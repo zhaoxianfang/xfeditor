@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8" />
+    <title>API 接口文档 - Editor.md v1.7.0</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="../css/editormd.css" />
+    <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
+    <style>
+        #layout { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .api-nav { position: fixed; left: 20px; top: 100px; width: 220px; background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 10px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); max-height: 80vh; overflow-y: auto; }
+        .api-nav a { display: block; padding: 6px 16px; color: #555; font-size: 13px; text-decoration: none; border-left: 3px solid transparent; }
+        .api-nav a:hover { background: #f5f7fa; color: #2196F3; border-left-color: #2196F3; }
+        .api-nav .nav-title { padding: 8px 16px; font-weight: bold; font-size: 14px; color: #333; border-bottom: 1px solid #eee; margin-bottom: 6px; }
+        .api-content { margin-left: 260px; padding: 20px; background: #fff; border-radius: 4px; }
+        .api-section { margin-bottom: 40px; }
+        .api-section h2 { font-size: 22px; color: #333; border-bottom: 2px solid #2196F3; padding-bottom: 8px; margin-bottom: 20px; }
+        .api-section h3 { font-size: 16px; color: #444; margin: 24px 0 12px; padding-left: 10px; border-left: 4px solid #2196F3; }
+        .api-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 16px; }
+        .api-table th { background: #f5f7fa; text-align: left; padding: 10px 12px; border: 1px solid #e0e0e0; font-weight: 600; }
+        .api-table td { padding: 10px 12px; border: 1px solid #e0e0e0; vertical-align: top; }
+        .api-table td:first-child { font-family: Consolas, Monaco, monospace; color: #c7254e; white-space: nowrap; }
+        .api-table .type { color: #2196F3; font-size: 12px; }
+        .api-table .default { color: #888; font-size: 12px; }
+        pre { background: #f8f8f8; padding: 14px; border-radius: 4px; overflow-x: auto; font-size: 13px; line-height: 1.6; border: 1px solid #e0e0e0; }
+        code { background: #e8e8e8; padding: 2px 6px; border-radius: 3px; font-family: Consolas, Monaco, monospace; font-size: 12px; color: #c7254e; }
+        .notice { background: #e3f2fd; border-left: 4px solid #2196F3; padding: 12px 16px; margin: 16px 0; border-radius: 0 4px 4px 0; font-size: 13px; }
+        @media (max-width: 960px) { .api-nav { display: none; } .api-content { margin-left: 0; } }
+    </style>
+</head>
+<body>
+    <div id="layout">
+        <header>
+            <h1>Editor.md v1.7.0 API 接口文档</h1>
+            <p>完整配置项、实例方法、事件回调与上传接口说明</p>
+        </header>
+
+        <div class="api-nav">
+            <div class="nav-title">目录导航</div>
+            <a href="#init">初始化</a>
+            <a href="#config">配置项</a>
+            <a href="#instance-methods">实例方法</a>
+            <a href="#events">事件回调</a>
+            <a href="#static-methods">静态方法</a>
+            <a href="#image-upload">图片上传接口</a>
+            <a href="#file-upload">文件上传接口</a>
+            <a href="#syntax">扩展语法</a>
+        </div>
+
+        <div class="api-content">
+
+            <div class="api-section" id="init">
+                <h2>初始化</h2>
+                <h3>基本用法</h3>
+                <pre>var editor = editormd("editor-id", {
+    width: "100%",
+    height: 640,
+    path: "./lib/"
+});</pre>
+                <p>第一个参数为容器 ID，第二个参数为配置对象，返回编辑器实例。</p>
+            </div>
+
+            <div class="api-section" id="config">
+                <h2>配置项</h2>
+
+                <h3>基础配置</h3>
+                <table class="api-table">
+                    <tr><th>名称</th><th>类型</th><th>默认值</th><th>说明</th></tr>
+                    <tr><td>mode</td><td class="type">String</td><td class="default">"gfm"</td><td>编辑器模式：gfm 或 markdown</td></tr>
+                    <tr><td>width</td><td class="type">String/Number</td><td class="default">"100%"</td><td>编辑器宽度</td></tr>
+                    <tr><td>height</td><td class="type">String/Number</td><td class="default">"100%"</td><td>编辑器高度</td></tr>
+                    <tr><td>path</td><td class="type">String</td><td class="default">"./lib/"</td><td>依赖模块目录</td></tr>
+                    <tr><td>pluginPath</td><td class="type">String</td><td class="default">""</td><td>插件目录</td></tr>
+                    <tr><td>delay</td><td class="type">Number</td><td class="default">300</td><td>预览刷新延迟（ms）</td></tr>
+                    <tr><td>watch</td><td class="type">Boolean</td><td class="default">true</td><td>开启实时预览</td></tr>
+                    <tr><td>placeholder</td><td class="type">String</td><td class="default">"Enjoy Markdown!"</td><td>占位提示</td></tr>
+                </table>
+
+                <h3>图片上传配置</h3>
+                <table class="api-table">
+                    <tr><th>名称</th><th>类型</th><th>默认值</th><th>说明</th></tr>
+                    <tr><td>imageUpload</td><td class="type">Boolean</td><td class="default">false</td><td>启用图片上传</td></tr>
+                    <tr><td>imageFormats</td><td class="type">Array</td><td class="default">["jpg","jpeg","gif","png","bmp","webp"]</td><td>允许的图片格式</td></tr>
+                    <tr><td>imageUploadURL</td><td class="type">String</td><td class="default">""</td><td>上传接口地址</td></tr>
+                    <tr><td>crossDomainUpload</td><td class="type">Boolean</td><td class="default">false</td><td>跨域上传</td></tr>
+                    <tr><td>uploadCallbackURL</td><td class="type">String</td><td class="default">""</td><td>跨域回调页</td></tr>
+                    <tr><td>imageResize</td><td class="type">Boolean</td><td class="default">true</td><td>图片尺寸调整</td></tr>
+                </table>
+
+                <h3>文件上传配置（v1.7.0 新增）</h3>
+                <table class="api-table">
+                    <tr><th>名称</th><th>类型</th><th>默认值</th><th>说明</th></tr>
+                    <tr><td>fileUpload</td><td class="type">Boolean</td><td class="default">false</td><td>启用文件上传</td></tr>
+                    <tr><td>fileFormats</td><td class="type">Array</td><td class="default">["doc","docx","pdf","txt","zip","rar","xls","xlsx","ppt","pptx","mp4","mp3"]</td><td>允许的文件格式</td></tr>
+                    <tr><td>fileUploadURL</td><td class="type">String</td><td class="default">""</td><td>文件上传接口地址</td></tr>
+                </table>
+
+                <h3>功能开关</h3>
+                <table class="api-table">
+                    <tr><th>名称</th><th>类型</th><th>默认值</th><th>说明</th></tr>
+                    <tr><td>toc</td><td class="type">Boolean</td><td class="default">true</td><td>目录</td></tr>
+                    <tr><td>htmlDecode</td><td class="type">Boolean/String</td><td class="default">false</td><td>HTML 标签解析</td></tr>
+
+                    <tr><td>tex</td><td class="type">Boolean</td><td class="default">false</td><td>TeX / KaTeX 公式</td></tr>
+                    <tr><td>flowChart</td><td class="type">Boolean</td><td class="default">false</td><td>流程图</td></tr>
+                    <tr><td>sequenceDiagram</td><td class="type">Boolean</td><td class="default">false</td><td>时序图</td></tr>
+                    <tr><td>pinyin</td><td class="type">Boolean</td><td class="default">false</td><td>拼音标注 {文本|拼音}</td></tr>
+                    <tr><td>textAlign</td><td class="type">Boolean</td><td class="default">true</td><td>文本对齐</td></tr>
+                    <tr><td>tableEdit</td><td class="type">Boolean</td><td class="default">true</td><td>表格编辑</td></tr>
+                    <tr><td>echarts</td><td class="type">Boolean</td><td class="default">false</td><td>ECharts 图表</td></tr>
+                    <tr><td>tabs</td><td class="type">Boolean</td><td class="default">true</td><td>Tabs 标签页</td></tr>
+                    <tr><td>columns</td><td class="type">Boolean</td><td class="default">true</td><td>多栏排版</td></tr>
+                    <tr><td>tooltip</td><td class="type">Boolean</td><td class="default">true</td><td>悬浮提示</td></tr>
+                    <tr><td>draftAutoSave</td><td class="type">Boolean</td><td class="default">false</td><td>浏览器草稿自动保存</td></tr>
+                    <tr><td>draftInterval</td><td class="type">Number</td><td class="default">30</td><td>草稿保存间隔（秒）</td></tr>
+                    <tr><td>draftMaxDays</td><td class="type">Number</td><td class="default">30</td><td>草稿最长保留天数，超期自动清理</td></tr>
+                </table>
+
+                <h3>工具栏配置</h3>
+                <table class="api-table">
+                    <tr><th>名称</th><th>类型</th><th>默认值</th><th>说明</th></tr>
+                    <tr><td>toolbar</td><td class="type">Boolean</td><td class="default">true</td><td>显示工具栏</td></tr>
+                    <tr><td>toolbarAutoFixed</td><td class="type">Boolean</td><td class="default">true</td><td>滚动固定工具栏</td></tr>
+                    <tr><td>toolbarIcons</td><td class="type">String/Array</td><td class="default">"full"</td><td>图标模式：full / simple / mini</td></tr>
+                    <tr><td>toolbarHandlers</td><td class="type">Object</td><td class="default">{}</td><td>自定义处理器</td></tr>
+                    <tr><td>toolbarCustomIcons</td><td class="type">Object</td><td class="default">{}</td><td>自定义图标 HTML</td></tr>
+                </table>
+            </div>
+
+            <div class="api-section" id="instance-methods">
+                <h2>实例方法</h2>
+                <table class="api-table">
+                    <tr><th>方法</th><th>返回值</th><th>说明</th></tr>
+                    <tr><td>getValue()</td><td>String</td><td>获取 Markdown 源码</td></tr>
+                    <tr><td>setValue(val)</td><td>editormd</td><td>设置 Markdown 源码</td></tr>
+                    <tr><td>getHTML()</td><td>String</td><td>获取解析后的 HTML</td></tr>
+                    <tr><td>getPreviewedHTML()</td><td>String</td><td>获取预览区 HTML</td></tr>
+                    <tr><td>watch()</td><td>editormd</td><td>开启实时预览</td></tr>
+                    <tr><td>unwatch()</td><td>editormd</td><td>关闭实时预览</td></tr>
+                    <tr><td>previewing()</td><td>editormd</td><td>进入全预览模式</td></tr>
+                    <tr><td>previewed()</td><td>editormd</td><td>退出全预览模式</td></tr>
+                    <tr><td>fullscreen()</td><td>editormd</td><td>进入全屏</td></tr>
+                    <tr><td>fullscreenExit()</td><td>editormd</td><td>退出全屏</td></tr>
+                    <tr><td>width(w)</td><td>editormd</td><td>设置宽度</td></tr>
+                    <tr><td>height(h)</td><td>editormd</td><td>设置高度</td></tr>
+                    <tr><td>resize(w, h)</td><td>editormd</td><td>调整尺寸</td></tr>
+                    <tr><td>save()</td><td>editormd</td><td>解析并保存</td></tr>
+                    <tr><td>focus()</td><td>editormd</td><td>聚焦编辑器</td></tr>
+                    <tr><td>setCursor(line, ch)</td><td>editormd</td><td>设置光标位置</td></tr>
+                    <tr><td>getCursor()</td><td>Object</td><td>获取光标位置</td></tr>
+                    <tr><td>getSelection()</td><td>String</td><td>获取选中文本</td></tr>
+                    <tr><td>replaceSelection(text)</td><td>editormd</td><td>替换选中文本</td></tr>
+                    <tr><td>insertValue(text)</td><td>editormd</td><td>插入文本</td></tr>
+                    <tr><td>clear()</td><td>editormd</td><td>清空内容</td></tr>
+                    <tr><td>gotoLine(line)</td><td>editormd</td><td>跳转到行</td></tr>
+                    <tr><td>showToolbar()</td><td>editormd</td><td>显示工具栏</td></tr>
+                    <tr><td>hideToolbar()</td><td>editormd</td><td>隐藏工具栏</td></tr>
+                    <tr><td>executePlugin(name, path)</td><td>editormd</td><td>执行插件</td></tr>
+                    <tr><td>saveDraft()</td><td>editormd</td><td>手动保存草稿</td></tr>
+                    <tr><td>clearDraft()</td><td>editormd</td><td>清除草稿</td></tr>
+                    <tr><td>showDraftRecovery()</td><td>editormd</td><td>显示草稿恢复</td></tr>
+                </table>
+            </div>
+
+            <div class="api-section" id="events">
+                <h2>事件回调</h2>
+                <table class="api-table">
+                    <tr><th>事件</th><th>说明</th></tr>
+                    <tr><td>onload()</td><td>加载完成</td></tr>
+                    <tr><td>onresize()</td><td>尺寸变化</td></tr>
+                    <tr><td>onchange()</td><td>内容变化</td></tr>
+                    <tr><td>onwatch()</td><td>开启预览</td></tr>
+                    <tr><td>onunwatch()</td><td>关闭预览</td></tr>
+                    <tr><td>onpreviewing()</td><td>进入全预览</td></tr>
+                    <tr><td>onpreviewed()</td><td>退出全预览</td></tr>
+                    <tr><td>onfullscreen()</td><td>进入全屏</td></tr>
+                    <tr><td>onfullscreenExit()</td><td>退出全屏</td></tr>
+                    <tr><td>onscroll()</td><td>编辑器滚动</td></tr>
+                    <tr><td>onpreviewscroll()</td><td>预览区滚动</td></tr>
+                    <tr><td>onbeforesave()</td><td>保存前</td></tr>
+                    <tr><td>onaftersave()</td><td>保存后</td></tr>
+                    <tr><td>oninsert()</td><td>插入内容</td></tr>
+                    <tr><td>ontablechange()</td><td>表格变化</td></tr>
+                    <tr><td>onimagechange()</td><td>图片尺寸变化</td></tr>
+                    <tr><td>onkeydown()</td><td>键盘按下</td></tr>
+                    <tr><td>onkeyup()</td><td>键盘松开</td></tr>
+                    <tr><td>onmouseup()</td><td>鼠标松开</td></tr>
+                    <tr><td>onmousedown()</td><td>鼠标按下</td></tr>
+                    <tr><td>onpaste()</td><td>粘贴</td></tr>
+                    <tr><td>ondrop()</td><td>拖拽放下</td></tr>
+                    <tr><td>oncopy()</td><td>复制</td></tr>
+                    <tr><td>oncut()</td><td>剪切</td></tr>
+                    <tr><td>onfocus()</td><td>获得焦点</td></tr>
+                    <tr><td>onblur()</td><td>失去焦点</td></tr>
+                    <tr><td>oncursoractivity()</td><td>光标活动</td></tr>
+                </table>
+            </div>
+
+            <div class="api-section" id="static-methods">
+                <h2>静态方法</h2>
+                <table class="api-table">
+                    <tr><th>方法</th><th>说明</th></tr>
+                    <tr><td>editormd.markdownToHTML(id, options)</td><td>Markdown 转 HTML</td></tr>
+                    <tr><td>editormd.markdownToCRenderer(toc, container, dropdown, startLevel)</td><td>生成目录</td></tr>
+                    <tr><td>editormd.filterHTMLTags(html, filters)</td><td>过滤 HTML 标签</td></tr>
+                    <tr><td>editormd.loadScript(path, callback)</td><td>动态加载 JS</td></tr>
+                    <tr><td>editormd.loadCSS(path, callback)</td><td>动态加载 CSS</td></tr>
+                    <tr><td>editormd.loadKaTeX(callback)</td><td>加载 KaTeX</td></tr>
+                    <tr><td>editormd.lockScreen(lock)</td><td>全局锁屏</td></tr>
+                </table>
+            </div>
+
+            <div class="api-section" id="image-upload">
+                <h2>图片上传接口</h2>
+                <h3>请求方式</h3>
+                <p><code>POST</code> 表单提交，<code>enctype="multipart/form-data"</code></p>
+                <h3>请求参数</h3>
+                <table class="api-table">
+                    <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+                    <tr><td>editormd-image-file</td><td class="type">File</td><td>是</td><td>图片文件</td></tr>
+                    <tr><td>guid</td><td class="type">String</td><td>否</td><td>唯一标识</td></tr>
+                </table>
+                <h3>成功返回</h3>
+                <pre>{"success":1,"message":"上传成功！","url":"https://example.com/uploads/image.png"}</pre>
+                <h3>失败返回</h3>
+                <pre>{"success":0,"message":"错误提示信息"}</pre>
+
+                <h3>跨域上传</h3>
+                <p>跨域时服务器返回 <code>302</code> 跳转到 callback 页面，URL 参数包含：</p>
+                <pre>?success=1&message=xxx&url=https://example.com/img.png&dialog_id=xxx&temp=xxx</pre>
+            </div>
+
+            <div class="api-section" id="file-upload">
+                <h2>文件上传接口（v1.7.0 新增）</h2>
+                <h3>请求方式</h3>
+                <p><code>POST</code> 表单提交，<code>enctype="multipart/form-data"</code></p>
+                <h3>请求参数</h3>
+                <table class="api-table">
+                    <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+                    <tr><td>editormd-file-file</td><td class="type">File</td><td>是</td><td>文件</td></tr>
+                    <tr><td>guid</td><td class="type">String</td><td>否</td><td>唯一标识</td></tr>
+                </table>
+                <h3>成功返回</h3>
+                <pre>{"success":1,"message":"上传成功！","url":"https://example.com/uploads/file.pdf","name":"file.pdf"}</pre>
+                <p>服务端必须返回 <code>success</code>、<code>url</code> 和 <code>name</code> 字段，其中 <code>name</code> 会自动回填到文件名称输入框。</p>
+                <h3>失败返回</h3>
+                <pre>{"success":0,"message":"错误提示信息"}</pre>
+            </div>
+
+            <div class="api-section" id="syntax">
+                <h2>扩展语法速查</h2>
+                <table class="api-table">
+                    <tr><th>语法</th><th>说明</th></tr>
+                    <tr><td>{文本|拼音}</td><td>拼音标注</td></tr>
+                    <tr><td>[[tabs]]...[[/tabs]]</td><td>Tabs 标签页</td></tr>
+                    <tr><td>[[tab:标题]]...[[/tab]]</td><td>单个标签</td></tr>
+                    <tr><td>[[columns:N]]...[[/columns]]</td><td>N 栏排版</td></tr>
+                    <tr><td>[[align:center]]...[[/align]]</td><td>块级居中对齐</td></tr>
+                    <tr><td>[[align:left]]...[[/align]]</td><td>块级左对齐</td></tr>
+                    <tr><td>[[align:right]]...[[/align]]</td><td>块级右对齐</td></tr>
+                    <tr><td>⁑⁑内容⁑⁑</td><td>行内居中对齐（Unicode）</td></tr>
+                    <tr><td>⁑⁖内容⁖⁑</td><td>行内左对齐（Unicode）</td></tr>
+                    <tr><td>⁑⠕内容⠕⁑</td><td>行内右对齐（Unicode）</td></tr>
+                    <tr><td>⁑⁛内容⁛⁑</td><td>行内两端对齐（Unicode）</td></tr>
+                    <tr><td>![alt](url)&lt;W,H&gt;</td><td>自定义图片尺寸</td></tr>
+                    <tr><td>[文本](tooltip:内容)</td><td>文本悬浮提示</td></tr>
+                    <tr><td>![alt](url "tooltip:内容")</td><td>图片悬浮提示</td></tr>
+                    <tr><td>```echarts ... ```</td><td>ECharts 图表</td></tr>
+                </table>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,175 @@
+/**
+ * Editor.md Examples - Common Styles
+ * Modern, clean design for all example pages
+ */
+
+/* --- Reset & Base --- */
+*, *::before, *::after {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body, div, dl, dt, dd, ul, ol, li, h1, h2, h3, h4, h5, h6,
+pre, code, form, fieldset, legend, input, textarea, p,
+blockquote, th, td, hr, button, article, aside, details,
+figcaption, figure, footer, header, hgroup, menu, nav, section {
+    margin: 0;
+    padding: 0;
+}
+
+article, aside, details, figcaption, figure, footer,
+header, hgroup, menu, nav, section, summary {
+    display: block;
+}
+
+audio, canvas, video {
+    display: inline-block;
+}
+
+img {
+    border: none;
+    vertical-align: middle;
+}
+
+/* --- Layout --- */
+.clear {
+    *zoom: 1;
+}
+
+.clear::before, .clear::after {
+    height: 0;
+    content: "";
+    font-size: 0;
+    display: table;
+    line-height: 0;
+    visibility: hidden;
+}
+
+.clear::after {
+    clear: both;
+}
+
+body {
+    font-size: 15px;
+    color: #444;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                 "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue",
+                 Helvetica, Arial, sans-serif;
+    background: #f0f2f5;
+    text-align: center;
+    line-height: 1.6;
+}
+
+#layout {
+    text-align: left;
+    min-height: 100vh;
+}
+
+/* --- Header --- */
+#layout > header {
+    padding: 50px 0 30px;
+    width: 90%;
+    max-width: 960px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+#layout > header h1 {
+    font-size: 26px;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin-bottom: 10px;
+}
+
+#layout > header p {
+    font-size: 14px;
+    color: #888;
+    margin-bottom: 6px;
+}
+
+#layout > header ul {
+    margin: 10px 0 0;
+    padding: 0;
+    list-style: none;
+    text-align: left;
+    display: inline-block;
+}
+
+#layout > header ul li {
+    font-size: 13px;
+    color: #666;
+    padding: 2px 0;
+}
+
+/* --- Buttons --- */
+.btns {
+    padding: 0 0 15px;
+    width: 90%;
+    max-width: 960px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.btns button, .btn {
+    padding: 8px 16px;
+    background: #fff;
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #333;
+    cursor: pointer;
+    -webkit-transition: all 250ms ease;
+    transition: all 250ms ease;
+    margin: 3px;
+}
+
+.btns button:hover, .btn:hover {
+    background: #1890ff;
+    border-color: #1890ff;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
+}
+
+.btns button:active {
+    transform: scale(0.97);
+}
+
+/* --- Editormd Container --- */
+.editormd,
+.editormd-html-preview {
+    width: 90%;
+    max-width: 960px;
+    margin: 0 auto 40px;
+}
+
+/* --- Link base --- */
+a {
+    color: #1890ff;
+    text-decoration: none;
+    transition: color 200ms ease;
+}
+
+a:hover {
+    color: #40a9ff;
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+    #layout > header {
+        padding: 30px 0 20px;
+    }
+
+    #layout > header h1 {
+        font-size: 22px;
+    }
+
+    .btns button, .btn {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+}

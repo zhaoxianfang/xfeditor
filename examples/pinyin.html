@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh">
+    <head>
+        <meta charset="utf-8" />
+        <title>拼音标注 - Editor.md v1.6.0</title>
+        <link rel="stylesheet" href="css/style.css" />
+        <link rel="stylesheet" href="../css/editormd.css" />
+        <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
+        <style>
+            .intro { width: 90%; margin: 15px auto; padding: 15px 20px; background: #f5f7fa; border-left: 4px solid #2196F3; border-radius: 4px; font-size: 14px; line-height: 1.8; color: #555; }
+            .intro h2 { margin: 0 0 8px; font-size: 16px; color: #333; }
+            .intro code { background: #e8e8e8; padding: 2px 6px; border-radius: 3px; font-family: Consolas, Monaco, monospace; font-size: 12px; color: #c7254e; }
+        </style>
+    </head>
+    <body>
+        <div id="layout">
+            <header>
+                <h1>拼音标注语法示例</h1>
+                <p>使用 <code>{汉字 | pin yin}</code> 语法为中文添加拼音注音</p>
+            </header>
+
+            <div class="intro">
+                <h2>使用说明</h2>
+                <p>使用 <code>{中文文本 | pin yin}</code> 语法，其中拼音用空格分隔每个音节，即可生成带有拼音注音的 HTML ruby 标签。</p>
+                <p>适合教育、出版、语言学习等场景。</p>
+            </div>
+
+            <div id="test-editormd">
+                <textarea style="display:none;"># 拼音标注示例
+
+## 基础用法
+
+{Editor.md | biān jí qì} 是一款非常优秀的 {Markdown | mā kè dáo nà} 编辑器。
+
+## 教育场景
+
+{床前明月光 | chuáng qián míng yuè guāng}，
+
+{疑是地上霜 | yí shì dì shàng shuāng}。
+
+{举头望明月 | jǔ tóu wàng míng yuè}，
+
+{低头思故乡 | dī tóu sī gù xiāng}。
+
+## 技术词汇
+
+- {浏览器 | liú lǎn qì}
+- {服务器 | fú wù qì}
+- {数据库 | shù jù kù}
+- {人工智能 | rén gōng zhì néng}
+- {区块链 | qū kuài liàn}
+
+## 混合文本
+
+在普通的 {段落 | duàn luò} 中，你可以自由混合使用拼音标注，帮助读者理解 {生僻字 | shēng pì zì} 或 {专业术语 | zhuān yè shù yǔ} 的读音。
+</textarea>
+            </div>
+        </div>
+
+        <script src="js/jquery.min.js"></script>
+        <script src="../editormd.js"></script>
+        <script type="text/javascript">
+            $(function() {
+                editormd("test-editormd", {
+                    width: "90%",
+                    height: 640,
+                    path: "../lib/",
+                    theme: "default",
+                    previewTheme: "default",
+                    editorTheme: "default",
+                    codeFold: true,
+                    saveHTMLToTextarea: true,
+                    searchReplace: true,
+                    watch: true,
+                    htmlDecode: "style,script,iframe|on*",
+
+                    taskList: true,
+                    tex: true,
+                    flowChart: true,
+                    sequenceDiagram: true,
+                    pinyin: true,
+                    onload: function() {
+                        console.log("拼音标注示例已加载完成");
+                    }
+                });
+            });
+        </script>
+    </body>
+</html>

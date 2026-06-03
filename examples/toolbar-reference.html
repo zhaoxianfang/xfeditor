@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8" />
+    <title>工具栏功能介绍 - Editor.md v1.7.0</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="../css/editormd.css" />
+    <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
+    <style>
+        #layout { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .toolbar-nav { position: fixed; left: 20px; top: 100px; width: 220px; background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 10px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); max-height: 80vh; overflow-y: auto; }
+        .toolbar-nav a { display: block; padding: 6px 16px; color: #555; font-size: 13px; text-decoration: none; border-left: 3px solid transparent; }
+        .toolbar-nav a:hover { background: #f5f7fa; color: #2196F3; border-left-color: #2196F3; }
+        .toolbar-nav .nav-title { padding: 8px 16px; font-weight: bold; font-size: 14px; color: #333; border-bottom: 1px solid #eee; margin-bottom: 6px; }
+        .toolbar-content { margin-left: 260px; padding: 20px; background: #fff; border-radius: 4px; }
+        .toolbar-section { margin-bottom: 40px; }
+        .toolbar-section h2 { font-size: 22px; color: #333; border-bottom: 2px solid #2196F3; padding-bottom: 8px; margin-bottom: 20px; }
+        .toolbar-section h3 { font-size: 16px; color: #444; margin: 24px 0 12px; padding-left: 10px; border-left: 4px solid #2196F3; }
+        .toolbar-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 16px; }
+        .toolbar-table th { background: #f5f7fa; text-align: left; padding: 10px 12px; border: 1px solid #e0e0e0; font-weight: 600; }
+        .toolbar-table td { padding: 10px 12px; border: 1px solid #e0e0e0; vertical-align: top; }
+        .toolbar-table td:first-child { white-space: nowrap; }
+        .toolbar-table .icon { display: inline-block; width: 24px; text-align: center; color: #555; }
+        .toolbar-table .name { font-weight: 600; color: #333; }
+        .toolbar-table .desc { color: #666; }
+        .toolbar-table .usage code { background: #e8e8e8; padding: 2px 6px; border-radius: 3px; font-family: Consolas, Monaco, monospace; font-size: 12px; color: #c7254e; }
+        .dropdown-badge { display: inline-block; background: #2196F3; color: #fff; font-size: 11px; padding: 1px 6px; border-radius: 3px; margin-left: 6px; }
+        pre { background: #f8f8f8; padding: 14px; border-radius: 4px; overflow-x: auto; font-size: 13px; line-height: 1.6; border: 1px solid #e0e0e0; }
+        code { background: #e8e8e8; padding: 2px 6px; border-radius: 3px; font-family: Consolas, Monaco, monospace; font-size: 12px; color: #c7254e; }
+        .notice { background: #e3f2fd; border-left: 4px solid #2196F3; padding: 12px 16px; margin: 16px 0; border-radius: 0 4px 4px 0; font-size: 13px; }
+        @media (max-width: 960px) { .toolbar-nav { display: none; } .toolbar-content { margin-left: 0; } }
+    </style>
+</head>
+<body>
+    <div id="layout">
+        <header>
+            <h1>Editor.md v1.7.0 工具栏功能介绍</h1>
+            <p>Toolbar Reference — 完整展示所有工具栏按钮的图标、功能、描述与用法</p>
+        </header>
+
+        <div class="toolbar-nav">
+            <div class="nav-title">目录导航</div>
+            <a href="#basic">基础编辑</a>
+            <a href="#format">格式排版</a>
+            <a href="#insert">插入内容</a>
+            <a href="#extend">扩展语法</a>
+            <a href="#view">视图操作</a>
+            <a href="#dropdown">下拉菜单说明</a>
+        </div>
+
+        <div class="toolbar-content">
+
+            <div class="toolbar-section" id="basic">
+                <h2>基础编辑</h2>
+                <table class="toolbar-table">
+                    <thead>
+                        <tr><th style="width:140px">图标 / 名称</th><th style="width:200px">功能描述</th><th>用法说明</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-undo"></i></span> <span class="name">撤销</span></td>
+                            <td class="desc">撤销上一步编辑操作</td>
+                            <td class="usage">快捷键 <code>Ctrl+Z</code>，或点击工具栏按钮</td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-repeat"></i></span> <span class="name">重做</span></td>
+                            <td class="desc">恢复被撤销的操作</td>
+                            <td class="usage">快捷键 <code>Ctrl+Y</code>，或点击工具栏按钮</td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-bold"></i></span> <span class="name">粗体</span></td>
+                            <td class="desc">将选中文本设为粗体</td>
+                            <td class="usage">选中文字后点击，生成 <code>**粗体**</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-strikethrough"></i></span> <span class="name">删除线</span></td>
+                            <td class="desc">为选中文本添加删除线</td>
+                            <td class="usage">选中文字后点击，生成 <code>~~删除线~~</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-italic"></i></span> <span class="name">斜体</span></td>
+                            <td class="desc">将选中文本设为斜体</td>
+                            <td class="usage">选中文字后点击，生成 <code>*斜体*</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-quote-left"></i></span> <span class="name">引用</span></td>
+                            <td class="desc">插入引用块</td>
+                            <td class="usage">选中文字后点击，生成 <code>&gt; 引用文本</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon" style="font-size:18px;margin-top:-3px;">Aa</span> <span class="name">首字母大写</span></td>
+                            <td class="desc">将每个单词首字母转为大写</td>
+                            <td class="usage">选中文字后点击，自动转换格式</td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-font"></i></span> <span class="name">转大写</span></td>
+                            <td class="desc">将选中文本全部转为大写</td>
+                            <td class="usage">选中文字后点击，自动转换格式</td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon" style="font-size:22px;margin-top:-8px;">a</span> <span class="name">转小写</span></td>
+                            <td class="desc">将选中文本全部转为小写</td>
+                            <td class="usage">选中文字后点击，自动转换格式</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="toolbar-section" id="format">
+                <h2>格式排版</h2>
+                <table class="toolbar-table">
+                    <thead>
+                        <tr><th style="width:140px">图标 / 名称</th><th style="width:200px">功能描述</th><th>用法说明</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="icon" style="font-weight:bold">H1</span> <span class="name">标题</span></td>
+                            <td class="desc">插入 H1~H6 标题</td>
+                            <td class="usage">下拉选择 H1~H6，生成 <code># 标题</code> ~ <code>###### 标题</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-list-ul"></i></span> <span class="name">无序列表</span></td>
+                            <td class="desc">插入无序列表</td>
+                            <td class="usage">点击生成 <code>- 列表项</code>，支持多级嵌套</td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-list-ol"></i></span> <span class="name">有序列表</span></td>
+                            <td class="desc">插入有序列表</td>
+                            <td class="usage">点击生成 <code>1. 列表项</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-minus"></i></span> <span class="name">分隔线</span></td>
+                            <td class="desc">插入水平分隔线</td>
+                            <td class="usage">点击生成 <code>---</code> 或 <code>***</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-align-left"></i></span> <span class="name">左对齐</span></td>
+                            <td class="desc">插入 Unicode 左对齐标记</td>
+                            <td class="usage">选中文字后点击，生成 <code>⁑⁖内容⁖⁑</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-align-center"></i></span> <span class="name">居中对齐</span></td>
+                            <td class="desc">插入 Unicode 居中对齐标记</td>
+                            <td class="usage">选中文字后点击，生成 <code>⁑⁑内容⁑⁑</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-align-right"></i></span> <span class="name">右对齐</span></td>
+                            <td class="desc">插入 Unicode 右对齐标记</td>
+                            <td class="usage">选中文字后点击，生成 <code>⁑⠕内容⠕⁑</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-align-justify"></i></span> <span class="name">两端对齐</span></td>
+                            <td class="desc">插入 Unicode 两端对齐标记</td>
+                            <td class="usage">选中文字后点击，生成 <code>⁑⁛内容⁛⁑</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-language"></i></span> <span class="name">拼音标注</span></td>
+                            <td class="desc">为汉字添加拼音注音</td>
+                            <td class="usage">选中文字后点击，生成 <code>{文字 | pinyin}</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="toolbar-section" id="insert">
+                <h2>插入内容</h2>
+                <table class="toolbar-table">
+                    <thead>
+                        <tr><th style="width:140px">图标 / 名称</th><th style="width:200px">功能描述</th><th>用法说明</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-link"></i></span> <span class="name">普通链接</span></td>
+                            <td class="desc">插入超链接</td>
+                            <td class="usage">弹出对话框填写 URL 和标题，生成 <code>[文本](url)</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-anchor"></i></span> <span class="name">引用链接</span></td>
+                            <td class="desc">插入行内引用链接</td>
+                            <td class="usage">弹出对话框填写文本、URL 和标题，生成 <code>[文本](url "标题")</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-picture-o"></i></span> <span class="name">图片</span></td>
+                            <td class="desc">插入图片，支持 URL 和本地上传</td>
+                            <td class="usage">弹出对话框填写 URL 或选择本地图片上传，支持尺寸语法 <code>&lt;W,H&gt;</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-paperclip"></i></span> <span class="name">文件</span></td>
+                            <td class="desc">插入文件链接，支持 URL 和本地上传</td>
+                            <td class="usage">弹出对话框填写 URL 或选择本地文件上传，生成 <code>[文件名](url)</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-plus"></i></span> <span class="name">插入 <span class="dropdown-badge">下拉</span></span></td>
+                            <td class="desc">统一的插入内容下拉菜单</td>
+                            <td class="usage">包含代码、预格式化文本、代码块、表格、日期时间、HTML 实体、分页符</td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-code"></i></span> <span class="name">行内代码</span></td>
+                            <td class="desc">插入行内代码</td>
+                            <td class="usage">选中文字后点击，生成 <code>`code`</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-file-code-o"></i></span> <span class="name">预格式化文本</span></td>
+                            <td class="desc">插入预格式化文本块</td>
+                            <td class="usage">弹出对话框选择语言，生成缩进代码块</td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-file-code-o"></i></span> <span class="name">代码块</span></td>
+                            <td class="desc">插入带语法高亮的 fenced 代码块</td>
+                            <td class="usage">弹出对话框选择语言，生成 <code>```lang ... ```</code></td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-table"></i></span> <span class="name">表格</span></td>
+                            <td class="desc">插入 Markdown 表格</td>
+                            <td class="usage">弹出对话框设置行列数，自动生成表格语法</td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-clock-o"></i></span> <span class="name">日期时间</span></td>
+                            <td class="desc">插入当前日期时间</td>
+                            <td class="usage">点击自动生成当前日期时间文本，如 <code>2026-06-03 星期三 11:06</code></td>
+                        </tr>
+
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-copyright"></i></span> <span class="name">HTML 实体</span></td>
+                            <td class="desc">插入特殊 HTML 字符实体</td>
+                            <td class="usage">点击打开 HTML 实体选择面板，如 <code>&amp;copy;</code>、<code>&amp;reg;</code> 等</td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-newspaper-o"></i></span> <span class="name">分页符</span></td>
+                            <td class="desc">插入分页符</td>
+                            <td class="usage">点击生成 <code>[========]</code>，用于打印分页控制</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="toolbar-section" id="extend">
+                <h2>扩展语法</h2>
+                <table class="toolbar-table">
+                    <thead>
+                        <tr><th style="width:140px">图标 / 名称</th><th style="width:200px">功能描述</th><th>用法说明</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-area-chart"></i></span> <span class="name">图表 <span class="dropdown-badge">下拉</span></span></td>
+                            <td class="desc">插入 Apache ECharts 交互式图表</td>
+                            <td class="usage">下拉选择图表类型（柱状图、折线图、饼图、雷达图、漏斗图），自动生成 <code>```echarts</code> 代码块</td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-folder-o"></i></span> <span class="name">标签页</span></td>
+                            <td class="desc">插入 Tabs 标签页组件</td>
+                            <td class="usage">选中文字后点击，自动生成 <code>[[tabs]] ... [[/tabs]]</code> 语法</td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-newspaper-o"></i></span> <span class="name">多列排版</span></td>
+                            <td class="desc">插入多栏报纸式排版</td>
+                            <td class="usage">选中文字后点击，自动生成 <code>[[columns:N]] ... [[/columns]]</code> 语法</td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-comment-o"></i></span> <span class="name">悬浮提示</span></td>
+                            <td class="desc">插入 Tooltip 悬浮提示</td>
+                            <td class="usage">支持链接 <code>[文本](tooltip:内容)</code> 和图片 <code>![alt](url "tooltip:内容")</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="toolbar-section" id="view">
+                <h2>视图操作</h2>
+                <table class="toolbar-table">
+                    <thead>
+                        <tr><th style="width:140px">图标 / 名称</th><th style="width:200px">功能描述</th><th>用法说明</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-terminal"></i></span> <span class="name">跳转行</span></td>
+                            <td class="desc">快速跳转到指定行号</td>
+                            <td class="usage">点击弹出对话框输入行号，自动定位光标</td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-eye-slash"></i></span> <span class="name">实时预览</span></td>
+                            <td class="desc">开启或关闭实时预览</td>
+                            <td class="usage">点击切换编辑区与预览区的同步显示状态</td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-desktop"></i></span> <span class="name">全窗口预览</span></td>
+                            <td class="desc">进入全窗口预览模式</td>
+                            <td class="usage">点击后隐藏编辑区，仅显示预览内容，按 ESC 退出</td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-arrows-alt"></i></span> <span class="name">全屏</span></td>
+                            <td class="desc">编辑器进入全屏模式</td>
+                            <td class="usage">点击后编辑器占据整个浏览器窗口，再次点击退出</td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-eraser"></i></span> <span class="name">清空</span></td>
+                            <td class="desc">清空编辑器全部内容</td>
+                            <td class="usage">点击后清空编辑区，操作前请确认已保存重要内容</td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-search"></i></span> <span class="name">搜索替换</span></td>
+                            <td class="desc">打开搜索替换对话框</td>
+                            <td class="usage">支持查找、替换、全部替换，支持正则表达式</td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-question-circle"></i></span> <span class="name">帮助</span></td>
+                            <td class="desc">打开 Markdown 语法帮助</td>
+                            <td class="usage">点击显示常用 Markdown 语法速查表</td>
+                        </tr>
+                        <tr>
+                            <td><span class="icon"><i class="fa fa-info-circle"></i></span> <span class="name">关于</span></td>
+                            <td class="desc">显示 Editor.md 关于信息</td>
+                            <td class="usage">点击显示版本号、作者和项目链接</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="toolbar-section" id="dropdown">
+                <h2>下拉菜单说明</h2>
+                <div class="notice">
+                    Editor.md v1.7.0 将部分功能按钮整合为下拉菜单组，使工具栏更加简洁。下拉菜单默认启用，可通过 <code>toolbarDropdown: false</code> 关闭。
+                </div>
+                <h3>Insert 插入菜单</h3>
+                <p>包含 <strong>代码、预格式化文本、代码块、表格、日期时间、HTML 实体、分页符</strong> 共 7 个功能。点击 <i class="fa fa-plus"></i> 图标展开。</p>
+                <h3>Align 对齐菜单</h3>
+                <p>包含 <strong>左对齐、居中对齐、右对齐、两端对齐</strong> 共 4 个功能。点击 <i class="fa fa-align-left"></i> 图标展开。</p>
+                <h3>Chart 图表菜单</h3>
+                <p>包含 <strong>柱状图、折线图、饼图、雷达图、漏斗图</strong> 共 5 个功能。点击 <i class="fa fa-area-chart"></i> 图标展开。</p>
+                <h3>H1 标题菜单</h3>
+                <p>包含 <strong>H1 ~ H6</strong> 六级标题。点击 <strong>H1</strong> 图标展开。</p>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>

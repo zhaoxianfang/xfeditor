@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh">
+    <head>
+        <meta charset="utf-8" />
+        <title>Tabs 标签页 - Editor.md v1.7.0</title>
+        <link rel="stylesheet" href="css/style.css" />
+        <link rel="stylesheet" href="../css/editormd.css" />
+        <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
+        <style>
+            .intro { width: 90%; margin: 15px auto; padding: 15px 20px; background: #f5f7fa; border-left: 4px solid #2196F3; border-radius: 4px; font-size: 14px; line-height: 1.8; color: #555; }
+            .intro h2 { margin: 0 0 8px; font-size: 16px; color: #333; }
+            .intro code { background: #e8e8e8; padding: 2px 6px; border-radius: 3px; font-family: Consolas, Monaco, monospace; font-size: 12px; color: #c7254e; }
+        </style>
+    </head>
+    <body>
+        <div id="layout">
+            <header>
+                <h1>Tabs 标签页组件示例</h1>
+                <p>使用 <code>[[tabs]]</code> ... <code>[[/tabs]]</code> 标签语法创建可交互的标签页，支持 Markdown 全语法</p>
+            </header>
+
+            <div class="intro">
+                <h2>使用说明</h2>
+                <p>使用 <code>[[tab:标题]]</code> 和 <code>[[/tab]]</code> 包裹每个标签页的内容，内部支持所有 Markdown 语法，包括代码块、表格、图表等。</p>
+                <p>也可通过工具栏 <i class="fa fa-folder"></i> Tabs 按钮快速插入标签页模板。</p>
+            </div>
+
+            <div id="test-editormd">
+                <textarea style="display:none;"># Tabs 标签页示例
+
+## 基础用法
+
+[[tabs]]
+[[tab:产品介绍]]
+Editor.md 是一款开源的、可嵌入的 Markdown 在线编辑器，基于 CodeMirror、jQuery 和 Marked 构建。
+
+- 支持实时预览
+- 支持图片上传
+- 支持流程图和时序图
+- 支持 ECharts 图表
+[[/tab]]
+
+[[tab:更新日志]]
+### v1.7.0
+- 新增 Apache ECharts 图表支持
+- 新增 Tabs 标签页功能
+- 新增多列排版功能
+- 新增悬浮提示功能
+
+### v1.6.0
+- 新增拼音标注语法
+- 新增文本对齐语法
+- 新增图片尺寸编辑
+- 新增表格行列操作
+[[/tab]]
+
+[[tab:使用帮助]]
+欢迎使用 Editor.md！您可以通过工具栏快速插入各种 Markdown 元素，也可以使用键盘快捷键提高编辑效率。
+
+1. **Ctrl + S** 保存内容
+2. **F11** 切换全屏
+3. **F10** 预览模式
+[[/tab]]
+[[/tabs]]
+
+## 标签页内嵌套复杂内容
+
+[[tabs]]
+[[tab:代码示例]]
+```javascript
+function hello() {
+    console.log("Hello from Tabs!");
+}
+```
+[[/tab]]
+
+[[tab:表格示例]]
+| 功能 | 版本 | 状态 |
+|------|------|------|
+| Tabs | v1.7.0 | 已发布 |
+| ECharts | v1.7.0 | 已发布 |
+| 多列排版 | v1.7.0 | 已发布 |
+[[/tab]]
+
+[[tab:图表示例]]
+```echarts
+{
+  "type": "bar",
+  "title": {"text": "Tab 内图表"},
+  "xAxis": {"data": ["A", "B", "C"]},
+  "yAxis": {},
+  "series": [{"type": "bar", "data": [10, 20, 30]}]
+}
+```
+[[/tab]]
+
+[[tab:任务列表示例]]
+- [x] 设计 Tabs 语法
+- [x] 实现标签切换
+- [ ] 支持嵌套标签页
+- [x] 支持 Markdown 全语法
+[[/tab]]
+[[/tabs]]
+</textarea>
+            </div>
+        </div>
+
+        <script src="js/jquery.min.js"></script>
+        <script src="../editormd.js"></script>
+        <script type="text/javascript">
+            $(function() {
+                editormd("test-editormd", {
+                    width: "90%",
+                    height: 700,
+                    path: "../lib/",
+                    theme: "default",
+                    previewTheme: "default",
+                    editorTheme: "default",
+                    codeFold: true,
+                    saveHTMLToTextarea: true,
+                    searchReplace: true,
+                    watch: true,
+                    htmlDecode: "style,script,iframe|on*",
+
+                    taskList: true,
+                    tex: true,
+                    flowChart: true,
+                    sequenceDiagram: true,
+                    echarts: true,
+                    tabs: true,
+                    onload: function() {
+                        console.log("Tabs 示例已加载完成");
+                    }
+                });
+            });
+        </script>
+    </body>
+</html>

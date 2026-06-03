@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh">
+    <head>
+        <meta charset="utf-8" />
+        <title>悬浮提示 Tooltip - Editor.md v1.7.0</title>
+        <link rel="stylesheet" href="css/style.css" />
+        <link rel="stylesheet" href="../css/editormd.css" />
+        <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
+        <style>
+            .intro { width: 90%; margin: 15px auto; padding: 15px 20px; background: #f5f7fa; border-left: 4px solid #2196F3; border-radius: 4px; font-size: 14px; line-height: 1.8; color: #555; }
+            .intro h2 { margin: 0 0 8px; font-size: 16px; color: #333; }
+            .intro code { background: #e8e8e8; padding: 2px 6px; border-radius: 3px; font-family: Consolas, Monaco, monospace; font-size: 12px; color: #c7254e; }
+        </style>
+    </head>
+    <body>
+        <div id="layout">
+            <header>
+                <h1>悬浮提示 Tooltip 示例</h1>
+                <p>为链接和图片添加鼠标悬浮提示，增强内容交互体验</p>
+            </header>
+
+            <div class="intro">
+                <h2>使用说明</h2>
+                <p><strong>文本提示：</strong>使用 <code>[文本](tooltip:提示内容)</code> 语法。</p>
+                <p><strong>图片提示：</strong>使用 <code>![alt](url "tooltip:提示内容")</code> 语法。</p>
+                <p>也可通过工具栏 <i class="fa fa-comment"></i> Tooltip 按钮快速插入。</p>
+            </div>
+
+            <div id="test-editormd">
+                <textarea style="display:none;"># Tooltip 悬浮提示示例
+
+## 文本悬浮提示
+
+请将鼠标悬停在此链接上查看效果：[百度](tooltip:百度是全球最大的中文搜索引擎，创立于2000年，总部位于北京。)
+
+以下是更多示例：
+
+- [GitHub](tooltip:GitHub 是全球最大的代码托管平台，于 2008 年上线。)
+- [Markdown](tooltip:Markdown 是一种轻量级标记语言，由约翰·格鲁伯于 2004 年创建。)
+- [Editor.md](tooltip:Editor.md 是一款开源的在线 Markdown 编辑器，基于 CodeMirror 构建。)
+
+## 图片悬浮提示
+
+![Editor.md Logo](../images/logos/editormd-logo-180x180.png "tooltip:Editor.md 的 Logo 图标，代表着开源、简洁与强大的 Markdown 编辑体验。")
+
+![示例图片](../images/logos/editormd-logo-64x64.png "tooltip:点击工具栏的 Logo 可返回首页。")
+
+## 混合使用
+
+在正文中混合使用 Tooltip，可以大大提升阅读体验，例如介绍 [技术术语](tooltip:技术术语是指在特定领域中使用的专业词汇。) 时提供即时解释，或展示 [产品名称](tooltip:产品名称是品牌识别的重要组成部分。) 时补充说明。
+</textarea>
+            </div>
+        </div>
+
+        <script src="js/jquery.min.js"></script>
+        <script src="../editormd.js"></script>
+        <script type="text/javascript">
+            $(function() {
+                editormd("test-editormd", {
+                    width: "90%",
+                    height: 640,
+                    path: "../lib/",
+                    theme: "default",
+                    previewTheme: "default",
+                    editorTheme: "default",
+                    codeFold: true,
+                    saveHTMLToTextarea: true,
+                    searchReplace: true,
+                    watch: true,
+                    htmlDecode: "style,script,iframe|on*",
+
+                    taskList: true,
+                    tex: true,
+                    flowChart: true,
+                    sequenceDiagram: true,
+                    tooltip: true,
+                    onload: function() {
+                        console.log("Tooltip 示例已加载完成");
+                    }
+                });
+            });
+        </script>
+    </body>
+</html>

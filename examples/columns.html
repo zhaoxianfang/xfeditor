@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh">
+    <head>
+        <meta charset="utf-8" />
+        <title>多列排版 - Editor.md v1.7.0</title>
+        <link rel="stylesheet" href="css/style.css" />
+        <link rel="stylesheet" href="../css/editormd.css" />
+        <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
+        <style>
+            .intro { width: 90%; margin: 15px auto; padding: 15px 20px; background: #f5f7fa; border-left: 4px solid #2196F3; border-radius: 4px; font-size: 14px; line-height: 1.8; color: #555; }
+            .intro h2 { margin: 0 0 8px; font-size: 16px; color: #333; }
+            .intro code { background: #e8e8e8; padding: 2px 6px; border-radius: 3px; font-family: Consolas, Monaco, monospace; font-size: 12px; color: #c7254e; }
+        </style>
+    </head>
+    <body>
+        <div id="layout">
+            <header>
+                <h1>多列排版示例</h1>
+                <p>使用 <code>[[columns:N]]</code> ... <code>[[/columns]]</code> 标签语法实现报纸式 N 栏排版</p>
+            </header>
+            <div class="intro">
+                <h2>使用说明</h2>
+                <p>使用 <code>[[columns:3]]</code> 开启三栏排版，内部支持所有 Markdown 语法。</p>
+            </div>
+            <div id="test-editormd">
+                <textarea style="display:none;"># 多列排版示例
+
+[[columns:3]]
+### 第一栏
+多列排版功能可以像报纸一样将内容分割为多个栏目展示。
+
+- 自动均衡分布
+- 支持全 Markdown 语法
+
+### 第二栏
+使用 `[[columns:3]]` 语法即可开启三栏排版。
+
+> 提示：每一栏的内容都会独立渲染 Markdown。
+
+### 第三栏
+您可以在每一栏中放入不同的产品介绍、功能特性或服务说明。
+[[/columns]]
+
+## 双栏排版
+
+[[columns:2]]
+### 左侧
+双栏排版适合对比展示、左右说明等场景。
+
+**适用场景：**
+- 产品特性对比
+- 优缺点分析
+
+### 右侧
+右侧栏支持完整的 Markdown 语法。
+
+```javascript
+console.log("Columns layout!");
+```
+[[/columns]]
+
+## 四栏排版
+
+[[columns:4]]
+### A
+第一列内容。
+
+### B
+第二列内容。
+
+### C
+第三列内容。
+
+### D
+第四列内容。
+[[/columns]]
+</textarea>
+            </div>
+        </div>
+        <script src="js/jquery.min.js"></script>
+        <script src="../editormd.js"></script>
+        <script>
+            $(function() {
+                editormd("test-editormd", {
+                    width: "90%", height: 700, path: "../lib/",
+                    theme: "default", previewTheme: "default", editorTheme: "default",
+                    codeFold: true, saveHTMLToTextarea: true, searchReplace: true,
+                    watch: true, htmlDecode: "style,script,iframe|on*",
+                    taskList: true, tex: true,
+                    flowChart: true, sequenceDiagram: true, columns: true,
+                    onload: function() { console.log("Columns 示例已加载完成"); }
+                });
+            });
+        </script>
+    </body>
+</html>

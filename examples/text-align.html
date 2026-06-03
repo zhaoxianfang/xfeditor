@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh">
+    <head>
+        <meta charset="utf-8" />
+        <title>文本对齐 - Editor.md v1.7.0</title>
+        <link rel="stylesheet" href="css/style.css" />
+        <link rel="stylesheet" href="../css/editormd.css" />
+        <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
+        <style>
+            .intro { width: 90%; margin: 15px auto; padding: 15px 20px; background: #f5f7fa; border-left: 4px solid #2196F3; border-radius: 4px; font-size: 14px; line-height: 1.8; color: #555; }
+            .intro h2 { margin: 0 0 8px; font-size: 16px; color: #333; }
+            .intro code { background: #e8e8e8; padding: 2px 6px; border-radius: 3px; font-family: Consolas, Monaco, monospace; font-size: 12px; color: #c7254e; }
+        </style>
+    </head>
+    <body>
+        <div id="layout">
+            <header>
+                <h1>文本对齐语法示例</h1>
+                <p>支持左对齐、居中对齐、右对齐三种文本对齐方式</p>
+            </header>
+
+            <div class="intro">
+                <h2>Unicode 行内对齐（v1.7.0 推荐）</h2>
+                <p>点击工具栏对齐按钮即可直接插入 Unicode 行内对齐标记，无需换行：</p>
+                <p><code>⁑⁑内容⁑⁑</code> 表示居中对齐</p>
+                <p><code>⁑⁖内容⁖⁑</code> 表示左对齐</p>
+                <p><code>⁑⠕内容⠕⁑</code> 表示右对齐</p>
+                <p><code>⁑⁛内容⁛⁑</code> 表示两端对齐</p>
+                <p>Unicode 对齐标记适用于标题、段落、列表项等任意行内场景。</p>
+                <hr style="margin: 12px 0; border: none; border-top: 1px solid #ddd;">
+                <h2>旧版块级对齐（兼容保留）</h2>
+                <p><code>[[align:center]]...[[/align]]</code> 表示居中对齐</p>
+                <p><code>[[align:right]]...[[/align]]</code> 表示右对齐</p>
+                <p><code>[[align:left]]...[[/align]]</code> 表示左对齐</p>
+                <p>块级对齐标签支持多段落、大段落内容，内部可使用任意 Markdown 语法。</p>
+            </div>
+
+            <div id="test-editormd">
+                <textarea style="display:none;"># 文本对齐示例
+
+## Unicode 行内对齐（推荐）
+
+工具栏对齐按钮直接插入 Unicode 标记，无需换行，适用于标题、段落、列表项等任意行内场景。
+
+### 居中对齐
+
+⁑⁑欢迎使用 Editor.md — 开源在线 Markdown 编辑器⁑⁑
+
+### 左对齐
+
+⁑⁖开源、简洁、强大，支持实时预览与扩展语法⁖⁑
+
+### 右对齐
+
+⁑⠕版本号：v1.7.0 | 更新日期：2026-06-02⠕⁑
+
+### 两端对齐
+
+⁑⁛Editor.md 致力于为开发者和内容创作者提供最优秀的 Markdown 编辑体验，支持实时预览、图片上传、图表渲染等丰富功能。⁛⁑
+
+### 标题中的对齐
+
+# ⁑⁑一级标题居中⁑⁑
+
+## ⁑⠕二级标题右对齐⠕⁑
+
+### ⁑⁛三级标题两端对齐⁛⁑
+
+### 列表项中的对齐
+
+- ⁑⁑列表项中的居中对齐⁑⁑
+- ⁑⠕列表项中的右对齐⠕⁑
+- ⁑⁛列表项中的两端对齐⁛⁑
+
+## 旧版块级对齐（兼容保留）
+
+[[align:center]]
+这是一段居中对齐的文本
+[[/align]]
+
+[[align:right]]
+这是一段右对齐的文本
+[[/align]]
+
+[[align:left]]
+这是一段左对齐的文本，通常段落默认就是左对齐，此语法可用于显式声明或与其他对齐方式混排。
+[[/align]]
+
+### 混合排版
+
+[[align:left]]
+左侧信息：作者 Pandao
+[[/align]]
+
+[[align:center]]
+居中标题：欢迎使用 Editor.md
+[[/align]]
+
+[[align:right]]
+右侧信息：MIT 许可证
+[[/align]]
+
+### 多段落大段落对齐
+
+[[align:center]]
+### 居中标题
+
+这是第一个段落。块级对齐标签支持多段落内容，包括标题、列表、引用等任意 Markdown 语法。
+
+- 支持列表
+- 支持嵌套
+
+> 支持引用块
+[[/align]]
+
+### 对齐与表情符号
+
+[[align:center]]
+:heart: 感谢使用 Editor.md :thumbsup:
+[[/align]]
+</textarea>
+            </div>
+        </div>
+
+        <script src="js/jquery.min.js"></script>
+        <script src="../editormd.js"></script>
+        <script type="text/javascript">
+            $(function() {
+                editormd("test-editormd", {
+                    width: "90%",
+                    height: 640,
+                    path: "../lib/",
+                    theme: "default",
+                    previewTheme: "default",
+                    editorTheme: "default",
+                    codeFold: true,
+                    saveHTMLToTextarea: true,
+                    searchReplace: true,
+                    watch: true,
+                    htmlDecode: "style,script,iframe|on*",
+
+                    taskList: true,
+                    tex: true,
+                    flowChart: true,
+                    sequenceDiagram: true,
+                    textAlign: true,
+                    onload: function() {
+                        console.log("文本对齐示例已加载完成");
+                    }
+                });
+            });
+        </script>
+    </body>
+</html>

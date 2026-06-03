@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh">
+    <head>
+        <meta charset="utf-8" />
+        <title>表格编辑 - Editor.md v1.6.0</title>
+        <link rel="stylesheet" href="css/style.css" />
+        <link rel="stylesheet" href="../css/editormd.css" />
+        <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
+        <style>
+            .intro { width: 90%; margin: 15px auto; padding: 15px 20px; background: #f5f7fa; border-left: 4px solid #2196F3; border-radius: 4px; font-size: 14px; line-height: 1.8; color: #555; }
+            .intro h2 { margin: 0 0 8px; font-size: 16px; color: #333; }
+            .intro code { background: #e8e8e8; padding: 2px 6px; border-radius: 3px; font-family: Consolas, Monaco, monospace; font-size: 12px; color: #c7254e; }
+        </style>
+    </head>
+    <body>
+        <div id="layout">
+            <header>
+                <h1>表格行列编辑示例</h1>
+                <p>在预览区点击表格单元格，可弹出工具栏进行插入/删除行列操作</p>
+            </header>
+
+            <div class="intro">
+                <h2>使用说明</h2>
+                <p>在预览区（右侧）点击任意表格单元格，会弹出浮动工具栏，支持：</p>
+                <ul>
+                    <li>在上方/下方插入行</li>
+                    <li>在左侧/右侧插入列</li>
+                    <li>删除当前行/列</li>
+                </ul>
+                <p>所有操作会自动同步到左侧的 Markdown 源码中。</p>
+            </div>
+
+            <div id="test-editormd">
+                <textarea style="display:none;"># 表格编辑示例
+
+## 基础表格
+
+| 功能 | 说明 | 状态 |
+|------|------|------|
+| 实时预览 | 编辑与预览同步 | 已启用 |
+| 表格编辑 | 点击单元格插入/删除行列 | 已启用 |
+| 图片上传 | 支持跨域上传 | 可选 |
+| 代码折叠 | 支持代码块折叠 | 已启用 |
+
+## 产品对比表
+
+| 特性 | Editor.md | 其他编辑器A | 其他编辑器B |
+|------|-----------|-------------|-------------|
+| 开源免费 | 是 | 否 | 部分 |
+| 实时预览 | 是 | 是 | 否 |
+| ECharts 支持 | 是 | 否 | 否 |
+| 多语言 | 是 | 是 | 是 |
+| 插件扩展 | 是 | 否 | 是 |
+
+## 任务进度表
+
+| 任务名称 | 负责人 | 进度 | 截止日期 |
+|----------|--------|------|----------|
+| 需求分析 | 张三 | 100% | 2026-05-01 |
+| UI 设计 | 李四 | 80% | 2026-05-15 |
+| 前端开发 | 王五 | 60% | 2026-06-01 |
+| 后端接口 | 赵六 | 40% | 2026-06-15 |
+| 测试验收 | 钱七 | 0% | 2026-06-30 |
+
+> 提示：点击上方表格的任意单元格，即可看到表格编辑工具栏。
+</textarea>
+            </div>
+        </div>
+
+        <script src="js/jquery.min.js"></script>
+        <script src="../editormd.js"></script>
+        <script type="text/javascript">
+            $(function() {
+                editormd("test-editormd", {
+                    width: "90%",
+                    height: 700,
+                    path: "../lib/",
+                    theme: "default",
+                    previewTheme: "default",
+                    editorTheme: "default",
+                    codeFold: true,
+                    saveHTMLToTextarea: true,
+                    searchReplace: true,
+                    watch: true,
+                    htmlDecode: "style,script,iframe|on*",
+
+                    taskList: true,
+                    tex: true,
+                    flowChart: true,
+                    sequenceDiagram: true,
+                    tableEdit: true,
+                    onload: function() {
+                        console.log("表格编辑示例已加载完成");
+                    }
+                });
+            });
+        </script>
+    </body>
+</html>

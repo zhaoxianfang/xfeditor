@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh">
+    <head>
+        <meta charset="utf-8" />
+        <title>图片尺寸编辑 - Editor.md v1.7.0</title>
+        <link rel="stylesheet" href="css/style.css" />
+        <link rel="stylesheet" href="../css/editormd.css" />
+        <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
+        <style>
+            .intro { width: 90%; margin: 15px auto; padding: 15px 20px; background: #f5f7fa; border-left: 4px solid #2196F3; border-radius: 4px; font-size: 14px; line-height: 1.8; color: #555; }
+            .intro h2 { margin: 0 0 8px; font-size: 16px; color: #333; }
+            .intro code { background: #e8e8e8; padding: 2px 6px; border-radius: 3px; font-family: Consolas, Monaco, monospace; font-size: 12px; color: #c7254e; }
+        </style>
+    </head>
+    <body>
+        <div id="layout">
+            <header>
+                <h1>图片尺寸编辑与拖拽调整示例</h1>
+                <p>支持 Markdown 语法设定尺寸、拖拽调整、双击输入精确尺寸</p>
+            </header>
+
+            <div class="intro">
+                <h2>使用说明</h2>
+                <p><strong>固定尺寸：</strong>使用 <code>![alt](url)&lt;宽度,高度&gt;</code> 语法，例如 <code>![logo](url)&lt;200,100&gt;</code>。</p>
+                <p><strong>拖拽调整：</strong>在预览区拖拽图片右下角调整尺寸，左侧编辑器会自动同步更新 <code>&lt;W,H&gt;</code> 数值。</p>
+                <p><strong>精确输入：</strong>双击图片弹出输入框，输入精确尺寸。</p>
+                <p><strong>保持比例：</strong>拖拽时按住 <strong>Shift 键</strong> 保持原始宽高比。</p>
+            </div>
+
+            <div id="test-editormd">
+                <textarea style="display:none;"># 图片尺寸编辑示例
+
+## 固定尺寸语法
+
+使用 `<宽度,高度>` 语法直接设定图片尺寸：
+
+![Editor.md Logo](../images/logos/editormd-logo-180x180.png)<120,120>
+
+![Editor.md Logo](../images/logos/editormd-logo-180x180.png)<200,100>
+
+## 拖拽调整尺寸
+
+以下图片未指定尺寸，可以在预览区直接拖拽调整：
+
+![可拖拽调整](../images/logos/editormd-logo-64x64.png)
+
+![可拖拽调整2](../images/logos/editormd-logo-180x180.png)
+
+> 提示：在预览区拖拽图片右下角可调整尺寸；按住 **Shift 键** 可保持原始宽高比；双击图片可输入精确尺寸。拖拽后左侧编辑器会自动同步为 `<W,H>` 语法。
+
+## 混排示例
+
+| 描述 | 图片 |
+|------|------|
+| 小尺寸 | ![小](../images/logos/editormd-logo-64x64.png)<50,50> |
+| 中尺寸 | ![中](../images/logos/editormd-logo-64x64.png)<100,100> |
+| 大尺寸 | ![大](../images/logos/editormd-logo-64x64.png)<150,150> |
+</textarea>
+            </div>
+        </div>
+
+        <script src="js/jquery.min.js"></script>
+        <script src="../editormd.js"></script>
+        <script type="text/javascript">
+            $(function() {
+                editormd("test-editormd", {
+                    width: "90%",
+                    height: 700,
+                    path: "../lib/",
+                    theme: "default",
+                    previewTheme: "default",
+                    editorTheme: "default",
+                    codeFold: true,
+                    saveHTMLToTextarea: true,
+                    searchReplace: true,
+                    watch: true,
+                    htmlDecode: "style,script,iframe|on*",
+
+                    taskList: true,
+                    tex: true,
+                    flowChart: true,
+                    sequenceDiagram: true,
+                    imageResize: true,
+                    onload: function() {
+                        console.log("图片尺寸编辑示例已加载完成");
+                    }
+                });
+            });
+        </script>
+    </body>
+</html>
