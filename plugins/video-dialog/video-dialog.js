@@ -136,7 +136,7 @@
 
                 var fileInput  = dialog.find("[name=\"" + classPrefix + "video-file\"]");
 
-                fileInput.bind("change", function() {
+                fileInput.on("change", function() {
                     var fileName  = fileInput.val();
                     var isVideo   = new RegExp("(\\.(" + settings.videoFormats.join("|") + "))$", "i");
 
@@ -183,7 +183,7 @@
                         };
                     };
 
-                    dialog.find("[type=\"submit\"]").bind("click", submitHandler).trigger("click");
+                    dialog.find("[type=\"submit\"]").on("click", submitHandler).trigger("click");
                 });
             }
 

@@ -36,23 +36,23 @@ testEditor = editormd("test-editormd", {
 }); 
 
 // the first method
-$("#undo").bind('click', function() {
+$("#undo").on('click', function() {
     $.proxy(testEditor.toolbarHandlers.undo, testEditor)();
 });
 
 // the Second method : using manually loaded dialog plugin
 // &lt;script src="../plugins/html-entities/html-entities.js"&gt;&lt;/script&gt;
-$("#open-html-entities-dialog").bind('click', function() {
+$("#open-html-entities-dialog").on('click', function() {
     testEditor.htmlEntities();
 });
 
 // using toolbar dialog plugin
-$("#open-link-dialog").bind('click', function() {
+$("#open-link-dialog").on('click', function() {
     $.proxy(testEditor.toolbarHandlers.link, testEditor)();
 });
 
 // or
-$("#open-image-dialog").bind('click', function(){
+$("#open-image-dialog").on('click', function(){
     // load and execute plugin
     testEditor.executePlugin("imageDialog", "../plugins/image-dialog/image-dialog");
 });
@@ -76,41 +76,41 @@ $("#open-image-dialog").bind('click', function(){
                 }); 
                 
                 // the first method
-                $("#undo").bind('click', function() {
+                $("#undo").on('click', function() {
                     $.proxy(testEditor.toolbarHandlers.undo, testEditor)();
                 });
                 
                 // the Second method : using manually loaded dialog plugin
-                $("#open-html-entities-dialog").bind('click', function() {
+                $("#open-html-entities-dialog").on('click', function() {
                     testEditor.htmlEntitiesDialog();
                 });
                 
-                $("#insert-bold").bind('click', function() {
+                $("#insert-bold").on('click', function() {
                     $.proxy(testEditor.toolbarHandlers.bold, testEditor)();
                     testEditor.focus();
                 });
                 
-                $("#insert-h6").bind('click', function() {
+                $("#insert-h6").on('click', function() {
                     $.proxy(testEditor.toolbarHandlers.h6, testEditor)();
                     testEditor.focus();
                 });
                 
-                $("#insert-inline-code").bind('click', function() {
+                $("#insert-inline-code").on('click', function() {
                     $.proxy(testEditor.toolbarHandlers.code, testEditor)();
                     testEditor.focus();
                 });                
                 
-                $("#open-help-dialog").bind('click', function() {
+                $("#open-help-dialog").on('click', function() {
                     $.proxy(testEditor.toolbarHandlers.help, testEditor)();
                 });
                 
                 // using toolbar dialog plugin
-                $("#open-link-dialog").bind('click', function() {
+                $("#open-link-dialog").on('click', function() {
                     $.proxy(testEditor.toolbarHandlers.link, testEditor)();
                 });
                 
                 // or
-                $("#open-image-dialog").bind('click', function(){
+                $("#open-image-dialog").on('click', function(){
                     testEditor.executePlugin("imageDialog", "../plugins/image-dialog/image-dialog"); // load and execute plugin
                 });
             });

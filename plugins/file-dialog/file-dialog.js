@@ -105,7 +105,7 @@
 
                 var fileInput  = dialog.find("[name=\"" + classPrefix + "file-file\"]");
 
-                fileInput.bind("change", function() {
+                fileInput.on("change", function() {
                     var fileName  = fileInput.val();
                     var isAllowed = new RegExp("(\\.(" + settings.fileFormats.join("|") + "))$", "i");
 
@@ -153,7 +153,7 @@
                         };
                     };
 
-                    dialog.find("[type=\"submit\"]").bind("click", submitHandler).trigger("click");
+                    dialog.find("[type=\"submit\"]").on("click", submitHandler).trigger("click");
                 });
             }
 

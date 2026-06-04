@@ -161,7 +161,7 @@
                     }
                 });
 
-				fileInput.bind("change", function() {
+				fileInput.on("change", function() {
 					var fileName  = fileInput.val();
 					var isImage   = new RegExp("(\\.(" + settings.imageFormats.join("|") + "))$", "i"); // /(\.(webp|jpg|jpeg|gif|bmp|png))$/
 
@@ -215,7 +215,7 @@
                         };
                     };
 
-                    dialog.find("[type=\"submit\"]").bind("click", submitHandler).trigger("click");
+                    dialog.find("[type=\"submit\"]").on("click", submitHandler).trigger("click");
 				});
             }
 

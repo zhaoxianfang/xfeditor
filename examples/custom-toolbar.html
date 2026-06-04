@@ -81,7 +81,7 @@ $(function() {
         },
 
         onload : function(){
-            $("[type=\"file\"]").bind("change", function(){
+            $("[type=\"file\"]").on("change", function(){
                 alert($(this).val());
                 testEditor.cm.replaceSelection($(this).val());
                 console.log($(this).val(), testEditor);
@@ -165,7 +165,7 @@ $(function() {
                     },
 
                     onload : function(){
-                        $("[type=\"file\"]").bind("change", function(){
+                        $("[type=\"file\"]").on("change", function(){
                             alert($(this).val());
                             testEditor.cm.replaceSelection($(this).val());
                             console.log($(this).val(), testEditor);

@@ -442,11 +442,11 @@ if __name__ == '__main__':
                     path             : '../lib/'
                 });
 
-                $("#get-code-btn").bind("click", function() {
+                $("#get-code-btn").on("click", function() {
                     alert(testEditor.getValue());
                 });
 
-                $("#fullscreen-btn").bind("click", function() {
+                $("#fullscreen-btn").on("click", function() {
                     testEditor.fullscreen();
                 });
                 

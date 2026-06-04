@@ -47,33 +47,33 @@
                     });
                 });
                 
-                $("#goto-line-btn").bind("click", function(){
+                $("#goto-line-btn").on("click", function(){
                     testEditor.gotoLine(90);
                 });
                 
-                $("#goto-line-150-btn").bind("click", function(){
+                $("#goto-line-150-btn").on("click", function(){
                     testEditor.gotoLine(150);
                 });
                 
-                $("#goto-line-240-btn").bind("click", function(){
+                $("#goto-line-240-btn").on("click", function(){
                     testEditor.gotoLine(240);
                 });
                 
-                $("#goto-line-300-btn").bind("click", function(){
+                $("#goto-line-300-btn").on("click", function(){
                     testEditor.gotoLine(300);
                 });
                 
-                $("#goto-line-400-btn").bind("click", function(){
+                $("#goto-line-400-btn").on("click", function(){
                     testEditor.gotoLine(400);
                 });
                 
-                $("#goto-first-line-btn").bind("click", function(){
+                $("#goto-first-line-btn").on("click", function(){
                     testEditor.gotoLine("first");
                     // or
                     //testEditor.gotoLine(1);
                 });
                 
-                $("#goto-last-line-btn").bind("click", function(){
+                $("#goto-last-line-btn").on("click", function(){
                     testEditor.gotoLine("last");
                     // or
                     //testEditor.gotoLine(testEditor.cm.lineCount());

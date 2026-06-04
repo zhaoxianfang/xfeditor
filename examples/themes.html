@@ -153,7 +153,7 @@ editor.setPreviewTheme('theme-name');
                     select.append("<option value=\"" + theme + "\"" + selected + ">" + theme + "</option>");
                 }
                 
-                select.bind("change", function(){
+                select.on("change", function(){
                     var theme = $(this).val();
                     
                     if (theme === "")

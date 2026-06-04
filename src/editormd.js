@@ -1237,7 +1237,7 @@
             
             if (!state.fullscreen && !state.preview && settings.toolbar && settings.toolbarAutoFixed)
             {
-                $(window).bind("scroll", autoFixedHandle);
+                $(window).on("scroll", autoFixedHandle);
             }
 
             return this;
@@ -1440,7 +1440,7 @@
             var toolbarIconHandlers = this.getToolbarHandles();  
             
             // 下拉菜单切换事件处理器
-            toolbar.find("." + classPrefix + "toolbar-dropdown > ." + classPrefix + "dropdown-toggle").bind(editormd.mouseOrTouch("click", "touchend"), function(event) {
+            toolbar.find("." + classPrefix + "toolbar-dropdown > ." + classPrefix + "dropdown-toggle").on(editormd.mouseOrTouch("click", "touchend"), function(event) {
                 var $this = $(this);
                 var $dropdown = $this.parent();
                 var $menu = $dropdown.children("." + classPrefix + "dropdown-menu");
@@ -1464,7 +1464,7 @@
                 return false;
             });
                 
-            toolbarIcons.bind(editormd.mouseOrTouch("click", "touchend"), function(event) {
+            toolbarIcons.on(editormd.mouseOrTouch("click", "touchend"), function(event) {
 
                 var icon                = $(this).children(".fa").first();
                 var name                = icon.attr("name");
@@ -1500,7 +1500,7 @@
             });
             
             // 下拉菜单项点击事件处理器
-            toolbar.find("." + classPrefix + "dropdown-menu > li > a").bind(editormd.mouseOrTouch("click", "touchend"), function(event) {
+            toolbar.find("." + classPrefix + "dropdown-menu > li > a").on(editormd.mouseOrTouch("click", "touchend"), function(event) {
                 var icon      = $(this).children(".fa").first();
                 var name      = icon.attr("name");
                 var cursor    = cm.getCursor();
@@ -1579,7 +1579,7 @@
             
             var infoDialog  = this.infoDialog = editor.children("." + classPrefix + "dialog-info");
 
-            infoDialog.find("." + classPrefix + "dialog-close").bind(editormd.mouseOrTouch("click", "touchend"), function() {
+            infoDialog.find("." + classPrefix + "dialog-close").on(editormd.mouseOrTouch("click", "touchend"), function() {
                 _this.hideInfoDialog();
             });
             
@@ -2048,7 +2048,7 @@
             var _isSyncing = false; // 互斥锁，防止编辑区和预览区滚动事件循环触发
             
             var cmBindScroll = function() {    
-                codeMirror.find(".CodeMirror-scroll").bind(mouseOrTouch("scroll", "touchmove"), function(event) {
+                codeMirror.find(".CodeMirror-scroll").on(mouseOrTouch("scroll", "touchmove"), function(event) {
                     if (_isSyncing) return;
                     _isSyncing = true;
                     
@@ -2088,12 +2088,12 @@
             };
 
             var cmUnbindScroll = function() {
-                codeMirror.find(".CodeMirror-scroll").unbind(mouseOrTouch("scroll", "touchmove"));
+                codeMirror.find(".CodeMirror-scroll").off(mouseOrTouch("scroll", "touchmove"));
             };
 
             var previewBindScroll = function() {
                 
-                preview.bind(mouseOrTouch("scroll", "touchmove"), function(event) {
+                preview.on(mouseOrTouch("scroll", "touchmove"), function(event) {
                     if (_isSyncing) return;
                     _isSyncing = true;
                     
@@ -2128,10 +2128,10 @@
             };
 
             var previewUnbindScroll = function() {
-                preview.unbind(mouseOrTouch("scroll", "touchmove"));
+                preview.off(mouseOrTouch("scroll", "touchmove"));
             }; 
 
-			codeMirror.bind({
+			codeMirror.on({
 				mouseover  : cmBindScroll,
 				mouseout   : cmUnbindScroll,
 				touchstart : cmBindScroll,
@@ -2142,7 +2142,7 @@
                 return this;
             }
             
-			preview.bind({
+			preview.on({
 				mouseover  : previewBindScroll,
 				mouseout   : previewUnbindScroll,
 				touchstart : previewBindScroll,
@@ -4355,7 +4355,7 @@
                     preview.css("background", "#fff");
                 }
                 
-                editor.find("." + this.classPrefix + "preview-close-btn").show().bind(editormd.mouseOrTouch("click", "touchend"), function(){
+                editor.find("." + this.classPrefix + "preview-close-btn").show().on(editormd.mouseOrTouch("click", "touchend"), function(){
                     _this.previewed();
                 });
             
@@ -4382,11 +4382,11 @@
                     $.proxy(settings.onpreviewing, this)();
                 }
 
-                $(window).bind("keyup", escHandle);
+                $(window).on("keyup", escHandle);
             } 
             else 
             {
-                $(window).unbind("keyup", escHandle);
+                $(window).off("keyup", escHandle);
                 this.previewed();
             }
         },
@@ -4417,7 +4417,7 @@
             
             preview[(settings.watch) ? "show" : "hide"]();
             
-            previewCloseBtn.hide().unbind(editormd.mouseOrTouch("click", "touchend"));
+            previewCloseBtn.hide().off(editormd.mouseOrTouch("click", "touchend"));
                 
             previewContainer.removeClass(this.classPrefix + "preview-active");
                 
@@ -4488,11 +4488,11 @@
     
                 $.proxy(settings.onfullscreen, this)();
 
-                $(window).bind("keyup", escHandle);
+                $(window).on("keyup", escHandle);
             }
             else
             {           
-                $(window).unbind("keyup", escHandle); 
+                $(window).off("keyup", escHandle); 
                 this.fullscreenExit();
             }
 
@@ -7551,7 +7551,7 @@
 
         $(window).resize(dialogPosition);
 
-        dialog.children("." + classPrefix + "dialog-close").bind(mouseOrTouch("click", "touchend"), function() {
+        dialog.children("." + classPrefix + "dialog-close").on(mouseOrTouch("click", "touchend"), function() {
             dialog.hide().lockScreen(false).hideMask();
         });
 
@@ -7566,7 +7566,7 @@
 
                 footer.append("<button class=\"" + classPrefix + "btn " + btnClassName + "\">" + btn[0] + "</button>");
                 btn[1] = $.proxy(btn[1], dialog);
-                footer.children("." + btnClassName).bind(mouseOrTouch("click", "touchend"), btn[1]);
+                footer.children("." + btnClassName).on(mouseOrTouch("click", "touchend"), btn[1]);
             }
         }
 
@@ -7576,7 +7576,7 @@
             var dialogHeader = dialog.children("." + classPrefix + "dialog-header");
 
             if (!options.mask) {
-                dialogHeader.bind(mouseOrTouch("click", "touchend"), function(){
+                dialogHeader.on(mouseOrTouch("click", "touchend"), function(){
                     editormd.dialogZindex += 2;
                     dialog.css("z-index", editormd.dialogZindex);
                 });
@@ -7665,7 +7665,7 @@
                     });
                 };
 
-                this.bind("touchstart", start).bind("touchmove", move);
+                this.on("touchstart", start).on("touchmove", move);
             };
 
             dialogHeader.touchDraggable();

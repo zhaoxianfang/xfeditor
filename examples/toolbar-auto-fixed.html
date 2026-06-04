@@ -105,13 +105,13 @@ Bower Distribution of the Sparqlification Mapping Language (SML) Syntax Highligh
                     path   : "../lib/"
                 });
                 
-                $("#enable-btn").bind("click", function() {
+                $("#enable-btn").on("click", function() {
                     testEditor.setToolbarAutoFixed(true);
                     // or
                     //testEditor.config("toolbarAutoFixed", true);
                 });
                 
-                $("#disable-btn").bind("click", function() {
+                $("#disable-btn").on("click", function() {
                     testEditor.setToolbarAutoFixed(false);
                     // or
                     //testEditor.config("toolbarAutoFixed", false);

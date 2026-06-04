@@ -119,43 +119,43 @@
                     });
                 });
 
-                $("#show-btn").bind('click', function(){
+                $("#show-btn").on('click', function(){
                     testEditor.show();
                 });
 
-                $("#hide-btn").bind('click', function(){
+                $("#hide-btn").on('click', function(){
                     testEditor.hide();
                 });
 
-                $("#get-md-btn").bind('click', function(){
+                $("#get-md-btn").on('click', function(){
                     alert(testEditor.getMarkdown());
                 });
 
-                $("#get-html-btn").bind('click', function() {
+                $("#get-html-btn").on('click', function() {
                     alert(testEditor.getHTML());
                 });                
 
-                $("#watch-btn").bind('click', function() {
+                $("#watch-btn").on('click', function() {
                     testEditor.watch();
                 });                 
 
-                $("#unwatch-btn").bind('click', function() {
+                $("#unwatch-btn").on('click', function() {
                     testEditor.unwatch();
                 });              
 
-                $("#preview-btn").bind('click', function() {
+                $("#preview-btn").on('click', function() {
                     testEditor.previewing();
                 });
 
-                $("#fullscreen-btn").bind('click', function() {
+                $("#fullscreen-btn").on('click', function() {
                     testEditor.fullscreen();
                 });
                 
-                $("#show-toolbar-btn").bind('click', function() {
+                $("#show-toolbar-btn").on('click', function() {
                     testEditor.showToolbar();
                 });
                 
-                $("#close-toolbar-btn").bind('click', function() {
+                $("#close-toolbar-btn").on('click', function() {
                     testEditor.hideToolbar();
                 });
                 

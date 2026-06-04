@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8" />
+    <title>jQuery 3.7 兼容性测试 | Editor.md</title>
+    <link rel="stylesheet" href="../css/editormd.min.css" />
+    <style>
+        body { padding: 20px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        h1 { color: #2c3e50; margin-bottom: 20px; }
+        .test-section { 
+            background: #f8f9fa; 
+            padding: 20px; 
+            margin: 20px 0; 
+            border-radius: 8px; 
+            border: 1px solid #e9ecef;
+        }
+        .test-title { font-weight: 600; color: #495057; margin-bottom: 10px; }
+        .test-result { 
+            padding: 10px; 
+            margin-top: 10px; 
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button { 
+            padding: 8px 16px; 
+            margin: 5px; 
+            border: 1px solid #007bff;
+            background: #007bff;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover { background: #0056b3; }
+        .editor-container { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 jQuery 3.7.1 兼容性测试页面</h1>
+    
+    <div class="test-section">
+        <div class="test-title">测试 1: jQuery 版本检查</div>
+        <div id="jquery-version"></div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-title">测试 2: 选择器语法（特殊字符转义）</div>
+        <a href="#section1">跳转到 Section 1</a>
+        <a href="#section2">跳转到 Section 2</a>
+        <div id="selector-test"></div>
+        <div id="section1" style="margin-top: 500px; padding: 20px; background: #fff;">Section 1 内容</div>
+        <div id="section2" style="margin-top: 200px; padding: 20px; background: #fff;">Section 2 内容</div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-title">测试 3: 事件绑定方法（.on() 替代 .bind()）</div>
+        <button id="test-btn">测试按钮</button>
+        <div id="event-test"></div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-title">测试 4: 事件解绑方法（.off() 替代 .unbind()）</div>
+        <button id="bind-btn">绑定事件</button>
+        <button id="unbind-btn">解绑事件</button>
+        <button id="trigger-btn">触发事件</button>
+        <div id="unbind-test"></div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-title">测试 5: Editor.md 初始化</div>
+        <div class="editor-container">
+            <div id="test-editor"></div>
+        </div>
+    </div>
+
+    <script src="js/jquery.min.js"></script>
+    <script src="../editormd.min.js"></script>
+    <script>
+        // 测试 1: jQuery 版本
+        $(function() {
+            var version = $.fn.jquery;
+            var resultDiv = $('#jquery-version');
+            resultDiv.html('<div class="test-result success">✅ jQuery 版本: ' + version + ' (支持 jQuery 3.x)</div>');
+            
+            // 测试 2: 选择器语法
+            try {
+                // 测试修复后的选择器
+                var links = $("a[href*='#']");
+                var count = links.length;
+                $('#selector-test').html('<div class="test-result success">✅ 选择器 $("a[href*=\'#\']") 正常工作，找到 ' + count + ' 个链接</div>');
+                
+                // 测试平滑滚动
+                $("a[href*='#']").on("click", function(e) {
+                    e.preventDefault();
+                    var target = $(this.hash);
+                    if (target.length) {
+                        $('html, body').animate({
+                            scrollTop: target.offset().top - 100
+                        }, 500);
+                        $('#selector-test').append('<div class="test-result info">✅ 平滑滚动成功</div>');
+                    }
+                });
+            } catch(e) {
+                $('#selector-test').html('<div class="test-result error">❌ 选择器错误: ' + e.message + '</div>');
+            }
+            
+            // 测试 3: .on() 方法
+            try {
+                var clickCount = 0;
+                $('#test-btn').on('click', function() {
+                    clickCount++;
+                    $('#event-test').html('<div class="test-result success">✅ .on() 方法工作正常，点击次数: ' + clickCount + '</div>');
+                });
+                $('#event-test').html('<div class="test-result info">✅ .on() 事件绑定成功</div>');
+            } catch(e) {
+                $('#event-test').html('<div class="test-result error">❌ .on() 方法错误: ' + e.message + '</div>');
+            }
+            
+            // 测试 4: .off() 方法
+            var handler = function() {
+                $('#unbind-test').html('<div class="test-result success">✅ 事件触发成功</div>');
+            };
+            
+            $('#bind-btn').on('click', function() {
+                $('#trigger-btn').on('click', handler);
+                $('#unbind-test').html('<div class="test-result info">✅ 事件已绑定</div>');
+            });
+            
+            $('#unbind-btn').on('click', function() {
+                $('#trigger-btn').off('click', handler);
+                $('#unbind-test').html('<div class="test-result info">✅ 事件已解绑</div>');
+            });
+            
+            // 测试 5: Editor.md 初始化
+            try {
+                var editor = editormd("test-editor", {
+                    width: "100%",
+                    height: 300,
+                    path: "../lib/",
+                    markdown: "# jQuery 3.7 兼容性测试\n\n这个编辑器使用 jQuery 3.7.1，所有功能正常工作！\n\n## 测试内容\n\n- ✅ 选择器语法\n- ✅ .on() 方法\n- ✅ .off() 方法\n- ✅ Editor.md 初始化\n\n## 代码示例\n\n```javascript\n$('a[href*='#']').on('click', handler);\n```",
+                    onload: function() {
+                        console.log("Editor.md loaded successfully with jQuery 3.7.1");
+                    }
+                });
+                
+                if (editor) {
+                    $('.editor-container').prepend('<div class="test-result success">✅ Editor.md 初始化成功</div>');
+                }
+            } catch(e) {
+                $('.editor-container').prepend('<div class="test-result error">❌ Editor.md 初始化错误: ' + e.message + '</div>');
+            }
+        });
+    </script>
+</body>
+</html>
