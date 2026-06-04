@@ -13,6 +13,45 @@
             border: none;
         }
 
+        pre {
+            border-color: #333;
+            background-color: #1a1a1a;
+
+            code {
+                color: #e6e6e6;
+            }
+        }
+
+        #{$prefix}code-copy-btn {
+            color: #b0b0b0;
+            background: #252525;
+            border-color: #444;
+
+            &:hover {
+                color: #58a6ff;
+                border-color: #58a6ff;
+                background: #1f2937;
+            }
+
+            &.copied {
+                color: #3fb950;
+                border-color: #3fb950;
+                background: #162b1a;
+            }
+
+            &.failed {
+                color: #f85149;
+                border-color: #f85149;
+                background: #2b1215;
+            }
+        }
+
+        code:not(pre code) {
+            color: #e6e6e6;
+            background: #3d4300;
+            border-color: #5a6400;
+        }
+
         blockquote {
             color: #555;
             padding: 0.5em;

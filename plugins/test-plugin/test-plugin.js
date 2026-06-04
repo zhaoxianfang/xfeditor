@@ -16,7 +16,7 @@
 		var $            = jQuery;           // if using module loader(Require.js/Sea.js).
 
 		exports.testPlugin = function(){
-			alert("testPlugin");
+			editormd.notify("testPlugin", "info");
 		};
 
 		exports.fn.testPluginMethodA = function() {
@@ -33,7 +33,7 @@
 			*/
 			//....
 
-			alert("testPluginMethodA");
+			editormd.notify("testPluginMethodA", "info");
 		};
 
 	};

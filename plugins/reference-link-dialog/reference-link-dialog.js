@@ -70,7 +70,7 @@
 
                             if (url === "http://" || url === "")
                             {
-                                alert(dialogLang.urlEmpty);
+                                editormd.notify(dialogLang.urlEmpty, "warning");
                                 return false;
                             }
 

@@ -99,7 +99,7 @@
 							var line   = parseInt(this.find("[data-line-number]").val());
 
 							if (line < 1 || line > lineCount) {
-								alert(dialogLang.error);
+								editormd.notify(dialogLang.error, "warning");
 
 								return false;
 							}

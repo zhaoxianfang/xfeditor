@@ -59,6 +59,7 @@ const replaceText1 = [
     '                cmAddonPath + "fold/markdown-fold",',
     '                cmAddonPath + "fold/comment-fold", ',
     '                cmAddonPath + "mode/overlay", ',
+    '                cmAddonPath + "mode/simple", ',
     '                cmAddonPath + "selection/active-line", ',
     '                cmAddonPath + "edit/closebrackets", ',
     '                cmAddonPath + "display/fullscreen",',

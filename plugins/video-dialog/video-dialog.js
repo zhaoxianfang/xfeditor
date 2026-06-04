@@ -88,7 +88,7 @@
 
                             if (url === "")
                             {
-                                alert(videoLang.videoURLEmpty);
+                                editormd.notify(videoLang.videoURLEmpty, "warning");
                                 return false;
                             }
 
@@ -142,13 +142,13 @@
 
                     if (fileName === "")
                     {
-                        alert(videoLang.uploadFileEmpty);
+                        editormd.notify(videoLang.uploadFileEmpty, "warning");
                         return false;
                     }
 
                     if (!isVideo.test(fileName))
                     {
-                        alert(videoLang.formatNotAllowed + settings.videoFormats.join(", "));
+                        editormd.notify(videoLang.formatNotAllowed + settings.videoFormats.join(", "), "warning");
                         return false;
                     }
 
@@ -166,7 +166,7 @@
                             try {
                                 json = (typeof JSON.parse !== "undefined") ? JSON.parse(json) : eval("(" + json + ")");
                             } catch(err) {
-                                alert(videoLang.uploadError + "\n" + (json || ""));
+                                editormd.notify(videoLang.uploadError + " " + (json || ""), "error", 5000);
                                 return false;
                             }
 
@@ -176,7 +176,7 @@
                             }
                             else
                             {
-                                alert(json.message || videoLang.uploadError);
+                                editormd.notify(json.message || videoLang.uploadError, "error", 5000);
                             }
 
                             return false;

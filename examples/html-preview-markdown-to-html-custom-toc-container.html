@@ -130,6 +130,10 @@ alert("script");
         <script src="../lib/jquery.flowchart.min.js"></script>
         <script src="../editormd.js"></script>
         <script type="text/javascript">
+            // 设置全局资源路径，确保从 examples/ 子目录也能正确加载 KaTeX、流程图等资源
+            editormd.defaults.path = "../lib/";
+        </script>
+        <script type="text/javascript">
             $(function() {
                 var testEditormdView, testEditormdView2;
                 

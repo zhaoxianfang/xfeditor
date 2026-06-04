@@ -62,7 +62,7 @@
 
                             if (codeTexts === "")
                             {
-                                alert(dialogLang.emptyAlert);
+                                editormd.notify(dialogLang.emptyAlert, "warning");
                                 return false;
                             }
 

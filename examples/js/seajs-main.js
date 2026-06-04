@@ -41,11 +41,13 @@ define(function(require){
     });
 
     $("#get-md-btn").bind('click', function(){
-        alert(testEditor.getMarkdown());
+        console.log(testEditor.getMarkdown());
+        editormd.notify("Markdown 内容已输出到控制台（F12 查看）", "success", 3000);
     });
 
     $("#get-html-btn").bind('click', function() {
-        alert(testEditor.getHTML());
+        console.log(testEditor.getHTML());
+        editormd.notify("HTML 内容已输出到控制台（F12 查看）", "success", 3000);
     });                
 
     $("#watch-btn").bind('click', function() {

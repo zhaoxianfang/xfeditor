@@ -478,22 +478,6 @@ editormd("editor", {
 ⁑⁛This text is justified⁛⁑
 ```
 
-旧版块级对齐（仍兼容）：
-
-```markdown
-[[align:center]]
-This text is centered
-[[/align]]
-
-[[align:right]]
-This text is right aligned
-[[/align]]
-
-[[align:left]]
-This text is left aligned
-[[/align]]
-```
-
 ##### Image with Dimensions
 
 ```markdown

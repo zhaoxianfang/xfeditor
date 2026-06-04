@@ -1,26 +1,29 @@
 ;(function(factory) {
     "use strict";
 
-    // Polyfill: guard against "test is not defined" / "test.mode is not a function" from third-party scripts
-    if (typeof window !== "undefined" && typeof test === "undefined") {
+    // Polyfill：始终覆盖 window.test，防止浏览器报 "test is not defined" / "test.mode is not a function" 错误
+    if (typeof window !== "undefined") {
         try {
-            var testPolyfill = function() {};
-            testPolyfill.mode = function() {};
-            testPolyfill.formatString = function() {};
-            testPolyfill.addOption = function() {};
-            testPolyfill.show = function() {};
-            window.test = testPolyfill;
+            var _testPolyfill = function() {};
+            _testPolyfill.mode       = function() {};
+            _testPolyfill.formatString = function() { return ""; };
+            _testPolyfill.addOption  = function() {};
+            _testPolyfill.show       = function() {};
+            _testPolyfill.init       = function() {};
+            _testPolyfill.run        = function() {};
+            _testPolyfill.destroy    = function() {};
+            window.test = _testPolyfill;
         } catch(e) {}
     }
     
-	// CommonJS/Node.js
+	// CommonJS / Node.js 模块加载
 	if (typeof require === "function" && typeof exports === "object" && typeof module === "object")
     { 
         module.exports = factory;
     }
-	else if (typeof define === "function")  // AMD/CMD/Sea.js
+	else if (typeof define === "function")  // AMD / CMD / Sea.js 模块加载
 	{
-        if (define.amd) // for Require.js
+        if (define.amd) // Require.js AMD 加载
         {
             var cmModePath  = "codemirror/mode/";
             var cmAddonPath = "codemirror/addon/";
@@ -31,34 +34,34 @@
 
                 "codemirror/lib/codemirror",
                 cmModePath + "css/css",
-                cmModePath + "sass/sass",
-                cmModePath + "shell/shell",
+                cmModePath + "sass/sass", 
+                cmModePath + "shell/shell", 
                 cmModePath + "sql/sql",
                 cmModePath + "clike/clike",
                 cmModePath + "php/php",
                 cmModePath + "xml/xml",
-                cmModePath + "markdown/markdown",
+                cmModePath + "markdown/markdown", 
                 cmModePath + "javascript/javascript",
                 cmModePath + "htmlmixed/htmlmixed",
                 cmModePath + "gfm/gfm",
                 cmModePath + "http/http",
-                cmModePath + "go/go",
-                cmModePath + "dart/dart",
+                cmModePath + "go/go", 
+                cmModePath + "dart/dart", 
                 cmModePath + "coffeescript/coffeescript",
                 cmModePath + "nginx/nginx",
-                cmModePath + "python/python",
+                cmModePath + "python/python", 
                 cmModePath + "perl/perl",
-                cmModePath + "lua/lua",
+                cmModePath + "lua/lua", 
                 cmModePath + "r/r", 
                 cmModePath + "ruby/ruby", 
                 cmModePath + "rst/rst",
-                cmModePath + "smartymixed/smartymixed",
+                cmModePath + "smartymixed/smartymixed", 
                 cmModePath + "vb/vb",
-                cmModePath + "vbscript/vbscript",
+                cmModePath + "vbscript/vbscript", 
                 cmModePath + "velocity/velocity",
                 cmModePath + "xquery/xquery",
                 cmModePath + "yaml/yaml",
-                cmModePath + "erlang/erlang",
+                cmModePath + "erlang/erlang", 
                 cmModePath + "jade/jade",
 
                 cmAddonPath + "edit/trailingspace", 
@@ -87,7 +90,7 @@
         } 
         else 
         {
-		    define(["jquery"], factory);  // for Sea.js
+		    define(["jquery"], factory);  // Sea.js CMD 加载
         }
 	} 
 	else
@@ -98,15 +101,15 @@
 }(function() {    
 
     if (typeof define == "function" && define.amd) {
-       $          = arguments[0];
-       marked     = arguments[1];
-       prettify   = arguments[2];
-       katex      = arguments[3];
-       Raphael    = arguments[4];
-       _          = arguments[5];
-       flowchart  = arguments[6];
-       CodeMirror = arguments[9];
-   }
+           $          = arguments[0];
+           marked     = arguments[1];
+           prettify   = arguments[2];
+           katex      = arguments[3];
+           Raphael    = arguments[4];
+           _          = arguments[5];
+           flowchart  = arguments[6];
+           CodeMirror = arguments[9];
+       }
     
     "use strict";
     
@@ -171,29 +174,29 @@
     };
     
     editormd.defaults     = {
-        mode                 : "gfm",          //gfm or markdown
-        name                 : "",             // Form element name
-        value                : "",             // value for CodeMirror, if mode not gfm/markdown
-        theme                : "",             // Editor.md self themes, before v1.5.0 is CodeMirror theme, default empty
-        editorTheme          : "default",      // Editor area, this is CodeMirror theme at v1.5.0
-        previewTheme         : "",             // Preview area theme, default empty
-        markdown             : "",             // Markdown source code
-        appendMarkdown       : "",             // if in init textarea value not empty, append markdown to textarea
+        mode                 : "gfm",          // 编辑器模式：gfm 或 markdown
+        name                 : "",             // 表单元素 name 属性值
+        value                : "",             // CodeMirror 初始值（当 mode 不是 gfm/markdown 时使用）
+        theme                : "",             // Editor.md 编辑器主题（v1.5.0 之前为 CodeMirror 主题）
+        editorTheme          : "default",      // 编辑区主题，即 CodeMirror 主题（v1.5.0 起）
+        previewTheme         : "",             // 预览区主题
+        markdown             : "",             // Markdown 源内容
+        appendMarkdown       : "",             // 追加 Markdown 内容（初始化时 textarea 已有值则追加）
         width                : "100%",
         height               : "100%",
-        path                 : "./lib/",       // Dependents module file directory
-        pluginPath           : "",             // If this empty, default use settings.path + "../plugins/"
-        delay                : 300,            // Delay parse markdown to html, Uint : ms
-        autoLoadModules      : true,           // Automatic load dependent module files
+        path                 : "./lib/",       // 依赖模块文件目录
+        pluginPath           : "",             // 插件目录（空则默认使用 settings.path + "../plugins/"）
+        delay                : 300,            // Markdown 解析延迟，单位：毫秒
+        autoLoadModules      : true,           // 是否自动加载依赖模块文件
         watch                : true,
-        placeholder          : "Enjoy Markdown! coding now...",
+        placeholder          : "写点什么吧~",
         gotoLine             : true,
         codeFold             : false,
         autoHeight           : false,
 		autoFocus            : true,
         autoCloseTags        : true,
         searchReplace        : true,
-        syncScrolling        : true,           // true | false | "single", default true
+        syncScrolling        : true,           // 同步滚动：true | false | "single"
         readOnly             : false,
         tabSize              : 4,
 		indentUnit           : 4,
@@ -204,8 +207,8 @@
 		matchBrackets        : true,
 		indentWithTabs       : true,
 		styleSelectedText    : true,
-        matchWordHighlight   : true,           // options: true, false, "onselected"
-        styleActiveLine      : true,           // Highlight the current line
+        matchWordHighlight   : true,           // 单词匹配高亮：true | false | "onselected"
+        styleActiveLine      : true,           // 高亮当前行
         dialogLockScreen     : true,
         dialogShowMask       : true,
         dialogDraggable      : true,
@@ -248,7 +251,7 @@
         imageUploadURL       : "",
         crossDomainUpload    : false,
         uploadCallbackURL    : "",
-        imageResize          : true,           // Enable image width/height edit
+        imageResize          : true,           // 启用图片宽高编辑
         
         fileUpload           : false,
         fileFormats          : ["doc", "docx", "pdf", "txt", "zip", "rar", "xls", "xlsx", "ppt", "pptx", "mp4", "mp3"],
@@ -258,35 +261,35 @@
         videoFormats         : ["mp4", "webm", "ogv", "mov"],
         videoUploadURL       : "",
         
-        toc                  : true,           // Table of contents
-        tocm                 : false,           // Using [TOCM], auto create ToC dropdown menu
-        tocTitle             : "",             // for ToC dropdown menu btn
-        tocDropdown          : false,
-        tocContainer         : "",
-        tocStartLevel        : 1,              // Said from H1 to create ToC
-        htmlDecode           : false,          // Open the HTML tag identification 
-        pageBreak            : true,           // Enable parse page break [========]
-        atLink               : true,           // for @link
-        emailLink            : true,           // for email address auto link
-        taskList             : false,          // Enable Github Flavored Markdown task lists
-        tex                  : false,          // TeX(LaTeX), based on KaTeX
-        flowChart            : false,          // flowChart.js only support IE9+
-        sequenceDiagram      : false,          // sequenceDiagram.js only support IE9+
-        previewCodeHighlight : true,
-        pinyin               : false,          // Enable pinyin display syntax {text | pinyin}
-        textAlign            : true,           // Enable text align syntax
-        tableEdit            : true,           // Enable table row/col insert/delete
-        toolbarDropdown      : true,           // Enable toolbar dropdown groups
-        echarts              : false,          // Enable Apache ECharts support
-        tabs                 : true,           // Enable tabs syntax
-        columns              : true,           // Enable multi-column layout syntax
-        tooltip              : true,           // Enable tooltip/popover syntax
-        draftAutoSave        : false,          // Enable browser draft auto-save
-        draftInterval        : 30,             // Draft auto-save interval in seconds
-        draftMaxDays         : 30,             // Maximum days to keep drafts (auto cleanup older)
+        toc                  : true,           // 启用目录生成
+        tocm                 : false,          // 使用 [TOCM] 自动创建目录下拉菜单
+        tocTitle             : "",             // 目录下拉菜单按钮文本
+        tocDropdown          : false,          // 自动创建目录下拉菜单
+        tocContainer         : "",             // 目录容器选择器
+        tocStartLevel        : 1,              // 目录起始标题级别（从H1开始）
+        htmlDecode           : false,          // 开启 HTML 标签识别解析
+        pageBreak            : true,           // 启用分页符解析 [========]
+        atLink               : true,           // 启用 @link 语法
+        emailLink            : true,           // 启用邮件地址自动链接
+        taskList             : false,          // 启用 GitHub Flavored Markdown 任务列表
+        tex                  : false,          // 启用 TeX/LaTeX 数学公式（基于 KaTeX）
+        flowChart            : false,          // 启用流程图（仅支持 IE9+）
+        sequenceDiagram      : false,          // 启用时序图（仅支持 IE9+）
+        previewCodeHighlight : true,           // 启用预览区代码高亮
+        pinyin               : false,          // 启用拼音标注语法 {text | pinyin}
+        textAlign            : true,           // 启用文本对齐语法
+        tableEdit            : true,           // 启用表格行列插入/删除
+        toolbarDropdown      : true,           // 启用工具栏下拉分组
+        echarts              : false,          // 启用 Apache ECharts 图表支持
+        tabs                 : true,           // 启用标签页语法 [[tabs]]
+        columns              : true,           // 启用多栏布局语法 [[columns:N]]
+        tooltip              : true,           // 启用悬浮提示语法 [text](tooltip:tip)
+        draftAutoSave        : false,          // 启用浏览器草稿自动保存
+        draftInterval        : 30,             // 草稿自动保存间隔（秒）
+        draftMaxDays         : 30,             // 草稿最大保留天数（过期自动清理）
 
-        toolbar              : true,           // show/hide toolbar
-        toolbarAutoFixed     : true,           // on window scroll auto fixed position
+        toolbar              : true,           // 显示/隐藏工具栏
+        toolbarAutoFixed     : true,           // 窗口滚动时工具栏自动固定位置
         toolbarIcons         : "full",
         toolbarTitles        : {},
         toolbarHandlers      : {
@@ -297,9 +300,9 @@
                 return editormd.toolbarHandlers.lowercase;
             }
         },
-        toolbarCustomIcons   : {               // using html tag create toolbar icon, unused default <a> tag.
-            lowercase        : "<a href=\"javascript:;\" title=\"Lowercase\" unselectable=\"on\"><i class=\"fa\" name=\"lowercase\" style=\"font-size:24px;margin-top: -10px;\">a</i></a>",
-            "ucwords"        : "<a href=\"javascript:;\" title=\"ucwords\" unselectable=\"on\"><i class=\"fa\" name=\"ucwords\" style=\"font-size:20px;margin-top: -3px;\">Aa</i></a>"
+        toolbarCustomIcons   : {               // 使用 HTML 标签创建工具栏图标（不使用默认的 <a> 标签）
+            lowercase        : "<a href=\"javascript:;\" title=\"\" unselectable=\"on\"><i class=\"fa\" name=\"lowercase\" style=\"font-size:24px;margin-top: -10px;\">a</i></a>",
+            "ucwords"        : "<a href=\"javascript:;\" title=\"\" unselectable=\"on\"><i class=\"fa\" name=\"ucwords\" style=\"font-size:20px;margin-top: -3px;\">Aa</i></a>"
         }, 
         toolbarIconsClass    : {
             undo             : "fa-undo",
@@ -330,7 +333,7 @@
             datetime         : "fa-clock-o",
             "html-entities"  : "fa-copyright",
             pagebreak        : "fa-newspaper-o",
-            "goto-line"      : "fa-terminal", // fa-crosshairs
+            "goto-line"      : "fa-terminal", // 跳转到行（备选图标：fa-crosshairs）
             watch            : "fa-eye-slash",
             unwatch          : "fa-eye",
             preview          : "fa-desktop",
@@ -365,6 +368,7 @@
             name        : "zh-cn",
             description : "开源在线Markdown编辑器<br/>Open source online Markdown editor.",
             tocTitle    : "目录",
+            placeholder : "写点什么吧~",
             toolbar     : {
                 undo             : "撤销（Ctrl+Z）",
                 redo             : "重做（Ctrl+Y）",
@@ -513,8 +517,42 @@
     editormd.$marked      = null;
     editormd.$CodeMirror  = null;
     editormd.$prettyPrint = null;
-    
-    var timer, flowchartTimer;
+
+    /**
+     * 语言包注册表
+     * Language pack registry
+     * 外部语言文件通过 editormd.langs["en"] = {...} 注册
+     */
+    editormd.langs = {};
+
+    /**
+     * 注册语言包
+     * Register a language pack
+     * 
+     * @param   {String} name    语言名称标识符，如 "en", "zh-cn", "zh-tw"
+     * @param   {Object} langObj 语言包对象
+     * @returns {void}
+     */
+    editormd.registerLang = function(name, langObj) {
+        editormd.langs[name] = langObj;
+    };
+
+    /**
+     * 获取已注册的语言包
+     * Get a registered language pack
+     * 
+     * @param   {String} name  语言名称标识符
+     * @returns {Object|null}  语言包对象，未注册则返回 null
+     */
+    editormd.getLang = function(name) {
+        return editormd.langs[name] || null;
+    };
+
+    /**
+     * 将内置默认语言注册到语言包注册表
+     * 确保 editormd.getLang("zh-cn") 无需加载外部文件即可获取
+     */
+    editormd.langs[editormd.defaults.lang.name] = editormd.defaults.lang;
 
     editormd.prototype    = editormd.fn = {
         state : {
@@ -552,6 +590,8 @@
             
             this.id              = id;
             this.lang            = settings.lang;
+            this.timer           = null;
+            this.flowchartTimer  = null;
             
             var classNames       = this.classNames   = {
                 textarea : {
@@ -586,7 +626,7 @@
                 markdownTextarea = this.markdownTextarea = editor.children("textarea");
             }
             
-            markdownTextarea.addClass(classNames.textarea.markdown).attr("placeholder", settings.placeholder);
+            markdownTextarea.addClass(classNames.textarea.markdown).attr("placeholder", settings.lang.placeholder || settings.placeholder);
             
             if (typeof markdownTextarea.attr("name") === "undefined" || markdownTextarea.attr("name") === "")
             {
@@ -661,7 +701,7 @@
                 this.loadQueues();
             }
 
-            // Setup draft auto-save and recovery
+            // 设置草稿自动保存与恢复
             if (settings.draftAutoSave)
             {
                 var draftIntervalMs = Math.max(5, settings.draftInterval || 30) * 1000;
@@ -669,7 +709,7 @@
                     _this.saveDraft();
                 }, draftIntervalMs);
 
-                // Check for existing drafts on init
+                // 初始化时检查是否存在旧草稿
                 setTimeout(function() {
                     _this.showDraftRecovery();
                 }, 500);
@@ -717,9 +757,9 @@
                 
                 editormd.loadScript(loadPath + "diff_match_patch", function() {
                     
-                editormd.loadScript(loadPath + "codemirror/modes.min", function() {
+                editormd.loadScript(loadPath + "codemirror/addons.min", function() {
                     
-                    editormd.loadScript(loadPath + "codemirror/addons.min", function() {
+                    editormd.loadScript(loadPath + "codemirror/modes.min", function() {
                         
                         _this.setCodeMirror();
                         
@@ -771,9 +811,26 @@
             var oldTheme    = this.settings.theme;
             var themePrefix = this.classPrefix + "theme-";
             
-            editor.removeClass(themePrefix + oldTheme).addClass(themePrefix + theme);
+            // 移除旧主题类（忽略 default 主题）
+            if (oldTheme && oldTheme !== "default") {
+                editor.removeClass(themePrefix + oldTheme);
+            }
+            
+            // 应用新主题类（default 主题不添加 class，保持默认样式）
+            if (theme && theme !== "default") {
+                editor.addClass(themePrefix + theme);
+            }
             
             this.settings.theme = theme;
+            
+            // 对于已知的主题映射，同时设置 CodeMirror 编辑区主题
+            var themeToEditorTheme = {
+                "dark": "monokai"
+                // 可扩展更多映射
+            };
+            if (themeToEditorTheme[theme]) {
+                this.setEditorTheme(themeToEditorTheme[theme]);
+            }
             
             return this;
         },
@@ -989,7 +1046,7 @@
             
             if (typeof line !== "number") 
             {  
-                alert("Error: The line number must be an integer.");
+                editormd.notify("行号必须是一个整数", "warning");
                 return this;
             }
             
@@ -997,7 +1054,7 @@
             
             if (line > count)
             {
-                alert("Error: The line number range 1-" + count);
+                editormd.notify("行号超出范围：1-" + count, "warning");
                 
                 return this;
             }
@@ -1395,8 +1452,8 @@
 
             toolbarMenu.html(menu);
             
-            toolbarMenu.find("[title=\"Lowercase\"]").attr("title", settings.lang.toolbar.lowercase);
-            toolbarMenu.find("[title=\"ucwords\"]").attr("title", settings.lang.toolbar.ucwords);
+            toolbarMenu.find(".fa[name=lowercase]").closest("a").attr("title", settings.lang.toolbar.lowercase);
+            toolbarMenu.find(".fa[name=ucwords]").closest("a").attr("title", settings.lang.toolbar.ucwords);
             
             this.setToolbarHandler();
             this.setToolbarAutoFixed();
@@ -1452,13 +1509,13 @@
             var toolbarIcons        = this.toolbarIcons = toolbar.find("." + classPrefix + "menu > li > a");  
             var toolbarIconHandlers = this.getToolbarHandles();  
             
-            // Dropdown toggle handler
+            // 下拉菜单切换事件处理器
             toolbar.find("." + classPrefix + "toolbar-dropdown > ." + classPrefix + "dropdown-toggle").bind(editormd.mouseOrTouch("click", "touchend"), function(event) {
                 var $this = $(this);
                 var $dropdown = $this.parent();
                 var $menu = $dropdown.children("." + classPrefix + "dropdown-menu");
                 
-                // Close other open dropdowns
+                // 关闭其他已打开的下拉菜单
                 toolbar.find("." + classPrefix + "toolbar-dropdown.open").not($dropdown).removeClass("open");
                 
                 $dropdown.toggleClass("open");
@@ -1512,7 +1569,7 @@
 
             });
             
-            // Dropdown menu item click handler
+            // 下拉菜单项点击事件处理器
             toolbar.find("." + classPrefix + "dropdown-menu > li > a").bind(editormd.mouseOrTouch("click", "touchend"), function(event) {
                 var icon      = $(this).children(".fa").first();
                 var name      = icon.attr("name");
@@ -1523,7 +1580,7 @@
                     return false;
                 }
                 
-                // Close dropdown
+                // 关闭下拉菜单
                 $(this).closest("." + classPrefix + "toolbar-dropdown").removeClass("open");
                 
                 _this.activeIcon = icon;
@@ -1748,6 +1805,108 @@
                 }
             }
 
+            // 向所有 pre 代码块注入复制按钮
+            this.initCodeCopy(previewContainer);
+
+            return this;
+        },
+        
+        /**
+         * Inject a "Copy" button into the top-right corner of every <pre> block
+         * in the given container.
+         *
+         * @param   {jQuery} $container  The container to search for <pre> blocks
+         * @returns {editormd}
+         */
+        initCodeCopy : function($container) {
+            var classPrefix = this.classPrefix;
+            var copyText    = "复制";
+            var copiedText  = "已复制";
+            var failedText  = "复制失败";
+
+            $container.find("pre").each(function() {
+                var $pre = $(this);
+
+                // 避免重复创建按钮
+                if ($pre.data("_copyBtnReady")) return;
+                $pre.data("_copyBtnReady", true);
+
+                // 确保 pre 元素为 relative 定位，以便按钮 absolute 定位
+                if ($pre.css("position") === "static") {
+                    $pre.css("position", "relative");
+                }
+
+                // Wrap existing content in scrollable container so the
+                // copy button stays fixed at the top-right regardless of scroll
+                var $scrollWrap = $pre.find("." + classPrefix + "code-scroll-wrap");
+                if ($scrollWrap.length === 0) {
+                    $scrollWrap = $("<div>")
+                        .addClass(classPrefix + "code-scroll-wrap");
+                    // 将所有现有子元素移入滚动包装容器
+                    $pre.children().wrapAll($scrollWrap);
+                }
+
+                var $btn = $("<span>")
+                    .addClass(classPrefix + "code-copy-btn")
+                    .text(copyText)
+                    .attr("title", copyText);
+
+                $btn.on("click", function(e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+
+                    if ($btn.hasClass("copied") || $btn.hasClass("failed")) {
+                        return;
+                    }
+
+                    // 从滚动包装容器中的 code 元素获取代码文本
+                    var $scrollWrap = $pre.find("." + classPrefix + "code-scroll-wrap");
+                    var code = $scrollWrap.find("code").length > 0
+                        ? $scrollWrap.find("code").text()
+                        : $scrollWrap.text();
+
+                    var done = function(success) {
+                        $btn.removeClass("copied failed")
+                            .addClass(success ? "copied" : "failed")
+                            .text(success ? copiedText : failedText);
+                        clearTimeout($btn.data("_timer"));
+                        $btn.data("_timer", setTimeout(function() {
+                            $btn.removeClass("copied failed").text(copyText);
+                        }, 2500));
+                    };
+
+                    // 优先使用 Clipboard API
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(code).then(function() {
+                            done(true);
+                        }).catch(function() {
+                            // 降级处理
+                            done(false);
+                        });
+                    } else {
+                        // 降级方案：使用 textarea + execCommand
+                        var textarea = document.createElement("textarea");
+                        textarea.value = code;
+                        textarea.style.position = "fixed";
+                        textarea.style.left = "-9999px";
+                        textarea.style.top = "-9999px";
+                        document.body.appendChild(textarea);
+                        textarea.focus();
+                        textarea.select();
+                        try {
+                            var ok = document.execCommand("copy");
+                            done(ok);
+                        } catch (ex) {
+                            done(false);
+                        }
+                        document.body.removeChild(textarea);
+                    }
+                });
+
+                // 将复制按钮追加到 pre 元素（位于滚动包装容器外部）
+                $pre.append($btn);
+            });
+
             return this;
         },
         
@@ -1760,7 +1919,7 @@
         
         katexRender : function() {
             
-            if (timer === null)
+            if (this.timer === null)
             {
                 return this;
             }
@@ -1773,7 +1932,7 @@
                 
                 tex.find(".katex").css("font-size", "1.6em");
                 
-                // Double click to edit formula in source
+                // 双击公式可定位到源码中进行编辑
                 tex.attr("title", "双击编辑公式").css("cursor", "pointer");
                 tex.off("dblclick.editormd-tex").on("dblclick.editormd-tex", function() {
                     var cm = _this.cm;
@@ -1811,7 +1970,7 @@
             }
 
             if (settings.flowChart) {
-                if (flowchartTimer === null) {
+                if (this.flowchartTimer === null) {
                     return this;
                 }
                 
@@ -1956,8 +2115,13 @@
                 return this;
             }
                 
+            var _isSyncing = false; // 互斥锁，防止编辑区和预览区滚动事件循环触发
+            
             var cmBindScroll = function() {    
                 codeMirror.find(".CodeMirror-scroll").bind(mouseOrTouch("scroll", "touchmove"), function(event) {
+                    if (_isSyncing) return;
+                    _isSyncing = true;
+                    
                     var height    = $(this).height();
                     var scrollTop = $(this).scrollTop();
                     var cm        = _this.cm;
@@ -1988,6 +2152,8 @@
                     }
                     
                     $.proxy(settings.onscroll, _this)(event);
+                    
+                    setTimeout(function() { _isSyncing = false; }, 30);
                 });
             };
 
@@ -1998,6 +2164,9 @@
             var previewBindScroll = function() {
                 
                 preview.bind(mouseOrTouch("scroll", "touchmove"), function(event) {
+                    if (_isSyncing) return;
+                    _isSyncing = true;
+                    
                     var height    = $(this).height();
                     var scrollTop = $(this).scrollTop();         
                     var codeView  = codeMirror.find(".CodeMirror-scroll");
@@ -2022,6 +2191,8 @@
                     }
                     
                     $.proxy(settings.onpreviewscroll, _this)(event);
+                    
+                    setTimeout(function() { _isSyncing = false; }, 30);
                 });
 
             };
@@ -2069,14 +2240,14 @@
                     _this.previewContainer.css("padding", settings.autoHeight ? "20px 20px 50px 40px" : "20px");
                 }
                 
-                timer = setTimeout(function() {
-                    clearTimeout(timer);
+                _this.timer = setTimeout(function() {
+                    clearTimeout(_this.timer);
                     _this.save();
-                    timer = null;
+                    _this.timer = null;
                 }, settings.delay);
             });
             
-            // Enhanced event handling
+            // 增强的事件处理（keydown/keyup/mouseup/mousedown/paste/drop/copy/cut/focus/blur）
             cm.on("keydown", function(_cm, e) {
                 $.proxy(settings.onkeydown, _this)(_cm, e);
             });
@@ -2145,13 +2316,16 @@
             
             this.containerMask.hide();
             
+            // 设置 timer 为非 null 值，确保 save() 守卫允许首次渲染
+            // 修复：编辑器初始化时有内容但不会自动渲染到预览区的问题
+            this.timer = 0;
             this.save();
             
             if (settings.watch) {
                 preview.show();
             }
             
-            editor.data("oldWidth", editor.width()).data("oldHeight", editor.height()); // 为了兼容Zepto
+            editor.data("oldWidth", editor.width()).data("oldHeight", editor.height()); // 缓存编辑器原始宽高（兼容 Zepto）
             
             this.resize();
             this.registerKeyMaps();
@@ -2311,7 +2485,7 @@
             var state            = this.state;
             var settings         = this.settings;
 
-            if (timer === null && !(!settings.watch && state.preview))
+            if (this.timer === null && !(!settings.watch && state.preview))
             {
                 return this;
             }
@@ -2338,8 +2512,8 @@
                 pageBreak            : settings.pageBreak,
                 taskList             : settings.taskList,
                 tex                  : settings.tex,
-                atLink               : settings.atLink,           // for @link
-                emailLink            : settings.emailLink,        // for mail address auto link
+                atLink               : settings.atLink,           // 是否解析 @用户名 链接
+                emailLink            : settings.emailLink,        // 是否解析邮箱地址自动链接
                 flowChart            : settings.flowChart,
                 sequenceDiagram      : settings.sequenceDiagram,
                 previewCodeHighlight : settings.previewCodeHighlight,
@@ -2365,7 +2539,7 @@
             
             marked.setOptions(markedOptions);
 
-            // Preprocess custom block syntax (tabs, columns, align) before marked parsing
+            // 在 marked 解析之前预处理自定义块级语法（标签页、多栏、对齐）
             var preprocessResult = editormd.preprocessMarkdownBlocks(cmValue, rendererOptions);
             var newMarkdownDoc = editormd.$marked(preprocessResult.markdown, markedOptions);
             newMarkdownDoc = editormd.restorePlaceholders(newMarkdownDoc, preprocessResult.placeholders);
@@ -2420,7 +2594,8 @@
                 {
                     if (!editormd.kaTeXLoaded && settings.autoLoadModules) 
                     {
-                        editormd.loadKaTeX(function() {
+                        // 传入 settings.path 作为前缀，解决 examples 子目录下 KaTeX 资源 404 问题
+                        editormd.loadKaTeX(settings.path, function() {
                             editormd.$katex = katex;
                             editormd.kaTeXLoaded = true;
                             _this.katexRender();
@@ -2433,12 +2608,15 @@
                     }
                 }                
                 
-                // Lazy load flowchart / sequence-diagram if preview contains corresponding elements
+                // 预览区包含对应元素时延迟加载流程图 / 时序图
                 if (settings.flowChart || settings.sequenceDiagram)
                 {
                     var hasFlowChart = previewContainer.find(".flowchart").length > 0;
                     var hasSequence  = previewContainer.find(".sequence-diagram").length > 0;
                     if (hasFlowChart || hasSequence) {
+                        // 设置 flowchartTimer 为非 null，确保渲染守卫通过
+                        // 修复：流程图/时序图始终无法渲染的问题
+                        _this.flowchartTimer = 0;
                         var renderFs = function() {
                             _this.flowChartAndSequenceDiagramRender();
                         };
@@ -2476,7 +2654,7 @@
                     $.proxy(settings.onchange, this)();
                 }
                 
-                // Initialize table editing and image resize in preview
+                // 初始化预览区中的表格编辑和图片缩放功能
                 if (settings.tableEdit) {
                     _this.initTableEdit();
                 }
@@ -2504,14 +2682,11 @@
                 if (settings.tooltip) {
                     _this.initTooltips();
                 }
-                
-                // Add copy buttons to all <pre> code blocks
-                _this.initCopyButton();
             }
             
             $.proxy(settings.onaftersave, this)();
 
-            // Auto-save draft after successful save
+            // 保存成功后自动保存草稿
             if (settings.draftAutoSave) {
                 this.saveDraft();
             }
@@ -2529,7 +2704,7 @@
             var markdown = cm.getValue();
             var lines = markdown.split("\n");
             
-            // Find all table blocks in markdown source
+            // 在 Markdown 源中查找所有表格块
             var allTableBlocks = [];
             var i = 0;
             while (i < lines.length) {
@@ -2538,7 +2713,7 @@
                     i++;
                     while (i < lines.length && (/^\|/.test(lines[i]) || lines[i].trim() === "")) {
                         if (lines[i].trim() === "") {
-                            // blank line inside table - skip but don't break (some tables have blank lines)
+                            // 表格内部空行 — 跳过但不中断扫描（某些表格含有空行）
                             i++;
                             continue;
                         }
@@ -2563,19 +2738,19 @@
                 $table.wrap($wrapper);
                 $wrapper = $table.parent();
                 
-                // Store table block reference
+                // 存储表格块引用信息
                 var currentBlock = (tableBlockIndex < allTableBlocks.length) ? allTableBlocks[tableBlockIndex] : null;
                 if (currentBlock) {
                     $wrapper.data("table-start", currentBlock.start);
                     $wrapper.data("table-end", currentBlock.end);
-                    // Also store first column header text for re-identification after modifications
+                    // 同时存储首列表头文本，供表格被修改后重新识别
                     var firstHeaderCell = lines[currentBlock.start].split("|");
                     var headerText = (firstHeaderCell[1] || "").trim();
                     $wrapper.data("table-identifier", headerText);
                 }
                 tableBlockIndex++;
                 
-                // Add column controls (positioned above selected column)
+                // 添加列控制按钮（定位在选中列上方）
                 var colControls = [
                     '<div class="editormd-table-col-controls">',
                     '<a class="editormd-table-btn" data-action="add-col-before" title="左侧插入列">+</a>',
@@ -2584,7 +2759,7 @@
                     '</div>'
                 ].join("");
                 
-                // Add row controls (positioned to the left of selected row)
+                // 添加行控制按钮（定位在选中行左侧）
                 var rowControls = [
                     '<div class="editormd-table-row-controls">',
                     '<a class="editormd-table-btn" data-action="add-row-before" title="上方插入行">+</a>',
@@ -2595,13 +2770,13 @@
                 
                 $wrapper.prepend(colControls + rowControls);
                 
-                // Track current cell
+                // 跟踪当前选中的单元格
                 var currentCell = null;
                 $table.on("click", "th, td", function(e) {
                     e.stopPropagation();
                     e.preventDefault();
                     currentCell = $(this);
-                    // Use wrapper-relative offset to handle scrolling properly
+                    // 使用相对于包装容器的偏移来正确处理滚动
                     var wrapperOffset = $wrapper.offset();
                     var cellOffset = currentCell.offset();
                     var relTop = cellOffset.top - wrapperOffset.top;
@@ -2639,7 +2814,7 @@
                 });
             });
             
-            // Hide controls when clicking outside
+            // 点击表格外部时隐藏控制按钮
             $(document).off("click.editormd-table").on("click.editormd-table", function(e) {
                 if (!$(e.target).closest(".editormd-table-wrapper").length) {
                     previewContainer.find(".editormd-table-col-controls, .editormd-table-row-controls").hide();
@@ -2656,9 +2831,9 @@
             var lines = markdown.split("\n");
             var tableEnd = -1;
             
-            // Verify tableStart is still valid and re-find the table boundaries
+            // 验证 tableStart 是否仍然有效，必要时重新查找表格边界
             if (tableStart < 0 || tableStart >= lines.length || !/^\|/.test(lines[tableStart])) {
-                // Table position changed - re-find by identifier
+                // 表格位置已变化 — 通过标识文本重新查找
                 var identifier = $wrapper ? $wrapper.data("table-identifier") : "";
                 tableStart = -1;
                 for (var fi = 0; fi < lines.length; fi++) {
@@ -2671,7 +2846,7 @@
                         }
                     }
                 }
-                // Fallback: find any table starting at or near expected position
+                // 降级方案：查找任意表格作为备选
                 if (tableStart < 0) {
                     for (var fi2 = 0; fi2 < lines.length; fi2++) {
                         if (/^\|/.test(lines[fi2])) { tableStart = fi2; break; }
@@ -2681,7 +2856,7 @@
             
             if (tableStart < 0) return;
             
-            // Find table end
+            // 查找表格结束位置
             for (var j = tableStart; j < lines.length; j++) {
                 if (j === tableStart) continue;
                 if (!/^\|/.test(lines[j]) && lines[j].trim() !== "") {
@@ -2705,10 +2880,10 @@
             var colCount = cols.length;
             if (colCount < 1) colCount = 1;
             
-            // Ensure minimum rows: header + separator + at least 1 data row
+            // 确保最小行数：表头 + 分隔行 + 至少 1 行数据
             var totalRows = tableLines.length;
 
-            // Make sure rowIndex is valid
+            // 确保 rowIndex 在有效范围内
             if (!isThead) {
                 rowIndex = Math.max(0, Math.min(rowIndex, bodyLines.length - 1));
             }
@@ -2716,14 +2891,14 @@
             switch(action) {
                 case "add-row-before":
                     var newRow = "| " + new Array(colCount + 1).join(" | ");
-                    // thead: insert before header. body: insert at tableStart + 2 + rowIndex
+                    // 表头区域：在表头之前插入。表体：在 tableStart + 2 + rowIndex 处插入
                     var insertIndex = isThead ? tableStart : tableStart + 2 + rowIndex;
                     if (!isThead && insertIndex < tableStart + 2) insertIndex = tableStart + 2;
                     lines.splice(insertIndex, 0, newRow);
                     break;
                 case "add-row-after":
                     var newRow2 = "| " + new Array(colCount + 1).join(" | ");
-                    // thead: insert as first data row. body: insert after current row
+                    // 表头区域：作为第一行数据插入。表体：在当前行之后插入
                     var insertIndex2 = isThead ? tableStart + 2 : tableStart + 2 + rowIndex + 1;
                     lines.splice(insertIndex2, 0, newRow2);
                     break;
@@ -2748,7 +2923,7 @@
                     }
                     break;
                 case "del-row":
-                    // Prevent deleting if only header + separator remain
+                    // 仅剩表头和分隔行时阻止删除操作
                     if (totalRows <= 2 && !isThead) return;
                     if (isThead && totalRows <= 2) return;
                     var delIndex = isThead ? tableStart : tableStart + 2 + rowIndex;
@@ -2770,7 +2945,7 @@
                     break;
             }
             
-            // Update table position reference on wrapper
+            // 更新包装容器上的表格位置引用
             if ($wrapper) {
                 $wrapper.data("table-start", tableStart);
                 $wrapper.data("table-end", tableStart + tableLines.length - 1);
@@ -2782,7 +2957,7 @@
             cm.setValue(lines.join("\n"));
             cm.setCursor(Math.min(cursor.line, lines.length - 1), cursor.ch);
             cm.scrollTo(editorScroll.left, editorScroll.top);
-            timer = 0;
+            this.timer = 0;
             this.save();
             this.preview.scrollTop(previewScroll);
             
@@ -2808,7 +2983,7 @@
                 $img.wrap($wrapper);
                 $wrapper = $img.parent();
                 
-                // Add resize handle
+                // 添加缩放拖拽手柄
                 var handle = $('<div class="editormd-img-resize-handle" title="拖拽调整尺寸"></div>');
                 $wrapper.append(handle);
                 
@@ -2831,7 +3006,7 @@
                     var newHeight = startHeight + (e.clientY - startY);
                     var ratio = startWidth / startHeight;
                     
-                    // Shift key to maintain aspect ratio
+                    // 按 Shift 键保持宽高比
                     if (e.shiftKey) {
                         newHeight = newWidth / ratio;
                     }
@@ -2850,7 +3025,7 @@
                     _this.modifyImageSizeInMarkdown($img.attr("src"), $img.attr("alt"), finalWidth, finalHeight);
                 });
                 
-                // Double click to edit size
+                // 双击图片可编辑尺寸
                 $img.on("dblclick", function(e) {
                     e.stopPropagation();
                     var currentWidth = $img.width();
@@ -2872,7 +3047,7 @@
             var markdown = cm.getValue();
             var sizeStr = "<" + width + "," + height + ">";
 
-            // Find and replace image markdown with new <width,height> syntax
+            // 查找并替换图片 Markdown，更新为新的 <宽,高> 语法
             var imgRegex = /!\[([^\]]*)\]\(([^)]+)\)(?:<(\d+),\s*(\d+)>)?/g;
             var newMarkdown = markdown.replace(imgRegex, function(match, mAlt, mSrc, mW, mH) {
                 var mUrl = mSrc.replace(/\s*=\s*\d+x\d+/, "").trim();
@@ -2887,7 +3062,7 @@
                 var previewScroll = this.preview.scrollTop();
                 cm.setValue(newMarkdown);
                 cm.scrollTo(editorScroll.left, editorScroll.top);
-                timer = 0;
+                this.timer = 0;
                 this.save();
                 this.preview.scrollTop(previewScroll);
                 $.proxy(this.settings.onimagechange, this)(src, width, height);
@@ -3017,115 +3192,10 @@
         },
 
         /**
-         * Initialize Tooltips in preview area
+         * Initialize Tooltips in preview area (instance method)
          */
         initTooltips : function() {
-            var previewContainer = this.previewContainer;
-            
-            previewContainer.find(".editormd-tooltip-trigger").each(function() {
-                var $trigger = $(this);
-                if ($trigger.attr("data-tooltip-initialized") === "true") {
-                    return;
-                }
-                
-                var tooltipContent = $trigger.attr("data-tooltip");
-                var tooltipType = $trigger.attr("data-tooltip-type") || "text";
-                if (!tooltipContent) return;
-                
-                var tooltipHtml = '';
-                if (tooltipType === "image") {
-                    tooltipHtml = '<img src="' + tooltipContent + '" alt="" />';
-                } else if (tooltipType === "iframe") {
-                    tooltipHtml = '<iframe src="' + tooltipContent + '" frameborder="0"></iframe>';
-                } else {
-                    tooltipHtml = tooltipContent;
-                }
-                var $tooltip = $('<div class="editormd-tooltip-popup editormd-tooltip-' + tooltipType + '">' + tooltipHtml + '</div>');
-                $("body").append($tooltip);
-                
-                var showTooltip = function(e) {
-                    clearTimeout($trigger.data("tooltip-timer"));
-                    var offset = $trigger.offset();
-                    $tooltip.css({
-                        left: offset.left + ($trigger.outerWidth() / 2) - ($tooltip.outerWidth() / 2),
-                        top: offset.top - $tooltip.outerHeight() - 8,
-                        display: "block"
-                    }).addClass("show");
-                };
-
-                var hideTooltip = function() {
-                    $trigger.data("tooltip-timer", setTimeout(function() {
-                        $tooltip.removeClass("show");
-                    }, 200));
-                };
-
-                $trigger.on("mouseenter", showTooltip).on("mouseleave", hideTooltip);
-                $tooltip.on("mouseenter", function() {
-                    clearTimeout($trigger.data("tooltip-timer"));
-                }).on("mouseleave", function() {
-                    $tooltip.removeClass("show");
-                });
-                $trigger.on("focus", showTooltip).on("blur", hideTooltip);
-
-                $trigger.attr("data-tooltip-initialized", "true");
-            });
-        },
-        
-        /**
-         * Initialize copy buttons on all <pre> tags in preview area
-         */
-        initCopyButton : function() {
-            var previewContainer = this.previewContainer;
-            
-            previewContainer.find("pre").each(function() {
-                var $pre = $(this);
-                
-                // Skip if already has copy button
-                if ($pre.children(".editormd-copy-btn").length > 0) return;
-                
-                // Skip empty pre blocks
-                var codeText = ($pre.text() || "").trim();
-                if (!codeText) return;
-                
-                var $copyBtn = $('<button class="editormd-copy-btn" title="复制代码">复制</button>');
-                
-                $copyBtn.on("click", function(e) {
-                    e.stopPropagation();
-                    var $btn = $(this);
-                    var $p = $btn.closest("pre");
-                    var text = ($p.text() || "").trim();
-                    
-                    var copySucceeded = false;
-                    if (navigator.clipboard && navigator.clipboard.writeText) {
-                        navigator.clipboard.writeText(text).then(function() {
-                            $btn.addClass("copied").text("已复制！");
-                            setTimeout(function() { $btn.removeClass("copied").text("复制"); }, 2000);
-                        }).catch(function() {
-                            $btn.addClass("copy-error").text("失败");
-                            setTimeout(function() { $btn.removeClass("copy-error").text("复制"); }, 2000);
-                        });
-                    } else {
-                        // Fallback for older browsers
-                        try {
-                            var textarea = document.createElement("textarea");
-                            textarea.value = text;
-                            textarea.style.position = "fixed";
-                            textarea.style.opacity = "0";
-                            document.body.appendChild(textarea);
-                            textarea.select();
-                            document.execCommand("copy");
-                            document.body.removeChild(textarea);
-                            $btn.addClass("copied").text("已复制！");
-                            setTimeout(function() { $btn.removeClass("copied").text("复制"); }, 2000);
-                        } catch(err) {
-                            $btn.addClass("copy-error").text("失败");
-                            setTimeout(function() { $btn.removeClass("copy-error").text("复制"); }, 2000);
-                        }
-                    }
-                });
-                
-                $pre.addClass("has-copy-btn").prepend($copyBtn);
-            });
+            editormd.initTooltips(this.previewContainer);
         },
         
         /**
@@ -3203,9 +3273,9 @@
         getWordCount : function() {
             var text = this.cm.getValue();
             var totalChars = text.length;
-            // Count Chinese characters
+            // 统计中文字符数
             var cnChars = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
-            // Count English words (sequences of letters)
+            // 统计英文单词数（字母序列）
             var enWords = (text.match(/[a-zA-Z]+/g) || []).length;
             return {
                 text   : totalChars,
@@ -3422,20 +3492,19 @@
             var maxDays = this.settings.draftMaxDays || 30;
             var maxAge = maxDays * 24 * 60 * 60 * 1000;
 
-            // Remove expired drafts
+            // 移除过期的草稿
             drafts = drafts.filter(function(d) {
                 return (now - d.time) < maxAge;
             });
 
-            // Remove duplicates (same content), keep only the latest
+            // 移除内容重复的草稿，仅保留最新的
             for (var i = drafts.length - 1; i >= 0; i--) {
                 if (drafts[i].content === cmValue) {
                     drafts.splice(i, 1);
                 }
             }
 
-            // In the same editing session (within 10 minutes), replace the latest draft
-            // to avoid accumulating multiple drafts from auto-save intervals
+            // 同一编辑会话中（10分钟内）替换最新草稿，避免自动保存产生多个重复草稿
             var sessionThreshold = 10 * 60 * 1000;
             if (drafts.length > 0 && (now - drafts[0].time) < sessionThreshold) {
                 drafts[0] = {
@@ -3451,7 +3520,7 @@
                 });
             }
 
-            // Keep only last 20 drafts
+            // 最多保留 20 条草稿
             if (drafts.length > 20) drafts = drafts.slice(0, 20);
 
             try {
@@ -3533,18 +3602,19 @@
             var $mask = $('<div id="' + maskId + '" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.3);z-index:99998;"></div>');
             $("body").append($mask);
 
+            var lang = _this.settings.lang;
             var dialogHtml = '<div id="' + dialogId + '" class="editormd-dialog editormd-draft-dialog">' +
                 '<div class="editormd-dialog-header" style="cursor: move;">' +
-                '<strong class="editormd-dialog-title">恢复草稿</strong>' +
+                '<strong class="editormd-dialog-title">' + (lang.toolbar.restoreDraft || "恢复草稿") + '</strong>' +
                 '<a href="javascript:;" class="editormd-dialog-close">&times;</a>' +
                 '</div>' +
                 '<div class="editormd-dialog-content">' +
-                '<p class="editormd-draft-tip">检测到以下自动保存的草稿，点击可恢复到编辑器：</p>' +
+                '<p class="editormd-draft-tip">' + (lang.toolbar.draftRestoreTip || "检测到以下自动保存的草稿，点击可恢复到编辑器：") + '</p>' +
                 '<div class="editormd-draft-list">' + listHtml + '</div>' +
                 '</div>' +
                 '<div class="editormd-dialog-footer">' +
-                '<button class="editormd-draft-clear editormd-btn">清除所有草稿</button>' +
-                '<button class="editormd-draft-cancel editormd-btn">取消</button>' +
+                '<button class="editormd-draft-clear editormd-btn">' + (lang.toolbar.draftClearBtn || "清除所有草稿") + '</button>' +
+                '<button class="editormd-draft-cancel editormd-btn">' + (lang.toolbar.draftCancelBtn || "取消") + '</button>' +
                 '</div>' +
                 '</div>';
 
@@ -3585,7 +3655,7 @@
                     var previewScroll = _this.preview.scrollTop();
                     _this.cm.setValue(drafts[idx].content);
                     _this.cm.scrollTo(editorScroll.left, editorScroll.top);
-                    timer = 0;
+                    _this.timer = 0;
                     _this.save();
                     _this.preview.scrollTop(previewScroll);
                 }
@@ -3604,28 +3674,539 @@
         },
 
         /**
-         * 获取解析后存放在Textarea的HTML源码
-         * Get parsed html code from Textarea
-         *
-         * @returns {String}               返回HTML源码
+         * 获取完整的独立可展示 HTML 代码（可直接脱离编辑器在任何页面渲染最终效果）
+         * 
+         * 返回包含完整 CSS 样式、脚本和渲染后 HTML 内容的完整页面代码。
+         * 该 HTML 可直接保存为 .html 文件或嵌入到其他页面中独立展示。
+         * 
+         * 返回结构：
+         *   1. 必要的 CSS 样式（内联，从 editormd.css / editormd.preview.css 中提取）
+         *   2. 渲染后的 Markdown HTML 内容
+         *   3. 必要的 JavaScript 初始化脚本（tooltip / tabs / columns 交互等）
+         * 
+         * @param {Object}  [options={}]         可选配置
+         * @param {Boolean} [options.wrap=true]  是否包裹完整 HTML 文档结构（<html><head>...</head><body>...</body></html>）
+         * @param {Boolean} [options.includeStyles=true]  是否包含内联 CSS 样式
+         * @param {Boolean} [options.includeScripts=true] 是否包含交互脚本
+         * @param {String}  [options.title=""]   HTML 页面标题（仅在 wrap=true 时有效）
+         * @param {String}  [options.lang="zh"]  HTML 语言属性
+         * @returns {String}                      完整的 HTML 代码字符串
          */
 
-        getHTML : function() {
-            if (!this.settings.saveHTMLToTextarea)
-            {
-                alert("Error: settings.saveHTMLToTextarea == false");
-
-                return false;
+        getHTML : function(options) {
+            var opts = $.extend({
+                includeStyles  : true,
+                includeScripts : true
+            }, options || {});
+            
+            var _this    = this;
+            var settings = this.settings;
+            var html     = "";
+            
+            // 获取预览容器的 HTML 内容
+            var previewHTML = this.previewContainer ? this.previewContainer.html() : "";
+            if (!previewHTML && this.htmlTextarea && this.htmlTextarea.length) {
+                previewHTML = this.htmlTextarea.val();
             }
             
-            return this.htmlTextarea.val();
+            // 如果是编辑器没有开启预览，就重新渲染一次
+            if (!previewHTML) {
+                var markdownText = this.getMarkdown();
+                if (markdownText) {
+                    var rendererOptions = {
+                        toc: false, tocm: false, tocStartLevel: 1,
+                        taskList: settings.taskList,
+                        tex: settings.tex, pageBreak: settings.pageBreak,
+                        atLink: settings.atLink, emailLink: settings.emailLink,
+                        flowChart: settings.flowChart, sequenceDiagram: settings.sequenceDiagram,
+                        previewCodeHighlight: settings.previewCodeHighlight,
+                        pinyin: settings.pinyin,
+                        imageResize: settings.imageResize,
+                        echarts: settings.echarts,
+                        tabs: settings.tabs,
+                        columns: settings.columns,
+                        tooltip: settings.tooltip
+                    };
+                    var markedOptions = {
+                        renderer: editormd.markedRenderer([], rendererOptions),
+                        gfm: settings.gfm, tables: true, breaks: true,
+                        pedantic: false, sanitize: (settings.htmlDecode) ? false : true,
+                        smartLists: true, smartypants: true
+                    };
+                    var mdPreprocess = editormd.preprocessMarkdownBlocks(markdownText, rendererOptions);
+                    previewHTML = marked(mdPreprocess.markdown, markedOptions);
+                    previewHTML = editormd.restorePlaceholders(previewHTML, mdPreprocess.placeholders);
+                    previewHTML = editormd.filterHTMLTags(previewHTML, settings.htmlDecode);
+                }
+            }
+            
+            // 构建内联 CSS 样式（提取编辑器和预览所需的核心样式）
+            var inlineStyles = "";
+            if (opts.includeStyles) {
+                inlineStyles += this._getCoreStyles();
+            }
+            
+            // 构建交互 JavaScript
+            var inlineScripts = "";
+            if (opts.includeScripts) {
+                inlineScripts += this._getInitScripts();
+            }
+            
+            // 输出内容片段（不包含 DOCTYPE、head、body 等标签）
+            // 包含内联样式和脚本的独立内容块，可直接嵌入任意页面
+            if (opts.includeStyles && inlineStyles) {
+                html += '<style>\n' + inlineStyles + '\n</style>\n';
+            }
+            html += '<div class="markdown-body editormd-html-preview">\n';
+            html += '  ' + previewHTML + '\n';
+            html += '</div>';
+            if (opts.includeScripts && inlineScripts) {
+                html += '\n<script>\n' + inlineScripts + '\n<\/script>';
+            }
+            
+            return html;
         },
         
         /**
-         * getHTML()的别名
-         * getHTML (alias)
+         * 获取核心 CSS 样式（内联版本，用于 getHTML() 输出独立页面）
+         * @private
+         * @returns {String}
+         */
+        _getCoreStyles : function() {
+            var css = [];
+            
+            // Pinyin ruby annotation
+            css.push('.editormd-pinyin{display:inline-ruby;ruby-align:center;line-height:2.2;}');
+            css.push('.editormd-pinyin rb{display:ruby-base;}');
+            css.push('.editormd-pinyin rt{display:ruby-text;font-size:0.65em;color:#666;line-height:1;}');
+            css.push('.editormd-pinyin rp{display:none;}');
+            
+            // Tooltip / Popover
+            css.push('.editormd-tooltip-trigger{border-bottom:1px dashed #2C7EEA;color:#2C7EEA;cursor:help;position:relative;display:inline;}');
+            css.push('.editormd-tooltip-trigger:focus{outline:2px solid #2C7EEA;outline-offset:2px;border-radius:2px;}');
+            css.push('.editormd-tooltip-popup{position:absolute;z-index:9999;background:#333;color:#fff;padding:8px 12px;border-radius:6px;font-size:13px;line-height:1.5;max-width:320px;word-wrap:break-word;display:none;opacity:0;transition:opacity 0.2s;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,0.18);}');
+            css.push('.editormd-tooltip-popup.show{opacity:1;}');
+            css.push('.editormd-tooltip-text-content{white-space:pre-wrap;}');
+            // Arrow styles
+            css.push('.editormd-tooltip-arrow{position:absolute;left:50%;margin-left:-8px;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;z-index:10000;}');
+            css.push('.editormd-tooltip-arrow-bottom .editormd-tooltip-arrow{top:100%;border-top:7px solid #333;}');
+            css.push('.editormd-tooltip-arrow-top .editormd-tooltip-arrow{bottom:100%;border-bottom:7px solid #333;}');
+            // Image/iframe popup
+            css.push('.editormd-tooltip-popup.editormd-tooltip-image,.editormd-tooltip-popup.editormd-tooltip-iframe{padding:4px;max-width:360px;background:#fff;border:1px solid #ddd;pointer-events:auto;min-width:100px;min-height:60px;}');
+            css.push('.editormd-tooltip-popup.editormd-tooltip-image img{display:block;max-width:340px;max-height:220px;border-radius:3px;}');
+            css.push('.editormd-tooltip-popup.editormd-tooltip-iframe iframe{display:block;width:340px;height:210px;border-radius:3px;}');
+            css.push('.editormd-tooltip-arrow-top.editormd-tooltip-image .editormd-tooltip-arrow,.editormd-tooltip-arrow-top.editormd-tooltip-iframe .editormd-tooltip-arrow{border-bottom-color:#ddd;}');
+            css.push('.editormd-tooltip-arrow-bottom.editormd-tooltip-image .editormd-tooltip-arrow,.editormd-tooltip-arrow-bottom.editormd-tooltip-iframe .editormd-tooltip-arrow{border-top-color:#ddd;}');
+            // Loading state
+            css.push('.editormd-tooltip-loading{display:flex;align-items:center;justify-content:center;padding:20px;color:#999;font-size:12px;}');
+            
+            // Tabs
+            css.push('.editormd-tabs{margin:15px 0;border:1px solid #ddd;border-radius:4px;overflow:hidden;background:#fff;}');
+            css.push('.editormd-tab-nav{list-style:none;margin:0;padding:0;display:flex;background:#f8f9fa;border-bottom:1px solid #ddd;}');
+            css.push('.editormd-tab-nav li{padding:10px 18px;cursor:pointer;border-right:1px solid #eee;font-size:14px;color:#666;transition:all 200ms ease;user-select:none;}');
+            css.push('.editormd-tab-nav li:hover{background:#fff;color:#333;}');
+            css.push('.editormd-tab-nav li.active{background:#fff;color:#2C7EEA;font-weight:600;border-bottom:2px solid #2C7EEA;margin-bottom:-1px;}');
+            css.push('.editormd-tab-body{padding:16px;min-height:60px;}');
+            css.push('.editormd-tab-panel{display:none;}');
+            css.push('.editormd-tab-panel.active{display:block;}');
+            css.push('.editormd-tab-panel>:first-child{margin-top:0;}');
+            
+            // Columns
+            css.push('.editormd-columns{margin:15px 0;padding:15px;border:1px dashed #ddd;border-radius:4px;column-gap:30px;-webkit-column-gap:30px;-moz-column-gap:30px;column-rule:1px solid #ccc;-webkit-column-rule:1px solid #ccc;-moz-column-rule:1px solid #ccc;}');
+            
+            // Video
+            css.push('.editormd-video-player{display:block;max-width:100%;border-radius:4px;background:#000;margin:10px 0;}');
+            
+            // File list
+            css.push('.editormd-file-list{margin:10px 0;}');
+            css.push('.editormd-file-list a{display:inline-block;margin:3px 6px 3px 0;padding:4px 10px;border:1px solid #ddd;border-radius:3px;text-decoration:none;color:#333;font-size:13px;}');
+            css.push('.editormd-file-list a:hover{background:#f0f0f0;}');
+            
+            // Text align
+            css.push('.editormd-text-align{display:block;margin:0.5em 0;}');
+            css.push('.editormd-text-align-center{text-align:center!important;}');
+            css.push('.editormd-text-align-left{text-align:left!important;}');
+            css.push('.editormd-text-align-right{text-align:right!important;}');
+            css.push('.editormd-text-align-justify{text-align:justify!important;}');
+            
+            // ECharts
+            css.push('.editormd-echarts{margin:15px 0;border:1px solid #eee;border-radius:4px;}');
+            
+            // Preview container
+            css.push('.editormd-html-preview{text-align:left;font-size:16px;line-height:1.6;padding:20px;overflow:auto;width:100%;background-color:#fff;color:#333;word-wrap:break-word;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";}');
+            css.push('.editormd-html-preview *{box-sizing:border-box;}');
+            css.push('.editormd-html-preview p{margin-top:0;margin-bottom:10px;}');
+            css.push('.editormd-html-preview strong{font-weight:600;}');
+            css.push('.editormd-html-preview em{font-style:italic;}');
+            css.push('.editormd-html-preview del{text-decoration:line-through;}');
+            css.push('.editormd-html-preview blockquote{padding:0 1em;color:#6a737d;border-left:0.25em solid #dfe2e5;margin:0 0 16px 0;}');
+            css.push('.editormd-html-preview blockquote>:first-child{margin-top:0;}');
+            css.push('.editormd-html-preview blockquote>:last-child{margin-bottom:0;}');
+            css.push('.editormd-html-preview pre{position:relative;border:1px solid #e1e4e8;background:#f6f8fa;padding:16px;margin-bottom:16px;overflow:hidden;line-height:1.5;font-size:13px;font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,Courier,monospace;word-wrap:normal;border-radius:6px;}');
+            css.push('.editormd-html-preview pre code{border:none;background:transparent;padding:0;font-size:13px;line-height:1.5;color:#24292e;white-space:pre;word-break:normal;font-family:inherit;}');
+            css.push('.editormd-html-preview code{font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,Courier,monospace;}');
+            css.push('.editormd-html-preview code:not(pre code){color:#c7254e;background:#f9f2f4;border:1px solid #f0d0d8;padding:2px 6px;border-radius:3px;font-size:85%;white-space:nowrap;}');
+            css.push('.editormd-code-scroll-wrap{overflow:auto;max-height:100%;}');
+            css.push('.editormd-html-preview img{max-width:100%;}');
+            css.push('.editormd-html-preview table{border-collapse:collapse;border-spacing:0;width:100%;margin-bottom:16px;display:block;overflow:auto;}');
+            css.push('.editormd-html-preview table th,.editormd-html-preview table td{padding:6px 13px;border:1px solid #dfe2e5;}');
+            css.push('.editormd-html-preview table th{font-weight:600;background:#f6f8fa;}');
+            css.push('.editormd-html-preview table tr{background:#fff;border-top:1px solid #c6cbd1;}');
+            css.push('.editormd-html-preview table tr:nth-child(2n){background:#f6f8fa;}');
+            css.push('.editormd-html-preview hr{height:0.25em;padding:0;margin:24px 0;background-color:#e1e4e8;border:0;overflow:hidden;}');
+            css.push('.editormd-html-preview hr.editormd-page-break{border:1px dotted #ccc;font-size:0;height:2px;margin:10px 0;padding:0;background:transparent;}');
+            css.push('.editormd-html-preview h1,.editormd-html-preview h2,.editormd-html-preview h3,.editormd-html-preview h4,.editormd-html-preview h5,.editormd-html-preview h6{margin-top:24px;margin-bottom:16px;font-weight:600;line-height:1.25;}');
+            css.push('.editormd-html-preview h1{font-size:2em;border-bottom:1px solid #eee;padding-bottom:0.3em;}');
+            css.push('.editormd-html-preview h2{font-size:1.5em;border-bottom:1px solid #eee;padding-bottom:0.3em;}');
+            css.push('.editormd-html-preview h3{font-size:1.25em;}');
+            css.push('.editormd-html-preview h4{font-size:1em;}');
+            css.push('.editormd-html-preview h5{font-size:0.875em;}');
+            css.push('.editormd-html-preview h6{font-size:0.85em;color:#6a737d;}');
+            css.push('.editormd-html-preview a{color:#0366d6;text-decoration:none;}');
+            css.push('.editormd-html-preview a:hover{text-decoration:underline;}');
+            css.push('.editormd-html-preview ul,.editormd-html-preview ol{padding-left:2em;margin-top:0;margin-bottom:16px;}');
+            css.push('.editormd-html-preview ul ul,.editormd-html-preview ul ol,.editormd-html-preview ol ol,.editormd-html-preview ol ul{margin-top:0;margin-bottom:0;}');
+            css.push('.editormd-html-preview li{word-wrap:break-all;}');
+            css.push('.editormd-html-preview li>p{margin-top:16px;}');
+            css.push('.editormd-html-preview li+li{margin-top:0.25em;}');
+            
+            // Code copy button (inside pre)
+            css.push('.editormd-code-copy-btn{position:absolute;top:8px;right:8px;z-index:10;display:inline-block;padding:3px 10px;font-size:12px;line-height:1.4;color:#586069;background:#fff;border:1px solid #d1d5da;border-radius:4px;cursor:pointer;user-select:none;-webkit-user-select:none;transition:all 0.2s ease;opacity:0;}');
+            css.push('pre:hover .editormd-code-copy-btn{opacity:1;}');
+            css.push('.editormd-code-copy-btn:hover{color:#0366d6;border-color:#0366d6;background:#f1f8ff;}');
+            css.push('.editormd-code-copy-btn.copied{color:#22863a;border-color:#22863a;background:#f0fff4;cursor:not-allowed;pointer-events:none;opacity:1;}');
+            css.push('.editormd-code-copy-btn.failed{color:#cb2431;border-color:#cb2431;background:#ffeef0;cursor:not-allowed;pointer-events:none;opacity:1;}');
+            
+            // Flow chart & sequence
+            css.push('.editormd-html-preview .flowchart,.editormd-html-preview .sequence-diagram{margin:0 auto;text-align:center;}');
+            css.push('.editormd-html-preview .flowchart svg,.editormd-html-preview .sequence-diagram svg{margin:0 auto;}');
+            css.push('.editormd-html-preview .flowchart text,.editormd-html-preview .sequence-diagram text{font-size:15px!important;}');
+            
+            // KaTeX - embed full KaTeX CSS (non-font-face rules) for standalone rendering
+            // The @font-face rules reference font files; we load those dynamically
+            css.push('.katex-display{display:block;margin:1em 0;text-align:center;}');
+            css.push('.katex-display>.katex{display:inline-block;}');
+            css.push('.katex{font:400 1.21em KaTeX_Main;line-height:1.2;white-space:nowrap;}');
+            css.push('.katex .katex-html{display:inline-block;}');
+            css.push('.katex .katex-mathml{position:absolute;clip:rect(1px,1px,1px,1px);padding:0;border:0;height:1px;width:1px;overflow:hidden;}');
+            css.push('.katex .base,.katex .strut{display:inline-block;}');
+            css.push('.katex .mathit{font-family:KaTeX_Math;font-style:italic;}');
+            css.push('.katex .amsrm{font-family:KaTeX_AMS;}');
+            css.push('.katex .textstyle>.mord+.mop{margin-left:.16667em;}');
+            css.push('.katex .textstyle>.mord+.mbin{margin-left:.22222em;}');
+            css.push('.katex .textstyle>.mord+.mrel{margin-left:.27778em;}');
+            css.push('.katex .textstyle>.mop+.mop,.katex .textstyle>.mop+.mord,.katex .textstyle>.mord+.minner{margin-left:.16667em;}');
+            css.push('.katex .textstyle>.mop+.mrel{margin-left:.27778em;}');
+            css.push('.katex .textstyle>.mop+.minner{margin-left:.16667em;}');
+            css.push('.katex .textstyle>.mbin+.minner,.katex .textstyle>.mbin+.mop,.katex .textstyle>.mbin+.mopen,.katex .textstyle>.mbin+.mord{margin-left:.22222em;}');
+            css.push('.katex .textstyle>.mrel+.minner,.katex .textstyle>.mrel+.mop,.katex .textstyle>.mrel+.mopen,.katex .textstyle>.mrel+.mord{margin-left:.27778em;}');
+            css.push('.katex .textstyle>.mclose+.mop{margin-left:.16667em;}');
+            css.push('.katex .textstyle>.mclose+.mbin{margin-left:.22222em;}');
+            css.push('.katex .textstyle>.mclose+.mrel{margin-left:.27778em;}');
+            css.push('.katex .textstyle>.mclose+.minner,.katex .textstyle>.minner+.mop,.katex .textstyle>.minner+.mord,.katex .textstyle>.mpunct+.mclose,.katex .textstyle>.mpunct+.minner,.katex .textstyle>.mpunct+.mop,.katex .textstyle>.mpunct+.mopen,.katex .textstyle>.mpunct+.mord,.katex .textstyle>.mpunct+.mpunct,.katex .textstyle>.mpunct+.mrel{margin-left:.16667em;}');
+            css.push('.katex .textstyle>.minner+.mbin{margin-left:.22222em;}');
+            css.push('.katex .textstyle>.minner+.mrel{margin-left:.27778em;}');
+            css.push('.katex .mclose+.mop,.katex .minner+.mop,.katex .mop+.mop,.katex .mop+.mord,.katex .mord+.mop,.katex .textstyle>.minner+.minner,.katex .textstyle>.minner+.mopen,.katex .textstyle>.minner+.mpunct{margin-left:.16667em;}');
+            css.push('.katex .reset-textstyle.textstyle{font-size:1em;}');
+            css.push('.katex .reset-textstyle.scriptstyle{font-size:.7em;}');
+            css.push('.katex .reset-textstyle.scriptscriptstyle{font-size:.5em;}');
+            css.push('.katex .reset-scriptstyle.textstyle{font-size:1.42857em;}');
+            css.push('.katex .reset-scriptstyle.scriptstyle{font-size:1em;}');
+            css.push('.katex .reset-scriptstyle.scriptscriptstyle{font-size:.71429em;}');
+            css.push('.katex .reset-scriptscriptstyle.textstyle{font-size:2em;}');
+            css.push('.katex .reset-scriptscriptstyle.scriptstyle{font-size:1.4em;}');
+            css.push('.katex .reset-scriptscriptstyle.scriptscriptstyle{font-size:1em;}');
+            css.push('.katex .style-wrap{position:relative;}');
+            css.push('.katex .vlist{display:inline-block;}');
+            css.push('.katex .vlist>span{display:block;height:0;position:relative;}');
+            css.push('.katex .vlist>span>span{display:inline-block;}');
+            css.push('.katex .vlist .baseline-fix{display:inline-table;table-layout:fixed;}');
+            css.push('.katex .msupsub{text-align:left;}');
+            css.push('.katex .mfrac>span>span{text-align:center;}');
+            css.push('.katex .mfrac .frac-line{width:100%;}');
+            css.push('.katex .mfrac .frac-line:before{border-bottom-style:solid;border-bottom-width:1px;content:"";display:block;}');
+            css.push('.katex .mfrac .frac-line:after{border-bottom-style:solid;border-bottom-width:.04em;content:"";display:block;margin-top:-1px;}');
+            css.push('.katex .mspace{display:inline-block;}');
+            css.push('.katex .mspace.negativethinspace{margin-left:-.16667em;}');
+            css.push('.katex .mspace.thinspace{width:.16667em;}');
+            css.push('.katex .mspace.mediumspace{width:.22222em;}');
+            css.push('.katex .mspace.thickspace{width:.27778em;}');
+            css.push('.katex .mspace.enspace{width:.5em;}');
+            css.push('.katex .mspace.quad{width:1em;}');
+            css.push('.katex .mspace.qquad{width:2em;}');
+            css.push('.katex .llap,.katex .rlap{width:0;position:relative;}');
+            css.push('.katex .llap>.inner,.katex .rlap>.inner{position:absolute;}');
+            css.push('.katex .llap>.fix,.katex .rlap>.fix{display:inline-block;}');
+            css.push('.katex .llap>.inner{right:0;}');
+            css.push('.katex .rlap>.inner{left:0;}');
+            css.push('.katex .katex-logo .a{font-size:.75em;margin-left:-.32em;position:relative;top:-.2em;}');
+            css.push('.katex .katex-logo .t{margin-left:-.23em;}');
+            css.push('.katex .katex-logo .e{margin-left:-.1667em;position:relative;top:.2155em;}');
+            css.push('.katex .katex-logo .x{margin-left:-.125em;}');
+            css.push('.katex .rule{display:inline-block;border-style:solid;position:relative;}');
+            css.push('.katex .overline .overline-line{width:100%;}');
+            css.push('.katex .overline .overline-line:before{border-bottom-style:solid;border-bottom-width:1px;content:"";display:block;}');
+            css.push('.katex .overline .overline-line:after{border-bottom-style:solid;border-bottom-width:.04em;content:"";display:block;margin-top:-1px;}');
+            css.push('.katex .sqrt>.sqrt-sign{position:relative;}');
+            css.push('.katex .sqrt .sqrt-line{width:100%;}');
+            css.push('.katex .sqrt .sqrt-line:before{border-bottom-style:solid;border-bottom-width:1px;content:"";display:block;}');
+            css.push('.katex .sqrt .sqrt-line:after{border-bottom-style:solid;border-bottom-width:.04em;content:"";display:block;margin-top:-1px;}');
+            css.push('.katex .fontsize-ensurer,.katex .sizing{display:inline-block;}');
+            css.push('.katex .fontsize-ensurer.reset-size1.size1,.katex .sizing.reset-size1.size1{font-size:1em;}');
+            css.push('.katex .fontsize-ensurer.reset-size1.size2,.katex .sizing.reset-size1.size2{font-size:1.4em;}');
+            css.push('.katex .fontsize-ensurer.reset-size1.size3,.katex .sizing.reset-size1.size3{font-size:1.6em;}');
+            css.push('.katex .fontsize-ensurer.reset-size1.size4,.katex .sizing.reset-size1.size4{font-size:1.8em;}');
+            css.push('.katex .fontsize-ensurer.reset-size1.size5,.katex .sizing.reset-size1.size5{font-size:2em;}');
+            css.push('.katex .fontsize-ensurer.reset-size1.size6,.katex .sizing.reset-size1.size6{font-size:2.4em;}');
+            css.push('.katex .fontsize-ensurer.reset-size1.size7,.katex .sizing.reset-size1.size7{font-size:2.88em;}');
+            css.push('.katex .fontsize-ensurer.reset-size1.size8,.katex .sizing.reset-size1.size8{font-size:3.46em;}');
+            css.push('.katex .fontsize-ensurer.reset-size1.size9,.katex .sizing.reset-size1.size9{font-size:4.14em;}');
+            css.push('.katex .fontsize-ensurer.reset-size1.size10,.katex .sizing.reset-size1.size10{font-size:4.98em;}');
+            css.push('.katex .delimsizing.size1{font-family:KaTeX_Size1;}');
+            css.push('.katex .delimsizing.size2{font-family:KaTeX_Size2;}');
+            css.push('.katex .delimsizing.size3{font-family:KaTeX_Size3;}');
+            css.push('.katex .delimsizing.size4{font-family:KaTeX_Size4;}');
+            css.push('.katex .delimsizing.mult .delim-size1>span{font-family:KaTeX_Size1;}');
+            css.push('.katex .delimsizing.mult .delim-size4>span{font-family:KaTeX_Size4;}');
+            css.push('.katex .nulldelimiter{display:inline-block;width:.12em;}');
+            css.push('.katex .op-symbol{position:relative;}');
+            css.push('.katex .op-symbol.small-op{font-family:KaTeX_Size1;}');
+            css.push('.katex .op-symbol.large-op{font-family:KaTeX_Size2;}');
+            css.push('.katex .accent>.vlist>span,.katex .op-limits>.vlist>span{text-align:center;}');
+            css.push('.katex .accent .accent-body>span{width:0;}');
+            css.push('.katex .accent .accent-body.accent-vec>span{position:relative;left:.326em;}');
+            css.push('.editormd-html-preview .katex{font-size:1.4em;}');
+            css.push('.editormd-html-preview p.editormd-tex{text-align:center;}');
+            css.push('.editormd-html-preview span.editormd-tex{margin:0 5px;}');
+            
+            // Prettify / code highlighting CSS
+            css.push('.prettyprint .pln{color:#24292e;}');
+            css.push('.prettyprint .str,.prettyprint .atv{color:#032f62;}');
+            css.push('.prettyprint .kwd,.prettyprint .tag{color:#d73a49;}');
+            css.push('.prettyprint .com{color:#6a737d;font-style:italic;}');
+            css.push('.prettyprint .typ,.prettyprint .atn,.prettyprint .dec,.prettyprint .var{color:#005cc5;}');
+            css.push('.prettyprint .lit,.prettyprint .pun{color:#005cc5;}');
+            css.push('.prettyprint .opn,.prettyprint .clo{color:#d73a49;}');
+            css.push('.prettyprint .fun{color:#6f42c1;}');
+            css.push('pre.prettyprint{position:relative !important;padding:16px !important;overflow:visible !important;}');
+            css.push('pre.prettyprint .editormd-code-scroll-wrap{max-height:600px;overflow:auto;}');
+            css.push('ol.linenums{margin:0 !important;padding-left:3.5em !important;color:#999;}');
+            css.push('ol.linenums li{list-style-type:decimal !important;padding-left:5px;min-height:1.5em;}');
+            css.push('ol.linenums li.L0,ol.linenums li.L1,ol.linenums li.L2,ol.linenums li.L3,ol.linenums li.L4,ol.linenums li.L5,ol.linenums li.L6,ol.linenums li.L7,ol.linenums li.L8,ol.linenums li.L9{list-style-type:decimal !important;}');
+            css.push('ol.linenums li:nth-child(odd){background:#fafbfc;}');
+            
+            return css.join('\n');
+        },
+        
+        /**
+         * 获取独立页面所需的交互初始化脚本（用于 getHTML() 输出）
+         * @private
+         * @returns {String}
+         */
+        _getInitScripts : function() {
+            var scripts = [];
+            
+            // DOM 加载完毕后初始化交互组件
+            scripts.push('(function(){');
+            
+            // 自动检测 editormd.js 基路径，用于加载 KaTeX/ECharts 等资源
+            scripts.push('  function detectBasePath(){');
+            scripts.push('    var scripts=document.getElementsByTagName("script");');
+            scripts.push('    for(var i=scripts.length-1;i>=0;i--){');
+            scripts.push('      var s=scripts[i];');
+            scripts.push('      if(s.src&&s.src.indexOf("editormd")!==-1){');
+            scripts.push('        var m=s.src.match(/^(.*\\/)editormd/);');
+            scripts.push('        if(m) return m[1];');
+            scripts.push('      }');
+            scripts.push('    }');
+            // 回退：从当前页面 URL 推断
+            scripts.push('    var loc=window.location.href;');
+            scripts.push('    if(loc.indexOf("/examples/")!==-1) return loc.replace(/\\/examples\\/.*$/,"/lib/");');
+            scripts.push('    return "./lib/";');
+            scripts.push('  }');
+            
+            // 动态加载 CSS
+            scripts.push('  function loadCSS(url){');
+            scripts.push('    if(!document.querySelector(\'link[href="\'+url+\'"]\')){');
+            scripts.push('      var l=document.createElement("link");');
+            scripts.push('      l.rel="stylesheet";l.href=url;');
+            scripts.push('      document.head.appendChild(l);');
+            scripts.push('    }');
+            scripts.push('  }');
+            
+            // 动态加载 JS 脚本
+            scripts.push('  function loadScript(url,cb){');
+            scripts.push('    if(!document.querySelector(\'script[src="\'+url+\'"]\')){');
+            scripts.push('      var s=document.createElement("script");');
+            scripts.push('      s.src=url;s.onload=cb||function(){};s.onerror=cb||function(){};');
+            scripts.push('      document.head.appendChild(s);');
+            scripts.push('    }else if(cb){cb();}');
+            scripts.push('  }');
+            
+            // 加载 KaTeX CSS（用于独立 HTML 中的公式渲染）
+            scripts.push('  function loadKaTeXForStandalone(){');
+            scripts.push('    var bp=detectBasePath();');
+            // 已经在页面中通过 link 标签加载过吗？
+            scripts.push('    if(document.querySelector(\'link[href*="katex.min.css"]\')) return;');
+            // 尝试从 editormd.js 所在目录的 lib/katex/ 加载
+            scripts.push('    loadCSS(bp+"lib/katex/katex.min.css");');
+            scripts.push('  }');
+            
+            // ECharts 初始化
+            scripts.push('  function initECharts(container,callback){');
+            scripts.push('    if(!container||container.length===0){if(callback)callback();return;}');
+            scripts.push('    var $charts=container.find(".editormd-echarts");');
+            scripts.push('    if($charts.length===0){if(callback)callback();return;}');
+            // 重置 data-initialized 标记（HTML 来自编辑器已初始化过的预览）
+            scripts.push('    $charts.removeAttr("data-initialized");');
+            scripts.push('    function doInit(){');
+            scripts.push('      $charts.each(function(){');
+            scripts.push('        var $c=$(this);');
+            scripts.push('        if($c.attr("data-initialized")==="true") return;');
+            scripts.push('        if($c.is(":hidden")||$c.width()===0||$c.height()===0) return;');
+            scripts.push('        var config={};');
+            scripts.push('        try{config=JSON.parse($c.attr("data-config"));}catch(e){return;}');
+            scripts.push('        var ch=echarts.init(this);');
+            scripts.push('        var opt={title:config.title||{},tooltip:config.tooltip||{trigger:"axis"},legend:config.legend||{},radar:config.radar||{},series:config.series||[]};');
+            scripts.push('        var t=config.type||(config.series&&config.series[0]&&config.series[0].type)||"";');
+            scripts.push('        var noAxis=["pie","funnel","gauge","graph","treemap","sunburst"];');
+            scripts.push('        if(noAxis.indexOf(t)===-1){opt.xAxis=config.xAxis||{};opt.yAxis=config.yAxis||{};}');
+            scripts.push('        ch.setOption(opt);');
+            scripts.push('        $c.attr("data-initialized","true");');
+            scripts.push('        $(window).on("resize.echarts-standalone",function(){ch.resize();});');
+            scripts.push('      });');
+            scripts.push('    }');
+            scripts.push('    if(typeof echarts==="undefined"){');
+            scripts.push('      var bp=detectBasePath();');
+            scripts.push('      loadScript(bp+"lib/echarts.min.js",function(){setTimeout(doInit,100);if(callback)callback();});');
+            scripts.push('    }else{doInit();if(callback)callback();}');
+            scripts.push('  }');
+            
+            scripts.push('  function getViewport(){var d=document,e=d.documentElement;return{w:Math.max(e.clientWidth,window.innerWidth||0),h:Math.max(e.clientHeight,window.innerHeight||0),sl:window.pageXOffset||e.scrollLeft||0,st:window.pageYOffset||e.scrollTop||0};}');
+            scripts.push('  function initTooltips(container){');
+            scripts.push('    if(!container||container.length===0) return;');
+            // 重置 tooltip 初始化标记
+            scripts.push('    container.find(".editormd-tooltip-trigger").removeAttr("data-tooltip-init");');
+            scripts.push('    container.find(".editormd-tooltip-trigger").each(function(){');
+            scripts.push('      var $t=$(this);');
+            scripts.push('      if($t.attr("data-tooltip-init")==="1") return;');
+            scripts.push('      var c=$t.attr("data-tooltip");');
+            scripts.push('      var ty=$t.attr("data-tooltip-type")||"text";');
+            scripts.push('      if(!c) return;');
+            scripts.push('      var h="";');
+            scripts.push('      if(ty==="image") h=\'<div class="editormd-tooltip-loading"><span>加载中...</span></div><img src="\'+c+\'" alt="" onload="$(this).prev().hide();$(this).show();" onerror="$(this).prev().html(\\\'<span>图片加载失败</span>\\\');" style="display:none;">\';');
+            scripts.push('      else if(ty==="iframe") h=\'<div class="editormd-tooltip-loading"><span>加载中...</span></div><iframe src="\'+c+\'" frameborder="0" onload="$(this).prev().hide();$(this).show();" style="display:none;"></iframe>\';');
+            scripts.push('      else h=\'<div class="editormd-tooltip-text-content">\'+c+\'</div>\';');
+            scripts.push('      var arrow=\'<div class="editormd-tooltip-arrow"></div>\';');
+            scripts.push('      var $p=$(\'<div class="editormd-tooltip-popup editormd-tooltip-\'+ty+\'" role="tooltip" aria-hidden="true">\'+h+arrow+\'</div>\');');
+            scripts.push('      $("body").append($p);');
+            scripts.push('      var showTimer=null,hideTimer=null;');
+            scripts.push('      var show=function(){clearTimeout(hideTimer);clearTimeout(showTimer);');
+            scripts.push('        showTimer=setTimeout(function(){');
+            scripts.push('          $p.css({display:"block",visibility:"hidden"});');
+            scripts.push('          var o=$t.offset();var pw=$p.outerWidth();var ph=$p.outerHeight();');
+            scripts.push('          var tw=$t.outerWidth();var th=$t.outerHeight();');
+            scripts.push('          var vp=getViewport();');
+            scripts.push('          var l=o.left+(tw/2)-(pw/2);');
+            scripts.push('          var tp=o.top-ph-10;');
+            scripts.push('          var arrowPos="bottom";');
+            scripts.push('          if(tp<vp.st+10){tp=o.top+th+10;arrowPos="top";}');
+            scripts.push('          if(l<10) l=10;');
+            scripts.push('          if(l+pw>vp.w-10) l=vp.w-pw-10;');
+            scripts.push('          $p.removeClass("editormd-tooltip-arrow-top editormd-tooltip-arrow-bottom");');
+            scripts.push('          $p.addClass("editormd-tooltip-arrow-"+arrowPos);');
+            scripts.push('          $p.css({left:l + "px",top:tp + "px",display:"block",visibility:"visible"}).addClass("show").attr("aria-hidden","false");');
+            scripts.push('        },150);');
+            scripts.push('      };');
+            scripts.push('      var hide=function(){clearTimeout(showTimer);clearTimeout(hideTimer);');
+            scripts.push('        hideTimer=setTimeout(function(){');
+            scripts.push('          $p.removeClass("show").attr("aria-hidden","true");');
+            scripts.push('          setTimeout(function(){if(!$p.hasClass("show")) $p.css({display:"none"});},220);');
+            scripts.push('        },200);');
+            scripts.push('      };');
+            scripts.push('      $t.on("mouseenter",show).on("mouseleave",hide);');
+            scripts.push('      $t.on("focus",show).on("blur",hide);');
+            scripts.push('      $p.on("mouseenter",function(){if(ty==="image"||ty==="iframe"){clearTimeout(hideTimer);clearTimeout(showTimer);}}).on("mouseleave",function(){if(ty==="image"||ty==="iframe"){hide();}});');
+            scripts.push('      $t.on("click",function(e){if("ontouchstart" in window||navigator.maxTouchPoints){e.preventDefault();$p.hasClass("show")?hide():show();}});');
+            scripts.push('      $(document).on("click.tooltip",function(e){if(!$(e.target).closest(".editormd-tooltip-trigger, .editormd-tooltip-popup").length) hide();});');
+            scripts.push('      $(document).on("keydown.tooltip",function(e){if(e.key==="Escape"&&$p.hasClass("show")){e.preventDefault();hide();}});');
+            scripts.push('      $t.attr("data-tooltip-init","1");');
+            scripts.push('    });');
+            scripts.push('  }');
+            
+            // 修复：重置 data-initialized 标记后初始化 Tabs
+            scripts.push('  function initTabs(container){');
+            scripts.push('    container.find(".editormd-tabs").each(function(){');
+            scripts.push('      var $tb=$(this);');
+            // 重要：重置 data-initialized 标记（编辑器预览输出时已标记为 true）
+            scripts.push('      $tb.removeAttr("data-initialized");');
+            scripts.push('      if($tb.attr("data-initialized")==="true") return;');
+            scripts.push('      var $n=$tb.find(">.editormd-tab-nav");');
+            scripts.push('      var $b=$tb.find(">.editormd-tab-body");');
+            // 移除旧的点击事件（防止重复绑定）
+            scripts.push('      $n.off("click",">li");');
+            scripts.push('      $n.on("click",">li",function(e){e.preventDefault();e.stopPropagation();');
+            scripts.push('        var $li=$(this),idx=$li.attr("data-index");');
+            scripts.push('        $n.find(">li").removeClass("active");$li.addClass("active");');
+            scripts.push('        $b.find(">.editormd-tab-panel").removeClass("active");');
+            scripts.push('        $b.find(\'>.editormd-tab-panel[data-index="\'+idx+\'"]\').addClass("active");');
+            scripts.push('      });');
+            scripts.push('      $tb.attr("data-initialized","true");');
+            scripts.push('    });');
+            scripts.push('  }');
+            
+            scripts.push('  function initCodeCopy(container){');
+            scripts.push('    if(!container||container.length===0) return;');
+            scripts.push('    container.find("pre").each(function(){');
+            scripts.push('      var $pre=$(this);');
+            scripts.push('      if($pre.data("_copyBtnReady")) return;');
+            scripts.push('      $pre.data("_copyBtnReady",true);');
+            scripts.push('      if($pre.css("position")==="static") $pre.css("position","relative");');
+            scripts.push('      var $wrap=$pre.find(".editormd-code-scroll-wrap");');
+            scripts.push('      if($wrap.length===0){');
+            scripts.push('        $wrap=$("<div>").addClass("editormd-code-scroll-wrap");');
+            scripts.push('        $pre.children().wrapAll($wrap);');
+            scripts.push('      }');
+            scripts.push('      var $btn=$("<span>").addClass("editormd-code-copy-btn").text("复制").attr("title","复制");');
+            scripts.push('      $btn.on("click",function(e){');
+            scripts.push('        e.stopPropagation();e.preventDefault();');
+            scripts.push('        if($btn.hasClass("copied")||$btn.hasClass("failed")) return;');
+            scripts.push('        var code=$pre.find(".editormd-code-scroll-wrap code").length>0?$pre.find(".editormd-code-scroll-wrap code").text():$pre.find(".editormd-code-scroll-wrap").text();');
+            scripts.push('        var done=function(success){');
+            scripts.push('          $btn.removeClass("copied failed").addClass(success?"copied":"failed").text(success?"已复制":"复制失败");');
+            scripts.push('          clearTimeout($btn.data("_timer"));');
+            scripts.push('          $btn.data("_timer",setTimeout(function(){$btn.removeClass("copied failed").text("复制");},2500));');
+            scripts.push('        };');
+            scripts.push('        if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(code).then(function(){done(true);}).catch(function(){done(false);});}');
+            scripts.push('        else{var t=document.createElement("textarea");t.value=code;t.style.position="fixed";t.style.left="-9999px";document.body.appendChild(t);t.select();try{done(document.execCommand("copy"));}catch(e){done(false);}document.body.removeChild(t);}');
+            scripts.push('      });');
+            scripts.push('      $pre.append($btn);');
+            scripts.push('    });');
+            scripts.push('  }');
+            
+            // DOM Ready — 按顺序初始化所有交互组件
+            scripts.push('  $(function(){');
+            scripts.push('    var $c=$(".editormd-html-preview");');
+            scripts.push('    if($c.length){');
+            // 加载 KaTeX CSS（用于公式渲染）
+            scripts.push('      loadKaTeXForStandalone();');
+            // 初始化不需要外部库的组件
+            scripts.push('      initTooltips($c);');
+            scripts.push('      initTabs($c);');
+            scripts.push('      initCodeCopy($c);');
+            // ECharts 异步加载（需要外部 echarts.min.js）
+            scripts.push('      initECharts($c);');
+            scripts.push('    }');
+            scripts.push('  });');
+            scripts.push('})();');
+            
+            return scripts.join('\n');
+        },
+        
+        /**
+         * getHTML()的别名，向后兼容
          * 
-         * @returns {String}           Return html code 返回HTML源码
+         * @returns {String} 返回HTML源码
          */
         
         getTextareaSavedHTML : function() {
@@ -3633,21 +4214,55 @@
         },
         
         /**
-         * 获取预览窗口的HTML源码
-         * Get html from preview container
+         * 获取预览窗口的 HTML 源码
+         * 支持 options.wrap 参数决定是否包裹为完整 HTML 文档
+         * Get previewed HTML from preview container
          * 
-         * @returns {editormd}         返回editormd的实例对象
+         * @param   {Object}  [options={}]  配置选项
+         * @param   {Boolean} options.wrap           是否包裹为完整 HTML（默认 false）
+         * @param   {Boolean} options.includeStyles  是否内联样式（默认 true，仅 wrap=true 时生效）
+         * @param   {Boolean} options.includeScripts 是否内联脚本（默认 true，仅 wrap=true 时生效）
+         * @param   {String}  options.title          页面标题
+         * @param   {String}  options.lang           语言（默认 "zh"）
+         * @returns {String}                返回预览区 HTML 源码
          */
-        
-        getPreviewedHTML : function() {
-            if (!this.settings.watch)
+        getPreviewedHTML : function(options) {
+            if (!this.settings.watch && !this.previewContainer)
             {
-                alert("Error: settings.watch == false");
-
-                return false;
+                return "";
             }
             
-            return this.previewContainer.html();
+            var opts = $.extend({
+                includeStyles  : true,
+                includeScripts : true
+            }, options || {});
+            
+            var rawHTML = this.previewContainer ? this.previewContainer.html() : "";
+
+            // 输出内容片段（不包含 DOCTYPE、head、body 等标签）
+            // 支持 includeStyles/includeScripts 控制内联资源
+            var html = '';
+            var inlineStyles = "";
+            var inlineScripts = "";
+            
+            if (opts.includeStyles) {
+                inlineStyles = this._getCoreStyles();
+            }
+            if (opts.includeScripts) {
+                inlineScripts = this._getInitScripts();
+            }
+            
+            if (opts.includeStyles && inlineStyles) {
+                html += '<style>\n' + inlineStyles + '\n</style>\n';
+            }
+            html += '<div class="markdown-body editormd-html-preview">\n';
+            html += '  ' + rawHTML + '\n';
+            html += '</div>';
+            if (opts.includeScripts && inlineScripts) {
+                html += '\n<script>\n' + inlineScripts + '\n<\/script>';
+            }
+            
+            return html;
         },
         
         /**
@@ -3680,7 +4295,7 @@
             
             this.codeMirror.css("border-right", "1px solid #ddd").width(this.editor.width() / 2); 
             
-            timer = 0;
+            this.timer = 0;
             
             this.save().resize();
             
@@ -3802,7 +4417,7 @@
                 }
             };
 
-            if (codeMirror.css("display") === "none") // 为了兼容Zepto，而不使用codeMirror.is(":hidden")
+            if (codeMirror.css("display") === "none") // 使用 css("display") 替代 is(":hidden") 以兼容 Zepto
             {
                 this.state.preview = true;
 
@@ -4009,7 +4624,7 @@
             {            
                 if (typeof this[name] === "undefined")
                 {
-                    alert("Error: " + name + " plugin is not found, you are not load this plugin.");
+                    editormd.notify("插件未找到：" + name + "，请确认已加载此插件", "error");
                     
                     return this;
                 }
@@ -4047,7 +4662,7 @@
             
             if (!settings.searchReplace)
             {
-                alert("Error: settings.searchReplace == false");
+                editormd.notify("请启用搜索替换功能：settings.searchReplace = true", "warning");
                 return this;
             }
             
@@ -4078,11 +4693,11 @@
             var _this = this;
             var toolbar = this.toolbar;
             
-            // Remove any existing picker
+            // 移除已存在的颜色选择面板
             $(".editormd-color-picker-panel").remove();
             $(document).off("mousedown.editormd-colorpicker");
             
-            // Common document colors: 2 rows x 4 cols, first 7 are colors, 8th is custom picker
+            // 常用颜色：2行×4列，前7个为预设颜色，第8个为自定义选择器
             var commonColors = [
                 "#000000", "#E74C3C", "#E67E22", "#F1C40F",
                 "#2ECC71", "#3498DB", "#9B59B6"
@@ -4105,7 +4720,7 @@
                 );
             }
             
-            // 8th custom color square
+            // 第8个为自定义颜色方块
             panelHTML.push(
                 '<div class="editormd-color-picker-swatch editormd-color-picker-custom" title="自定义颜色">',
                 '<div class="editormd-color-picker-plus-bg"></div>',
@@ -4115,13 +4730,14 @@
             
             panelHTML.push('</div>');
             
-            // Hidden custom area
+            // 隐藏的自定义颜色区域
+            var lang = _this.settings.lang;
             panelHTML.push('<div class="editormd-color-picker-custom-area" style="display:none;">');
-            panelHTML.push('<button class="editormd-color-picker-back">&larr; 返回</button>');
+            panelHTML.push('<button class="editormd-color-picker-back">&larr; ' + (lang.buttons.close || "返回") + '</button>');
             panelHTML.push('<input type="color" class="editormd-color-picker-native" value="#ff0000" style="display:none;">');
             panelHTML.push('<div class="editormd-color-picker-hex-row">');
             panelHTML.push('<input type="text" class="editormd-color-picker-hex-input" maxlength="7" placeholder="#000000">');
-            panelHTML.push('<button class="editormd-color-picker-confirm">确认</button>');
+            panelHTML.push('<button class="editormd-color-picker-confirm">' + (lang.buttons.confirm || "确认") + '</button>');
             panelHTML.push('</div>');
             panelHTML.push('</div>');
             
@@ -4129,7 +4745,7 @@
             
             var $panel = $(panelHTML.join(""));
             
-            // Position relative to toolbar button
+            // 相对于工具栏按钮定位
             if (this.activeIcon && this.activeIcon.length) {
                 var iconOffset = this.activeIcon.offset();
                 var iconHeight = this.activeIcon.outerHeight();
@@ -4142,11 +4758,11 @@
             
             $("body").append($panel);
             
-            // Save context for apply
+            // 保存上下文信息用于应用颜色
             this._colorPickerSelection = this.cm.getSelection();
             this._colorPickerType = type;
             
-            // Swatch click
+            // 预设颜色块点击
             $panel.on("click", ".editormd-color-picker-swatch:not(.editormd-color-picker-custom)", function() {
                 var color = $(this).data("color");
                 _this.applyColor(color);
@@ -4154,7 +4770,7 @@
                 $(document).off("mousedown.editormd-colorpicker");
             });
             
-            // Custom picker click
+            // 自定义颜色选择器点击
             $panel.on("click", ".editormd-color-picker-custom", function() {
                 $panel.find(".editormd-color-picker-grid").hide();
                 $panel.find(".editormd-color-picker-title").hide();
@@ -4162,20 +4778,20 @@
                 $panel.find(".editormd-color-picker-native").trigger("click");
             });
             
-            // Back button
+            // 返回按钮
             $panel.on("click", ".editormd-color-picker-back", function() {
                 $panel.find(".editormd-color-picker-grid").show();
                 $panel.find(".editormd-color-picker-title").show();
                 $panel.find(".editormd-color-picker-custom-area").hide();
             });
             
-            // Native color input change
+            // 原生颜色选择器值变化
             $panel.on("input change", ".editormd-color-picker-native", function() {
                 var val = $(this).val();
                 $panel.find(".editormd-color-picker-hex-input").val(val);
             });
             
-            // Hex input validate
+            // 16进制颜色值输入校验
             $panel.on("input", ".editormd-color-picker-hex-input", function() {
                 var input = $(this);
                 var val = input.val();
@@ -4186,7 +4802,7 @@
                 input.val(val);
             });
             
-            // Confirm button
+            // 确认按钮
             $panel.on("click", ".editormd-color-picker-confirm", function() {
                 var hexVal = $panel.find(".editormd-color-picker-hex-input").val();
                 if (!hexVal) return;
@@ -4198,7 +4814,7 @@
                 }
             });
             
-            // Close when clicking outside
+            // 点击面板外部时关闭
             setTimeout(function() {
                 $(document).on("mousedown.editormd-colorpicker", function(e) {
                     if (!$(e.target).closest(".editormd-color-picker-panel").length &&
@@ -4220,9 +4836,138 @@
             cm.replaceSelection('<span style="' + styleAttr + ':' + colorVal + '">' + (selection || "文字") + '</span>');
             this._colorPickerSelection = null;
             cm.focus();
+        },
+
+        /**
+         * 销毁编辑器实例，清理所有资源
+         * Destroy editor instance and clean up all resources
+         * 
+         * @returns {editormd} 返回editormd实例对象
+         */
+        destroy : function() {
+            var editor    = this.editor;
+            var settings  = this.settings;
+            var classPrefix = this.classPrefix;
+
+            // 1. 清除所有定时器
+            if (this.timer) {
+                clearTimeout(this.timer);
+                this.timer = null;
+            }
+            if (this.flowchartTimer) {
+                clearTimeout(this.flowchartTimer);
+                this.flowchartTimer = null;
+            }
+            if (this.draftTimer) {
+                clearInterval(this.draftTimer);
+                this.draftTimer = null;
+            }
+
+            // 2. 解绑所有文档级事件（editormd 命名空间）
+            $(document).off("click.editormd-table");
+            $(document).off("mousemove.editormd-img mouseup.editormd-img");
+            $(document).off("keydown.editormdDraft");
+            $(document).off("mousedown.editormd-colorpicker");
+
+            // 3. 解绑所有窗口 resize 事件（命名空间）
+            $(window).off("resize.editormd-echarts");
+            $(window).off("resize.editormd-echarts-md");
+            // 解绑通用 resize（可能影响其他实例， 
+            // 但对于匿名处理器这是最优解）
+            $(window).off("resize");
+
+            // 4. 如果处于全屏状态则退出全屏
+            if (this.state.fullscreen) {
+                this.fullscreen();
+            }
+
+            // 5. 销毁 CodeMirror 并恢复原始 textarea
+            if (this.cm) {
+                var cmElement = $(this.cm.getWrapperElement());
+                this.cm.toTextArea();
+                cmElement.remove();
+                this.cm = null;
+                this.codeEditor = null;
+                this.codeMirrorElement = null;
+            }
+
+            // 6. 移除 editormd 相关的 DOM 元素
+            editor.find("." + classPrefix + "preview-close-btn").remove();
+            editor.find("." + classPrefix + "html-textarea").remove();
+            editor.find("." + classPrefix + "preview").remove();
+            editor.find("." + classPrefix + "container-mask").remove();
+            editor.find("." + classPrefix + "mask").remove();
+            editor.find("." + classPrefix + "toolbar").remove();
+
+            // 恢复原始 textarea 的可见性
+            this.markdownTextarea.show().removeAttr("style");
+
+            // 7. 移除 editormd 相关的 CSS 类名
+            editor.removeClass("editormd " + classPrefix + "vertical");
+            if (settings.theme) {
+                editor.removeClass(classPrefix + "theme-" + settings.theme);
+            }
+
+            // 8. 重置编辑器状态
+            this.state.watching    = false;
+            this.state.loaded      = false;
+            this.state.preview     = false;
+            this.state.fullscreen  = false;
+
+            // 9. 清除引用以辅助垃圾回收
+            this.toolbar         = null;
+            this.preview         = null;
+            this.previewContainer = null;
+            this.mask            = null;
+            this.containerMask   = null;
+            this.htmlTextarea    = null;
+
+            return this;
+        },
+
+        /**
+         * 动态切换编辑器语言（运行时）
+         * Dynamically switch editor language at runtime
+         * 
+         * @param   {Object|String} langObj  语言对象 或 语言名称 (如 "en", "zh-cn", "zh-tw")
+         * @param   {Boolean}       [recreateToolbar=true]  是否重建工具栏以刷新 tooltip
+         * @returns {editormd}                返回 editormd 实例对象
+         * 
+         * 使用示例：
+         *   editor.setLang("en");                    // 切换到内置英文
+         *   editor.setLang({name: "fr", toolbar: {...}, ...});  // 使用自定义语言包
+         */
+        setLang : function(langObj, recreateToolbar) {
+            var settings = this.settings;
+            
+            // 如果传入字符串（语言名称），则尝试从 editormd.langs 获取
+            if (typeof langObj === "string") {
+                var langName = langObj;
+                if (editormd.langs && editormd.langs[langName]) {
+                    langObj = editormd.langs[langName];
+                } else {
+                    // 仅切换内置语言名称，工具栏等文本不改变
+                    settings.lang.name = langName;
+                    return this;
+                }
+            }
+            
+            // 合并语言包到当前设置
+            if (langObj && typeof langObj === "object") {
+                $.extend(true, settings.lang, langObj);
+            }
+            
+            // 确保 this.lang 和 settings.lang 指向同一对象
+            this.lang = settings.lang;
+            
+            // 重新构建工具栏以刷新 tooltip 文本
+            if (recreateToolbar !== false && settings.toolbar && this.toolbar) {
+                this.setToolbar();
+            }
+            
+            return this;
         }
     };
-    
     editormd.fn.init.prototype = editormd.fn; 
    
     /**
@@ -4523,7 +5268,7 @@
         tex : function() {
             if (!this.settings.tex)
             {
-                alert("settings.tex === false");
+                editormd.notify("请启用 TeX 公式支持：settings.tex = true", "warning");
                 return this;
             }
             
@@ -4549,7 +5294,7 @@
         pagebreak : function() {
             if (!this.settings.pageBreak)
             {
-                alert("settings.pageBreak === false");
+                editormd.notify("请启用分页符功能：settings.pageBreak = true", "warning");
                 return this;
             }
             
@@ -4791,7 +5536,7 @@
         "Ctrl-4"       : "h4",
         "Ctrl-5"       : "h5",
         "Ctrl-6"       : "h6",
-        "Ctrl-B"       : "bold",  // if this is string ==  editormd.toolbarHandlers.xxxx
+        "Ctrl-B"       : "bold",  // 如果值为字符串，则对应 editormd.toolbarHandlers 中的方法
         "Ctrl-D"       : "datetime",
         "Ctrl-Alt-G"   : "goto-line",
         "Ctrl-H"       : "hr",
@@ -4820,7 +5565,7 @@
             
             if (!this.settings.atLink)
             {
-                alert("Error: settings.atLink == false");
+                editormd.notify("请启用 @链接功能：settings.atLink = true", "warning");
                 return ;
             }
 
@@ -4991,7 +5736,106 @@
             };
         }
 
-        // Convert new image/video size syntax to inline HTML for renderer compatibility
+        /**
+         * 保护代码区域：将围栏代码块和行内代码替换为占位符，
+         * 防止 [[columns]] / [[tabs]] / [[video]] / [[file]] 等语法
+         * 在代码块内被错误解析。
+         */
+        function protectCodeBlocks(text) {
+            var codePlaceholders = [];
+            var cid = 0;
+            // 1. 保护围栏代码块 ``` 或 ~~~
+            text = text.replace(/(```|~~~)(\w*)\n([\s\S]*?)\n?\1/g, function(match) {
+                var id = "editormd-cb-" + (++cid);
+                codePlaceholders.push({ id: id, html: match });
+                return "<!--" + id + "-->";
+            });
+            // 2. 保护行内代码 `code`（不跨行）
+            text = text.replace(/`([^`\n]+)`/g, function(match) {
+                var id = "editormd-cb-" + (++cid);
+                codePlaceholders.push({ id: id, html: match });
+                return "<!--" + id + "-->";
+            });
+            return { text: text, placeholders: codePlaceholders };
+        }
+
+        function restoreCodeBlocks(text, codePlaceholders) {
+            for (var i = 0; i < codePlaceholders.length; i++) {
+                var cp = codePlaceholders[i];
+                text = text.split("<!--" + cp.id + "-->").join(cp.html);
+            }
+            return text;
+        }
+
+        // 在处理块级语法之前先保护代码区域
+        var codeProtection = protectCodeBlocks(markdown);
+        markdown = codeProtection.text;
+
+        /**
+         * 在文本中查找所有平衡块（支持嵌套）
+         * 从指定位置开始查找开标签，然后计数嵌套深度来找到匹配的闭标签。
+         *
+         * @param {string} text       搜索文本
+         * @param {RegExp} openRegex  开标签正则（如 /\[\[tabs\]\]/g）
+         * @param {RegExp} closeRegex 闭标签正则（如 /\[\[\/tabs\]\]/g）
+         * @returns {Array<{start:number, end:number, content:string}>}
+         */
+        function findBalancedBlocks(text, openRegex, closeRegex) {
+            var blocks = [];
+            var i = 0;
+            var openMatch, closeMatch;
+
+            // 克隆正则以保证 lastIndex 独立
+            var openRe = new RegExp(openRegex.source, openRegex.flags.replace('g', '') + 'g');
+            var closeRe = new RegExp(closeRegex.source, closeRegex.flags.replace('g', '') + 'g');
+
+            while (i < text.length) {
+                openRe.lastIndex = i;
+                openMatch = openRe.exec(text);
+                if (!openMatch) break;
+
+                var openEnd = openRe.lastIndex;
+                var depth = 1;
+                var searchPos = openEnd;
+
+                // 查找匹配的闭标签
+                closeRe.lastIndex = searchPos;
+                while (depth > 0 && (closeMatch = closeRe.exec(text)) !== null) {
+                    // 检查在闭标签之前是否有嵌套的开标签
+                    openRe.lastIndex = searchPos;
+                    var nestedOpen;
+                    while ((nestedOpen = openRe.exec(text)) !== null && nestedOpen.index < closeMatch.index) {
+                        depth++;
+                        searchPos = openRe.lastIndex;
+                        openRe.lastIndex = searchPos;
+                    }
+                    depth--;
+                    if (depth > 0) {
+                        searchPos = closeRe.lastIndex;
+                        closeRe.lastIndex = searchPos;
+                    }
+                }
+
+                if (depth === 0) {
+                    // 找到匹配的闭标签
+                    var content = text.substring(openEnd, closeMatch.index);
+                    blocks.push({
+                        start: openMatch.index,
+                        end: closeRe.lastIndex,
+                        content: content,
+                        fullMatch: text.substring(openMatch.index, closeRe.lastIndex)
+                    });
+                    i = closeRe.lastIndex;
+                } else {
+                    // 未找到匹配的闭标签，跳过此开标签
+                    i = openEnd;
+                }
+            }
+
+            return blocks;
+        }
+
+        // 将新的图片/视频尺寸语法转换为内联 HTML 以兼容 marked 渲染器
         if (options.imageResize !== false) {
             var videoExts = /\.(mp4|webm|ogv|mov)(\?.*)?$/i;
             markdown = markdown.replace(editormd.regexs.imageSizeNew, function(match, alt, url, w, h) {
@@ -5006,9 +5850,24 @@
             });
         }
 
-        // Process tabs blocks: [[tabs]]...[[/tabs]]
+        // 处理转义语法：\[\[ 和 \]\] → 用占位符保护，防止被 tabs/columns 解析
+        // 例如 \[\[columns:3\]\] 将显示为普通文本 [[columns:3]]
+        var escapePlaceholders = [];
+        var escId = 0;
+        markdown = markdown.replace(/\\(\[\[|\]\])/g, function(match) {
+            var id = "editormd-esc-" + (++escId);
+            escapePlaceholders.push({ id: id, html: match.substring(1) }); // 去掉反斜杠
+            return "<!--" + id + "-->";
+        });
+
+        // 处理标签页语法：[[tabs]]...[[/tabs]]（支持嵌套）
         if (options.tabs !== false) {
-            markdown = markdown.replace(editormd.regexs.tabs, function(match, content) {
+            var tabBlocks = findBalancedBlocks(markdown, /\[\[tabs\]\]/g, /\[\[\/tabs\]\]/g);
+            var tabOffset = 0;
+            for (var bi = 0; bi < tabBlocks.length; bi++) {
+                var block = tabBlocks[bi];
+                var content = block.content;
+                var originalEnd = block.end + tabOffset;
                 var tabHtml = '<div class="editormd-tabs">';
                 var tabHeaders = '<ul class="editormd-tab-nav">';
                 var tabBodies = '<div class="editormd-tab-body">';
@@ -5018,6 +5877,8 @@
                 var hasTabs = false;
                 var tabMarkedOptions = createMarkedOptions(options, true);
 
+                // 重置 regex lastIndex
+                tabRegex.lastIndex = 0;
                 while ((tabMatch = tabRegex.exec(content)) !== null) {
                     hasTabs = true;
                     var tabTitle = tabMatch[1].trim();
@@ -5044,24 +5905,37 @@
                 tabHeaders += '</ul>';
                 tabBodies += '</div>';
                 tabHtml += tabHeaders + tabBodies + '</div>';
-                return addPlaceholder(tabHtml);
-            });
+
+                var placeholder = addPlaceholder(tabHtml);
+                var lengthDiff = placeholder.length - (originalEnd - block.start);
+                markdown = markdown.substring(0, block.start) + placeholder + markdown.substring(originalEnd);
+                tabOffset += lengthDiff;
+            }
         }
 
-        // Process columns blocks: [[columns:N]]...[[/columns]]
+        // 处理多栏布局语法：[[columns:N]]...[[/columns]]（支持嵌套）
         if (options.columns !== false) {
-            markdown = markdown.replace(editormd.regexs.columns, function(match, count, content) {
-                var colCount = parseInt(count, 10) || 3;
+            var colBlocks = findBalancedBlocks(markdown, /\[\[columns:(\d+)\]\]/g, /\[\[\/columns\]\]/g);
+            var colOffset = 0;
+            for (var ci = 0; ci < colBlocks.length; ci++) {
+                var colBlock = colBlocks[ci];
+                var colMatch = colBlock.fullMatch.match(/\[\[columns:(\d+)\]\]/);
+                var colCount = colMatch ? parseInt(colMatch[1], 10) || 3 : 3;
+                var colContent = colBlock.content;
+                var colOriginalEnd = colBlock.end + colOffset;
                 var colMarkedOptions = createMarkedOptions(options, true);
-                var preprocessed = editormd.preprocessMarkdownBlocks(content.trim(), options);
+                var preprocessed = editormd.preprocessMarkdownBlocks(colContent.trim(), options);
                 var colContentHtml = editormd.$marked(preprocessed.markdown, colMarkedOptions);
                 colContentHtml = editormd.restorePlaceholders(colContentHtml, preprocessed.placeholders);
                 var colHtml = '<div class="editormd-columns" data-count="' + colCount + '" style="-webkit-column-count:' + colCount + ';-moz-column-count:' + colCount + ';column-count:' + colCount + ';">' + colContentHtml + '</div>';
-                return addPlaceholder(colHtml);
-            });
+                var colPlaceholder = addPlaceholder(colHtml);
+                var colLengthDiff = colPlaceholder.length - (colOriginalEnd - colBlock.start);
+                markdown = markdown.substring(0, colBlock.start) + colPlaceholder + markdown.substring(colOriginalEnd);
+                colOffset += colLengthDiff;
+            }
         }
 
-        // Process video blocks: [[video]]...[[/video]]
+        // 处理视频列表语法：[[video]]...[[/video]]
         markdown = markdown.replace(editormd.regexs.videoBlock, function(match, content) {
             var lines = content.trim().split("\n");
             var resultHtml = "";
@@ -5076,7 +5950,7 @@
             return addPlaceholder(resultHtml);
         });
 
-        // Process file blocks: [[file]]...[[/file]]
+        // 处理文件列表语法：[[file]]...[[/file]]
         markdown = markdown.replace(editormd.regexs.fileBlock, function(match, content) {
             var lines = content.trim().split("\n");
             var resultHtml = '<div class="editormd-file-list">';
@@ -5092,6 +5966,15 @@
             resultHtml += '</div>';
             return addPlaceholder(resultHtml);
         });
+
+        // 恢复转义语法占位符（\[\[ → [[，\]\] → ]]）
+        for (var ei = 0; ei < escapePlaceholders.length; ei++) {
+            var ep = escapePlaceholders[ei];
+            markdown = markdown.split("<!--" + ep.id + "-->").join(ep.html);
+        }
+
+        // 恢复之前保护的代码块，让 marked 正常解析代码高亮
+        markdown = restoreCodeBlocks(markdown, codeProtection.placeholders);
 
         return { markdown: markdown, placeholders: placeholders };
     };
@@ -5117,24 +6000,24 @@
 
     editormd.markedRenderer = function(markdownToC, options) {
         var defaults = {
-            toc                  : true,           // Table of contents
+            toc                  : true,           // 生成目录（Table of Contents）
             tocm                 : false,
-            tocStartLevel        : 1,              // Said from H1 to create ToC  
+            tocStartLevel        : 1,              // 从第几级标题开始生成目录  
             pageBreak            : true,
-            atLink               : true,           // for @link
-            emailLink            : true,           // for mail address auto link
-            taskList             : false,          // Enable Github Flavored Markdown task lists
+            atLink               : true,           // 是否解析 @用户名 链接
+            emailLink            : true,           // 是否解析邮箱地址自动链接
+            taskList             : false,          // 启用 GitHub Flavored Markdown 任务列表
 
-            tex                  : false,          // TeX(LaTeX), based on KaTeX
-            flowChart            : false,          // flowChart.js only support IE9+
-            sequenceDiagram      : false,          // sequenceDiagram.js only support IE9+
-            pinyin               : false,          // Enable pinyin syntax {text | pinyin}
-            textAlign            : true,           // Enable text align syntax
-            imageResize          : true,           // Enable image width/height syntax
-            echarts              : false,          // Enable Apache ECharts
-            tabs                 : true,           // Enable tabs syntax
-            columns              : true,           // Enable multi-column layout
-            tooltip              : true            // Enable tooltip syntax
+            tex                  : false,          // 启用 TeX / LaTeX 数学公式（基于 KaTeX）
+            flowChart            : false,          // 启用流程图（flowChart.js 仅支持 IE9+）
+            sequenceDiagram      : false,          // 启用时序图（sequenceDiagram.js 仅支持 IE9+）
+            pinyin               : false,          // 启用拼音标注语法 {文本 | 拼音}
+            textAlign            : true,           // 启用文本对齐语法
+            imageResize          : true,           // 启用图片宽高编辑语法
+            echarts              : false,          // 启用 Apache ECharts 图表
+            tabs                 : true,           // 启用标签页 [[tabs]] 语法
+            columns              : true,           // 启用多栏布局 [[columns:N]] 语法
+            tooltip              : true            // 启用悬浮提示 [text](tooltip:content) 语法
         };
         
         var settings        = $.extend(defaults, options || {});    
@@ -5185,8 +6068,55 @@
             
             text = text.replace(pinyinReg, function($1, $2, $3) {
                 var baseText = $2.trim();
-                var pyText = $3.trim();
-                return '<ruby class="editormd-pinyin"><rb>' + baseText + '</rb><rt>' + pyText + '</rt></ruby>';
+                // 保留原始拼音中的空格，不执行 trim
+                // 仅对分组检测使用 trim 后的版本
+                var pyTextRaw = $3;
+                var pyTrimmed = pyTextRaw.trim();
+                // 保存原始拼音中的空格（用 &nbsp; 替代），防止 HTML 折叠空白
+                var pyText = pyTextRaw.replace(/ /g, '&nbsp;');
+                
+                // 检测拼音中是否包含空格（表示分组拼音如 "chuáng qián míng yuè guāng"）
+                var pyGroups = pyTrimmed.split(/\s+/).filter(function(g) { return g.length > 0; });
+                var textChars = [];
+                // 将文字拆分为可见字符数组
+                for (var i = 0; i < baseText.length; i++) {
+                    textChars.push(baseText.charAt(i));
+                }
+                
+                // 如果拼音分组数等于文字字符数，进行一一对应渲染
+                if (pyGroups.length > 1 && pyGroups.length === textChars.length) {
+                    var result = '';
+                    for (var j = 0; j < textChars.length; j++) {
+                        result += '<ruby class="editormd-pinyin editormd-pinyin-matched"><rb>' + textChars[j] + '</rb><rt>' + pyGroups[j] + '</rt></ruby>';
+                    }
+                    return result;
+                }
+                
+                // 分组数不匹配或没有空格分隔时，使用标准 ruby 渲染（拼音在上方，文字在下方）
+                // 注意：不使用 display:inline-block 覆盖 rb/rt 的 display:ruby-base/ruby-text，
+                // 否则会破坏 ruby 上下排列的布局（拼音和文字挤在同一行）
+                var rtStyleAttr = '';
+                var rbStyleAttr = '';
+                
+                // 当文字与拼音长度差异较大时，给较短的元素设置 text-align:justify 以视觉对齐
+                var textWidth = baseText.length;
+                var pyWidth   = pyTrimmed.replace(/\s/g, '').length * 0.65;
+                var maxWidth  = Math.max(textWidth, pyWidth) + 'em';
+                
+                if (pyGroups.length > 1 && pyGroups.length !== textChars.length) {
+                    // 拼音分组数与文字数不匹配：两端对齐显示
+                    rtStyleAttr = ' style="min-width:' + maxWidth + ';text-align:justify;text-align-last:justify;"';
+                } else if ((pyGroups.length === 1 || pyGroups.length !== textChars.length) && Math.abs(textWidth - pyWidth) > 1.5) {
+                    // 单组拼音与文字长度不匹配时，对较短的一方进行两端对齐
+                    if (textWidth > pyWidth) {
+                        rbStyleAttr = ' style="min-width:' + maxWidth + ';text-align:justify;text-align-last:justify;"';
+                    } else {
+                        rtStyleAttr = ' style="min-width:' + maxWidth + ';text-align:justify;text-align-last:justify;"';
+                    }
+                }
+                
+                // 使用 <rp> 括号为不支持 ruby 的浏览器提供降级方案
+                return '<ruby class="editormd-pinyin"><rb' + rbStyleAttr + '>' + baseText + '</rb><rp>(</rp><rt' + rtStyleAttr + '>' + pyText + '</rt><rp>)</rp></ruby>';
             });
             
             return text;
@@ -5231,7 +6161,7 @@
                 }
             }
 
-            // Tooltip link syntax: [text](tooltip:content) / [text](tooltip:image:url) / [text](tooltip:iframe:url)
+            // 悬浮提示链接语法：[文本](tooltip:内容) / [文本](tooltip:image:图片URL) / [文本](tooltip:iframe:页面URL)
             if (settings.tooltip && href.indexOf("tooltip:") === 0) {
                 var tooltipBody = href.substring(8);
                 var tooltipType = "text";
@@ -5294,7 +6224,7 @@
             var style = "";
             var tooltipAttr = "";
             
-            // Image tooltip syntax: ![alt](url){tooltip:content} / {tooltip:image:url} / {tooltip:iframe:url}
+            // 图片悬浮提示语法：![alt](url){tooltip:内容} / {tooltip:image:图片URL} / {tooltip:iframe:页面URL}
             if (settings.tooltip && title && title.indexOf("tooltip:") === 0) {
                 var imgTooltipBody = title.substring(8);
                 var imgTooltipType = "text";
@@ -5342,15 +6272,26 @@
             
             text = trim(text);
             
-            var escapedText    = text.toLowerCase().replace(/[^\w]+/g, "-");
+            // TOC 目录文本过滤：清除 Unicode 对齐标记、删除线标记和 HTML 标签
+            // 避免 TOC 中出现 ⁑⠕二级标题右对齐⠕⁑ 这样的原始语法标记
+            var tocText = text
+                .replace(/⁑(⁑|⁖|⠕|⁛)/g, "")   // 移除对齐开始标记（居中⁑⁑、左⁑⁖、右⁑⠕、两端⁑⁛）
+                .replace(/(⁖|⠕|⁛)⁑/g, "")     // 移除对齐结束标记（左⁖⁑、右⠕⁑、两端⁛⁑）
+                .replace(/~~/g, "")             // 移除删除线标记
+                .replace(/<\/?[^>]+>/g, "");    // 移除 HTML 标签（span, em, strong 等）
+            tocText = trim(tocText);
+            // 若过滤后为空，回退到原始文本
+            if (!tocText) tocText = text;
+            
+            var escapedText    = tocText.toLowerCase().replace(/[^\w]+/g, "-");
             var toc = {
-                text  : text,
+                text  : tocText,
                 level : level,
                 slug  : escapedText
             };
             
-            var isChinese = /^[\u4e00-\u9fa5]+$/.test(text);
-            var id        = (isChinese) ? escape(text).replace(/\%/g, "") : text.toLowerCase().replace(/[^\w]+/g, "-");
+            var isChinese = /^[\u4e00-\u9fa5]+$/.test(tocText);
+            var id        = (isChinese) ? escape(tocText).replace(/\%/g, "") : tocText.toLowerCase().replace(/[^\w]+/g, "-");
 
             markdownToC.push(toc);
             
@@ -5536,7 +6477,7 @@
     
     editormd.tocDropdownMenu = function(container, tocTitle) {
         
-        tocTitle      = tocTitle || "Table of Contents";
+        tocTitle      = tocTitle || "目录";
         
         var zindex    = 400;
         var tocMenus  = container.find("." + this.classPrefix + "toc-menu");
@@ -5620,7 +6561,7 @@
             html = html.replace(new RegExp("\<\s*" + tag + "\s*([^\>]*)\>([^\>]*)\<\s*\/" + tag + "\s*\>", "igm"), "");
         }
         
-        // Enhanced XSS protection with whitelist approach
+        // 增强的 XSS 防护（白名单方式）
         var xssWhitelist = {
             allowedTags: ['p', 'div', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'br', 'hr', 'img', 'a', 'b', 'i', 'strong', 'em', 'code', 'pre', 'blockquote', 'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'sup', 'sub', 'ruby', 'rb', 'rt', 'rp', 'input', 'del', 'ins', 'mark', 'small'],
             allowedAttributes: {
@@ -5639,17 +6580,17 @@
             dangerousTags: ['script', 'style', 'iframe', 'frame', 'frameset', 'object', 'embed', 'applet', 'base', 'basefont', 'link', 'meta', 'noscript', 'template', 'canvas', 'form', 'input', 'textarea', 'button', 'select', 'option', 'optgroup', 'datalist', 'fieldset', 'label', 'legend', 'meter', 'output', 'progress', 'audio', 'video', 'source', 'track']
         };
         
-        // Remove dangerous tags completely
+        // 彻底移除危险标签
         for (var dt = 0; dt < xssWhitelist.dangerousTags.length; dt++) {
             var dTag = xssWhitelist.dangerousTags[dt];
             var dTagReg = new RegExp("<\\s*" + dTag + "[^>]*>[\\s\\S]*?<\\s*\\/\\s*" + dTag + "\\s*>", "gi");
             html = html.replace(dTagReg, "");
-            // Also handle self-closing dangerous tags
+            // 同时处理自闭合的危险标签
             var dTagSelfReg = new RegExp("<\\s*" + dTag + "[^>]*\\/?\\s*>", "gi");
             html = html.replace(dTagSelfReg, "");
         }
         
-        // Sanitize href and src attributes to prevent javascript: protocol
+        // 清洗 href 和 src 属性，防止 javascript: 协议注入
         html = html.replace(/(href|src)\s*=\s*["']?([^"'>\s]*)["']?/gi, function(match, attr, url) {
             var sanitizedUrl = url.replace(/[\x00-\x20\x7f]+/g, "").toLowerCase();
             if (sanitizedUrl.indexOf("javascript:") === 0 || 
@@ -5664,17 +6605,17 @@
             return attr + '="' + url + '"';
         });
         
-        // Remove dangerous event attributes
+        // 移除危险的事件属性
         for (var da = 0; da < xssWhitelist.dangerousAttributes.length; da++) {
             var dAttr = xssWhitelist.dangerousAttributes[da];
             var dAttrReg = new RegExp("\\s+" + dAttr + "\\s*=\\s*['\"][^'\"]*['\"]", "gi");
             html = html.replace(dAttrReg, "");
-            // Handle without quotes
+            // 处理不带引号的属性值
             var dAttrReg2 = new RegExp("\\s+" + dAttr + "\\s*=\\s*[^\\s>]*", "gi");
             html = html.replace(dAttrReg2, "");
         }
         
-        // Remove expression and behavior in style attributes (IE-specific XSS vectors)
+        // 移除 style 属性中的 expression 和 behavior（IE 特有的 XSS 向量）
         html = html.replace(/style\s*=\s*["'][^"']*["']/gi, function(match) {
             var sanitized = match.replace(/expression\s*\(/gi, "expr-invalid(");
             sanitized = sanitized.replace(/behavior\s*:/gi, "behavior-invalid:");
@@ -5735,7 +6676,194 @@
         
         return html;
     };
-    
+
+    /**
+     * Static helper: Inject "Copy" buttons into every <pre> block inside a container.
+     * Used by both the editor preview and the standalone markdownToHTML renderer.
+     *
+     * @param {jQuery} $container  The container element (jQuery object)
+     */
+    editormd.initCodeCopy = function($container) {
+        var classPrefix = editormd.defaults ? editormd.defaults.classPrefix || "editormd-" : "editormd-";
+        var copyText    = "复制";
+        var copiedText  = "已复制";
+        var failedText  = "复制失败";
+
+        $container.find("pre").each(function() {
+            var $pre = $(this);
+
+            // Avoid duplicate buttons
+            if ($pre.data("_copyBtnReady")) return;
+            $pre.data("_copyBtnReady", true);
+
+            // Ensure pre is positioned for the absolute button
+            if ($pre.css("position") === "static") {
+                $pre.css("position", "relative");
+            }
+
+            // Wrap existing content in scrollable container so the
+            // copy button stays fixed at the top-right regardless of scroll
+            var $scrollWrap = $pre.find("." + classPrefix + "code-scroll-wrap");
+            if ($scrollWrap.length === 0) {
+                $scrollWrap = $("<div>")
+                    .addClass(classPrefix + "code-scroll-wrap");
+                // Move all existing children into the scroll wrapper
+                $pre.children().wrapAll($scrollWrap);
+            }
+
+            var $btn = $("<span>")
+                .addClass(classPrefix + "code-copy-btn")
+                .text(copyText)
+                .attr("title", copyText);
+
+            $btn.on("click", function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+
+                if ($btn.hasClass("copied") || $btn.hasClass("failed")) {
+                    return;
+                }
+
+                // Get code text from the scroll wrapper's code element
+                var $scrollWrap = $pre.find("." + classPrefix + "code-scroll-wrap");
+                var code = $scrollWrap.find("code").length > 0
+                    ? $scrollWrap.find("code").text()
+                    : $scrollWrap.text();
+
+                var done = function(success) {
+                    $btn.removeClass("copied failed")
+                        .addClass(success ? "copied" : "failed")
+                        .text(success ? copiedText : failedText);
+                    clearTimeout($btn.data("_timer"));
+                    $btn.data("_timer", setTimeout(function() {
+                        $btn.removeClass("copied failed").text(copyText);
+                    }, 2500));
+                };
+
+                // Use Clipboard API if available
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(code).then(function() {
+                        done(true);
+                    }).catch(function() {
+                        done(false);
+                    });
+                } else {
+                    // 降级方案：使用 textarea + execCommand
+                    var textarea = document.createElement("textarea");
+                    textarea.value = code;
+                    textarea.style.position = "fixed";
+                    textarea.style.left = "-9999px";
+                    textarea.style.top = "-9999px";
+                    document.body.appendChild(textarea);
+                    textarea.focus();
+                    textarea.select();
+                    try {
+                        var ok = document.execCommand("copy");
+                        done(ok);
+                    } catch (ex) {
+                        done(false);
+                    }
+                    document.body.removeChild(textarea);
+                }
+            });
+
+            // 将复制按钮追加到 pre 元素（位于滚动包装容器外部）
+            $pre.append($btn);
+        });
+    };
+
+    /**
+     * 初始化指定容器内的所有悬浮提示（Tooltip）
+     * Initialize all tooltips within a given container (static method)
+     * 
+     * @param {jQuery} $container  容器元素（jQuery 对象）
+     * @returns {void}
+     */
+    editormd.initTooltips = function($container) {
+        if (!$container || $container.length === 0) return;
+        
+        $container.find(".editormd-tooltip-trigger").each(function() {
+            var $trigger = $(this);
+            if ($trigger.attr("data-tooltip-initialized") === "true") {
+                return;
+            }
+            
+            var tooltipContent = $trigger.attr("data-tooltip");
+            var tooltipType    = $trigger.attr("data-tooltip-type") || "text";
+            if (!tooltipContent) return;
+            
+            // 构造 tooltip 内容 HTML
+            var tooltipHtml = '';
+            if (tooltipType === "image") {
+                tooltipHtml = '<img src="' + tooltipContent + '" alt="" />';
+            } else if (tooltipType === "iframe") {
+                tooltipHtml = '<iframe src="' + tooltipContent + '" frameborder="0"></iframe>';
+            } else {
+                tooltipHtml = tooltipContent;
+            }
+            
+            var $tooltip = $('<div class="editormd-tooltip-popup editormd-tooltip-' + tooltipType + '">' + tooltipHtml + '</div>');
+            $("body").append($tooltip);
+            
+            /**
+             * 显示 tooltip —— 计算并设置定位，使其居中显示在触发元素上方
+             */
+            var showTooltip = function(e) {
+                clearTimeout($trigger.data("tooltip-timer"));
+                // 先临时显示以获取真实尺寸
+                $tooltip.css({ display: "block", visibility: "hidden" });
+                var offset = $trigger.offset();
+                var left = offset.left + ($trigger.outerWidth() / 2) - ($tooltip.outerWidth() / 2);
+                var top  = offset.top - $tooltip.outerHeight() - 8;
+                
+                // 边界处理：防止 tooltip 超出视口
+                var winW = $(window).width();
+                var winH = $(window).height();
+                var scrollTop = $(window).scrollTop();
+                if (left < 10) left = 10;
+                if (left + $tooltip.outerWidth() > winW - 10) left = winW - $tooltip.outerWidth() - 10;
+                if (top < scrollTop + 10) {
+                    // 上方空间不足，显示在下方
+                    top = offset.top + $trigger.outerHeight() + 8;
+                }
+                
+                $tooltip.css({
+                    left: left,
+                    top: top,
+                    display: "block",
+                    visibility: "visible"
+                }).addClass("show");
+            };
+
+            /**
+             * 隐藏 tooltip —— 延迟后重置 opacity，然后隐藏元素
+             */
+            var hideTooltip = function() {
+                $trigger.data("tooltip-timer", setTimeout(function() {
+                    $tooltip.removeClass("show");
+                    // 等待 CSS transition 完成后彻底隐藏
+                    setTimeout(function() {
+                        if (!$tooltip.hasClass("show")) {
+                            $tooltip.css({ display: "none" });
+                        }
+                    }, 220);
+                }, 200));
+            };
+
+            // 绑定事件
+            $trigger.on("mouseenter", showTooltip).on("mouseleave", hideTooltip);
+            $tooltip.on("mouseenter", function() {
+                clearTimeout($trigger.data("tooltip-timer"));
+            }).on("mouseleave", function() {
+                $tooltip.removeClass("show");
+                $tooltip.css({ display: "none" });
+            });
+            $trigger.on("focus", showTooltip).on("blur", hideTooltip);
+
+            $trigger.attr("data-tooltip-initialized", "true");
+        });
+    };
+
     /**
      * 将Markdown文档解析为HTML用于前台显示
      * Parse Markdown to HTML for Font-end preview.
@@ -5759,10 +6887,13 @@
             htmlDecode           : false,
             autoLoadKaTeX        : true,
             pageBreak            : true,
-            atLink               : true,    // for @link
-            emailLink            : true,    // for mail address auto link
+            atLink               : true,    // 是否解析 @用户名 链接
+            emailLink            : true,    // 是否解析邮箱地址自动链接
             tex                  : false,
-            taskList             : false,   // Github Flavored Markdown task lists
+            taskList             : false,   // GitHub Flavored Markdown 任务列表
+            pinyin               : false,   // 拼音标注 {文本|拼音}
+            textAlign            : true,    // 文本对齐
+            imageResize          : true,    // 图片尺寸
             flowChart            : false,
             sequenceDiagram      : false,
             previewCodeHighlight : true,
@@ -5800,6 +6931,7 @@
             sequenceDiagram      : settings.sequenceDiagram,
             previewCodeHighlight : settings.previewCodeHighlight,
             pinyin               : settings.pinyin,
+            textAlign            : settings.textAlign,
             imageResize          : settings.imageResize,
             echarts              : settings.echarts,
             tabs                 : settings.tabs,
@@ -5813,14 +6945,14 @@
             tables      : true,
             breaks      : true,
             pedantic    : false,
-            sanitize    : (settings.htmlDecode) ? false : true, // 是否忽略HTML标签，即是否开启HTML标签解析，为了安全性，默认不开启
+            sanitize    : (settings.htmlDecode) ? false : true, // 是否过滤 HTML 标签，即是否开启 HTML 标签解析（默认关闭以保证安全性）
             smartLists  : true,
             smartypants : true
         };
         
 		markdownDoc = new String(markdownDoc);
 
-        // Preprocess custom block syntax before marked parsing
+        // 在 marked 解析之前预处理自定义块级语法
         var mdPreprocess = editormd.preprocessMarkdownBlocks(markdownDoc, rendererOptions);
         var markdownParsed = marked(mdPreprocess.markdown, markedOptions);
         markdownParsed = editormd.restorePlaceholders(markdownParsed, mdPreprocess.placeholders);
@@ -5862,6 +6994,9 @@
             div.find("pre").addClass("prettyprint linenums");
             prettyPrint();
         }
+
+        // 向所有 pre 代码块注入复制按钮
+        editormd.initCodeCopy(div);
         
         if (!editormd.isIE8) 
         {
@@ -5917,7 +7052,10 @@
             
             if (settings.autoLoadKaTeX && !editormd.$katex && !editormd.kaTeXLoaded)
             {
-                this.loadKaTeX(function() {
+                // 使用 editormd.defaults.path 作为 KaTeX 资源加载的基础路径
+                // 修复在 examples/ 等子目录下 KaTeX 路径 404 的问题
+                var katexBasePath = settings.path || editormd.defaults.path || "";
+                this.loadKaTeX(katexBasePath, function() {
                     editormd.$katex      = katex;
                     editormd.kaTeXLoaded = true;
                     katexHandle();
@@ -6030,43 +7168,7 @@
         
         if (settings.tooltip)
         {
-            div.find(".editormd-tooltip-trigger").each(function() {
-                var $trigger = $(this);
-                var tooltipContent = $trigger.attr("data-tooltip");
-                var tooltipType = $trigger.attr("data-tooltip-type") || "text";
-                if (!tooltipContent) return;
-                var tooltipHtml = '';
-                if (tooltipType === "image") {
-                    tooltipHtml = '<img src="' + tooltipContent + '" alt="" />';
-                } else if (tooltipType === "iframe") {
-                    tooltipHtml = '<iframe src="' + tooltipContent + '" frameborder="0"></iframe>';
-                } else {
-                    tooltipHtml = tooltipContent;
-                }
-                var $tooltip = $('<div class="editormd-tooltip-popup editormd-tooltip-' + tooltipType + '">' + tooltipHtml + '</div>');
-                $("body").append($tooltip);
-                var showTooltip = function(e) {
-                    clearTimeout($trigger.data("tooltip-timer"));
-                    var offset = $trigger.offset();
-                    $tooltip.css({
-                        left: offset.left + ($trigger.outerWidth() / 2) - ($tooltip.outerWidth() / 2),
-                        top: offset.top - $tooltip.outerHeight() - 8,
-                        display: "block"
-                    }).addClass("show");
-                };
-                var hideTooltip = function() {
-                    $trigger.data("tooltip-timer", setTimeout(function() {
-                        $tooltip.removeClass("show");
-                    }, 200));
-                };
-                $trigger.on("mouseenter", showTooltip).on("mouseleave", hideTooltip);
-                $tooltip.on("mouseenter", function() {
-                    clearTimeout($trigger.data("tooltip-timer"));
-                }).on("mouseleave", function() {
-                    $tooltip.removeClass("show");
-                });
-                $trigger.on("focus", showTooltip).on("blur", hideTooltip);
-            });
+            editormd.initTooltips(div);
         }
         
         div.getMarkdown = function() {            
@@ -6076,16 +7178,16 @@
         return div;
     };
     
-    // Editor.md themes, change toolbar themes etc.
-    // added @1.5.0
+    // Editor.md 编辑器主题列表（用于切换工具栏等主题）
+    // 自 v1.5.0 起添加
     editormd.themes        = ["default", "dark"];
     
-    // Preview area themes
+    // 预览区主题列表
     // added @1.5.0
     editormd.previewThemes = ["default", "dark"];
     
-    // CodeMirror / editor area themes
-    // @1.5.0 rename -> editorThemes, old version -> themes
+    // CodeMirror / 编辑区主题列表
+    // 自 v1.5.0 起重命名为 editorThemes，旧版本为 themes
     editormd.editorThemes = [
         "default", "3024-day", "3024-night",
         "ambiance", "ambiance-mobile",
@@ -6150,12 +7252,30 @@
         var css    = document.createElement("link");
         css.type   = "text/css";
         css.rel    = "stylesheet";
-        css.onload = css.onreadystatechange = function() {
-            editormd.loadFiles.css.push(fileName);
-            callback();
-        };
+        
+        if (editormd.isIE8) 
+        {            
+            css.onreadystatechange = function() {
+                if (css.readyState) 
+                {
+                    if (css.readyState === "loaded" || css.readyState === "complete") 
+                    {
+                        css.onreadystatechange = null; 
+                        editormd.loadFiles.css.push(fileName);
+                        callback();
+                    }
+                } 
+            };
+        }
+        else
+        {
+            css.onload = function() {
+                editormd.loadFiles.css.push(fileName);
+                callback();
+            };
+        }
 
-        css.href   = fileName + ".css";
+        css.href   = (/\.css$/i.test(fileName)) ? fileName : (fileName + ".css");
 
         if(into === "head") {
             document.getElementsByTagName("head")[0].appendChild(css);
@@ -6190,7 +7310,7 @@
         script        = document.createElement("script");
         script.id     = fileName.replace(/[\./]+/g, "-");
         script.type   = "text/javascript";        
-        script.src    = fileName + ".js";
+        script.src    = (/\.js$/i.test(fileName)) ? fileName : (fileName + ".js");
         
         if (editormd.isIE8) 
         {            
@@ -6213,6 +7333,12 @@
                 callback();
             };
         }
+        
+        // 优雅处理脚本加载失败
+        script.onerror = function() {
+            // 即使脚本加载失败，也继续执行加载链
+            callback();
+        };
 
         if (into === "head") {
             document.getElementsByTagName("head")[0].appendChild(script);
@@ -6221,28 +7347,147 @@
         }
     };
     
-    // 使用国外的CDN，加载速度有时会很慢，或者自定义URL
-    // You can custom KaTeX load url.
+    // KaTeX 资源加载配置
+    // 默认路径为项目根目录下的 lib/katex/，会自动拼接 settings.path 前缀
+    // 用户可以通过 editormd.katexURL 覆盖为完整 URL（如 CDN 地址）
     editormd.katexURL  = {
-        css : "lib/katex/katex.min",
-        js  : "lib/katex/katex.min"
+        css : "katex/katex.min.css",
+        js  : "katex/katex.min.js"
     };
     
     editormd.kaTeXLoaded = false;
     
     /**
+     * 自动检测 editormd.js 所在的基路径，用于解决子目录下部署时资源 404 的问题
+     * @private
+     * @returns {String} 返回基路径（末尾带 /），如 "../" 或 "./lib/"
+     */
+    editormd._resolveBasePath = function() {
+        // 尝试从加载 editormd.js 的 script 标签推断基路径
+        if (document.currentScript && document.currentScript.src) {
+            var src = document.currentScript.src;
+            var match = src.match(/^(.*\/)editormd/);
+            if (match) {
+                return match[1];
+            }
+        }
+        // 回退：遍历所有 script 标签查找 editormd
+        var scripts = document.getElementsByTagName("script");
+        for (var i = scripts.length - 1; i >= 0; i--) {
+            var s = scripts[i];
+            if (s.src && (s.src.indexOf("editormd") !== -1)) {
+                var m = s.src.match(/^(.*\/)editormd/);
+                if (m) return m[1];
+            }
+        }
+        return "";
+    };
+    
+    /**
      * 加载KaTeX文件
-     * load KaTeX files
+     * load KaTeX files — 自动解析基路径解决相对路径 404 问题
      * 
-     * @param {Function} [callback=function()]  加载成功后执行的回调函数
+     * @param {String}   [basePath=""]           资源路径前缀（如 settings.path）
+     * @param {Function} [callback=function()]   加载成功后执行的回调函数
      */
     
-    editormd.loadKaTeX = function (callback) {
-        editormd.loadCSS(editormd.katexURL.css, function(){
-            editormd.loadScript(editormd.katexURL.js, callback || function(){});
+    editormd.loadKaTeX = function (basePath, callback) {
+        // 兼容旧的 loadKaTeX(callback) 调用方式
+        if (typeof basePath === "function") {
+            callback = basePath;
+            basePath = "";
+        }
+        basePath = basePath || "";
+        
+        // 如果 basePath 为空或是默认的 "./lib/"，尝试自动推断基路径
+        // 解决在子目录（如 examples/）下部署时相对路径 404 的问题
+        if (!basePath || basePath === "./lib/") {
+            var autoPath = editormd._resolveBasePath();
+            if (autoPath) {
+                // 从 autoPath 推导 lib 目录：editormd.js 在项目根目录
+                // 例如 autoPath = "https://example.com/editor.md/"
+                // 则 KaTeX 应在 "https://example.com/editor.md/lib/katex/"
+                basePath = autoPath + "lib/";
+            }
+        }
+        
+        var cssUrl = (basePath ? basePath : "") + editormd.katexURL.css;
+        var jsUrl  = (basePath ? basePath : "") + editormd.katexURL.js;
+        editormd.loadCSS(cssUrl, function(){
+            editormd.loadScript(jsUrl, callback || function(){});
         });
     };
         
+    /**
+     * 漂亮的 Toast 通知系统（替代原生 alert）
+     * 支持 info / success / warning / error 四种类型
+     *
+     * @param {String} message 提示信息
+     * @param {String} [type="info"] 类型: "info" | "success" | "warning" | "error"
+     * @param {Number} [duration=3000] 显示时长（毫秒），0 表示不自动关闭
+     */
+    editormd.notify = function(message, type, duration) {
+        type = type || "info";
+        duration = (typeof duration === "undefined") ? 3000 : duration;
+
+        // 初始化通知容器
+        var $container = $("#editormd-notify-container");
+        if ($container.length === 0) {
+            $container = $('<div id="editormd-notify-container" style="position:fixed;top:16px;right:16px;z-index:100000;display:flex;flex-direction:column;gap:8px;pointer-events:none;"></div>');
+            $("body").append($container);
+        }
+
+        var icons = { info: "ℹ", success: "✓", warning: "⚠", error: "✕" };
+        var colors = { info: "#2196F3", success: "#4CAF50", warning: "#FF9800", error: "#F44336" };
+        var bgColors = { info: "#E3F2FD", success: "#E8F5E9", warning: "#FFF3E0", error: "#FFEBEE" };
+        var textColors = { info: "#1565C0", success: "#2E7D32", warning: "#E65100", error: "#C62828" };
+
+        var $toast = $(
+            '<div class="editormd-notify-toast" style="' +
+            'display:flex;align-items:flex-start;gap:10px;' +
+            'background:' + bgColors[type] + ';color:' + textColors[type] + ';' +
+            'padding:12px 16px;border-radius:8px;min-width:260px;max-width:420px;' +
+            'box-shadow:0 4px 16px rgba(0,0,0,0.12);' +
+            'border-left:4px solid ' + colors[type] + ';' +
+            'font-size:14px;line-height:1.5;' +
+            'pointer-events:auto;' +
+            'transform:translateX(120%);opacity:0;transition:all 0.35s cubic-bezier(0.4,0,0.2,1);' +
+            'word-break:break-word;' +
+            '">' +
+            '<span style="flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;' +
+            'width:22px;height:22px;border-radius:50%;background:' + colors[type] + ';color:#fff;' +
+            'font-size:12px;font-weight:bold;line-height:1;">' + icons[type] + '</span>' +
+            '<span style="flex:1;">' + message + '</span>' +
+            '<span class="editormd-notify-close" style="flex-shrink:0;cursor:pointer;font-size:16px;' +
+            'opacity:0.5;line-height:1;padding:0 2px;" onclick="$(this).closest(\'.editormd-notify-toast\').remove()">×</span>' +
+            '</div>'
+        );
+
+        $container.append($toast);
+
+        // 入场动画
+        setTimeout(function() {
+            $toast.css({ transform: "translateX(0)", opacity: "1" });
+        }, 10);
+
+        // 自动关闭
+        if (duration > 0) {
+            var timer = setTimeout(function() {
+                $toast.css({ transform: "translateX(120%)", opacity: "0" });
+                setTimeout(function() { $toast.remove(); }, 350);
+            }, duration);
+
+            // 鼠标悬停暂停计时
+            $toast.on("mouseenter", function() { clearTimeout(timer); });
+            $toast.on("mouseleave", function() {
+                timer = setTimeout(function() {
+                    $toast.css({ transform: "translateX(120%)", opacity: "0" });
+                    setTimeout(function() { $toast.remove(); }, 350);
+                }, 1200);
+            });
+        }
+    };
+
     /**
      * 锁屏
      * lock screen
@@ -6408,7 +7653,7 @@
             }
 
             dialogHeader.mousedown(function(e) {
-                e = e || window.event;  //IE
+                e = e || window.event;  // IE 兼容
                 posX = e.clientX - parseInt(dialog[0].style.left);
                 posY = e.clientY - parseInt(dialog[0].style.top);
 

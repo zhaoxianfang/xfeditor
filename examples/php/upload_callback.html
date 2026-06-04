@@ -1,35 +1,86 @@
 <!DOCTYPE html>
-<html lang="zh">
-    <head>
-        <meta charset="utf-8" />
-    </head>
-    <body>
-        <!--
-         这是同域下的callback页面，本页面在iframe内，所以只要通过window.parent就能操作父窗口的元素 
-        -->
-        <script type="text/javascript"> 
-            var query = {};
-            var urlParams = window.location.search.split('?')[1];
-            urlParams = urlParams.split("&");
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>上传回调 - Editor.md</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background: #f8f9fa;
+        }
+        .status {
+            text-align: center;
+            padding: 30px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        .success { color: #16a34a; }
+        .error   { color: #dc2626; }
+    </style>
+</head>
+<body>
+    <!--
+        跨域上传回调页面
+        本页面在 iframe 内加载，通过 window.parent 操作父窗口的元素。
+        上传成功后，将返回的文件 URL 填入父窗口的图片对话框中。
+    -->
+    <div class="status" id="status">
+        <p id="status-text">处理中…</p>
+    </div>
 
-            for (var i = 0; i< urlParams.length; i++) 
-            {
-                var param       = urlParams[i].split("="); 
-                query[param[0]] = param[1]; 
+    <script>
+        (function () {
+            // 解析 URL 查询参数
+            var params = {};
+            var search = window.location.search.substring(1);
+            if (search) {
+                var pairs = search.split('&');
+                for (var i = 0; i < pairs.length; i++) {
+                    var eq = pairs[i].indexOf('=');
+                    if (eq > 0) {
+                        params[pairs[i].substring(0, eq)] = decodeURIComponent(pairs[i].substring(eq + 1));
+                    }
+                }
             }
 
-            var imageDialog = window.parent.document.getElementById(query['dialog_id']);
+            var dialogId = params['dialog_id'];
+            var success  = parseInt(params['success'], 10);
+            var message  = params['message'] || '';
+            var url      = params['url'] || '';
 
-            if (parseInt(query['success']) === 1)
-            {
-                imageDialog.querySelector("[data-url]").value = query['url'];
-            }
-            else
-            {
-                alert(query['message']);
+            try {
+                if (success === 1) {
+                    // 上传成功：回填 URL 到父窗口的图片对话框
+                    if (dialogId && window.parent) {
+                        var dialog = window.parent.document.getElementById(dialogId);
+                        if (dialog) {
+                            var urlInput = dialog.querySelector('[data-url]');
+                            if (urlInput) {
+                                urlInput.value = url;
+                            }
+                        }
+                    }
+                    document.getElementById('status-text').innerHTML =
+                        '<span class="success">上传成功！</span><br>' + message;
+                } else {
+                    // 上传失败：提示错误信息
+                    document.getElementById('status-text').innerHTML =
+                        '<span class="error">上传失败</span><br>' + message;
+                }
+            } catch (e) {
+                document.getElementById('status-text').innerHTML =
+                    '<span class="error">处理出错</span><br>' + e.message;
             }
 
-            location.href = "about:blank";
-        </script>        
-    </body>   
+            // 重定向到空白页，避免浏览器历史记录残留
+            location.href = 'about:blank';
+        })();
+    </script>
+</body>
 </html>

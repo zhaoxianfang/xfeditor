@@ -91,7 +91,7 @@
 
                             if (url === "")
                             {
-                                alert(imageLang.imageURLEmpty);
+                                editormd.notify(imageLang.imageURLEmpty, "warning");
                                 return false;
                             }
 
@@ -167,14 +167,14 @@
 
 					if (fileName === "")
 					{
-						alert(imageLang.uploadFileEmpty);
+						editormd.notify(imageLang.uploadFileEmpty, "warning");
 
                         return false;
 					}
 
                     if (!isImage.test(fileName))
 					{
-						alert(imageLang.formatNotAllowed + settings.imageFormats.join(", "));
+						editormd.notify(imageLang.formatNotAllowed + settings.imageFormats.join(", "), "warning");
 
                         return false;
 					}
@@ -195,7 +195,7 @@
                             try {
                                 json = (typeof JSON.parse !== "undefined") ? JSON.parse(json) : eval("(" + json + ")");
                             } catch(err) {
-                                alert("上传响应解析失败，请检查服务器返回格式。");
+                                editormd.notify("上传响应解析失败，请检查服务器返回格式。", "error", 5000);
                                 return false;
                             }
 
@@ -207,7 +207,7 @@
                               }
                               else
                               {
-                                  alert(json.message || "上传失败，未知错误。");
+                                  editormd.notify(json.message || "上传失败，未知错误。", "error", 5000);
                               }
                             }
 

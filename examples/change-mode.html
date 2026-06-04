@@ -452,9 +452,19 @@ if __name__ == '__main__':
                 
                 var select = $("#themes");
                 
-                for (var i = 0, len = editormd.themes.length; i < len; i ++)
+                // 合并编辑器整体主题和 CodeMirror 编辑区主题到下拉框
+                var allThemes = editormd.themes.concat(editormd.editorThemes);
+                // 去重
+                var uniqueThemes = [];
+                for (var t = 0; t < allThemes.length; t++) {
+                    if ($.inArray(allThemes[t], uniqueThemes) === -1) {
+                        uniqueThemes.push(allThemes[t]);
+                    }
+                }
+                
+                for (var i = 0, len = uniqueThemes.length; i < len; i ++)
                 {                    
-                    var theme    = editormd.themes[i];
+                    var theme    = uniqueThemes[i];
                     var selected = (localStorage.theme == theme) ? " selected=\"selected\"" : "";
                     select.append("<option value=\"" + theme + "\"" + selected + ">" + theme + "</option>");
                 }
@@ -469,7 +479,16 @@ if __name__ == '__main__':
                     }
                     
                     localStorage.theme = theme;
-                    testEditor.setTheme(theme);
+                    
+                    // 如果是编辑器整体主题（default/dark），设置整体主题
+                    if ($.inArray(theme, editormd.themes) !== -1) {
+                        testEditor.setTheme(theme);
+                        // setTheme 内部会自动为 "dark" 设置 "monokai" CodeMirror 主题
+                    }
+                    // 如果是 CodeMirror 编辑区主题
+                    if ($.inArray(theme, editormd.editorThemes) !== -1) {
+                        testEditor.setEditorTheme(theme);
+                    }
                 });   
                 
                 var modesSelect = $("#modes");

@@ -195,7 +195,7 @@
 			var line = cm.getLine(cursor.line);
 			
 			if (!/^\|/.test(line)) {
-				alert("请将光标放在表格行内");
+				editormd.notify("请将光标放在表格行内", "warning");
 				return;
 			}
 			
@@ -242,7 +242,7 @@
 			var line = cm.getLine(cursor.line);
 			
 			if (!/^\|/.test(line)) {
-				alert("请将光标放在表格行内");
+				editormd.notify("请将光标放在表格行内", "warning");
 				return;
 			}
 			

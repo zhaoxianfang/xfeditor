@@ -107,13 +107,13 @@
 
                             if (langName === "")
                             {
-                                alert(lang.dialog.codeBlock.unselectedLanguageAlert);
+                                editormd.notify(lang.dialog.codeBlock.unselectedLanguageAlert, "warning");
                                 return false;
                             }
 
                             if (codeTexts === "")
                             {
-                                alert(lang.dialog.codeBlock.codeEmptyAlert);
+                                editormd.notify(lang.dialog.codeBlock.codeEmptyAlert, "warning");
                                 return false;
                             }
 

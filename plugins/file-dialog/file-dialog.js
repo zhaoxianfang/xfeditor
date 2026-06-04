@@ -76,7 +76,7 @@
 
                             if (url === "")
                             {
-                                alert(fileLang.fileURLEmpty);
+                                editormd.notify(fileLang.fileURLEmpty, "warning");
                                 return false;
                             }
 
@@ -111,13 +111,13 @@
 
                     if (fileName === "")
                     {
-                        alert(fileLang.uploadFileEmpty);
+                        editormd.notify(fileLang.uploadFileEmpty, "warning");
                         return false;
                     }
 
                     if (!isAllowed.test(fileName))
                     {
-                        alert(fileLang.formatNotAllowed + settings.fileFormats.join(", "));
+                        editormd.notify(fileLang.formatNotAllowed + settings.fileFormats.join(", "), "warning");
                         return false;
                     }
 
@@ -135,7 +135,7 @@
                             try {
                                 json = (typeof JSON.parse !== "undefined") ? JSON.parse(json) : eval("(" + json + ")");
                             } catch (err) {
-                                alert(fileLang.uploadError + "\n" + (json || ""));
+                                editormd.notify(fileLang.uploadError + " " + (json || ""), "error", 5000);
                                 return false;
                             }
 
@@ -146,7 +146,7 @@
                             }
                             else
                             {
-                                alert(json.message || fileLang.uploadError);
+                                editormd.notify(json.message || fileLang.uploadError, "error", 5000);
                             }
 
                             return false;
