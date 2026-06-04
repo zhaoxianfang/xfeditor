@@ -1,14 +1,16 @@
 {
   "name": "editor.md",
   "version": "1.7.0",
-  "description": "Open source online markdown editor.",
+  "description": "开源可嵌入 Markdown 在线编辑器 - 基于 pandao/editor.md 的改进增强版 | Open source embeddable online Markdown editor (improved fork of pandao/editor.md)",
   "directories": {
-    "doc": "docs",
     "example": "examples",
     "test": "tests"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:js": "uglifyjs src/editormd.js -o editormd.min.js -c -m",
+    "build:amd": "uglifyjs editormd.amd.js -o editormd.amd.min.js -c -m",
+    "build:css": "cleancss css/editormd.css -o css/editormd.min.css && cleancss css/editormd.preview.css -o css/editormd.preview.min.css && cleancss css/editormd.logo.css -o css/editormd.logo.min.css"
   },
   "repository": {
     "type": "git",
@@ -17,9 +19,13 @@
   "keywords": [
     "editor.md",
     "markdown",
-    "editor"
+    "editor",
+    "echarts",
+    "katex",
+    "wysiwyg",
+    "markdown-editor"
   ],
-  "author": "Pandao",
+  "author": "Pandao (original), with improvements and extensions",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/pandao/editor.md/issues"
@@ -37,7 +43,8 @@
     "gulp-replace": "^0.5.3",
     "gulp-ruby-sass": "^1.0.1",
     "gulp-uglifyjs": "^0.6.1",
-    "gulp-util": "^3.0.1"
+    "gulp-util": "^3.0.1",
+    "uglify-js": "^3.19.3"
   },
   "dependencies": {
     "diff-match-patch": "^1.0.5"

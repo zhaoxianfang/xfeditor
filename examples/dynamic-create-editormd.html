@@ -4,7 +4,7 @@
         <meta charset="utf-8" />
         <title>动态创建 Editor.md - Editor.md examples</title>
         <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.css" />
+        <link rel="stylesheet" href="../css/editormd.min.css" />
         <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
     </head>
     <body>
@@ -26,7 +26,7 @@
             
             $(function() {                
                 $("#create-btn").click(function(){                    
-					$.getScript("../editormd.js", function() {
+					$.getScript("../editormd.min.js", function() {
                         $("#layout").append("<div id=\"test-editormd\"></div>");
                         
                         testEditormd = editormd("test-editormd", {
