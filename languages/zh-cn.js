@@ -74,6 +74,7 @@
                 tooltip          : "悬浮提示",
                 color            : "文字颜色",
                 "bg-color"       : "背景颜色",
+                formula          : "插入公式",
                 draft            : "草稿",
                 restoreDraft     : "恢复草稿",
                 clearDraft       : "清除所有草稿",

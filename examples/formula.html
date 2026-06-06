@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh">
+    <head>
+        <meta charset="utf-8" />
+        <title>插入公式 - Editor.md Examples</title>
+        <link rel="stylesheet" href="css/style.css" />
+        <link rel="stylesheet" href="../css/editormd.min.css" />
+        <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Helvetica, Arial, sans-serif; background: #eef2f7; color: #333; line-height: 1.7; }
+            #layout { max-width: 960px; margin: 0 auto; padding: 40px 20px 60px; }
+            header { text-align: center; padding: 50px 20px 40px; margin-bottom: 30px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: #fff; border-radius: 16px; }
+            header h1 { font-size: 32px; font-weight: 700; margin-bottom: 12px; }
+            header p { font-size: 14px; opacity: 0.85; max-width: 640px; margin: 0 auto 8px; }
+            header .links { margin-top: 16px; }
+            header .links a { color: rgba(255,255,255,0.85); margin: 0 10px; font-size: 13px; text-decoration: none; border-bottom: 1px dashed rgba(255,255,255,0.4); transition: all 0.2s; }
+            header .links a:hover { color: #fff; border-color: #fff; }
+            .section-title { font-size: 18px; font-weight: 700; color: #1a1a2e; margin: 28px 0 12px; padding-bottom: 8px; border-bottom: 2px solid #e8e8e8; }
+            #test-editormd { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+            .info-box { background: #e6f7ff; border-left: 4px solid #1890ff; padding: 14px 18px; border-radius: 0 8px 8px 0; font-size: 13px; margin: 16px 0; line-height: 1.8; }
+            .info-box strong { color: #096dd9; }
+            .info-box code { background: #d6e4ff; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+            footer { text-align: center; font-size: 12px; color: #999; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e8e8e8; }
+        </style>
+    </head>
+    <body>
+        <div id="layout">
+            <header>
+                <h1>📐 插入公式工具栏功能</h1>
+                <p>点击工具栏中的 <strong>∑</strong>（插入公式）按钮，打开公式面板</p>
+                <p>11 大分类 · 100+ 公式示例 · 搜索过滤 · 实时预览 · 一键插入 · 自动关闭</p>
+                <div class="links">
+                    <a href="./index.html">← 返回首页</a>
+                    <a href="#editor">编辑器</a>
+                    <a href="#quick-ref">语法速查</a>
+                </div>
+            </header>
+
+            <div class="info-box">
+                <strong>🆕 新特性：</strong>
+                <br>• <strong>延迟渲染</strong> — 弹窗秒开，公式按需渲染，不卡顿
+                <br>• <strong>自动关闭</strong> — 点击公式即插入并关闭弹窗
+                <br>• <strong>11 大分类</strong> — 基础运算 · 微积分 · 线性代数 · 三角函数 · 概率统计 · 集合论 · 逻辑推理 · 希腊字母 · 箭头关系 · 括号分隔 · 数论特殊
+                <br>• <strong>模式切换</strong> — 支持 <code>$行内$</code> 和 <code>$$块级$$</code> 两种插入模式
+                <br>• <strong>自定义输入</strong> — 底部可直接输入任意 LaTeX 公式
+            </div>
+
+            <h2 class="section-title" id="editor">公式编辑器</h2>
+            <div id="test-editormd">
+                <textarea style="display:none;">
+### 公式插入功能演示
+
+点击工具栏中的 **∑（插入公式）** 按钮，打开公式面板。
+
+#### 面板功能
+
+1. **分类浏览** — 11 个分类标签页，涵盖几乎所有数学领域
+2. **搜索过滤** — 输入关键词实时过滤公式（如搜"积分"）
+3. **一键插入** — 点击公式项自动插入到光标位置，弹窗自动关闭
+4. **自定义公式** — 面板底部可输入任意 LaTeX 公式
+5. **模式切换** — 行内 `$...$` 或块级 `$$...$$`
+
+#### 示例公式
+
+##### 行内公式示例
+
+爱因斯坦质能方程：$E = mc^2$
+
+勾股定理：$a^2 + b^2 = c^2$
+
+欧拉公式：$e^{i\pi} + 1 = 0$
+
+##### 块级公式示例
+
+正态分布概率密度函数：
+$$f(x) = \frac{1}{\sigma\sqrt{2\pi}} e^{-\frac{(x-\mu)^2}{2\sigma^2}}$$
+
+贝叶斯定理：
+$$P(A|B) = \frac{P(B|A) P(A)}{P(B)}$$
+
+##### 线性代数
+
+矩阵：
+$$
+\begin{pmatrix}
+a & b \\
+c & d
+\end{pmatrix}
+$$
+
+行列式：
+$$
+\begin{vmatrix}
+a & b \\
+c & d
+\end{vmatrix}
+= ad - bc
+$$
+
+##### 微积分
+
+定积分：$\int_{a}^{b} f(x) \, dx$
+
+二重积分：$\iint_{D} f(x,y) \, dA$
+
+偏导数：$\frac{\partial f}{\partial x}$
+
+极限：$\lim_{x \to \infty} f(x)$
+
+导数定义：
+$$f'(x) = \lim_{h \to 0} \frac{f(x+h) - f(x)}{h}$$
+
+##### 概率统计
+
+期望值：$E[X] = \sum_{i} x_i P(x_i)$
+
+方差：$\operatorname{Var}(X) = E[(X - \mu)^2]$
+
+二项分布：$P(X=k) = \binom{n}{k} p^k (1-p)^{n-k}$
+
+##### 集合与逻辑
+
+属于：$x \in A$
+
+全称量词：$\forall x \in \mathbb{R}$
+
+蕴含：$P \Rightarrow Q$
+
+##### 希腊字母
+
+$\alpha, \beta, \gamma, \delta, \epsilon, \zeta, \eta, \theta, \lambda, \mu, \pi, \rho, \sigma, \tau, \phi, \omega$
+
+$\Gamma, \Delta, \Theta, \Lambda, \Pi, \Sigma, \Phi, \Omega$
+</textarea>
+            </div>
+
+            <h2 class="section-title" id="quick-ref">LaTeX 常用语法速查</h2>
+            <div class="info-box" style="font-family: monospace; white-space: pre-line;">
+<strong>上标/下标</strong>    x^{n}  x_{i}  x_{i}^{n}
+<strong>分式/根式</strong>    \frac{a}{b}  \sqrt{x}  \sqrt[3]{x}
+<strong>求和/乘积</strong>    \sum_{i=1}^{n} x_i  \prod_{i=1}^{n} x_i
+<strong>积分/极限</strong>    \int_{a}^{b} f(x) dx  \lim_{x \to 0} f(x)
+<strong>希腊字母</strong>    \alpha \beta \gamma \delta \theta \lambda \mu \pi \sigma \phi \omega
+<strong>集合/逻辑</strong>    \in \notin \subset \subseteq \cap \cup \emptyset \forall \exists
+<strong>关系符号</strong>    \leq \geq \neq \approx \equiv \propto \sim
+<strong>箭头符号</strong>    \rightarrow \leftarrow \Rightarrow \Leftrightarrow \mapsto
+<strong>矩阵/括号</strong>    \begin{pmatrix}...\end{pmatrix}  \left( \frac{a}{b} \right)
+<strong>黑板粗体</strong>    \mathbb{R} \mathbb{N} \mathbb{Z} \mathbb{C} \mathbb{Q}
+            </div>
+
+            <footer>
+                <p>Editor.md — Open source online markdown editor. MIT License.</p>
+                <p>KaTeX v0.16.9 — Fast math typesetting for the web.</p>
+            </footer>
+        </div>
+        <script src="js/jquery.min.js"></script>
+        <script src="../editormd.min.js"></script>
+        <script>
+            var testEditor;
+            $(function() {
+                testEditor = editormd("test-editormd", {
+                    width    : "100%",
+                    height   : 720,
+                    path     : "../lib/",
+                    tex      : true,
+                    emoji    : true,
+                    taskList : true,
+                    flowChart : true,
+                    sequenceDiagram : true,
+                    onEditorLoad : function() {
+                        console.log("✅ onEditorLoad — 编辑器加载完成");
+                    },
+                    onPageLoad : function() {
+                        console.log("✅ onPageLoad — 网页 DOM 加载完成");
+                    },
+                    onAllAsyncLoad : function() {
+                        console.log("✅ onAllAsyncLoad — 异步模块加载完成");
+                    },
+                    onPageAllLoad : function() {
+                        console.log("✅ onPageAllLoad — 所有资源加载完成");
+                    }
+                });
+            });
+        </script>
+    </body>
+</html>

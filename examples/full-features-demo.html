@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="../css/editormd.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
     <script src="../editormd.min.js"></script>
-    <script src="../languages/en.js"></script>
+    <script src="../languages/zh-cn.js"></script>
 </head>
 <body>
     <h1>Editor.md 完整功能示例</h1>
@@ -333,18 +333,32 @@
     <hr>
 
     <!-- ========== 示例 12：多栏布局 ========== -->
-    <h2>示例 12：多栏布局</h2>
+    <h2>示例 12：多栏布局（含代码语法保护）</h2>
     <div id="editor-12">
         <textarea style="display:none;">## 多栏布局示例
 
 [[columns:2]]
 **第一栏**
+使用 `[columns:2]` 或 `[[columns:3]]` 语法可实现多栏布局。
+使用 `[[tabs]]` 语法可实现标签页功能。
+> 注意：被反引号包裹的语法（如 `[columns:2]`）不会被解析为多栏语法，而是显示为行内代码。
 
-这是第一栏的内容。
+这是第一栏的内容，支持 **Markdown** 格式。
 
 **第二栏**
 
-这是第二栏的内容。
+这是第二栏的内容，可以包含：
+
+- 列表项 1
+- 列表项 2
+- 列表项 3
+
+```javascript
+// 代码示例：不会被解析为语法
+const cols = "[[columns:3]]";
+console.log(cols); // 输出: [[columns:3]]
+```
+
 [[/columns]]</textarea>
     </div>
     <script>

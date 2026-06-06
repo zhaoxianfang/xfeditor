@@ -5296,6 +5296,299 @@ hr.editormd-page-break {
   opacity: 1;
 }
 
+/* ========== 公式插入弹窗 ========== */
+.editormd-formula-dialog {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+}
+
+/* Tab 导航栏 */
+.editormd-formula-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  padding: 6px 12px 0;
+  background: #f5f7fa;
+  border-bottom: 2px solid #e8e8e8;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  flex-shrink: 0;
+}
+
+.editormd-formula-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 11px;
+  font-size: 12px;
+  color: #666;
+  cursor: pointer;
+  border-radius: 6px 6px 0 0;
+  background: transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  border-bottom: none;
+  margin-bottom: -2px;
+  position: relative;
+  user-select: none;
+}
+
+.editormd-formula-tab:hover {
+  color: #1890ff;
+  background: #e6f7ff;
+}
+
+.editormd-formula-tab.active {
+  color: #1890ff;
+  background: #fff;
+  border-color: #e8e8e8;
+  border-bottom: 2px solid #1890ff;
+  font-weight: 600;
+}
+
+.editormd-formula-tab i {
+  font-size: 11px;
+}
+
+/* 搜索栏 */
+.editormd-formula-search-bar {
+  display: flex;
+  align-items: center;
+  padding: 8px 15px;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.editormd-formula-search {
+  flex: 1;
+  height: 34px;
+  padding: 0 36px 0 14px;
+  border: 1px solid #d9d9d9;
+  border-radius: 17px;
+  font-size: 13px;
+  outline: none;
+  transition: all 0.2s;
+  background: #fafafa;
+}
+
+.editormd-formula-search:focus {
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24,144,255,0.15);
+  background: #fff;
+}
+
+.editormd-formula-search-icon {
+  position: absolute;
+  right: 27px;
+  color: #bfbfbf;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+/* 分类内容面板 */
+.editormd-formula-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px 15px 16px;
+  background: #fff;
+}
+
+.editormd-formula-category-panel {
+  display: none;
+}
+
+/* 公式网格 — 自适应列宽，给复杂公式足够空间 */
+.editormd-formula-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+  gap: 10px;
+}
+
+.editormd-formula-item {
+  border: 1px solid #eef0f2;
+  border-radius: 8px;
+  padding: 14px 12px 10px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease;
+  background: #fafbfc;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 76px;
+  overflow: hidden;
+  word-break: break-all;
+}
+
+.editormd-formula-item:hover {
+  border-color: #1890ff;
+  background: #f0f7ff;
+  box-shadow: 0 2px 10px rgba(24,144,255,0.14);
+  transform: translateY(-2px);
+}
+
+/* KaTeX 渲染区 — 给够空间，避免滚动条 */
+.editormd-formula-katex-container {
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 8px;
+  line-height: 1.6;
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  max-width: 100%;
+  padding: 4px 2px;
+  flex: 1;
+  width: 100%;
+}
+
+.editormd-formula-katex-container .katex {
+  font-size: 1.05em !important;
+}
+
+.editormd-formula-katex-container .katex-display {
+  margin: 0 !important;
+  padding: 2px 0 !important;
+}
+
+/* 公式名称标签 */
+.editormd-formula-name {
+  font-size: 11px;
+  color: #8c8c8c;
+  line-height: 1.3;
+  margin-top: auto;
+  padding-top: 6px;
+  border-top: 1px solid #f0f0f0;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 底部工具栏 */
+.editormd-formula-footer {
+  border-top: 1px solid #e8e8e8;
+  padding: 10px 15px;
+  background: #fafbfc;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* 模式切换 */
+.editormd-formula-mode-toggle {
+  display: flex;
+  gap: 18px;
+  font-size: 12px;
+  color: #666;
+}
+
+.editormd-formula-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.editormd-formula-radio input[type="radio"] {
+  margin: 0;
+  accent-color: #1890ff;
+}
+
+/* 自定义公式输入 */
+.editormd-formula-custom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.editormd-formula-custom-input {
+  flex: 1;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+  font-family: "KaTeX_Main","Times New Roman",serif;
+  background: #fff;
+}
+
+.editormd-formula-custom-input:focus {
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24,144,255,0.15);
+}
+
+.editormd-formula-custom-btn {
+  height: 32px;
+  padding: 0 18px;
+  background: #1890ff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.editormd-formula-custom-btn:hover {
+  background: #40a9ff;
+}
+
+.editormd-formula-custom-btn:active {
+  background: #096dd9;
+}
+
+/* 旧版兼容样式 */
+.editormd-formula-display {
+  font-size: 16px;
+  color: #333;
+  margin-bottom: 4px;
+  font-family: "KaTeX_Main","Times New Roman",serif;
+  line-height: 1.5;
+  min-height: 24px;
+}
+
+.editormd-formula-category {
+  margin-bottom: 18px;
+}
+
+.editormd-formula-category h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #555;
+  margin: 0 0 10px 8px;
+  padding: 0;
+  border: none;
+}
+
+.editormd-formula-category h3 i {
+  margin-right: 6px;
+  color: #1890ff;
+}
+
+/* 深色主题适配 */
+.editormd-container .editor-preview .editormd-tex {
+  font-size: 1.1em;
+}
+
+.editormd-container .editor-preview .editormd-tex .katex {
+  font-size: 1.6em !important;
+}
+
 
 
 

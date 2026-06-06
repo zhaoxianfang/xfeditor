@@ -3767,17 +3767,6 @@ hr.editormd-page-break {
   width: 0;
   border-left: 1px dashed #bbb;
 }
-.editormd-column-divider-icon {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: #bbb;
-  background: #fff;
-  width: 20px;
-  text-align: center;
-  font-size: 14px;
-}
 
 /* Video player styling */
 .editormd-video-player {

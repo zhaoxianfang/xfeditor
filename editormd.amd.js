@@ -25,69 +25,7 @@
 	{
         if (define.amd) // Require.js AMD 加载
         {
-            var cmModePath  = "codemirror/mode/";
-            var cmAddonPath = "codemirror/addon/";
-
-            var codeMirrorModules = [
-                "jquery", "marked", "prettify",
-                "katex", "raphael", "underscore", "flowchart",  "jqueryflowchart",  "sequenceDiagram",
-
-                "codemirror/lib/codemirror",
-                cmModePath + "css/css",
-                cmModePath + "sass/sass",
-                cmModePath + "shell/shell",
-                cmModePath + "sql/sql",
-                cmModePath + "clike/clike",
-                cmModePath + "php/php",
-                cmModePath + "xml/xml",
-                cmModePath + "markdown/markdown",
-                cmModePath + "javascript/javascript",
-                cmModePath + "htmlmixed/htmlmixed",
-                cmModePath + "gfm/gfm",
-                cmModePath + "http/http",
-                cmModePath + "go/go",
-                cmModePath + "dart/dart",
-                cmModePath + "coffeescript/coffeescript",
-                cmModePath + "nginx/nginx",
-                cmModePath + "python/python",
-                cmModePath + "perl/perl",
-                cmModePath + "lua/lua",
-                cmModePath + "r/r", 
-                cmModePath + "ruby/ruby", 
-                cmModePath + "rst/rst",
-                cmModePath + "smartymixed/smartymixed",
-                cmModePath + "vb/vb",
-                cmModePath + "vbscript/vbscript",
-                cmModePath + "velocity/velocity",
-                cmModePath + "xquery/xquery",
-                cmModePath + "yaml/yaml",
-                cmModePath + "erlang/erlang",
-                cmModePath + "jade/jade",
-
-                cmAddonPath + "edit/trailingspace", 
-                cmAddonPath + "dialog/dialog", 
-                cmAddonPath + "search/searchcursor", 
-                cmAddonPath + "search/search", 
-                cmAddonPath + "scroll/annotatescrollbar", 
-                cmAddonPath + "search/matchesonscrollbar", 
-                cmAddonPath + "display/placeholder", 
-                cmAddonPath + "edit/closetag", 
-                cmAddonPath + "fold/foldcode",
-                cmAddonPath + "fold/foldgutter",
-                cmAddonPath + "fold/indent-fold",
-                cmAddonPath + "fold/brace-fold",
-                cmAddonPath + "fold/xml-fold", 
-                cmAddonPath + "fold/markdown-fold",
-                cmAddonPath + "fold/comment-fold", 
-                cmAddonPath + "mode/overlay", 
-                cmAddonPath + "mode/simple", 
-                cmAddonPath + "selection/active-line", 
-                cmAddonPath + "edit/closebrackets", 
-                cmAddonPath + "display/fullscreen",
-                cmAddonPath + "search/match-highlighter"
-            ];
-
-            define(codeMirrorModules, factory);
+            /* Require.js define replace */
         } 
         else 
         {
@@ -101,16 +39,7 @@
     
 }(function() {    
 
-    if (typeof define == "function" && define.amd) {
-       $          = arguments[0];
-       marked     = arguments[1];
-       prettify   = arguments[2];
-       katex      = arguments[3];
-       Raphael    = arguments[4];
-       _          = arguments[5];
-       flowchart  = arguments[6];
-       CodeMirror = arguments[9];
-   }
+    /* Require.js assignment replace */
     
     "use strict";
     
@@ -153,7 +82,7 @@
             "|",
             { "chart" : ["echarts-bar", "echarts-line", "echarts-pie", "echarts-radar", "echarts-funnel"] },
             "|",
-            "tabs", "columns", "tooltip", "|",
+            "tabs", "columns", "tooltip", "formula", "|",
             "color", "bg-color", "|",
             "goto-line", "watch", "preview", "fullscreen", "clear", "search", "|",
             "help", "info"
@@ -246,6 +175,11 @@
         onfocus              : function() {},
         onblur               : function() {},
         oncursoractivity     : function() {},
+        // 新增事件回调
+        onEditorLoad         : function() {},  // 编辑器加载完成（包括 CodeMirror 初始化）
+        onPageLoad           : function() {},  // 当前网页加载完成
+        onAllAsyncLoad       : function() {},  // 编辑器中的所有异步加载完成（KaTeX、FlowChart、SequenceDiagram、ECharts 等）
+        onPageAllLoad        : function() {},  // 网页所有异步加载完成
         
         imageUpload          : false,
         imageFormats         : ["jpg", "jpeg", "gif", "png", "bmp", "webp"],
@@ -303,7 +237,8 @@
         },
         toolbarCustomIcons   : {               // 使用 HTML 标签创建工具栏图标（不使用默认的 <a> 标签）
             lowercase        : "<a href=\"javascript:;\" title=\"\" unselectable=\"on\"><i class=\"fa\" name=\"lowercase\" style=\"font-size:24px;margin-top: -10px;\">a</i></a>",
-            "ucwords"        : "<a href=\"javascript:;\" title=\"\" unselectable=\"on\"><i class=\"fa\" name=\"ucwords\" style=\"font-size:20px;margin-top: -3px;\">Aa</i></a>"
+            "ucwords"        : "<a href=\"javascript:;\" title=\"\" unselectable=\"on\"><i class=\"fa\" name=\"ucwords\" style=\"font-size:20px;margin-top: -3px;\">Aa</i></a>",
+            "formula"         : "<a href=\"javascript:;\" title=\"\" unselectable=\"on\"><i class=\"fa\" name=\"formula\" style=\"font-size:20px;font-weight:bold;line-height:20px;\">∑</i></a>"
         }, 
         toolbarIconsClass    : {
             undo             : "fa-undo",
@@ -361,7 +296,8 @@
             "columns"        : "fa-newspaper-o",
             "tooltip"        : "fa-comment-o",
             "color"          : "fa-font",
-            "bg-color"       : "fa-paint-brush"
+            "bg-color"       : "fa-paint-brush",
+            "formula"         : ""
         },        
         toolbarIconTexts     : {},
         
@@ -427,7 +363,8 @@
                 columns          : "多栏排版",
                 tooltip          : "悬浮提示",
                 color            : "文字颜色",
-                "bg-color"       : "背景颜色"
+                "bg-color"       : "背景颜色",
+                formula          : "插入公式"
             },
             buttons : {
                 enter  : "确定",
@@ -593,6 +530,8 @@
             this.lang            = settings.lang;
             this.timer           = null;
             this.flowchartTimer  = null;
+            this._asyncLoadCount  = 0;        // 异步加载计数器
+            this._allAsyncLoaded = false;    // onAllAsyncLoad 是否已触发
             
             var classNames       = this.classNames   = {
                 textarea : {
@@ -1108,7 +1047,7 @@
             {
                 if (typeof arguments[1] === "function")
                 {
-                    arguments[1] = $.proxy(arguments[1], this);
+                    arguments[1] = arguments[1].bind(this);
                 }
 
                 this[arguments[0]] = arguments[1];
@@ -1135,7 +1074,7 @@
             
             if (typeof value !== "undefined" && typeof value === "function")
             {
-                value = $.proxy(value, this);
+                value = value.bind(this);
             }
             
             this[key] = value;
@@ -1185,7 +1124,7 @@
             
             if (typeof settings["on" + eventType] !== "undefined") 
             {                
-                settings["on" + eventType] = $.proxy(callback, this);      
+                settings["on" + eventType] = callback.bind(this);      
             }
 
             return this;
@@ -1235,7 +1174,7 @@
             this.toolbar.show();
             this.resize();
             
-            $.proxy(callback || function(){}, this)();
+            callback || function(){}.call(this);
 
             return this;
         },
@@ -1255,7 +1194,7 @@
             this.toolbar.hide();
             this.resize();
             
-            $.proxy(callback || function(){}, this)();
+            callback || function(){}.call(this);
 
             return this;
         },
@@ -1472,13 +1411,13 @@
          */
             
         dialogLockScreen : function() {
-            $.proxy(editormd.dialogLockScreen, this)();
+            editormd.dialogLockScreen.call(this);
             
             return this;
         },
 
         dialogShowMask : function(dialog) {
-            $.proxy(editormd.dialogShowMask, this)(dialog);
+            editormd.dialogShowMask.call(this, dialog);
             
             return this;
         },
@@ -1550,13 +1489,13 @@
 
                 if (typeof toolbarIconHandlers[name] !== "undefined") 
                 {
-                    $.proxy(toolbarIconHandlers[name], _this)(cm);
+                    toolbarIconHandlers[name].call(_this, cm);
                 }
                 else 
                 {
                     if (typeof settings.toolbarHandlers[name] !== "undefined") 
                     {
-                        $.proxy(settings.toolbarHandlers[name], _this)(cm, icon, cursor, selection);
+                        settings.toolbarHandlers[name].call(_this, cm, icon, cursor, selection);
                     }
                 }
                 
@@ -1588,13 +1527,13 @@
                 
                 if (typeof toolbarIconHandlers[name] !== "undefined") 
                 {
-                    $.proxy(toolbarIconHandlers[name], _this)(cm);
+                    toolbarIconHandlers[name].call(_this, cm);
                 }
                 else 
                 {
                     if (typeof settings.toolbarHandlers[name] !== "undefined") 
                     {
-                        $.proxy(settings.toolbarHandlers[name], _this)(cm, icon, cursor, selection);
+                        settings.toolbarHandlers[name].call(_this, cm, icon, cursor, selection);
                     }
                 }
                 
@@ -1619,7 +1558,7 @@
          */
         
         createDialog : function(options) {            
-            return $.proxy(editormd.createDialog, this)(options);
+            return editormd.createDialog.call(this, options);
         },
         
         /**
@@ -1929,7 +1868,9 @@
             this.previewContainer.find("." + editormd.classNames.tex).each(function(){
                 var tex  = $(this);
                 var texCode = tex.text().trim();
-                editormd.$katex.render(texCode, tex[0]);
+                // 自动检测 displayMode：公式含 \begin{...}（矩阵、行列式等）使用块级模式
+                var isBlock = /^\\begin\{/.test(texCode);
+                editormd.$katex.render(texCode, tex[0], { throwOnError: false, displayMode: isBlock });
                 
                 tex.find(".katex").css("font-size", "1.6em");
                 
@@ -2050,7 +1991,7 @@
                 for (var k in editormd.keyMaps)
                 {
                     var _keyMap = editormd.keyMaps[k];
-                    var handle = (typeof _keyMap === "string") ? $.proxy(toolbarHandlers[_keyMap], _this) : $.proxy(_keyMap, _this);
+                    var handle = (typeof _keyMap === "string") ? toolbarHandlers[_keyMap].bind(_this) : _keyMap.bind(_this);
                     
                     if ($.inArray(k, ["F9", "F10", "F11"]) < 0 && $.inArray(k, disabledKeyMaps) < 0)
                     {
@@ -2074,17 +2015,17 @@
                         switch (event.keyCode)
                         {
                             case 120:
-                                    $.proxy(toolbarHandlers["watch"], _this)();
+                                    toolbarHandlers["watch"].call(_this);
                                     return false;
                                 break;
                                 
                             case 121:
-                                    $.proxy(toolbarHandlers["preview"], _this)();
+                                    toolbarHandlers["preview"].call(_this);
                                     return false;
                                 break;
                                 
                             case 122:
-                                    $.proxy(toolbarHandlers["fullscreen"], _this)();                        
+                                    toolbarHandlers["fullscreen"].call(_this);                        
                                     return false;
                                 break;
                                 
@@ -2152,7 +2093,7 @@
                         preview.scrollTop((preview[0].scrollHeight + tocHeight + tocMenuHeight) * linePercent);
                     }
                     
-                    $.proxy(settings.onscroll, _this)(event);
+                    settings.onscroll.call(_this, event);
                     
                     setTimeout(function() { _isSyncing = false; }, 30);
                 });
@@ -2191,7 +2132,7 @@
                         codeView.scrollTop(targetY);
                     }
                     
-                    $.proxy(settings.onpreviewscroll, _this)(event);
+                    settings.onpreviewscroll.call(_this, event);
                     
                     setTimeout(function() { _isSyncing = false; }, 30);
                 });
@@ -2250,49 +2191,49 @@
             
             // 增强的事件处理（keydown/keyup/mouseup/mousedown/paste/drop/copy/cut/focus/blur）
             cm.on("keydown", function(_cm, e) {
-                $.proxy(settings.onkeydown, _this)(_cm, e);
+                settings.onkeydown.call(_this, _cm, e);
             });
             
             cm.on("keyup", function(_cm, e) {
-                $.proxy(settings.onkeyup, _this)(_cm, e);
+                settings.onkeyup.call(_this, _cm, e);
             });
             
             cm.on("mouseup", function(_cm, e) {
-                $.proxy(settings.onmouseup, _this)(_cm, e);
+                settings.onmouseup.call(_this, _cm, e);
             });
             
             cm.on("mousedown", function(_cm, e) {
-                $.proxy(settings.onmousedown, _this)(_cm, e);
+                settings.onmousedown.call(_this, _cm, e);
             });
             
             cm.on("paste", function(_cm, e) {
-                $.proxy(settings.onpaste, _this)(_cm, e);
+                settings.onpaste.call(_this, _cm, e);
             });
             
             cm.on("drop", function(_cm, e) {
-                $.proxy(settings.ondrop, _this)(_cm, e);
+                settings.ondrop.call(_this, _cm, e);
             });
             
             cm.on("copy", function(_cm, e) {
-                $.proxy(settings.oncopy, _this)(_cm, e);
+                settings.oncopy.call(_this, _cm, e);
             });
             
             cm.on("cut", function(_cm, e) {
-                $.proxy(settings.oncut, _this)(_cm, e);
+                settings.oncut.call(_this, _cm, e);
             });
             
             cm.on("focus", function(_cm, e) {
                 editor.addClass("editormd-focus");
-                $.proxy(settings.onfocus, _this)(_cm, e);
+                settings.onfocus.call(_this, _cm, e);
             });
             
             cm.on("blur", function(_cm, e) {
                 editor.removeClass("editormd-focus");
-                $.proxy(settings.onblur, _this)(_cm, e);
+                settings.onblur.call(_this, _cm, e);
             });
             
             cm.on("cursorActivity", function(_cm) {
-                $.proxy(settings.oncursoractivity, _this)(_cm);
+                settings.oncursoractivity.call(_this, _cm);
             });
 
             return this;
@@ -2339,12 +2280,39 @@
             
             if (!recreate)
             {
-                $.proxy(settings.onload, this)();
+                settings.onload.call(this);
             }
+            
+            // 触发 onEditorLoad 事件（编辑器加载完成）
+            settings.onEditorLoad.call(this);
+            
+            // 触发 onPageLoad 事件（当前网页 DOM 加载完成）
+            $(function() {
+                settings.onPageLoad.call(_this);
+            });
+            
+            // 绑定 onPageAllLoad 事件（网页所有资源加载完成，包括图片、iframe 等）
+            $(window).on("load", function() {
+                settings.onPageAllLoad.call(_this);
+            });
             
             this.state.loaded = true;
 
             return this;
+        },
+        
+        /**
+         * 检查所有异步模块是否加载完成，触发 onAllAsyncLoad 事件
+         * Check if all async modules loaded and fire onAllAsyncLoad event
+         */
+        
+        _checkAllAsyncLoaded : function() {
+            if (this._allAsyncLoaded) return;
+            if (this._asyncLoadCount <= 0) 
+            {
+                this._allAsyncLoaded = true;
+                this.settings.onAllAsyncLoad.call(this);
+            }
         },
         
         /**
@@ -2467,7 +2435,7 @@
             
             if (state.loaded) 
             {
-                $.proxy(settings.onresize, this)();
+                settings.onresize.call(this);
             }
 
             return this;
@@ -2491,7 +2459,7 @@
                 return this;
             }
             
-            $.proxy(settings.onbeforesave, this)();
+            settings.onbeforesave.call(this);
             
             var cm               = this.cm;            
             var cmValue          = cm.getValue();
@@ -2500,7 +2468,7 @@
             if (settings.mode !== "gfm" && settings.mode !== "markdown") 
             {
                 this.markdownTextarea.val(cmValue);
-                $.proxy(settings.onaftersave, this)();
+                settings.onaftersave.call(this);
                 return this;
             }
             
@@ -2533,7 +2501,7 @@
                 tables      : true,
                 breaks      : true,
                 pedantic    : false,
-                sanitize    : (settings.htmlDecode) ? false : true,  // 关闭忽略HTML标签，即开启识别HTML标签，默认为false
+                sanitize    : false,  // 关闭 sanitize 以确保 HTML 注释占位符不被转义，占位符用于 tabs/columns 等自定义语法
                 smartLists  : true,
                 smartypants : true
             };
@@ -2541,9 +2509,12 @@
             marked.setOptions(markedOptions);
 
             // 在 marked 解析之前预处理自定义块级语法（标签页、多栏、对齐）
-            var preprocessResult = editormd.preprocessMarkdownBlocks(cmValue, rendererOptions);
+            // 先保护 LaTeX 反斜杠，防止 marked.js 将其当作 Markdown 转义吃掉
+            var markdownProtected = editormd.protectTeXSyntax(cmValue);
+            var preprocessResult = editormd.preprocessMarkdownBlocks(markdownProtected, rendererOptions);
             var newMarkdownDoc = editormd.$marked(preprocessResult.markdown, markedOptions);
             newMarkdownDoc = editormd.restorePlaceholders(newMarkdownDoc, preprocessResult.placeholders);
+            newMarkdownDoc = editormd.restoreTeXSyntax(newMarkdownDoc);
 
             //console.info("cmValue", cmValue, newMarkdownDoc);
 
@@ -2596,10 +2567,13 @@
                     if (!editormd.kaTeXLoaded && settings.autoLoadModules) 
                     {
                         // 传入 settings.path 作为前缀，解决 examples 子目录下 KaTeX 资源 404 问题
+                        _this._asyncLoadCount++;
                         editormd.loadKaTeX(settings.path, function() {
                             editormd.$katex = katex;
                             editormd.kaTeXLoaded = true;
                             _this.katexRender();
+                            _this._asyncLoadCount--;
+                            _this._checkAllAsyncLoaded();
                         });
                     } 
                     else 
@@ -2624,12 +2598,17 @@
                         var needRaphael = (hasFlowChart && typeof flowchart === "undefined") || 
                                           (hasSequence && typeof Diagram === "undefined");
                         if (needRaphael) {
+                            _this._asyncLoadCount++;
                             editormd.loadScript(settings.path + "raphael.min", function() {
                                 editormd.loadScript(settings.path + "underscore.min", function() {
                                     var pending = 0;
                                     var checkDone = function() {
                                         pending--;
-                                        if (pending <= 0) renderFs();
+                                        if (pending <= 0) {
+                                            renderFs();
+                                            _this._asyncLoadCount--;
+                                            _this._checkAllAsyncLoaded();
+                                        }
                                     };
                                     if (hasFlowChart && typeof flowchart === "undefined") {
                                         pending++;
@@ -2641,7 +2620,11 @@
                                         pending++;
                                         editormd.loadScript(settings.path + "sequence-diagram.min", checkDone);
                                     }
-                                    if (pending === 0) renderFs();
+                                    if (pending === 0) {
+                                        renderFs();
+                                        _this._asyncLoadCount--;
+                                        _this._checkAllAsyncLoaded();
+                                    }
                                 });
                             });
                         } else {
@@ -2652,7 +2635,7 @@
 
                 if (state.loaded) 
                 {
-                    $.proxy(settings.onchange, this)();
+                    settings.onchange.call(this);
                 }
                 
                 // 初始化预览区中的表格编辑和图片缩放功能
@@ -2666,8 +2649,11 @@
                     var echartsElements = previewContainer.find(".editormd-echarts");
                     if (echartsElements.length > 0) {
                         if (typeof echarts === "undefined") {
+                            _this._asyncLoadCount++;
                             editormd.loadScript(settings.path + "echarts.min", function() {
                                 _this.initECharts();
+                                _this._asyncLoadCount--;
+                                _this._checkAllAsyncLoaded();
                             });
                         } else {
                             _this.initECharts();
@@ -2685,7 +2671,10 @@
                 }
             }
             
-            $.proxy(settings.onaftersave, this)();
+            settings.onaftersave.call(this);
+
+            // 检查是否所有异步加载已完成（处理无异步模块需要加载的情况）
+            this._checkAllAsyncLoaded();
 
             // 保存成功后自动保存草稿
             if (settings.draftAutoSave) {
@@ -2962,7 +2951,7 @@
             this.save();
             this.preview.scrollTop(previewScroll);
             
-            $.proxy(this.settings.ontablechange, this)(action, rowIndex, colIndex);
+            this.settings.ontablechange.call(this, action, rowIndex, colIndex);
         },
         
         /**
@@ -3066,7 +3055,7 @@
                 this.timer = 0;
                 this.save();
                 this.preview.scrollTop(previewScroll);
-                $.proxy(this.settings.onimagechange, this)(src, width, height);
+                this.settings.onimagechange.call(this, src, width, height);
             }
         },
         
@@ -3170,7 +3159,7 @@
                 $cols.css("position", "relative");
 
                 for (var i = 1; i < count; i++) {
-                    var $divider = $('<div class="editormd-column-divider"><span class="editormd-column-divider-icon">&#166;</span></div>');
+                    var $divider = $('<div class="editormd-column-divider"></div>');
                     $divider.css({
                         position: "absolute",
                         left: (i / count * 100) + "%",
@@ -3179,9 +3168,6 @@
                         width: "0",
                         transform: "translateX(-50%)",
                         borderLeft: "1px dashed #bbb",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
                         pointerEvents: "none",
                         zIndex: 1
                     });
@@ -3614,8 +3600,8 @@
                 '<div class="editormd-draft-list">' + listHtml + '</div>' +
                 '</div>' +
                 '<div class="editormd-dialog-footer">' +
-                '<button class="editormd-draft-clear editormd-btn">' + (lang.toolbar.draftClearBtn || "清除所有草稿") + '</button>' +
-                '<button class="editormd-draft-cancel editormd-btn">' + (lang.toolbar.draftCancelBtn || "取消") + '</button>' +
+                '<button type="button" class="editormd-draft-clear editormd-btn">' + (lang.toolbar.draftClearBtn || "清除所有草稿") + '</button>' +
+                '<button type="button" class="editormd-draft-cancel editormd-btn">' + (lang.toolbar.draftCancelBtn || "取消") + '</button>' +
                 '</div>' +
                 '</div>';
 
@@ -3694,24 +3680,36 @@
          * @returns {String}                      完整的 HTML 代码字符串
          */
 
+        /**
+         * 获取完整的独立 HTML 文档（含 DOCTYPE、head、body）
+         * 与 getPreviewedHTML() 不同，此方法生成可直接独立打开的完整 HTML 页面，
+         * 包含 HTML 骨架、DOCTYPE 声明、meta 标签、title、样式和脚本。
+         *
+         * @param {Object} [options={}] 选项
+         * @param {Boolean} [options.includeStyles=true] 是否包含内联样式
+         * @param {Boolean} [options.includeScripts=true] 是否包含交互脚本
+         * @param {String}  [options.title="Editor.md Preview"] 页面标题
+         * @returns {String} 完整 HTML 文档字符串
+         */
         getHTML : function(options) {
             var opts = $.extend({
                 includeStyles  : true,
-                includeScripts : true
+                includeScripts : true,
+                title          : "Editor.md Preview"
             }, options || {});
             
             var _this    = this;
             var settings = this.settings;
-            var html     = "";
             
-            // 获取预览容器的 HTML 内容
-            var previewHTML = this.previewContainer ? this.previewContainer.html() : "";
-            if (!previewHTML && this.htmlTextarea && this.htmlTextarea.length) {
-                previewHTML = this.htmlTextarea.val();
-            }
+            // 获取预览 HTML 内容（通过 getPreviewedHTML 复用渲染逻辑）
+            var previewOptions = $.extend({}, options, {
+                includeStyles : false,
+                includeScripts: false
+            });
+            var contentHTML = this.getPreviewedHTML(previewOptions);
             
-            // 如果是编辑器没有开启预览，就重新渲染一次
-            if (!previewHTML) {
+            // 如果没有内容，尝试从 Markdown 渲染
+            if (!contentHTML || contentHTML === '<div class="markdown-body editormd-html-preview">\n  \n</div>') {
                 var markdownText = this.getMarkdown();
                 if (markdownText) {
                     var rendererOptions = {
@@ -3731,39 +3729,46 @@
                     var markedOptions = {
                         renderer: editormd.markedRenderer([], rendererOptions),
                         gfm: settings.gfm, tables: true, breaks: true,
-                        pedantic: false, sanitize: (settings.htmlDecode) ? false : true,
+                        pedantic: false, sanitize: false,
                         smartLists: true, smartypants: true
                     };
-                    var mdPreprocess = editormd.preprocessMarkdownBlocks(markdownText, rendererOptions);
-                    previewHTML = marked(mdPreprocess.markdown, markedOptions);
+                    var markdownProtected2 = editormd.protectTeXSyntax(markdownText);
+                    var mdPreprocess = editormd.preprocessMarkdownBlocks(markdownProtected2, rendererOptions);
+                    var previewHTML = editormd.$marked(mdPreprocess.markdown, markedOptions);
                     previewHTML = editormd.restorePlaceholders(previewHTML, mdPreprocess.placeholders);
-                    previewHTML = editormd.filterHTMLTags(previewHTML, settings.htmlDecode);
+                    previewHTML = editormd.restoreTeXSyntax(previewHTML);
+                    contentHTML = '<div class="markdown-body editormd-html-preview">\n  ' + previewHTML + '\n</div>';
                 }
             }
             
-            // 构建内联 CSS 样式（提取编辑器和预览所需的核心样式）
+            // 构建内联样式和脚本
             var inlineStyles = "";
-            if (opts.includeStyles) {
-                inlineStyles += this._getCoreStyles();
-            }
-            
-            // 构建交互 JavaScript
             var inlineScripts = "";
+            if (opts.includeStyles) {
+                inlineStyles = this._getCoreStyles();
+            }
             if (opts.includeScripts) {
-                inlineScripts += this._getInitScripts();
+                inlineScripts = this._getInitScripts();
             }
             
-            // 输出内容片段（不包含 DOCTYPE、head、body 等标签）
-            // 包含内联样式和脚本的独立内容块，可直接嵌入任意页面
+            // 生成完整的独立 HTML 文档
+            var html = '<!DOCTYPE html>\n';
+            html += '<html lang="zh-CN">\n';
+            html += '<head>\n';
+            html += '  <meta charset="UTF-8">\n';
+            html += '  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n';
+            html += '  <title>' + opts.title + '</title>\n';
             if (opts.includeStyles && inlineStyles) {
-                html += '<style>\n' + inlineStyles + '\n</style>\n';
+                html += '  <style>\n' + inlineStyles + '\n  </style>\n';
             }
-            html += '<div class="markdown-body editormd-html-preview">\n';
-            html += '  ' + previewHTML + '\n';
-            html += '</div>';
+            html += '</head>\n';
+            html += '<body>\n';
+            html += contentHTML + '\n';
             if (opts.includeScripts && inlineScripts) {
-                html += '\n<script>\n' + inlineScripts + '\n<\/script>';
+                html += '<script>\n' + inlineScripts + '\n<\/script>\n';
             }
+            html += '</body>\n';
+            html += '</html>';
             
             return html;
         },
@@ -4227,43 +4232,108 @@
          * @param   {String}  options.lang           语言（默认 "zh"）
          * @returns {String}                返回预览区 HTML 源码
          */
+        /**
+         * 获取预览区渲染后的 HTML 内容
+         * 支持多种输出模式：内容片段、完整页面、原始 Markdown
+         *
+         * @param {Object}   [options={}]
+         * @param {Boolean}  [options.includeStyles=true]  是否内联核心样式
+         * @param {Boolean}  [options.includeScripts=true] 是否内联交互脚本
+         * @param {Boolean}  [options.fullPage=false]       是否输出完整 HTML 页面（含 DOCTYPE/head/body）
+         * @param {Boolean}  [options.rawMarkdown=false]   是否返回原始 Markdown 而非渲染后的 HTML
+         * @param {String}   [options.title="Preview"]   fullPage 模式下的页面标题
+         * @returns {String} HTML 字符串
+         */
         getPreviewedHTML : function(options) {
-            if (!this.settings.watch && !this.previewContainer)
-            {
-                return "";
-            }
-            
             var opts = $.extend({
                 includeStyles  : true,
-                includeScripts : true
+                includeScripts : true,
+                fullPage       : false,
+                rawMarkdown    : false,
+                title          : "Preview"
             }, options || {});
-            
-            var rawHTML = this.previewContainer ? this.previewContainer.html() : "";
 
-            // 输出内容片段（不包含 DOCTYPE、head、body 等标签）
-            // 支持 includeStyles/includeScripts 控制内联资源
-            var html = '';
+            // 如果只需要原始 Markdown，直接返回
+            if (opts.rawMarkdown) {
+                return this.getMarkdown();
+            }
+
+            var rawHTML = "";
+            if (this.previewContainer) {
+                rawHTML = this.previewContainer.html();
+            } else if (!this.settings.watch) {
+                // 未开启预览，尝试重新渲染
+                var markdownText = this.getMarkdown();
+                if (markdownText) {
+                    var settings = this.settings;
+                    var rendererOptions = {
+                        toc: false, tocm: false, tocStartLevel: 1,
+                        taskList: settings.taskList,
+                        tex: settings.tex, pageBreak: settings.pageBreak,
+                        atLink: settings.atLink, emailLink: settings.emailLink,
+                        flowChart: settings.flowChart, sequenceDiagram: settings.sequenceDiagram,
+                        previewCodeHighlight: settings.previewCodeHighlight,
+                        pinyin: settings.pinyin,
+                        imageResize: settings.imageResize,
+                        echarts: settings.echarts,
+                        tabs: settings.tabs,
+                        columns: settings.columns,
+                        tooltip: settings.tooltip
+                    };
+                    var markedOptions = {
+                        renderer: editormd.markedRenderer([], rendererOptions),
+                        gfm: settings.gfm, tables: true, breaks: true,
+                        pedantic: false, sanitize: false,
+                        smartLists: true, smartypants: true
+                    };
+                    var markdownProtected3 = editormd.protectTeXSyntax(markdownText);
+                    var mdPreprocess = editormd.preprocessMarkdownBlocks(markdownProtected3, rendererOptions);
+                    rawHTML = editormd.$marked(mdPreprocess.markdown, markedOptions);
+                    rawHTML = editormd.restorePlaceholders(rawHTML, mdPreprocess.placeholders);
+                    rawHTML = editormd.restoreTeXSyntax(rawHTML);
+                    rawHTML = editormd.filterHTMLTags(rawHTML, settings.htmlDecode);
+                }
+            }
+
+            // 构建内联样式和脚本
             var inlineStyles = "";
             var inlineScripts = "";
-            
             if (opts.includeStyles) {
                 inlineStyles = this._getCoreStyles();
             }
             if (opts.includeScripts) {
                 inlineScripts = this._getInitScripts();
             }
-            
+
+            // 内容片段
+            var contentHTML = "";
             if (opts.includeStyles && inlineStyles) {
-                html += '<style>\n' + inlineStyles + '\n</style>\n';
+                contentHTML += '<style>\n' + inlineStyles + '\n</style>\n';
             }
-            html += '<div class="markdown-body editormd-html-preview">\n';
-            html += '  ' + rawHTML + '\n';
-            html += '</div>';
+            contentHTML += '<div class="markdown-body editormd-html-preview">\n';
+            contentHTML += '  ' + (rawHTML || "") + '\n';
+            contentHTML += '</div>';
             if (opts.includeScripts && inlineScripts) {
-                html += '\n<script>\n' + inlineScripts + '\n<\/script>';
+                contentHTML += '\n<script>\n' + inlineScripts + '\n<\/script>';
             }
-            
-            return html;
+
+            // 如果要求完整页面，包裹 DOCTYPE/html/head/body
+            if (opts.fullPage) {
+                var fullHTML = '<!DOCTYPE html>\n';
+                fullHTML += '<html lang="zh-CN">\n';
+                fullHTML += '<head>\n';
+                fullHTML += '  <meta charset="UTF-8">\n';
+                fullHTML += '  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n';
+                fullHTML += '  <title>' + opts.title + '</title>\n';
+                fullHTML += '</head>\n';
+                fullHTML += '<body>\n';
+                fullHTML += contentHTML + '\n';
+                fullHTML += '</body>\n';
+                fullHTML += '</html>';
+                return fullHTML;
+            }
+
+            return contentHTML;
         },
         
         /**
@@ -4305,7 +4375,7 @@
                 settings.onwatch = callback || function() {};
             }
             
-            $.proxy(settings.onwatch, this)();
+            settings.onwatch.call(this);
             
             return this;
         },
@@ -4341,7 +4411,7 @@
                 settings.onunwatch = callback || function() {};
             }
             
-            $.proxy(settings.onunwatch, this)();
+            settings.onunwatch.call(this);
             
             return this;
         },
@@ -4359,7 +4429,7 @@
             
             var _this = this;
             this.editor.show(0, function() {
-                $.proxy(callback, _this)();
+                callback.call(_this);
             });
             
             return this;
@@ -4378,7 +4448,7 @@
             
             var _this = this;
             this.editor.hide(0, function() {
-                $.proxy(callback, _this)();
+                callback.call(_this);
             });
             
             return this;
@@ -4450,7 +4520,7 @@
                 
                 if (this.state.loaded)
                 {
-                    $.proxy(settings.onpreviewing, this)();
+                    settings.onpreviewing.call(this);
                 }
 
                 $(window).on("keyup", escHandle);
@@ -4507,7 +4577,7 @@
 
             if (this.state.loaded)
             {
-                $.proxy(settings.onpreviewed, this)();
+                settings.onpreviewed.call(this);
             }
             
             return this;
@@ -4557,7 +4627,7 @@
 
                 this.resize();
     
-                $.proxy(settings.onfullscreen, this)();
+                settings.onfullscreen.call(this);
 
                 $(window).on("keyup", escHandle);
             }
@@ -4599,7 +4669,7 @@
 
             this.resize();
             
-            $.proxy(settings.onfullscreenExit, this)();
+            settings.onfullscreenExit.call(this);
 
             return this;
         },
@@ -4644,7 +4714,7 @@
             }
             else
             {
-                $.proxy(editormd.loadPlugins[name], this)(cm);
+                editormd.loadPlugins[name].call(this, cm);
             }
             
             return this;
@@ -4734,7 +4804,7 @@
             // 隐藏的自定义颜色区域
             var lang = _this.settings.lang;
             panelHTML.push('<div class="editormd-color-picker-custom-area" style="display:none;">');
-            panelHTML.push('<button class="editormd-color-picker-back">&larr; ' + (lang.buttons.close || "返回") + '</button>');
+            panelHTML.push('<button type="button" class="editormd-color-picker-back">&larr; ' + (lang.buttons.close || "返回") + '</button>');
             panelHTML.push('<input type="color" class="editormd-color-picker-native" value="#ff0000" style="display:none;">');
             panelHTML.push('<div class="editormd-color-picker-hex-row">');
             panelHTML.push('<input type="text" class="editormd-color-picker-hex-input" maxlength="7" placeholder="#000000">');
@@ -5527,6 +5597,470 @@
 
         "bg-color" : function() {
             this.showColorPicker("bg-color");
+        },
+
+        /**
+         * 插入公式：弹出公式示例面板，用户点击后插入对应 LaTeX 公式
+         */
+        formula : function() {
+            var _this       = this;
+            var cm          = this.cm;
+            var settings     = this.settings;
+            var lang        = settings.lang;
+            var cursor      = cm.getCursor();
+            var classPrefix = this.classPrefix;
+
+            // 公式分类和示例（涵盖各种复杂场景）
+            var katexAvail = (typeof editormd.$katex !== "undefined" && editormd.$katex !== null);
+            var formulaCategories = [
+                {
+                    name: "基础运算",
+                    icon: "fa-asterisk",
+                    formulas: [
+                        { name: "分式", latex: "\\frac{a}{b}" },
+                        { name: "连分数", latex: "\\cfrac{1}{a_1 + \\cfrac{1}{a_2 + \\cfrac{1}{a_3}}}" },
+                        { name: "上标", latex: "x^{n}" },
+                        { name: "下标", latex: "x_{i}" },
+                        { name: "上下标", latex: "x_{i}^{n}" },
+                        { name: "平方根", latex: "\\sqrt{x}" },
+                        { name: "立方根", latex: "\\sqrt[3]{x}" },
+                        { name: "嵌套根", latex: "\\sqrt{x^{2}+y^{2}}" },
+                        { name: "求和", latex: "\\sum_{i=1}^{n} x_i" },
+                        { name: "无穷求和", latex: "\\sum\\limits_{i=1}^{\\infty} a_i" },
+                        { name: "乘积", latex: "\\prod_{i=1}^{n} x_i" },
+                        { name: "并积", latex: "\\coprod_{i=1}^{n} x_i" },
+                        { name: "二项式系数", latex: "\\binom{n}{k}" },
+                        { name: "绝对值", latex: "|x|" },
+                        { name: "范数", latex: "\\lVert x \\rVert" }
+                    ]
+                },
+                {
+                    name: "微积分",
+                    icon: "fa-calculator",
+                    formulas: [
+                        { name: "定积分", latex: "\\int_{a}^{b} f(x) \\, dx" },
+                        { name: "不定积分", latex: "\\int f(x) \\, dx" },
+                        { name: "二重积分", latex: "\\iint_{D} f(x,y) \\, dA" },
+                        { name: "三重积分", latex: "\\iiint_{E} f(x,y,z) \\, dV" },
+                        { name: "环路积分", latex: "\\oint_{C} F \\cdot dr" },
+                        { name: "偏导数", latex: "\\frac{\\partial f}{\\partial x}" },
+                        { name: "混合偏导", latex: "\\frac{\\partial^2 f}{\\partial x \\partial y}" },
+                        { name: "极限", latex: "\\lim_{x \\to \\infty} f(x)" },
+                        { name: "导数定义", latex: "f'(x) = \\lim_{h \\to 0} \\frac{f(x+h)-f(x)}{h}" },
+                        { name: "梯度", latex: "\\nabla f(x,y)" },
+                        { name: "拉普拉斯", latex: "\\nabla^2 f = \\frac{\\partial^2}{\\partial x^2} + \\frac{\\partial^2}{\\partial y^2}" }
+                    ]
+                },
+                {
+                    name: "线性代数",
+                    icon: "fa-table",
+                    formulas: [
+                        { name: "2x2矩阵", latex: "\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}", block: true },
+                        { name: "3x3矩阵", latex: "\\begin{bmatrix} a & b & c \\\\ d & e & f \\\\ g & h & i \\end{bmatrix}", block: true },
+                        { name: "行列式", latex: "\\begin{vmatrix} a & b \\\\ c & d \\end{vmatrix}", block: true },
+                        { name: "向量", latex: "\\vec{v} = (x, y, z)" },
+                        { name: "单位向量", latex: "\\hat{v}" },
+                        { name: "点积", latex: "\\vec{a} \\cdot \\vec{b}" },
+                        { name: "叉积", latex: "\\vec{a} \\times \\vec{b}" },
+                        { name: "特征值方程", latex: "A\\vec{v} = \\lambda \\vec{v}" },
+                        { name: "逆矩阵", latex: "A^{-1}" },
+                        { name: "迹", latex: "\\operatorname{Tr}(A) = \\sum_{i} a_{ii}" }
+                    ]
+                },
+                {
+                    name: "三角函数",
+                    icon: "fa-circle-o",
+                    formulas: [
+                        { name: "正弦", latex: "\\sin \\theta" },
+                        { name: "余弦", latex: "\\cos \\theta" },
+                        { name: "正切", latex: "\\tan \\theta" },
+                        { name: "反正弦", latex: "\\arcsin x" },
+                        { name: "反余弦", latex: "\\arccos x" },
+                        { name: "反正切", latex: "\\arctan x" },
+                        { name: "双曲正弦", latex: "\\sinh x" },
+                        { name: "双曲余弦", latex: "\\cosh x" },
+                        { name: "恒等式", latex: "\\sin^2 \\theta + \\cos^2 \\theta = 1" },
+                        { name: "和角公式", latex: "\\sin(\\alpha+\\beta)=\\sin\\alpha\\cos\\beta+\\cos\\alpha\\sin\\beta" },
+                        { name: "倍角公式", latex: "\\sin 2\\theta = 2\\sin\\theta\\cos\\theta" }
+                    ]
+                },
+                {
+                    name: "概率统计",
+                    icon: "fa-bar-chart",
+                    formulas: [
+                        { name: "期望值", latex: "E[X] = \\sum_{i} x_i P(x_i)" },
+                        { name: "连续期望", latex: "E[X] = \\int_{-\\infty}^{\\infty} x f(x) dx" },
+                        { name: "方差", latex: "\\operatorname{Var}(X) = E[(X-\\mu)^2]" },
+                        { name: "标准差", latex: "\\sigma" },
+                        { name: "正态分布", latex: "f(x)=\\frac{1}{\\sigma\\sqrt{2\\pi}}e^{-\\frac{(x-\\mu)^2}{2\\sigma^2}}" },
+                        { name: "协方差", latex: "\\operatorname{Cov}(X,Y)=E[(X-\\mu_X)(Y-\\mu_Y)]" },
+                        { name: "条件概率", latex: "P(A|B) = \\frac{P(A \\cap B)}{P(B)}" },
+                        { name: "贝叶斯定理", latex: "P(A|B)=\\frac{P(B|A)P(A)}{P(B)}" },
+                        { name: "二项分布", latex: "P(X=k)=\\binom{n}{k}p^k(1-p)^{n-k}" },
+                        { name: "泊松分布", latex: "P(X=k)=\\frac{\\lambda^k e^{-\\lambda}}{k!}" }
+                    ]
+                },
+                {
+                    name: "集合论",
+                    icon: "fa-th",
+                    formulas: [
+                        { name: "属于", latex: "x \\in A" },
+                        { name: "不属于", latex: "x \\notin A" },
+                        { name: "子集", latex: "A \\subset B" },
+                        { name: "真子集", latex: "A \\subsetneq B" },
+                        { name: "超集", latex: "A \\supset B" },
+                        { name: "交集", latex: "A \\cap B" },
+                        { name: "并集", latex: "A \\cup B" },
+                        { name: "空集", latex: "\\emptyset" },
+                        { name: "全集", latex: "\\mathbb{U}" },
+                        { name: "补集", latex: "A^{c}" },
+                        { name: "差集", latex: "A \\setminus B" },
+                        { name: "笛卡尔积", latex: "A \\times B" }
+                    ]
+                },
+                {
+                    name: "逻辑推理",
+                    icon: "fa-code-fork",
+                    formulas: [
+                        { name: "蕴含", latex: "P \\Rightarrow Q" },
+                        { name: "等价", latex: "P \\Leftrightarrow Q" },
+                        { name: "全称量词", latex: "\\forall x \\in \\mathbb{R}" },
+                        { name: "存在量词", latex: "\\exists x" },
+                        { name: "唯一存在", latex: "\\exists! x" },
+                        { name: "合取", latex: "P \\land Q" },
+                        { name: "析取", latex: "P \\lor Q" },
+                        { name: "否定", latex: "\\neg P" },
+                        { name: "因此", latex: "\\therefore" },
+                        { name: "因为", latex: "\\because" }
+                    ]
+                },
+                {
+                    name: "希腊字母",
+                    icon: "fa-font",
+                    formulas: [
+                        { name: "α Alpha", latex: "\\alpha" },
+                        { name: "β Beta", latex: "\\beta" },
+                        { name: "γ Gamma", latex: "\\gamma" },
+                        { name: "Γ 大写Gamma", latex: "\\Gamma" },
+                        { name: "δ Delta", latex: "\\delta" },
+                        { name: "Δ 大写Delta", latex: "\\Delta" },
+                        { name: "ε Epsilon", latex: "\\epsilon" },
+                        { name: "ζ Zeta", latex: "\\zeta" },
+                        { name: "η Eta", latex: "\\eta" },
+                        { name: "θ Theta", latex: "\\theta" },
+                        { name: "Θ 大写Theta", latex: "\\Theta" },
+                        { name: "λ Lambda", latex: "\\lambda" },
+                        { name: "Λ 大写Lambda", latex: "\\Lambda" },
+                        { name: "μ Mu", latex: "\\mu" },
+                        { name: "π Pi", latex: "\\pi" },
+                        { name: "Π 大写Pi", latex: "\\Pi" },
+                        { name: "ρ Rho", latex: "\\rho" },
+                        { name: "σ Sigma", latex: "\\sigma" },
+                        { name: "Σ 大写Sigma", latex: "\\Sigma" },
+                        { name: "τ Tau", latex: "\\tau" },
+                        { name: "φ Phi", latex: "\\phi" },
+                        { name: "Φ 大写Phi", latex: "\\Phi" },
+                        { name: "ω Omega", latex: "\\omega" },
+                        { name: "Ω 大写Omega", latex: "\\Omega" }
+                    ]
+                },
+                {
+                    name: "箭头与关系",
+                    icon: "fa-arrows-h",
+                    formulas: [
+                        { name: "右箭头", latex: "\\rightarrow" },
+                        { name: "左箭头", latex: "\\leftarrow" },
+                        { name: "双向箭头", latex: "\\leftrightarrow" },
+                        { name: "长右箭头", latex: "\\longrightarrow" },
+                        { name: "映射", latex: "f: X \\mapsto Y" },
+                        { name: "大于等于", latex: "x \\geq y" },
+                        { name: "小于等于", latex: "x \\leq y" },
+                        { name: "不等于", latex: "x \\neq y" },
+                        { name: "约等于", latex: "x \\approx y" },
+                        { name: "正比于", latex: "F \\propto x" },
+                        { name: "偏序", latex: "a \\preceq b" }
+                    ]
+                },
+                {
+                    name: "括号与分隔符",
+                    icon: "fa-code",
+                    formulas: [
+                        { name: "圆括号(自适应)", latex: "\\left( \\frac{a}{b} \\right)" },
+                        { name: "方括号(自适应)", latex: "\\left[ \\frac{a}{b} \\right]" },
+                        { name: "花括号(自适应)", latex: "\\left\\{ \\frac{a}{b} \\right\\}" },
+                        { name: "角括号", latex: "\\langle x \\rangle" },
+                        { name: "上取整", latex: "\\lceil x \\rceil" },
+                        { name: "下取整", latex: "\\lfloor x \\rfloor" },
+                        { name: "分段函数", latex: "f(x)=\\begin{cases} x^2 & x>0 \\\\ 0 & x=0 \\\\ -x^2 & x<0 \\end{cases}", block: true },
+                        { name: "方程组", latex: "\\left\\{\\begin{aligned} x+y &= 5 \\\\ x-y &= 1 \\end{aligned}\\right.", block: true }
+                    ]
+                },
+                {
+                    name: "数论与特殊函数",
+                    icon: "fa-signal",
+                    formulas: [
+                        { name: "自然对数", latex: "\\ln x" },
+                        { name: "以2为底对数", latex: "\\log_2 x" },
+                        { name: "常用对数", latex: "\\lg x" },
+                        { name: "指数函数", latex: "e^{i\\theta}" },
+                        { name: "欧拉公式", latex: "e^{i\\pi} + 1 = 0" },
+                        { name: "自然常数", latex: "\\mathbb{e}" },
+                        { name: "虚数单位", latex: "\\mathbb{i}" },
+                        { name: "实数集", latex: "\\mathbb{R}" },
+                        { name: "自然数集", latex: "\\mathbb{N}" },
+                        { name: "整数集", latex: "\\mathbb{Z}" },
+                        { name: "复数集", latex: "\\mathbb{C}" },
+                        { name: "有理数集", latex: "\\mathbb{Q}" },
+                        { name: "阶乘", latex: "n!" },
+                        { name: "同余", latex: "a \\equiv b \\pmod{n}" }
+                    ]
+                }
+            ];
+
+            // 创建弹窗HTML（Tab导航 + 分类面板 + 搜索 + 自定义输入）
+            var dialogHTML = '<div class="' + classPrefix + 'formula-dialog">';
+            
+            // Tab 导航栏
+            dialogHTML += '<div class="' + classPrefix + 'formula-tabs">';
+            for (var ci = 0; ci < formulaCategories.length; ci++) {
+                var cat = formulaCategories[ci];
+                var actCls = (ci === 0) ? ' active' : '';
+                dialogHTML += '<span class="' + classPrefix + 'formula-tab' + actCls + '" data-cat="' + ci + '">';
+                dialogHTML += '<i class="fa ' + cat.icon + '"></i>' + cat.name + '</span>';
+            }
+            dialogHTML += '</div>';
+
+            // 搜索栏
+            dialogHTML += '<div class="' + classPrefix + 'formula-search-bar">';
+            dialogHTML += '<input type="text" class="' + classPrefix + 'formula-search" placeholder="搜索公式..." />';
+            dialogHTML += '<span class="' + classPrefix + 'formula-search-icon"><i class="fa fa-search"></i></span>';
+            dialogHTML += '</div>';
+
+            // 分类内容面板
+            dialogHTML += '<div class="' + classPrefix + 'formula-content">';
+            for (var ci2 = 0; ci2 < formulaCategories.length; ci2++) {
+                var cat2 = formulaCategories[ci2];
+                var panelStyle = (ci2 === 0) ? ' style="display:block;"' : ' style="display:none;"';
+                dialogHTML += '<div class="' + classPrefix + 'formula-category-panel" data-cat="' + ci2 + '"' + panelStyle + '>';
+                dialogHTML += '<div class="' + classPrefix + 'formula-grid">';
+                for (var fi = 0; fi < cat2.formulas.length; fi++) {
+                    var f = cat2.formulas[fi];
+                    // HTML 属性 + KaTeX 容器统一使用完整 HTML 实体转义
+                    // jQuery .text() / DOM textContent 会自动解码回原始字符，KaTeX 得到正确的 LaTeX
+                    var escLatex = f.latex.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    var blockAttr = f.block ? ' data-block="1"' : '';
+                    dialogHTML += '<div class="' + classPrefix + 'formula-item" data-latex="' + escLatex + '"' + blockAttr + ' title="' + escLatex + '">';
+                    dialogHTML += '<div class="' + classPrefix + 'formula-katex-container">' + escLatex + '</div>';
+                    dialogHTML += '<div class="' + classPrefix + 'formula-name">' + f.name + '</div>';
+                    dialogHTML += '</div>';
+                }
+                dialogHTML += '</div></div>';
+            }
+            dialogHTML += '</div>'; // .formula-content
+
+            // 底部：模式切换 + 自定义公式
+            dialogHTML += '<div class="' + classPrefix + 'formula-footer">';
+            dialogHTML += '<div class="' + classPrefix + 'formula-mode-toggle">';
+            dialogHTML += '<label class="' + classPrefix + 'formula-radio">';
+            dialogHTML += '<input type="radio" name="' + classPrefix + 'formulaMode" value="inline" checked /> 行内($)</label>';
+            dialogHTML += '<label class="' + classPrefix + 'formula-radio">';
+            dialogHTML += '<input type="radio" name="' + classPrefix + 'formulaMode" value="block" /> 块级($$)</label>';
+            dialogHTML += '</div>';
+            dialogHTML += '<div class="' + classPrefix + 'formula-custom">';
+            dialogHTML += '<input type="text" class="' + classPrefix + 'formula-custom-input" placeholder="输入 LaTeX 公式..." />';
+            dialogHTML += '<button type="button" class="' + classPrefix + 'formula-custom-btn">插入</button>';
+            dialogHTML += '</div>';
+            dialogHTML += '</div>';
+            dialogHTML += '</div>'; // .formula-dialog
+
+            // ===== 确保每次打开公式弹窗都是全新状态 =====
+            // createDialog 每次 append 新 HTML，不会删除旧 DOM。
+            // 若不清理，第二次打开时选择器会拿到旧的已渲染 DOM，导致公式预览显示为 KaTeX HTML 而不是 LaTeX。
+            var dialogName = classPrefix + "formula-dialog";
+            _this.editor.find("." + dialogName).remove();
+            
+            // 创建对话框（捕获返回的 dialog 对象，它附带了 lockScreen/hideMask 等方法）
+            var $dialog = editormd.createDialog.call(_this, {
+                name       : dialogName,
+                title      : lang.toolbar.formula || "插入公式",
+                width      : 900,
+                height     : 600,
+                content    : dialogHTML,
+                lockScreen : true,
+                mask       : true,
+                drag       : true,
+                buttons    : false,
+                overlay    : {
+                    show        : true,
+                    color       : "#fff",
+                    opacity     : 0.1
+                }
+            });
+            var $formulaItems = $dialog.find("." + classPrefix + "formula-item");
+            var $searchInput = $dialog.find("." + classPrefix + "formula-search");
+            var $customInput = $dialog.find("." + classPrefix + "formula-custom-input");
+            var $customBtn = $dialog.find("." + classPrefix + "formula-custom-btn");
+            var $tabs = $dialog.find("." + classPrefix + "formula-tab");
+            var $panels = $dialog.find("." + classPrefix + "formula-category-panel");
+            var $katexContainers = $dialog.find("." + classPrefix + "formula-katex-container");
+
+            // ===== 延迟 + 按需渲染 KaTeX 预览 =====
+            // 仅初始渲染第一个（当前激活）Tab 的公式，其他 Tab 在切换时按需渲染
+            var renderedTabs = {};
+            
+            function renderPanelFormulas(panel) {
+                var $p = $(panel);
+                var catIdx = $p.data("cat");
+                if (renderedTabs[catIdx]) return;
+                renderedTabs[catIdx] = true;
+                // 使用 requestAnimationFrame 批量渲染，避免阻塞 UI
+                var $containers = $p.find("." + classPrefix + "formula-katex-container");
+                var i = 0;
+                function renderBatch() {
+                    var batchEnd = Math.min(i + 6, $containers.length);
+                    for (; i < batchEnd; i++) {
+                        var $el = $containers.eq(i);
+                        var latexText = $el.text();
+                        if (!latexText) continue;
+                        // 根据公式的 block 属性决定 displayMode，块级公式（矩阵、行列式等）需要 displayMode: true
+                        var $item = $el.closest("." + classPrefix + "formula-item");
+                        var isBlock = $item.length && $item.data("block") == "1";
+                        try {
+                            editormd.$katex.render(latexText, $el[0], { throwOnError: false, displayMode: isBlock });
+                        } catch(e) {
+                            if (window.console) console.error("KaTeX render error:", e);
+                        }
+                    }
+                    if (i < $containers.length) {
+                        requestAnimationFrame(renderBatch);
+                    }
+                }
+                requestAnimationFrame(renderBatch);
+            }
+            
+            // 延迟 30ms 后开始渲染首屏公式（让弹窗先显示出来）
+            if (katexAvail) {
+                setTimeout(function() {
+                    var firstPanel = $panels.filter(":visible").first();
+                    if (firstPanel.length) renderPanelFormulas(firstPanel[0]);
+                }, 30);
+            }
+
+            // Tab 切换 — 按需渲染
+            $tabs.off("click").on("click", function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var catIdx = $(this).data("cat");
+                $tabs.removeClass("active");
+                $(this).addClass("active");
+                $panels.hide();
+                var $targetPanel = $dialog.find('.' + classPrefix + 'formula-category-panel[data-cat="' + catIdx + '"]').show();
+                // 切换 Tab 时按需渲染该面板的公式
+                if (katexAvail && $targetPanel.length) {
+                    setTimeout(function() { renderPanelFormulas($targetPanel[0]); }, 20);
+                }
+            });
+
+            // 获取当前插入模式
+            function getFormulaMode() {
+                return $dialog.find('input[name="' + classPrefix + 'formulaMode"]:checked').val() || "inline";
+            }
+
+            // 点击公式项 → 插入并自动关闭弹窗
+            $formulaItems.off("click").on("click", function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var latex = $(this).data("latex"); // data() 自动解码 HTML 实体
+                var isBlockMode = getFormulaMode() === "block";
+                var hasBlockData = $(this).data("block") == "1";
+                var useBlock = isBlockMode || hasBlockData;
+                var isBlockSyntax = latex && (latex.indexOf("\\begin") !== -1 || latex.indexOf("\\end") !== -1);
+                var toInsert;
+                if (useBlock || isBlockSyntax) {
+                    toInsert = isBlockSyntax ? "\n$$\n" + latex + "\n$$\n" : "$$" + latex + "$$";
+                } else {
+                    toInsert = "$" + latex + "$";
+                }
+                cm.replaceSelection(toInsert);
+                // 插入后先聚焦编辑器，再关闭弹窗防止卡死
+                cm.focus();
+                if (settings.watch) { _this.save.call(_this); }
+                if ($dialog && typeof $dialog.lockScreen === "function") {
+                    $dialog.hide().lockScreen(false).hideMask();
+                } else {
+                    // 降级方案：直接操作
+                    $dialog.hide();
+                    editormd.lockScreen(false);
+                    _this.mask.hide();
+                }
+            });
+
+            // 搜索过滤
+            $searchInput.off("input").on("input", function() {
+                var keyword = $(this).val().toLowerCase();
+                if (keyword === "") {
+                    var activeCat = $tabs.filter(".active").data("cat");
+                    $tabs.show();
+                    $panels.each(function() {
+                        $(this).toggle(String($(this).data("cat")) === String(activeCat));
+                    });
+                    $formulaItems.show();
+                    return;
+                }
+                $tabs.hide();
+                $panels.show();
+                $formulaItems.each(function() {
+                    var $item = $(this);
+                    var name = $item.find("." + classPrefix + "formula-name").text().toLowerCase();
+                    var latex = ($item.data("latex") || "").toLowerCase();
+                    $item.toggle(name.indexOf(keyword) !== -1 || latex.indexOf(keyword) !== -1);
+                });
+                $panels.each(function() {
+                    $(this).toggle($(this).find("." + classPrefix + "formula-item:visible").length > 0);
+                });
+            });
+            // 搜索框 Enter 键阻止表单提交
+            $searchInput.off("keydown").on("keydown", function(e) {
+                if (e.keyCode === 13) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            });
+
+            // 自定义公式插入
+            function insertCustom() {
+                var customLatex = $customInput.val().trim();
+                if (!customLatex) { editormd.notify("请输入 LaTeX 公式", "warning"); return; }
+                var isBlockMode = getFormulaMode() === "block";
+                var isBlockSyntax = customLatex.indexOf("\\begin") !== -1 || customLatex.indexOf("\\end") !== -1;
+                var toInsert = (isBlockMode || isBlockSyntax) ? 
+                    (isBlockSyntax ? "\n$$\n" + customLatex + "\n$$\n" : "$$" + customLatex + "$$") :
+                    "$" + customLatex + "$";
+                cm.replaceSelection(toInsert);
+                cm.focus();
+                if (settings.watch) { _this.save.call(_this); }
+                $customInput.val("");
+                // 插入后自动关闭弹窗
+                if ($dialog && typeof $dialog.lockScreen === "function") {
+                    $dialog.hide().lockScreen(false).hideMask();
+                } else {
+                    $dialog.hide();
+                    editormd.lockScreen(false);
+                    _this.mask.hide();
+                }
+            }
+            $customBtn.off("click").on("click", function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                insertCustom();
+            });
+            $customInput.off("keydown").on("keydown", function(e) {
+                if (e.keyCode === 13) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    insertCustom();
+                }
+            });
         }
     };
 
@@ -5701,6 +6235,35 @@
     };
 
     /**
+     * Protect LaTeX backslashes inside $...$ and $$...$$ from marked.js escape processing.
+     * marked.js treats `\\` as escaped backslash, `\{` as escaped brace, etc.,
+     * which corrupts LaTeX commands that rely on these sequences.
+     */
+    var TEX_BSLASH_PLACEHOLDER = "EDITORMDBSLHPLACEHOLDER7F3A";
+
+    editormd.protectTeXSyntax = function(markdown) {
+        if (!markdown) return markdown;
+
+        // Protect $$...$$ blocks first (handles inner $ not being double-matched)
+        markdown = markdown.replace(/\$\$([\s\S]*?)\$\$/g, function(match, tex) {
+            return "$$" + tex.replace(/\\/g, TEX_BSLASH_PLACEHOLDER) + "$$";
+        });
+
+        // Protect remaining $...$ inline formulas (skip lines that look like $$ remnants)
+        markdown = markdown.replace(/\$([^$\n]+?)\$/g, function(match, tex) {
+            return "$" + tex.replace(/\\/g, TEX_BSLASH_PLACEHOLDER) + "$";
+        });
+
+        return markdown;
+    };
+
+    editormd.restoreTeXSyntax = function(html) {
+        if (!html) return html;
+        // Use split/join for better performance than regex on long strings
+        return html.split(TEX_BSLASH_PLACEHOLDER).join("\\");
+    };
+
+    /**
      * Preprocess markdown to extract custom block-level syntax (tabs, columns, align)
      * before passing to marked. This prevents conflicts with fenced code blocks.
      */
@@ -5745,18 +6308,42 @@
         function protectCodeBlocks(text) {
             var codePlaceholders = [];
             var cid = 0;
-            // 1. 保护围栏代码块 ``` 或 ~~~
-            text = text.replace(/(```|~~~)(\w*)\n([\s\S]*?)\n?\1/g, function(match) {
+
+            /**
+             * 保护围栏代码块：支持 ``` 和 ~~~，支持任意数量的反引号/波浪号作为分隔符
+             * 规则：开标签是 3 个或更多 ` 或 ~，闭标签必须与开标签相同数量的相同字符
+             * 支持代码块内包含任意内容（包括嵌套的 [[tabs]]、[[columns]] 等）
+             */
+            // 匹配围栏代码块：开标签(3+个 ` 或 ~)，可选语言名，内容，闭标签(相同数量的 ` 或 ~)
+            // 使用非贪婪匹配内容，确保匹配最近的闭标签
+            text = text.replace(/(`{3,}|~{3,})([^\n]*)\n([\s\S]*?)\n?\1/g, function(match, fence, lang, content) {
                 var id = "editormd-cb-" + (++cid);
                 codePlaceholders.push({ id: id, html: match });
                 return "<!--" + id + "-->";
             });
-            // 2. 保护行内代码 `code`（不跨行）
-            text = text.replace(/`([^`\n]+)`/g, function(match) {
+
+            /**
+             * 保护行内代码：支持单反引号 `code` 和多反引号 ``code``
+             * 规则：开标签是 1 个或多个 `，闭标签必须是相同数量的 `
+             * 行内代码不能跨行（Markdown 规范）
+             */
+            // 先处理多反引号行内代码（2+ 个反引号），再处理单反引号
+            // 多反引号：``code`` 或 ```code```
+            text = text.replace(/(`{2,})([\s\S]*?)\1/g, function(match, fence, content) {
+                // 确保不是围栏代码块（围栏代码块已经处理了，这里只处理真正的行内代码）
+                // 行内代码不能包含换行符
+                if (content.indexOf('\n') !== -1) return match;
                 var id = "editormd-cb-" + (++cid);
                 codePlaceholders.push({ id: id, html: match });
                 return "<!--" + id + "-->";
             });
+            // 单反引号行内代码：`code`（不能跨行，不能包含 `）
+            text = text.replace(/`([^`\n]+)`/g, function(match, content) {
+                var id = "editormd-cb-" + (++cid);
+                codePlaceholders.push({ id: id, html: match });
+                return "<!--" + id + "-->";
+            });
+
             return { text: text, placeholders: codePlaceholders };
         }
 
@@ -5790,12 +6377,55 @@
             var openRe = new RegExp(openRegex.source, openRegex.flags.replace('g', '') + 'g');
             var closeRe = new RegExp(closeRegex.source, closeRegex.flags.replace('g', '') + 'g');
 
+            // 辅助函数：判断从指定位置开始是否真的存在匹配的闭标签对
+            // 用于验证嵌套语法是否有效（避免将普通文本中的 [[columns:3]] 误判为嵌套）
+            function hasMatchingPair(fromPos) {
+                var tmpOpen = new RegExp(openRegex.source, openRegex.flags.replace('g', '') + 'g');
+                var tmpClose = new RegExp(closeRegex.source, closeRegex.flags.replace('g', '') + 'g');
+                var tmpDepth = 1;
+                var tmpPos = fromPos;
+                tmpOpen.lastIndex = tmpPos;
+                tmpClose.lastIndex = tmpPos;
+                var tmpCloseMatch;
+                while (tmpDepth > 0 && (tmpCloseMatch = tmpClose.exec(text)) !== null) {
+                    tmpOpen.lastIndex = tmpPos;
+                    var tmpOpenMatch;
+                    while ((tmpOpenMatch = tmpOpen.exec(text)) !== null && tmpOpenMatch.index < tmpCloseMatch.index) {
+                        // 对每个嵌套的开标签，验证它是否有对应的闭标签
+                        if (hasMatchingPair(tmpOpen.lastIndex)) {
+                            tmpDepth++;
+                            tmpPos = tmpOpen.lastIndex;
+                            tmpOpen.lastIndex = tmpPos;
+                        } else {
+                            // 这个伪嵌套开标签没有对应闭标签，不增加 depth
+                            // 将 tmpOpen.lastIndex 设置为 tmpOpenMatch 之后，跳过它
+                            tmpPos = tmpOpenMatch.index + 1;
+                            tmpOpen.lastIndex = tmpPos;
+                        }
+                    }
+                    tmpDepth--;
+                    if (tmpDepth > 0) {
+                        tmpPos = tmpClose.lastIndex;
+                        tmpClose.lastIndex = tmpPos;
+                    }
+                }
+                return tmpDepth === 0;
+            }
+
             while (i < text.length) {
                 openRe.lastIndex = i;
                 openMatch = openRe.exec(text);
                 if (!openMatch) break;
 
                 var openEnd = openRe.lastIndex;
+
+                // 预检查：从当前位置开始是否真的能匹配对应的闭标签
+                // 避免孤立开标签（如普通文本中的 [[columns:3]] 没有对应 [[/columns]]）
+                if (!hasMatchingPair(openEnd)) {
+                    i = openEnd;
+                    continue;
+                }
+
                 var depth = 1;
                 var searchPos = openEnd;
 
@@ -5806,9 +6436,17 @@
                     openRe.lastIndex = searchPos;
                     var nestedOpen;
                     while ((nestedOpen = openRe.exec(text)) !== null && nestedOpen.index < closeMatch.index) {
-                        depth++;
-                        searchPos = openRe.lastIndex;
-                        openRe.lastIndex = searchPos;
+                        // 验证这个嵌套开标签是否有对应的闭标签
+                        if (hasMatchingPair(openRe.lastIndex)) {
+                            depth++;
+                            searchPos = openRe.lastIndex;
+                            openRe.lastIndex = searchPos;
+                        } else {
+                            // 伪嵌套：这个 [[columns:N]] 或 [[tabs]] 没有对应的闭标签
+                            // 不增加 depth，直接跳过
+                            searchPos = nestedOpen.index + 1;
+                            openRe.lastIndex = searchPos;
+                        }
                     }
                     depth--;
                     if (depth > 0) {
@@ -5862,13 +6500,14 @@
         });
 
         // 处理标签页语法：[[tabs]]...[[/tabs]]（支持嵌套）
+        // 注意：必须逆序处理（从后往前），否则前面的 block 被替换后，
+        // 后续 block 的位置（基于原始文本）会错误地偏移
         if (options.tabs !== false) {
             var tabBlocks = findBalancedBlocks(markdown, /\[\[tabs\]\]/g, /\[\[\/tabs\]\]/g);
-            var tabOffset = 0;
-            for (var bi = 0; bi < tabBlocks.length; bi++) {
+            for (var bi = tabBlocks.length - 1; bi >= 0; bi--) {
                 var block = tabBlocks[bi];
                 var content = block.content;
-                var originalEnd = block.end + tabOffset;
+                var originalEnd = block.end;
                 var tabHtml = '<div class="editormd-tabs">';
                 var tabHeaders = '<ul class="editormd-tab-nav">';
                 var tabBodies = '<div class="editormd-tab-body">';
@@ -5884,7 +6523,9 @@
                     hasTabs = true;
                     var tabTitle = tabMatch[1].trim();
                     var tabContent = tabMatch[2].trim();
-                    var preprocessed = editormd.preprocessMarkdownBlocks(tabContent, options);
+                    // 在递归处理前，先恢复上层保护的代码块占位符，避免 marked 渲染时丢失
+                    var tabContentRestored = restoreCodeBlocks(tabContent, codeProtection.placeholders);
+                    var preprocessed = editormd.preprocessMarkdownBlocks(tabContentRestored, options);
                     var tabContentHtml = editormd.$marked(preprocessed.markdown, tabMarkedOptions);
                     tabContentHtml = editormd.restorePlaceholders(tabContentHtml, preprocessed.placeholders);
 
@@ -5896,7 +6537,9 @@
                 }
 
                 if (!hasTabs) {
-                    var preprocessed2 = editormd.preprocessMarkdownBlocks(content.trim(), options);
+                    // 在递归处理前，先恢复上层保护的代码块占位符
+                    var contentRestored = restoreCodeBlocks(content.trim(), codeProtection.placeholders);
+                    var preprocessed2 = editormd.preprocessMarkdownBlocks(contentRestored, options);
                     var defaultHtml = editormd.$marked(preprocessed2.markdown, tabMarkedOptions);
                     defaultHtml = editormd.restorePlaceholders(defaultHtml, preprocessed2.placeholders);
                     tabHeaders += '<li class="active" data-index="0">Tab1</li>';
@@ -5908,31 +6551,29 @@
                 tabHtml += tabHeaders + tabBodies + '</div>';
 
                 var placeholder = addPlaceholder(tabHtml);
-                var lengthDiff = placeholder.length - (originalEnd - block.start);
                 markdown = markdown.substring(0, block.start) + placeholder + markdown.substring(originalEnd);
-                tabOffset += lengthDiff;
             }
         }
 
         // 处理多栏布局语法：[[columns:N]]...[[/columns]]（支持嵌套）
+        // 注意：同样逆序处理，避免位置偏移问题
         if (options.columns !== false) {
             var colBlocks = findBalancedBlocks(markdown, /\[\[columns:(\d+)\]\]/g, /\[\[\/columns\]\]/g);
-            var colOffset = 0;
-            for (var ci = 0; ci < colBlocks.length; ci++) {
+            for (var ci = colBlocks.length - 1; ci >= 0; ci--) {
                 var colBlock = colBlocks[ci];
                 var colMatch = colBlock.fullMatch.match(/\[\[columns:(\d+)\]\]/);
                 var colCount = colMatch ? parseInt(colMatch[1], 10) || 3 : 3;
                 var colContent = colBlock.content;
-                var colOriginalEnd = colBlock.end + colOffset;
+                var colOriginalEnd = colBlock.end;
                 var colMarkedOptions = createMarkedOptions(options, true);
-                var preprocessed = editormd.preprocessMarkdownBlocks(colContent.trim(), options);
+                // 在递归处理前，先恢复上层保护的代码块占位符，避免 marked 渲染时丢失
+                var colContentRestored = restoreCodeBlocks(colContent.trim(), codeProtection.placeholders);
+                var preprocessed = editormd.preprocessMarkdownBlocks(colContentRestored, options);
                 var colContentHtml = editormd.$marked(preprocessed.markdown, colMarkedOptions);
                 colContentHtml = editormd.restorePlaceholders(colContentHtml, preprocessed.placeholders);
                 var colHtml = '<div class="editormd-columns" data-count="' + colCount + '" style="-webkit-column-count:' + colCount + ';-moz-column-count:' + colCount + ';column-count:' + colCount + ';">' + colContentHtml + '</div>';
                 var colPlaceholder = addPlaceholder(colHtml);
-                var colLengthDiff = colPlaceholder.length - (colOriginalEnd - colBlock.start);
                 markdown = markdown.substring(0, colBlock.start) + colPlaceholder + markdown.substring(colOriginalEnd);
-                colOffset += colLengthDiff;
             }
         }
 
@@ -6033,9 +6674,12 @@
         var pageBreakReg    = regexs.pageBreak;
 
         markedRenderer.atLink = function(text) {
-
+            // 重置 atLinkReg 的 lastIndex，避免全局正则的状态残留问题
+            atLinkReg.lastIndex = 0;
+            
             if (atLinkReg.test(text))
             { 
+                atLinkReg.lastIndex = 0;
                 if (settings.atLink) 
                 {
                     text = text.replace(emailReg, function($1, $2, $3, $4) {
@@ -6179,9 +6823,9 @@
             var imageExts = /\.(jpg|jpeg|png|gif|bmp|webp)(\?.*)?$/i;
             
             if (videoExts.test(href)) {
-                var videoOut = '<video src="' + href + '" controls preload="metadata" class="editormd-video-player">';
+                var videoOut = '<video src="' + href + '" controls preload="metadata" class="editormd-video-player"';
                 if (title) videoOut += ' title="' + title + '"';
-                videoOut += text + '</video>';
+                videoOut += '>' + text + '</video>';
                 return videoOut;
             }
             
@@ -6191,7 +6835,14 @@
                 out += ' download class="editormd-attachment-link"';
             }
             
-            if (atLinkReg.test(title) || atLinkReg.test(text))
+            // 重置 atLinkReg 的 lastIndex，避免全局正则的状态残留
+            atLinkReg.lastIndex = 0;
+            var titleHasAt = atLinkReg.test(title || "");
+            atLinkReg.lastIndex = 0;
+            var textHasAt = atLinkReg.test(text || "");
+            atLinkReg.lastIndex = 0;
+            
+            if (titleHasAt || textHasAt)
             {
                 if (title)
                 {
@@ -6284,7 +6935,7 @@
             // 若过滤后为空，回退到原始文本
             if (!tocText) tocText = text;
             
-            var escapedText    = tocText.toLowerCase().replace(/[^\w]+/g, "-");
+            var escapedText    = tocText.replace(/[^\u4e00-\u9fa5\w\s]+/g, "").replace(/\s+/g, "-").replace(/^-+|-+$/g, "");
             var toc = {
                 text  : tocText,
                 level : level,
@@ -6300,7 +6951,7 @@
             
             headingHTML    += "<a name=\"" + text + "\" class=\"reference-link\"></a>";
             headingHTML    += "<span class=\"header-link octicon octicon-link\"></span>";
-            var displayText = (hasLinkReg) ? this.atLink(linkText) : this.atLink(text);
+            var displayText = (hasLinkReg.test(linkText)) ? this.atLink(linkText) : this.atLink(text);
             headingHTML    += this.postProcessInline(displayText);
             headingHTML    += "</h" + level + ">";
 
@@ -6317,21 +6968,37 @@
         };
 
         markedRenderer.paragraph = function(text) {
-            var isTeXInline     = /\$\$(.*)\$\$/g.test(text);
-            var isTeXLine       = /^\$\$(.*)\$\$$/.test(text);
-            var isTeXAddClass   = (isTeXLine)     ? " class=\"" + editormd.classNames.tex + "\"" : "";
             var isToC           = (settings.tocm) ? /^(\[TOC\]|\[TOCM\])$/.test(text) : /^\[TOC\]$/.test(text);
             var isToCMenu       = /^\[TOCM\]$/.test(text);
             
-            if (!isTeXLine && isTeXInline) 
+            if (settings.tex) 
             {
-                text = text.replace(/(\$\$([^\$]*)\$\$)+/g, function($1, $2) {
-                    return "<span class=\"" + editormd.classNames.tex + "\">" + $2.replace(/\$/g, "") + "</span>";
+                // 恢复被 marked.js breaks:true 插入的 <br> 标签
+                // 注：LaTeX 反斜杠已在 protectTeXSyntax 中保护，此处只需处理 <br>
+                var restoreTeXBreaks = function(texText) {
+                    return texText.replace(/<br\s*\/?>\s*/gi, " ");
+                };
+                
+                var isTeXLine = /^\$\$([\s\S]*)\$\$$/.test(text);
+                
+                if (isTeXLine) 
+                {
+                    // 整个段落是块级公式: $$...$$ → 直接包裹为 editormd-tex 块
+                    text = text.replace(/^\$\$/, "").replace(/\$\$$/, "");
+                    text = restoreTeXBreaks(text);
+                    text = this.postProcessInline(text);
+                    return "<p class=\"" + editormd.classNames.tex + "\" style=\"text-align:center;\">" + text + "</p>\n";
+                }
+                
+                // 段落内混合公式处理
+                // Step 1: 先处理 $$...$$ 块级公式（行内块级）
+                text = text.replace(/\$\$([^$]+?)\$\$/g, function(match, content) {
+                    return '<span class="' + editormd.classNames.tex + '" style="display:block;text-align:center;">' + restoreTeXBreaks(content.trim()) + '</span>';
                 });
-            } 
-            else 
-            {
-                text = (isTeXLine) ? text.replace(/\$/g, "") : text;
+                // Step 2: 再处理 $...$ 行内公式（单美元符）
+                text = text.replace(/\$(?!\$)([^$]+?)\$(?!\$)/g, function(match, content) {
+                    return '<span class="' + editormd.classNames.tex + '">' + restoreTeXBreaks(content) + '</span>';
+                });
             }
             
             var tocHTML = "<div class=\"markdown-toc editormd-markdown-toc\">" + text + "</div>";
@@ -6339,16 +7006,16 @@
             text = this.postProcessInline(text);
             
             return (isToC) ? ( (isToCMenu) ? "<div class=\"editormd-toc-menu\">" + tocHTML + "</div><br/>" : tocHTML )
-                           : ( (pageBreakReg.test(text)) ? this.pageBreak(text) : "<p" + isTeXAddClass + ">" + this.atLink(text) + "</p>\n" );
+                           : ( (pageBreakReg.test(text)) ? this.pageBreak(text) : "<p>" + this.atLink(text) + "</p>\n" );
         };
 
         markedRenderer.code = function (code, lang, escaped) { 
 
-            if (lang === "seq" || lang === "sequence")
+            if (lang === "seq" || lang === "sequence" || lang === "sequenceDiagram")
             {
                 return "<div class=\"sequence-diagram\">" + code + "</div>";
             } 
-            else if ( lang === "flow")
+            else if ( lang === "flow" || lang === "flowChart")
             {
                 return "<div class=\"flowchart\">" + code + "</div>";
             } 
@@ -6572,13 +7239,12 @@
                 'table': ['border', 'cellpadding', 'cellspacing'],
                 'th': ['colspan', 'rowspan', 'align'],
                 'td': ['colspan', 'rowspan', 'align'],
-                'input': ['type', 'checked', 'disabled', 'class'],
                 'code': ['class', 'data-lang'],
                 'pre': ['class', 'data-lang']
             },
             allowedSchemes: ['http', 'https', 'mailto', 'tel'],
             dangerousAttributes: ['onerror', 'onload', 'onclick', 'onmouseover', 'onmouseout', 'onfocus', 'onblur', 'onchange', 'onsubmit', 'onkeydown', 'onkeyup', 'onkeypress', 'ondblclick', 'onmousedown', 'onmouseup', 'onmousemove', 'onmouseenter', 'onmouseleave', 'ontouchstart', 'ontouchend', 'ontouchmove', 'onscroll', 'onresize', 'onselect', 'onreset', 'onformchange', 'onforminput', 'ondrag', 'ondragend', 'ondragenter', 'ondragleave', 'ondragover', 'ondragstart', 'ondrop', 'onabort', 'oncanplay', 'oncanplaythrough', 'oncontextmenu', 'oncuechange', 'ondurationchange', 'onemptied', 'onended', 'oninput', 'oninvalid', 'onpause', 'onplay', 'onplaying', 'onprogress', 'onratechange', 'onreadystatechange', 'onseeked', 'onseeking', 'onstalled', 'onsuspend', 'ontimeupdate', 'onvolumechange', 'onwaiting', 'onwheel'],
-            dangerousTags: ['script', 'style', 'iframe', 'frame', 'frameset', 'object', 'embed', 'applet', 'base', 'basefont', 'link', 'meta', 'noscript', 'template', 'canvas', 'form', 'input', 'textarea', 'button', 'select', 'option', 'optgroup', 'datalist', 'fieldset', 'label', 'legend', 'meter', 'output', 'progress', 'audio', 'video', 'source', 'track']
+            dangerousTags: ['script', 'style', 'iframe', 'frame', 'frameset', 'object', 'embed', 'applet', 'base', 'basefont', 'link', 'meta', 'noscript', 'template', 'canvas', 'form', 'input', 'textarea', 'button', 'select', 'option', 'optgroup', 'datalist', 'fieldset', 'label', 'legend', 'meter', 'output', 'progress', 'source', 'track']
         };
         
         // 彻底移除危险标签
@@ -6946,7 +7612,7 @@
             tables      : true,
             breaks      : true,
             pedantic    : false,
-            sanitize    : (settings.htmlDecode) ? false : true, // 是否过滤 HTML 标签，即是否开启 HTML 标签解析（默认关闭以保证安全性）
+            sanitize    : false, // 关闭 sanitize 以确保 HTML 注释占位符不被转义，占位符用于 tabs/columns 等自定义语法
             smartLists  : true,
             smartypants : true
         };
@@ -7045,8 +7711,16 @@
         {
             var katexHandle = function() {
                 div.find("." + editormd.classNames.tex).each(function(){
-                    var tex  = $(this);                    
-                    katex.render(tex.html().replace(/&lt;/g, "<").replace(/&gt;/g, ">"), tex[0]);                    
+                    var tex  = $(this);
+                    // 使用 .text() 自动解码 HTML 实体，与同步渲染一致
+                    var texCode = tex.text();
+                    // 修复 KaTeX 对 &amp; 等实体处理
+                    texCode = texCode.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"');
+                    if (texCode.trim()) {
+                        // 自动检测 displayMode：公式含 \begin{...}（矩阵、行列式等）使用块级模式
+                        var isBlock = /^\\begin\{/.test(texCode);
+                        katex.render(texCode, tex[0], { throwOnError: false, displayMode: isBlock });
+                    }
                     tex.find(".katex").css("font-size", "1.6em");
                 });
             };
@@ -7146,7 +7820,7 @@
                 $cols.find(".editormd-column-divider").remove();
                 $cols.css("position", "relative");
                 for (var i = 1; i < count; i++) {
-                    var $divider = $('<div class="editormd-column-divider"><span class="editormd-column-divider-icon">&#166;</span></div>');
+                    var $divider = $('<div class="editormd-column-divider"></div>');
                     $divider.css({
                         position: "absolute",
                         left: (i / count * 100) + "%",
@@ -7155,9 +7829,6 @@
                         width: "0",
                         transform: "translateX(-50%)",
                         borderLeft: "1px dashed #bbb",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
                         pointerEvents: "none",
                         zIndex: 1
                     });
@@ -7622,7 +8293,9 @@
 
         $(window).resize(dialogPosition);
 
-        dialog.children("." + classPrefix + "dialog-close").on(mouseOrTouch("click", "touchend"), function() {
+        dialog.children("." + classPrefix + "dialog-close").on(mouseOrTouch("click", "touchend"), function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             dialog.hide().lockScreen(false).hideMask();
         });
 
@@ -7635,9 +8308,13 @@
                 var btn = options.buttons[key];
                 var btnClassName = classPrefix + key + "-btn";
 
-                footer.append("<button class=\"" + classPrefix + "btn " + btnClassName + "\">" + btn[0] + "</button>");
-                btn[1] = $.proxy(btn[1], dialog);
-                footer.children("." + btnClassName).on(mouseOrTouch("click", "touchend"), btn[1]);
+                footer.append("<button type=\"button\" class=\"" + classPrefix + "btn " + btnClassName + "\">" + btn[0] + "</button>");
+                btn[1] = btn[1].bind(dialog);
+                footer.children("." + btnClassName).on(mouseOrTouch("click", "touchend"), function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    btn[1](e);
+                });
             }
         }
 

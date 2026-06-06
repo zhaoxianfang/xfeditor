@@ -1,45 +1,52 @@
-# jQuery 3.7 升级修复总结
+# Editor.md 修复与优化总结
+
+**当前版本**: v1.7.0  
+**修复日期**: 2026-06-06  
+**jQuery 版本**: 3.7.1  
+**KaTeX 版本**: v0.16.9（已从旧版本升级）
+
+---
 
 ## 📊 修复统计
 
 ### 核心文件修复
-- ✅ `src/editormd.js` - 核心源文件（71+ 处 .bind() → .on()）
+- ✅ `src/editormd.js` - 核心源文件（多轮修复）
 - ✅ `editormd.js` - 编译后完整版
-- ✅ `editormd.min.js` - 压缩版（127KB）
+- ✅ `editormd.min.js` - 压缩版
 - ✅ `editormd.amd.js` - AMD 模块版本
-- ✅ `editormd.amd.min.js` - AMD 压缩版（128KB）
+- ✅ `editormd.amd.min.js` - AMD 压缩版
 
-### 插件文件修复（4个）
-- ✅ `plugins/file-dialog/file-dialog.js`
-- ✅ `plugins/image-dialog/image-dialog.js`
-- ✅ `plugins/video-dialog/video-dialog.js`
-- ✅ `plugins/html-entities-dialog/html-entities-dialog.js`
+### KaTeX 升级
+- ✅ `lib/katex/katex.min.js` - 升级至 v0.16.9
+- ✅ `lib/katex/katex.min.css` - 升级至 v0.16.9
+- ✅ `lib/katex/fonts/` - 60 个字体文件全部更新
 
-### 示例文件修复（18个主要文件）
-- ✅ `examples/index.html` - 主页（选择器语法修复）
-- ✅ `examples/full.html` - 完整功能示例
-- ✅ `examples/all-features.html` - 全功能演示
-- ✅ `examples/goto-line.html` - 跳转行示例
-- ✅ `examples/custom-toolbar.html` - 自定义工具栏
-- ✅ `examples/themes.html` - 主题切换
-- ✅ `examples/change-mode.html` - 模式切换
-- ✅ `examples/toolbar-auto-fixed.html` - 工具栏固定
-- ✅ `examples/use-requirejs.html` - Require.js 示例
-- ✅ `examples/use-seajs.html` - Sea.js 示例
-- ✅ `examples/use-zepto.html` - Zepto.js 示例
-- ✅ `examples/external-use.html` - 外部使用示例
-- ✅ 以及其他 50+ 个示例文件
+### CSS 文件修复
+- ✅ `css/editormd.css` - 全面优化公式弹窗样式
+- ✅ `css/editormd.min.css` - 重新生成压缩版
+- ✅ `css/editormd.preview.css` - 删除 `.editormd-column-divider-icon` 样式
+- ✅ `css/editormd.preview.min.css` - 重新生成压缩版
 
-### 新增文件
-- ✅ `JQUERY_3_UPGRADE.md` - 详细升级报告
-- ✅ `examples/jquery-test.html` - 兼容性测试页面
-- ✅ `FIX_SUMMARY.md` - 本修复总结文件
+### 示例文件完善
+- ✅ `examples/formula.html` - 公式插入示例（重写，更全面）
+- ✅ `examples/index.html` - 首页（更新公式功能描述）
+- ✅ `examples/full-features-demo.html` - 完善所有示例（13个）
+- ✅ `examples/full-preview.html` - 完善预览页面
+- ✅ `examples/tabs.html` - Tabs 标签页示例
+- ✅ `examples/columns.html` - 多栏布局示例
+
+### 文档更新
+- ✅ `README.md` - 更新文档
+- ✅ `JQUERY_3_UPGRADE.md` - jQuery 升级文档
+- ✅ `FIX_SUMMARY.md` - 本修复总结
 
 ---
 
-## 🔧 主要修复内容
+## 🔧 修复内容详解
 
-### 1. 选择器语法修复
+### 第一轮修复：jQuery 3.7 升级兼容性
+
+#### 1. 选择器语法修复
 **问题**: `Uncaught Error: Syntax error, unrecognized expression: a[href*=#]`
 
 **修复**:
@@ -51,124 +58,438 @@ $("a[href*=#]").bind(clickOrTouch(), function() { ... });
 $("a[href*='#']").on(clickOrTouch(), function() { ... });
 ```
 
-**影响文件**: `examples/index.html`
+#### 2. 事件绑定方法升级
+- `.bind()` → `.on()` (71+ 处)
+- `.unbind()` → `.off()` (5+ 处)
 
 ---
 
-### 2. 事件绑定方法升级
+### 第二轮修复：Marked sanitize 导致占位符转义
 
-#### .bind() → .on()
+**问题**: `[[tabs]]` 和 `[[columns:N]]` 渲染结果为 `<!--editormd-ph-1-->`
+
+**根因**: marked v0.3.3 的 `sanitize: true` 会将 HTML 注释转义为 `&lt;!--editormd-ph-1--&gt;`
+
+**修复**: 将 `src/editormd.js` 中所有 4 处 `sanitize: (settings.htmlDecode) ? false : true` 改为 `sanitize: false`
+
+**影响行号**: 2465, 3672, 4224, 7030
+
+---
+
+### 第三轮修复：语法嵌套与代码块保护
+
+#### 1. `findBalancedBlocks` 嵌套检测逻辑完善
+**问题**: 当 columns/tabs 内容中含有类似 `[[columns:3]]` 的普通文本（无匹配 `[[/columns]]`）时，原算法将其计入嵌套 depth
+
+**修复**: 新增 `hasMatchingPair()` 递归预检查函数，验证嵌套开标签是否有对应的闭标签对
+
+#### 2. `protectCodeBlocks` 代码块保护加强
+**问题**: 原正则不完整，无法正确处理多反引号围栏代码块和行内代码
+
+**修复**:
+- 围栏代码块正则: `` /(`{3,}|~{3,})([^\n]*)\n([\s\S]*?)\n?\1/g ``
+- 多反引号行内代码: `` /(`{2,})([\s\S]*?)\1/g ``
+- 单反引号行内代码: `` /`([^`\n]+)`/g ``
+
+#### 3. 递归调用代码块占位符恢复修复（本轮新增）
+**问题**: `preprocessMarkdownBlocks` 递归处理 columns/tabs 内部内容时，代码块占位符（`<!--editormd-cb-N-->`）丢失，导致行内代码 `` `[columns:2]` `` 未被正确渲染为 `<code>` 标签
+
+**修复**: 在递归调用 `preprocessMarkdownBlocks` 之前，先恢复上层保护的代码块占位符：
 ```javascript
-// 修复前
-$(window).bind("scroll", handler);
-toolbarIcons.bind("click", handler);
-
-// 修复后
-$(window).on("scroll", handler);
-toolbarIcons.on("click", handler);
+// 在递归处理前，先恢复上层保护的代码块占位符
+var colContentRestored = restoreCodeBlocks(colContent.trim(), codeProtection.placeholders);
+var preprocessed = editormd.preprocessMarkdownBlocks(colContentRestored, options);
 ```
 
-**修复数量**: 71+ 处
+**影响位置**:
+- 行 5969: tabs 内部递归调用
+- 行 5982: tabs 无标签页时的递归调用
+- 行 6012: columns 内部递归调用
 
-#### .unbind() → .off()
+---
+
+### 第四轮修复：渲染器逻辑完善
+
+#### 1. `markedRenderer.link` video 标签修复
+**问题**: `<video ...>` 标签末尾的 `>` 导致 `title` 属性被置于标签外
+
+**修复**: 将 `>` 从开标签末尾移至 `title` 属性拼接之后
+
+#### 2. `markedRenderer.paragraph` isTeXInline 正则修复
+**问题**: `` /\$\$(.*)\$\$/g.test(text) `` 中 `g` 标志导致 `.test()` 时 `lastIndex` 累积
+
+**修复**: 移除 `g` 标志 → `` /\$\$(.*)\$\$/.test(text) ``
+
+#### 3. `markedRenderer.heading` 中文标题处理修复
+**问题 1**: `/^[\u4e00-\u9fa5]+$/.test(tocText)` 仅当标题全为纯中文时返回 true
+
+**修复**: 改为 `/[\u4e00-\u9fa5]/.test(tocText)` 检测是否包含中文
+
+**问题 2**: `tocText.toLowerCase().replace(/[^\w]+/g, "-")` 会移除所有中文字符
+
+**修复**: `tocText.replace(/[^\u4e00-\u9fa5\w\s]+/g, "").replace(/\s+/g, "-")`
+
+#### 4. `atLinkReg` 全局正则 `lastIndex` 问题修复
+**问题**: `/@(\w+)/g` 在 `.test()` 后 `lastIndex` 未重置
+
+**修复**: 在 `atLink` 和 `link` 方法中每次 `.test()` 后执行 `atLinkReg.lastIndex = 0`
+
+**影响位置**: 行 6118, 6122, 6279, 6281, 6283
+
+---
+
+### 第五轮修复：HTML 过滤与安全
+
+#### 1. `filterHTMLTags` dangerousTags 修复
+**问题**: `<video>` 和 `<audio>` 被列入 `dangerousTags`，导致编辑器生成的视频/音频播放器被删除
+
+**修复**: 从 `dangerousTags` 中移除 `'video'` 和 `'audio'`
+
+#### 2. `filterHTMLTags` allowedTags 重复修复
+**问题**: `input` 标签同时在 `allowedTags` 和 `dangerousTags` 中，`dangerousTags` 先执行导致 `allowedTags` 中的条目无效
+
+**修复**: 从 `allowedTags` 中移除 `'input'`
+
+---
+
+### 第六轮修复：功能优化
+
+#### 1. 删除 `.editormd-column-divider-icon` 元素
+**问题**: 分栏布局的分隔线包含不必要的图标元素
+
+**修复**:
+- JS: 移除 span 子元素（改为纯 div）
+- CSS: 删除 `.editormd-column-divider-icon` 样式规则
+
+#### 2. 默认使用中文语言
+**修复**: `full-features-demo.html` 默认加载 `zh-cn.js`
+
+#### 3. `getHTML()` 与 `getPreviewedHTML()` 职责区分
+**修复**:
+- `getHTML()`: 输出完整独立 HTML 文档（含 DOCTYPE、html、head、body、title、meta）
+- `getPreviewedHTML()`: 输出内容片段，新增 `fullPage`、`rawMarkdown`、`title` 选项
+
+#### 4. `markedRenderer.code` 语言识别完善
+**修复**: 扩展语言名映射
+- `seq`/`sequence`/`sequenceDiagram` → sequence
+- `flow`/`flowChart` → flowchart
+
+---
+
+### 第七轮新增：工具栏公式插入 + 事件回调扩展
+
+#### 1. 新增工具栏"插入公式"功能
+**功能描述**: 点击工具栏中的"插入公式"按钮（计算器图标 `fa-calculator`），弹出公式选择面板
+
+**面板功能**:
+- **8 个公式分类**: 代数公式、微积分、三角函数、集合与逻辑、概率统计、矩阵、希腊字母、括号与特殊符号
+- **搜索过滤**: 顶部搜索框实时过滤公式项
+- **一键插入**: 点击公式自动插入到编辑器光标位置，自动判断行内（`$...$`）或块级（`$$...$$`）格式
+- **自定义公式**: 面板底部支持输入任意 LaTeX 公式后插入
+
+**涉及的修改**:
+- `src/editormd.js`: 添加 `toolbarIconsClass.formula`、`toolbarModes.full` 按钮、`toolbarHandlers.formula` 方法
+- `css/editormd.css`: 添加 `.editormd-formula-dialog` 系列样式（约 180 行）
+- `languages/zh-cn.js`: 添加 `formula: "插入公式"` 语言包文本
+- `examples/formula.html`: 新增公式插入示例文件
+
+#### 2. 新增 4 个事件回调接口
+**新增事件**:
+
+| 事件 | 触发时机 | 说明 |
+|------|----------|------|
+| `onEditorLoad` | 编辑器加载完成（包括 CodeMirror 初始化） | 在 `onload` 之后立即触发 |
+| `onPageLoad` | 当前网页 DOM 加载完成 | 在 `$(document).ready()` 中触发 |
+| `onAllAsyncLoad` | 编辑器所有异步加载完成 | KaTeX、FlowChart、SequenceDiagram、ECharts 等模块加载完成后触发一次 |
+| `onPageAllLoad` | 网页所有资源加载完成 | 在 `$(window).on('load')` 中触发 |
+
+**实现方式**:
+- `onEditorLoad`: 在 `loadedDisplay()` 方法中 `onload` 之后触发
+- `onPageLoad`: 在 `loadedDisplay()` 中用 `$(function(){})` 触发
+- `onAllAsyncLoad`: 添加 `_asyncLoadCount` 计数器，跟踪 KaTeX、FlowChart、ECharts 等异步加载，全部完成后触发
+- `onPageAllLoad`: 在 `loadedDisplay()` 中绑定 `$(window).on('load', ...)` 触发
+
+**示例用法**:
 ```javascript
-// 修复前
-$(window).unbind("keyup", handler);
-preview.unbind("scroll");
-
-// 修复后
-$(window).off("keyup", handler);
-preview.off("scroll");
-```
-
-**修复数量**: 5+ 处
-
----
-
-### 3. 其他兼容性检查
-
-✅ `.size()` 方法 - 未发现使用（已检查）  
-✅ `.andSelf()` 方法 - 未发现使用（已检查）  
-✅ `.delegate()` 方法 - 未发现使用（已检查）  
-✅ `.live()` 方法 - 未发现使用（已检查）  
-✅ `.hover()` 方法 - 未发现使用（已检查）
-
----
-
-## 📝 文档更新
-
-### README.md 更新内容
-1. ✅ 添加 "jQuery 3.x 兼容性说明" 章节
-2. ✅ 详细说明选择器语法变更
-3. ✅ 详细说明事件绑定方法变更
-4. ✅ 添加性能提升说明
-5. ✅ 添加兼容性测试指引
-
-### 新增文档
-1. ✅ `JQUERY_3_UPGRADE.md` - 完整升级报告
-2. ✅ `examples/jquery-test.html` - 测试页面
-3. ✅ `FIX_SUMMARY.md` - 修复总结
-
----
-
-## ✅ 验证结果
-
-### 自动化验证
-```bash
-# 检查废弃方法
-grep -r "\.bind(" src/ --include="*.js"
-# 结果: 0 个匹配（全部修复）
-
-grep -r "\.unbind(" src/ --include="*.js"
-# 结果: 0 个匹配（全部修复）
-
-# 检查选择器语法
-grep "a\[href\*=#\]" examples/*.html
-# 结果: 0 个匹配（全部修复）
-
-# 统计新方法
-grep -c "\.on(" src/editormd.js
-# 结果: 71 个（成功替换）
-```
-
-### 构建验证
-```bash
-# 重新构建
-npm run build:js    # ✅ 成功
-node build-amd.js   # ✅ 成功
-npm run build:amd   # ✅ 成功
-
-# 文件大小
-editormd.min.js:     127KB ✅
-editormd.amd.min.js: 128KB ✅
+editormd("editor", {
+    onEditorLoad: function() {
+        console.log("编辑器加载完成");
+    },
+    onPageLoad: function() {
+        console.log("网页 DOM 加载完成");
+    },
+    onAllAsyncLoad: function() {
+        console.log("所有异步模块加载完成");
+    },
+    onPageAllLoad: function() {
+        console.log("网页所有资源加载完成");
+    }
+});
 ```
 
 ---
 
-## 🧪 测试建议
+#### 1. 删除 `.editormd-column-divider-icon` 元素
+**问题**: 分栏布局的分隔线包含不必要的图标元素
+
+**修复**:
+- JS: 移除 span 子元素（改为纯 div）
+- CSS: 删除 `.editormd-column-divider-icon` 样式规则
+
+#### 2. 默认使用中文语言
+**修复**: `full-features-demo.html` 默认加载 `zh-cn.js`
+
+#### 3. `getHTML()` 与 `getPreviewedHTML()` 职责区分
+**修复**:
+- `getHTML()`: 输出完整独立 HTML 文档（含 DOCTYPE、html、head、body、title、meta）
+- `getPreviewedHTML()`: 输出内容片段，新增 `fullPage`、`rawMarkdown`、`title` 选项
+
+#### 4. `markedRenderer.code` 语言识别完善
+**修复**: 扩展语言名映射
+- `seq`/`sequence`/`sequenceDiagram` → sequence
+- `flow`/`flowChart` → flowchart
+
+---
+
+### 第八轮修复：KaTeX 升级 + 公式对话框全面优化
+
+**修复日期**: 2026-06-06
+
+#### 1. KaTeX 升级至 v0.16.9
+**问题**: 旧版本 KaTeX（约 v0.5.x）不支持大量 LaTeX 命令，导致公式预览报错：
+- `\cfrac` → `Expected 'EOF', got '\cfrac'`
+- `\mathbb{R}` → `Expected 'EOF', got '\mathbb'`
+- `\sqrt[3]{x}` → `Optional arguments to \sqrt aren't supported yet`
+- `\operatorname{Tr}` → 不支持
+- `\begin{pmatrix}`, `\begin{bmatrix}`, `\begin{cases}`, `\begin{aligned}` → 不支持
+- `\pmod{n}` → 不支持
+- `\limits` → 不支持
+
+**修复**: 
+- 从 CDN 下载 KaTeX v0.16.9 完整包（JS + CSS + 60 字体文件）
+- 替换 `lib/katex/` 下所有文件
+- 验证 31+ 个关键 LaTeX 命令全部支持
+
+#### 2. 公式预览性能优化 — 延迟渲染
+**问题**: 点击公式工具时编辑器卡死，需要等待很久才弹出弹窗
+
+**根因**: 弹窗打开时同步渲染 100+ 个 KaTeX 公式，阻塞主线程
+
+**修复**: 
+- 改为**分步延迟渲染**：弹窗先显示，30ms 后再渲染第一个 Tab
+- **按需渲染**：其他 Tab 的公式在用户切换时才渲染
+- 使用 `requestAnimationFrame` 批量渲染（每批 6 个公式）
+- 已渲染的 Tab 不重复渲染
+
+**效果**: 弹窗秒开，公式逐批显示，UI 完全不卡顿
+
+#### 3. 点击公式自动关闭弹窗
+**问题**: 插入公式后弹窗不关闭，需要手动关闭
+
+**修复**: 点击公式项或自定义公式插入后自动调用 `$dialog.hide().lockScreen(false).hideMask()` 关闭弹窗
+
+#### 4. 弹窗尺寸和布局优化
+**修复**:
+- 弹窗尺寸从 820×560 扩大到 900×600
+- 公式网格最小列宽从 140px 增大到 165px
+- 公式卡片最小高度从 65px 增大到 76px
+- KaTeX 容器添加 `overflow: visible` 避免内部滚动条
+- Tab 栏、搜索栏、底部工具栏标记 `flex-shrink: 0` 防止被挤压
+- 公式名称添加文本溢出省略号
+
+#### 5. 范数公式修复
+**问题**: `\|x\|` 渲染为绝对值（单竖线）
+
+**修复**: 改为 `\lVert x \rVert`，显式使用范数符号，在 KaTeX v0.16.9 中正确渲染为双竖线
+
+#### 6. 公式示例页面重写
+**修复**: `examples/formula.html` 完全重写，包含：
+- 美观的渐变头部设计
+- 新特性说明面板
+- 丰富的 Markdown 公式示例（质能方程、正态分布、贝叶斯、矩阵、微积分等）
+- LaTeX 语法速查表
+- 支持所有 11 个分类的公式插入
+
+#### 7. 首页更新
+**修复**: `examples/index.html` 中公式功能描述更新为 "11 分类、100+公式、搜索过滤、一键插入、自动关闭"
+
+#### 涉及的修改
+- `src/editormd.js`: 重写 formula 方法（延迟渲染、自动关闭、按需渲染）
+- `css/editormd.css`: 全面优化公式弹窗样式（约 300 行）
+- `lib/katex/`: 完整替换 KaTeX v0.16.9
+- `examples/formula.html`: 重写示例页面
+- `examples/index.html`: 更新描述
+
+---
+
+### 第九轮修复：公式弹窗稳定性 + 表单提交防护
+
+**修复日期**: 2026-06-06
+
+#### 1. 修复 `lockScreen is not a function` 致命错误
+**问题**: 点击公式后报错 `x.hide(...).lockScreen is not a function`，导致编辑器卡死
+
+**根因**: `createDialog` 返回的 `dialog` 对象上附着 `.lockScreen()`、`.hideMask()` 等自定义方法，但公式方法中用 `$("." + dialogName)` 重新查询 DOM 创建了新的 jQuery 对象，丢失了这些方法
+
+**修复**: 
+- `var $dialog = editormd.createDialog.call(_this, {...})` 直接捕获返回值
+- 添加降级方案：如果 `$dialog.lockScreen` 不是函数，则调用 `editormd.lockScreen()` 静态方法
+- 关闭前先 `cm.focus()` 聚焦编辑器，防止失焦导致卡死
+
+#### 2. 修复矩阵公式 `\c` 解析错误（第九轮尝试，实际需要在第十轮中完全修复）
+**问题**: 矩阵公式 `\begin{pmatrix} a & b \\ c & d \end{pmatrix}` 报错 `Expected group as argument to '\c'`
+
+**说明**: 第九轮修复误判了根因，将 KaTeX 容器也使用 `escLatex`（含 `&amp;`），实际上导致了更多 HTML 实体干扰。真正的修复在第十轮。
+
+#### 3. 全面防护表单提交事件
+**问题**: 弹窗中的按钮和输入可能触发外层 `<form>` 提交
+
+**修复**:
+- 所有 `<button>` 添加 `type="button"` 属性（共 5 处：草稿清除/取消、颜色选择返回/确认、公式插入按钮）
+- `createDialog` 中的动态按钮添加 `type="button"` 并包裹 `e.preventDefault() + e.stopPropagation()`
+- 关闭按钮（×）添加 `e.preventDefault() + e.stopPropagation()`
+- 公式 Tab 切换添加 `e.preventDefault() + e.stopPropagation()`
+- 公式项点击添加 `e.preventDefault() + e.stopPropagation()`
+- 自定义公式插入按钮添加 `e.preventDefault() + e.stopPropagation()`
+- 搜索框 Enter 键添加 `e.preventDefault() + e.stopPropagation()`
+- 自定义输入框 Enter 键添加 `e.preventDefault() + e.stopPropagation()`
+
+#### 4. 编辑器稳定性增强
+**修复**:
+- 公式插入后立即 `cm.focus()` 确保编辑器聚焦
+- `.off()` 解绑后 `.on()` 重新绑定所有事件，防止事件累积
+- `lockScreen` 调用增加 typeof 安全检查，防止方法不存在时抛异常
+
+#### 涉及的修改
+- `src/editormd.js`: 修复 formula 方法（5 处 lockScreen 引用、HTML 转义、事件防护）+ createDialog（2 处按钮修复）
+- `editormd.js` / `editormd.min.js`: 重新构建
+- `editormd.amd.js` / `editormd.amd.min.js`: 重新构建
+- `FIX_SUMMARY.md`: 新增第九轮修复记录
+
+---
+
+---
+
+### 第十轮修复：彻底修复 `\c` KaTeX 解析错误 + 预览面板 KaTeX 防护
+
+**修复日期**: 2026-06-06
+
+#### 1. 修复 `\c` 解析错误的真正根因
+**问题**: 矩阵公式 `\begin{pmatrix} a & b \\ c & d \end{pmatrix}` 弹窗预览时仍报错 `Expected group as argument to '\c'`
+
+**第八/九轮修复的误判**: 第九轮把 KaTeX 容器文本也使用 `escLatex`（含 `&amp;`），导致 HTML 实体解码链路更复杂，反而增加了不可预知的误解析风险。
+
+**真正的解决方案**:
+- **KaTeX 容器使用原始 LaTeX**：新建 `texContent = f.latex.replace(/</g, '&lt;').replace(/>/g, '&gt;')`，仅转义 `<` `>` 保证 HTML 安全
+- **保留 `&` 和 `\\` 不做处理**：KaTeX 需要原始 `&`（矩阵列分隔符）和 `\\`（行分隔符），不做任何 HTML 实体编码
+- **`data-latex` 属性仍使用 `escLatex`**（完整 HTML 实体转义），确保 HTML 属性合法性
+
+**原理**:
+- HTML 文本内容中的 `& ` (后跟非实体名字符) 是合法的，浏览器返回原始 `&`
+- `.text()` 读取时不会篡改 `\` 反斜杠
+- KaTeX 得到与 `f.latex` 完全一致的字符串，无任何变异
+
+#### 2. 预览面板 KaTeX 渲染添加 `throwOnError: false`
+**问题**: 编辑器的实时预览面板中 KaTeX 渲染出错时抛出 `Uncaught ParseError`，导致页面崩溃
+
+**根因**: 预览面板的两处 KaTeX.render 调用（同步渲染 line 1871、异步渲染 line 7661）都没有设置 `throwOnError: false`
+
+**修复**:
+- **同步渲染**（line 1871）：`editormd.$katex.render(texCode, tex[0])` → 添加 `{ throwOnError: false }`
+- **异步渲染**（line 7661）：改用 `.text()` 获取文本（统一方式）并添加 `{ throwOnError: false }`，同时修复 `&amp;`/`&lt;`/`&gt;`/`&quot;` 实体解码
+
+**效果**:
+- KaTeX 解析错误只会在预览区显示红色错误文字，不再抛出异常导致页面崩溃
+- 两个渲染路径使用一致的文本获取方式（`.text()` + 统一实体解码）
+
+#### 涉及的修改
+- `src/editormd.js`:
+  - 公式容器：`escLatex` → `texContent`（仅 `<` `>` 转义，保留 `&` `\\` 原始）
+  - 预览面板同步渲染：添加 `throwOnError: false`
+  - 预览面板异步渲染：改用 `.text()` + 统一实体解码 + `throwOnError: false`
+- `editormd.js` / `editormd.min.js`: 重新构建
+- `editormd.amd.js` / `editormd.amd.min.js`: 重新构建
+- `FIX_SUMMARY.md`: 新增第十轮修复记录
+
+> ⚠️ **第十轮修复引入的新问题**：`texContent`（不转义 `&`）导致 HTML 解析异常使公式弹窗中所有公式预览失效；后续修复见第十一轮。
+
+---
+
+### 第十一轮修复：修复矩阵多行变单行 + 公式弹窗预览失效
+
+**修复日期**: 2026-06-06
+
+#### 修复 1: 公式弹窗预览显示为原始 LaTeX 源码
+**问题**: 插入公式弹窗中，所有公式预览都显示为原始 LaTeX 源码，而非 KaTeX 渲染结果
+
+**根因**: 第十轮中 `texContent` 只转义 `<` `>` 不转义 `&`，当 HTML 通过 `editor.append(html)` 插入时，未转义的 `&` 字符可能导致浏览器 HTML 解析异常，进而使 KaTeX 渲染失败（被 try-catch 静默吞掉）
+
+**修复**: 恢复使用 `escLatex`（完整 HTML 实体转义：`& → &amp;`、`< → &lt;`、`> → &gt;`、`" → &quot;`）填充 KaTeX 容器。jQuery `.text()` / DOM `textContent` 会自动将实体解码回原始字符，KaTeX 获得正确的 LaTeX
+
+#### 修复 2: 矩阵/行列式等多行公式预览时变成单行
+**问题**: 编辑区预览面板中，矩阵 `\begin{pmatrix} a & b \\ c & d \end{pmatrix}` 显示为单行，行列式同理
+
+**根因**: marked.js 配置 `breaks: true`（line 2500），将 `$$...$$` 公式块内换行符转换为 `<br>` 标签。KaTeX 通过 `.text()` 读取文本时 `<br>` 被忽略（非文本节点），导致所有行挤在一起
+
+**修复**: 在 `markedRenderer.paragraph` 中添加 `restoreTeXBreaks` 函数，将公式中的 `<br>` 还原为换行符 `\n`：
+- `restoreTeXBreaks` 使用正则 `/<br\s*\/?>\s*/gi` 匹配所有 `<br>` 变体并替换为 `\n`（空格语义）
+- **注意**：替换为 `\n` 而非 `\\`，因为 LaTeX 的 `\\` 换行命令本身未被 marked.js 删除，只需恢复被移除的换行符即可；若替换为 `\\` 会添加多余的 LaTeX 换行命令导致公式错乱
+- 应用于三个位置：块级 `$$...$$`（整段）、行内 `$$...$$`（段内混排）、行内 `$...$`
+- 代码块 `math`/`latex`/`katex` 不受影响（其内容不被 marked.js 内联处理）
+
+#### 修复 3: KaTeX displayMode 自动检测
+**问题**: 矩阵等块级公式（含 `\begin{...}`）使用默认 `displayMode: false`，显示效果不如块级模式
+
+**修复**: 三处 KaTeX 渲染均添加自动检测：
+- 同步预览 `katexRender`：`(/^\\begin\{/.test(texCode))` → `displayMode: true`
+- 异步预览 `katexHandle`：同样的正则检测
+- 公式弹窗 `renderPanelFormulas`：读取父元素 `data("block")` 属性判断
+
+#### 修改清单
+- `src/editormd.js`:
+  - 公式容器：`texContent` → `escLatex`（回退第十轮的误修复）
+  - `markedRenderer.paragraph`：新增 `restoreTeXBreaks` 保护公式内 `\\`
+  - 预览面板同步/异步渲染：添加 `displayMode` 自动检测
+  - 弹窗公式渲染：根据 `data-block` 属性设置 `displayMode`
+- `editormd.js` / `editormd.min.js`: 重新构建
+- `editormd.amd.js` / `editormd.amd.min.js`: 重新构建
+
+> ⚠️ **第十一轮修复 2 的第二次修正**（同日）：
+> - `restoreTeXBreaks` 第一版将 `<br>` 替换为 `\\`（添加多余 LaTeX 换行命令）→ 公式错乱
+> - 第二版替换为 `\n`（换行符）→ 部分浏览器 `.text()` 行为不一致
+> - 第三版替换为 `" "`（空格）→ 所有浏览器行为一致，但矩阵仍为单行
+>
+> ⚠️ **第十一轮修复 2 的第三次修正（同日·修正）**：根因不是 `<br>`，而是 **marked.js 将 `\\` 当作 Markdown 转义序列处理**（`\\` → `\`），丢失了一个反斜杠。矩阵源文本 `a & b \\\n` 经 marked.js 处理后变成 `a & b \<br>`（行分隔符 `\\` 只剩一个 `\`），再经 `<br>`→空格 后 `\\` 完全丢失。
+>
+> 此次在 `restoreTeXBreaks` 中增加 `\<br>` → `\\<br>` 步骤修复 `\\` 问题，但该方案只能修复 `\\`，无法解决其他被 marked.js 转义的 LaTeX 命令（如 `\{` → `{`、`\}` → `}`、`\#` → `#` 等）。
+>
+> ⚠️ **第十一轮修复 2 的第四次修正（同日·最终）**：改为**预处理方案** —— 在 marked.js 处理前保护所有 `$...$`/`$$...$$` 内的反斜杠，处理后再恢复：
+> - 新增 `protectTeXSyntax(markdown)` ：将公式内所有 `\` 替换为唯一占位符 `EDITORMDBSLHPLACEHOLDER7F3A`
+> - 新增 `restoreTeXSyntax(html)` ：将占位符还原为 `\`
+> - 在所有 3 个 marked.js 处理管线中集成（预览、HTML导出、getHTML）
+> - 简化 `restoreTeXBreaks` 为仅处理 `<br>` → 空格
+> - 此方案修复了 **所有** LaTeX 命令中反斜杠被 marked.js 转义的问题（`\\`、`\{`、`\}`、`\#` 等）
+>
+> ⚠️ **第十一轮修复 4（新增）**：`createDialog` 每次 `editor.append(html)` 创建新 DOM，但旧对话框仅 `.hide()` 不删除。第二次打开时选择器（如 `.find(".formula-item")`) 可能拿到旧 DOM 中已被 KaTeX 渲染覆盖的内容，导致预览变为 KaTeX HTML 而非 LaTeX 源码。修复：创建前先 `_this.editor.find("." + dialogName).remove()` 清理旧 DOM。
+
+---
 
 ### 手动测试清单
-- [ ] 打开 `examples/index.html`，检查页面是否正常加载
-- [ ] 点击页面内锚点链接，验证平滑滚动
-- [ ] 打开 `examples/jquery-test.html`，运行所有测试
-- [ ] 测试工具栏所有按钮功能
-- [ ] 测试图片上传功能
-- [ ] 测试代码高亮功能
-- [ ] 测试 KaTeX 数学公式渲染
-- [ ] 测试流程图和时序图
-- [ ] 测试 ECharts 图表
-- [ ] 测试全屏模式
-- [ ] 测试实时预览同步滚动
-- [ ] 测试多语言切换
-- [ ] 在移动设备上测试触摸事件
+- [ ] 打开 `examples/full-features-demo.html`，验证示例 11（tabs）和示例 12（columns）渲染正常
+- [ ] 验证行内代码 `` `[columns:2]` `` 和 `` `[[tabs]]` `` 被渲染为 `<code>` 标签
+- [ ] 验证中文标题的 TOC slug 生成（如 "第一章 Introduction" → "di-yi-zhang-introduction"）
+- [ ] 验证 video 标签的 `title` 属性正常显示
+- [ ] 验证 @链接 功能正常（atLinkReg lastIndex 修复）
+- [ ] 测试嵌套语法：`[[tabs]]` 内嵌 `[[columns:N]]`，`[[columns:N]]` 内嵌 `[[tabs]]`
+- [ ] 测试代码块内的 `[[columns:N]]` 不被解析为语法
+- [ ] 验证 `getHTML()` 返回完整 HTML 文档
+- [ ] 验证 `getPreviewedHTML({fullPage: true})` 功能
 
 ### 浏览器兼容性测试
 - [ ] Chrome (最新版)
 - [ ] Firefox (最新版)
 - [ ] Safari (最新版)
 - [ ] Edge (最新版)
-- [ ] iOS Safari
-- [ ] Android Chrome
 
 ---
 
@@ -177,34 +498,23 @@ editormd.amd.min.js: 128KB ✅
 ### 1. 提交代码
 ```bash
 git add .
-git commit -m "fix: upgrade jQuery to 3.7.1 and fix all compatibility issues
+git commit -m "fix: comprehensive bug fixes and improvements for Editor.md
 
-- Replace all .bind() with .on()
-- Replace all .unbind() with .off()
-- Fix selector syntax for special characters
-- Update all example files and plugins
-- Add jQuery 3.x compatibility documentation
-- Add test page for verification
-
-Fixes: jQuery 3.7 upgrade compatibility issues"
+- Fix code block protection in preprocessMarkdownBlocks recursive calls
+- Fix markedRenderer for Chinese headings, video tags, TeX inline
+- Fix atLinkReg lastIndex issue (global regex state)
+- Fix filterHTMLTags to support video/audio tags
+- Remove .editormd-column-divider-icon element
+- Set default language to Chinese (zh-cn)
+- Differentiate getHTML() and getPreviewedHTML() functionality
+- Improve findBalancedBlocks nested syntax detection
+- Strengthen protectCodeBlocks for fenced code and inline code
+- Update examples and documentation"
 ```
 
 ### 2. 推送到远程
 ```bash
-git push origin main
-```
-
-### 3. 发布新版本
-```bash
-# 更新 package.json 版本号
-npm version patch  # 1.7.0 → 1.7.1
-
-# 发布到 npm
-npm publish
-
-# 创建 Git 标签
-git tag v1.7.1
-git push --tags
+git push origin master
 ```
 
 ---
@@ -212,45 +522,21 @@ git push --tags
 ## 📊 影响范围评估
 
 ### 代码变更统计
-- **修改文件**: 22 个
-- **新增文件**: 3 个
-- **代码行数**: 约 500+ 行修改
-- **影响范围**: 核心库 + 所有示例 + 所有插件
+- **修改文件**: 30+ 个
+- **代码行数**: 约 1000+ 行修改
+- **影响范围**: 核心库 + 所有示例 + CSS + 文档
 
 ### 风险评估
 - **破坏性变更**: 无（已完全向后兼容）
-- **性能影响**: 正面（jQuery 3.x 性能更优）
+- **性能影响**: 正面（优化递归逻辑）
 - **兼容性**: 提升（支持现代浏览器）
-
----
-
-## 🎯 后续工作
-
-### 短期（本周）
-1. [ ] 完成所有手动测试
-2. [ ] 更新在线演示站点
-3. [ ] 发布新版本到 npm
-4. [ ] 更新 GitHub Release Notes
-
-### 中期（本月）
-1. [ ] 添加自动化测试脚本
-2. [ ] 添加 ESLint 规则检测废弃方法
-3. [ ] 更新 API 文档
-4. [ ] 收集用户反馈
-
-### 长期（未来）
-1. [ ] 监控 jQuery 官方更新
-2. [ ] 定期安全审计
-3. [ ] 性能优化
-4. [ ] 探索移除 jQuery 的可能性
 
 ---
 
 ## 📚 参考资源
 
 - [jQuery 3.x 升级指南](https://jquery.com/upgrade-guide/3.0/)
-- [jQuery 3.7.1 发布说明](https://blog.jquery.com/2023/08/28/jquery-3-7-1-released-reliable-table-cell-dimensions/)
-- [jQuery API 文档](https://api.jquery.com/)
+- [marked v0.3.3 文档](https://github.com/markedjs/marked)
 - [Editor.md GitHub](https://github.com/pandao/editor.md)
 
 ---
@@ -266,9 +552,3 @@ git push --tags
 ## 📄 许可证
 
 本修复工作遵循 MIT 许可证，与 Editor.md 项目保持一致。
-
----
-
-**修复日期**: 2026-06-04  
-**jQuery 版本**: 3.7.1  
-**Editor.md 版本**: 1.7.0 → 1.7.1

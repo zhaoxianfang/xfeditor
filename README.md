@@ -46,6 +46,8 @@
 | **草稿自动保存** | localStorage 自动保存 + 恢复对话框 |
 | **文件上传** | `fileFormats` 白名单 + 工具栏上传 |
 | **Unicode 行内对齐** | `⁑⁑居中⁑⁑` `⁑⁖左对齐⁖⁑` `⁑⠕右对齐⠕⁑` `⁑⁛两端对齐⁛⁑` |
+| **公式插入面板** | 工具栏"∑"按钮，11 分类浏览/搜索过滤/一键插入 $...$ 或 $$...$$ 公式/自动关闭弹窗 |
+| **事件系统增强** | 新增 onEditorLoad / onPageLoad / onAllAsyncLoad / onPageAllLoad 四个事件回调 |
 | **其他增强** | 图片粘贴上传、Shift等比缩放、公式双击定位、代码复制按钮、insert下拉工具栏 |
 
 ### v1.6.0 新增
@@ -384,7 +386,9 @@ editor.off("onchange");
 | `onimagechange` | 图片尺寸变化 | `onkeydown/onkeyup` | 键盘事件 |
 | `onmouseup/onmousedown` | 鼠标事件 | `onpaste/ondrop` | 粘贴/拖放 |
 | `oncopy/oncut` | 复制/剪切 | `onfocus/onblur` | 焦点事件 |
-| `oncursoractivity` | 光标移动 | | |
+| `oncursoractivity` | 光标移动 | `onEditorLoad` | 编辑器加载完成 |
+| `onPageLoad` | 网页 DOM 加载完成 | `onAllAsyncLoad` | 所有异步模块加载完成 |
+| `onPageAllLoad` | 网页所有资源加载完成 | | |
 
 ---
 
@@ -667,7 +671,7 @@ $(element).off("click");
 | [CodeMirror](http://codemirror.net/) | 代码编辑器核心 |
 | [marked](https://github.com/markedjs/marked) | Markdown 解析器 |
 | [jQuery](http://jquery.com/) | DOM 操作 |
-| [KaTeX](https://khan.github.io/KaTeX/) | 数学公式渲染 |
+| [KaTeX](https://khan.github.io/KaTeX/) (v0.16.9) | 数学公式渲染 |
 | [prettify.js](https://github.com/google/code-prettify) | 代码语法高亮 |
 | [Raphael.js](http://raphaeljs.com/) | SVG 矢量图形（流程图/时序图依赖） |
 | [flowchart.js](http://flowchart.js.org/) | 流程图 |
