@@ -1,76 +1,83 @@
 <!DOCTYPE html>
 <html lang="zh">
-    <head>
-        <meta charset="utf-8" />
-        <title>全部功能示例 - Editor.md v1.7.0</title>
-        <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" />
-        <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
-        <style>
-            #layout { padding-bottom: 60px; }
-            .feature-btns { width: 90%; margin: 15px auto; text-align: center; }
-            .feature-btns button {
-                margin: 4px; padding: 6px 14px; font-size: 13px;
-                border: 1px solid #2196F3; background: #fff; color: #2196F3;
-                border-radius: 4px; cursor: pointer; transition: all 0.2s;
-            }
-            .feature-btns button:hover { background: #2196F3; color: #fff; }
-            .feature-intro {
-                width: 90%; margin: 0 auto 20px; padding: 15px 20px;
-                background: #f5f7fa; border-left: 4px solid #2196F3; border-radius: 4px;
-                font-size: 14px; line-height: 1.8; color: #555;
-            }
-            .feature-intro h2 { margin: 0 0 10px; font-size: 18px; color: #333; }
-            .feature-intro code {
-                background: #e8e8e8; padding: 2px 6px; border-radius: 3px;
-                font-family: Consolas, Monaco, monospace; font-size: 12px; color: #c7254e;
-            }
-        </style>
-    </head>
-    <body>
-        <div id="layout">
-            <header>
-                <h1>Editor.md v1.7.0 全部功能示例</h1>
-                <p>All Features Demo — 本示例演示了 Editor.md 的所有功能与特性</p>
-            </header>
+<head>
+    <meta charset="utf-8" />
+    <title>Editor.md v1.7.0 — 全部功能完整演示</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="../css/editormd.min.css" />
+    <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
+    <style>
+        #layout { padding-bottom: 60px; }
+        .feature-btns { width: 90%; margin: 15px auto; text-align: center; }
+        .feature-btns button {
+            margin: 4px; padding: 6px 14px; font-size: 13px;
+            border: 1px solid #2196F3; background: #fff; color: #2196F3;
+            border-radius: 4px; cursor: pointer; transition: all 0.2s;
+        }
+        .feature-btns button:hover { background: #2196F3; color: #fff; }
+        .feature-intro {
+            width: 90%; margin: 0 auto 20px; padding: 15px 20px;
+            background: #f5f7fa; border-left: 4px solid #2196F3; border-radius: 4px;
+            font-size: 14px; line-height: 1.8; color: #555;
+        }
+        .feature-intro h2 { margin: 0 0 10px; font-size: 18px; color: #333; }
+        .feature-intro code {
+            background: #e8e8e8; padding: 2px 6px; border-radius: 3px;
+            font-family: Consolas, Monaco, monospace; font-size: 12px; color: #c7254e;
+        }
+        .badge {
+            display: inline-block; padding: 2px 8px; font-size: 11px;
+            border-radius: 10px; background: #2196F3; color: #fff; margin: 0 2px;
+        }
+        .badge-new { background: #4CAF50; }
+    </style>
+</head>
+<body>
+    <div id="layout">
+        <header>
+            <h1>Editor.md v1.7.0 全部功能完整演示</h1>
+            <p>Complete All-Features Demo — 涵盖所有 Markdown 语法、扩展特性与 API 交互</p>
+        </header>
 
-            <div class="feature-intro">
-                <h2>v1.7.0 新增功能速览</h2>
-                <ul>
-                    <li><strong>ECharts 图表</strong>：支持柱状图、折线图、饼图、雷达图、漏斗图，使用 <code>```echarts</code> 代码块语法</li>
-                    <li><strong>Tabs 标签页</strong>：使用 <code>[[tabs]]</code> ... <code>[[/tabs]]</code> 标签语法创建可交互标签页，内部支持代码块、表格、图表等任意 Markdown 内容</li>
-                    <li><strong>多列排版</strong>：使用 <code>[[columns:N]]</code> ... <code>[[/columns]]</code> 标签语法实现报纸式 N 栏排版</li>
-                    <li><strong>文本对齐</strong>：工具栏按钮直接插入 Unicode 行内对齐 <code>⁑⁑内容⁑⁑</code>（居中）、<code>⁑⁖内容⁖⁑</code>（左）、<code>⁑⠕内容⠕⁑</code>（右）、<code>⁑⁛内容⁛⁑</code>（两端），适用于标题、段落、列表等任意行内位置</li>
-                    <li><strong>图片尺寸</strong>：使用 <code>![alt](url)&lt;W,H&gt;</code> 语法设定图片尺寸，预览区拖拽后左侧同步更新</li>
-                    <li><strong>悬浮提示</strong>：链接使用 <code>[文本](tooltip:内容)</code>、<code>[文本](tooltip:image:图片URL)</code>、<code>[文本](tooltip:iframe:页面URL)</code>；图片使用 <code>![alt](url "tooltip:内容")</code></li>
-                    <li><strong>浏览器草稿暂存</strong>：配置 <code>draftAutoSave: true</code> 自动暂存，防止误刷新丢失内容</li>
-                    <li><strong>Unicode 行内对齐</strong>：使用 <code>⁑⁑内容⁑⁑</code>、<code>⁑⁖内容⁖⁑</code>、<code>⁑⠕内容⠕⁑</code>、<code>⁑⁛内容⁛⁑</code> 实现行内对齐</li>
-                    <li><strong>Insert 插入下拉工具栏</strong>：将代码、预格式化文本、代码块、表格、日期时间、HTML 实体、分页符等归入统一的 <code>insert</code> 下拉菜单，工具栏更简洁</li>
-                    <li><strong>文件上传</strong>：支持配置允许上传的文件格式，工具栏一键插入文件链接，同时支持填写 URL 和本地上传</li>
-                    <li><strong>视频插入</strong>：支持 <code>[[video]]</code> 标签和 <code>&lt;video&gt;</code> 标签两种方式嵌入视频</li>
-                    <li><strong>附件链接</strong>：支持 <code>[[file]]</code> 标签创建带文件类型图标的附件下载链接</li>
-                </ul>
-            </div>
+        <div class="feature-intro">
+            <h2>v1.7.0 新增功能速览 <span class="badge badge-new">NEW</span></h2>
+            <ul>
+                <li><strong>ECharts 图表</strong>：柱状图、折线图、饼图、雷达图、漏斗图，<code>```echarts</code> 代码块</li>
+                <li><strong>Tabs 标签页</strong>：<code>[[tabs]]...[[/tabs]]</code> 语法，支持内部嵌套代码块、表格、图表等</li>
+                <li><strong>多列排版</strong>：<code>[[columns:N]]...[[/columns]]</code> 报纸式多栏布局</li>
+                <li><strong>悬浮提示</strong>：文本/图片/iframe 三种类型悬浮提示</li>
+                <li><strong>文本对齐</strong>：Unicode 行内对齐，支持居中/左/右/两端</li>
+                <li><strong>视频/附件</strong>：<code>[[video]]</code> 和 <code>[[file]]</code> 标签</li>
+                <li><strong>图片尺寸</strong>：<code>![alt](url)&lt;W,H&gt;</code> 语法 + 拖拽调整</li>
+                <li><strong>草稿暂存</strong>：浏览器端自动保存，防止误刷新丢失内容</li>
+                <li><strong>JetBrains 风格代码块</strong>：IDE 风格代码展示，带语言标识标题栏</li>
+            </ul>
+        </div>
 
-            <div class="feature-btns">
-                <button id="get-md-btn">获取 Markdown</button>
-                <button id="get-html-btn">获取 HTML</button>
-                <button id="watch-btn">开启实时预览</button>
-                <button id="unwatch-btn">关闭实时预览</button>
-                <button id="fullscreen-btn">全屏编辑</button>
-                <button id="show-toolbar-btn">显示工具栏</button>
-                <button id="hide-toolbar-btn">隐藏工具栏</button>
-                <button id="goto-line-btn">跳转到第 30 行</button>
-            </div>
+        <div class="feature-btns">
+            <button id="get-md-btn">获取 Markdown</button>
+            <button id="get-html-btn">获取 HTML</button>
+            <button id="watch-btn">开启实时预览</button>
+            <button id="unwatch-btn">关闭实时预览</button>
+            <button id="fullscreen-btn">全屏编辑 (F11)</button>
+            <button id="show-toolbar-btn">显示工具栏</button>
+            <button id="hide-toolbar-btn">隐藏工具栏</button>
+            <button id="goto-line-btn">跳转到第 30 行</button>
+            <button id="preview-btn">独立预览 HTML</button>
+            <button id="toc-dropdown-btn">ToC 下拉</button>
+            <button id="toc-default-btn">ToC 默认</button>
+        </div>
 
-            <div id="test-editormd">
-                <textarea style="display:none;">[TOC]
+        <div id="test-editormd">
+            <textarea style="display:none;">[TOC]
 
 # Editor.md v1.7.0 全部功能演示
 
+---
+
 ## 一、Markdown 基础语法
 
-### 1.1 标题
+### 1.1 标题与文本样式
 
 # 一级标题
 ## 二级标题
@@ -79,13 +86,11 @@
 ##### 五级标题
 ###### 六级标题
 
-### 1.2 文本样式
+**粗体文本**、*斜体文本*、~~删除线文本~~、`行内代码`、[超链接](https://pandao.github.io/editor.md/)
 
-**粗体文本**、*斜体文本*、~~删除线文本~~、`行内代码`
+> 这是一段引用文本。Editor.md 是一款开源的、可嵌入的 Markdown 在线编辑器（组件），基于 CodeMirror、jQuery 和 Marked 构建。
 
-> 这是一段引用文本。Editor.md 支持标准 Markdown 和 GFM 语法。
-
-### 1.3 列表
+### 1.2 列表与任务列表
 
 - 无序列表项 1
 - 无序列表项 2
@@ -97,50 +102,155 @@
 2. 有序列表项 2
 3. 有序列表项 3
 
-### 1.4 任务列表（Task Lists）
+**GFM 任务列表：**
 
 - [x] 已完成任务
 - [ ] 未完成任务
-- [x] 支持 GFM 任务列表语法
+- [x] @mentions 提醒功能
+- [x] #标签 引用功能
 
 ---
 
 ## 二、表格与表格编辑
 
-| 功能 | 说明 | 状态 |
-|------|------|------|
-| 实时预览 | 编辑与预览同步 | 已启用 |
-| 表格编辑 | 点击单元格插入/删除行列 | 已启用 |
-| 图片上传 | 支持跨域上传 | 可选 |
+| 功能 | 版本 | 状态 | 说明 |
+|------|------|------|------|
+| 实时预览 | v1.0 | 已发布 | 编辑与预览同步滚动 |
+| 图片上传 | v1.0 | 已发布 | 支持拖拽和跨域上传 |
+| 流程图 | v1.0 | 已发布 | flowchart.js 渲染 |
+| 时序图 | v1.0 | 已发布 | js-sequence-diagrams 渲染 |
+| Tabs 标签页 | v1.7.0 | 已发布 | 支持任意嵌套 Markdown 内容 |
+| ECharts 图表 | v1.7.0 | 已发布 | 5 种图表类型 |
 
 > 提示：点击预览区表格单元格，可弹出工具栏进行插入/删除行列操作，并自动同步到 Markdown 源码。
 
 ---
 
-## 三、代码高亮
+## 三、代码高亮（JetBrains 风格）
+
+### JavaScript
 
 ```javascript
-// JavaScript 示例
-function helloEditorMD() {
-    console.log("Hello, Editor.md v1.7.0!");
-    return {
-        version: "1.7.0",
-        features: ["ECharts", "Tabs", "Columns", "Tooltip", "Draft"]
-    };
+// Fibonacci 数列生成器
+function* fibonacci(n) {
+    let [a, b] = [0, 1];
+    for (let i = 0; i < n; i++) {
+        yield a;
+        [a, b] = [b, a + b];
+    }
+}
+
+const seq = [...fibonacci(10)];
+console.log(seq); // [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]
+
+// 使用 async/await 的示例
+async function fetchUserData(id) {
+    try {
+        const res = await fetch(`/api/users/${id}`);
+        const data = await res.json();
+        return data;
+    } catch (err) {
+        console.error("Failed:", err);
+        return null;
+    }
 }
 ```
 
-```python
-# Python 示例
-def greet(name):
-    return f"Hello, {name}! Welcome to Editor.md."
+### Python
 
-print(greet("Developer"))
+```python
+# 快速排序实现
+def quicksort(arr):
+    if len(arr) <= 1:
+        return arr
+    pivot = arr[len(arr) // 2]
+    left = [x for x in arr if x < pivot]
+    middle = [x for x in arr if x == pivot]
+    right = [x for x in arr if x > pivot]
+    return quicksort(left) + middle + quicksort(right)
+
+print(quicksort([3, 6, 8, 10, 1, 2, 1]))
+```
+
+### TypeScript
+
+```typescript
+interface User {
+    id: number;
+    name: string;
+    email: string;
+    role: "admin" | "editor" | "viewer";
+}
+
+class UserService {
+    private users: Map<number, User> = new Map();
+
+    addUser(user: User): void {
+        this.users.set(user.id, user);
+        console.log(`User ${user.name} added.`);
+    }
+
+    getUser(id: number): User | undefined {
+        return this.users.get(id);
+    }
+}
+```
+
+### Go
+
+```go
+package main
+
+import (
+    "fmt"
+    "sync"
+)
+
+func main() {
+    var wg sync.WaitGroup
+    urls := []string{"https://golang.org", "https://pkg.go.dev"}
+
+    for _, url := range urls {
+        wg.Add(1)
+        go func(u string) {
+            defer wg.Done()
+            fmt.Printf("Fetching %s...\n", u)
+            // http.Get(u) ...
+        }(url)
+    }
+
+    wg.Wait()
+    fmt.Println("All done!")
+}
+```
+
+### JSON 配置示例
+
+```json
+{
+    "name": "editor.md",
+    "version": "1.7.0",
+    "features": {
+        "echarts": true,
+        "tabs": true,
+        "columns": true,
+        "tooltip": true,
+        "tex": true,
+        "flowchart": true,
+        "sequenceDiagram": true
+    },
+    "dependencies": {
+        "codemirror": "^5.65",
+        "marked": "^4.0",
+        "katex": "^0.16",
+        "echarts": "^5.4"
+    }
+}
 ```
 
 ---
 
-## 四、ECharts 交互式图表（v1.7.0 新增）
+## 四、ECharts 交互式图表 <span class="badge badge-new">NEW</span>
 
 ### 4.1 柱状图
 
@@ -150,7 +260,10 @@ print(greet("Developer"))
   "title": {"text": "月度销售额"},
   "xAxis": {"data": ["1月", "2月", "3月", "4月", "5月", "6月"]},
   "yAxis": {},
-  "series": [{"type": "bar", "data": [120, 200, 150, 80, 70, 110]}]
+  "series": [
+    {"type": "bar", "data": [120, 200, 150, 80, 70, 110], "name": "产品A"},
+    {"type": "bar", "data": [90, 140, 180, 120, 100, 130], "name": "产品B"}
+  ]
 }
 ```
 
@@ -162,7 +275,10 @@ print(greet("Developer"))
   "title": {"text": "用户增长趋势"},
   "xAxis": {"type": "category", "data": ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]},
   "yAxis": {"type": "value"},
-  "series": [{"type": "line", "data": [150, 230, 224, 218, 135, 147, 260], "smooth": true}]
+  "series": [
+    {"type": "line", "data": [150, 230, 224, 218, 135, 147, 260], "smooth": true, "name": "新增用户"},
+    {"type": "line", "data": [820, 932, 901, 934, 1290, 1330, 1320], "smooth": true, "name": "活跃用户"}
+  ]
 }
 ```
 
@@ -174,7 +290,7 @@ print(greet("Developer"))
   "title": {"text": "访问来源分布"},
   "series": [{
     "type": "pie",
-    "radius": "55%",
+    "radius": ["40%", "70%"],
     "data": [
       {"value": 1048, "name": "搜索引擎"},
       {"value": 735, "name": "直接访问"},
@@ -217,15 +333,15 @@ print(greet("Developer"))
 ```echarts
 {
   "type": "funnel",
-  "title": {"text": "销售漏斗"},
+  "title": {"text": "销售转化漏斗"},
   "series": [{
     "type": "funnel",
     "data": [
+      {"value": 100, "name": "展现"},
+      {"value": 80, "name": "点击"},
       {"value": 60, "name": "访问"},
       {"value": 40, "name": "咨询"},
-      {"value": 20, "name": "订单"},
-      {"value": 80, "name": "点击"},
-      {"value": 100, "name": "展现"}
+      {"value": 20, "name": "订单"}
     ]
   }]
 }
@@ -233,25 +349,32 @@ print(greet("Developer"))
 
 ---
 
-## 五、Tabs 标签页组件（v1.7.0 新增）
+## 五、Tabs 标签页组件 <span class="badge badge-new">NEW</span>
+
+### 5.1 基础用法
 
 [[tabs]]
 [[tab:产品介绍]]
-Editor.md 是一款开源的、可嵌入的 Markdown 在线编辑器，基于 CodeMirror、jQuery 和 Marked 构建。
+Editor.md 是一款开源的、可嵌入的 Markdown 在线编辑器（组件），基于 CodeMirror、jQuery 和 Marked 构建。
 
-- 支持实时预览
-- 支持图片上传
-- 支持流程图和时序图
-- 支持 ECharts 图表
+**核心特性：**
+- 支持 Standard Markdown / GFM / CommonMark
+- 支持实时预览、图片上传、HTML 标签解析
+- 支持流程图、时序图
+- 支持 ECharts 交互式图表
+- 支持 KaTeX 科学公式
+- 支持代码语法高亮
 [[/tab]]
 
 [[tab:更新日志]]
 ### v1.7.0
-- 新增 Apache ECharts 图表支持
-- 新增 Tabs 标签页功能
-- 新增多列排版功能
-- 新增悬浮提示功能
-- 新增浏览器草稿暂存功能
+- 新增 Apache ECharts 图表支持（柱状图/折线图/饼图/雷达图/漏斗图）
+- 新增 Tabs 标签页功能（支持任意 Markdown 内容嵌套）
+- 新增多列排版 Columns 功能
+- 新增悬浮提示 Tooltip 功能
+- 新增浏览器草稿暂存 Draft 功能
+- 新增视频嵌入和附件链接功能
+- JetBrains 风格代码块展示
 
 ### v1.6.0
 - 新增拼音标注语法
@@ -260,26 +383,82 @@ Editor.md 是一款开源的、可嵌入的 Markdown 在线编辑器，基于 Co
 - 新增表格行列操作
 [[/tab]]
 
-[[tab:嵌套演示]]
-Tab 内支持任意 Markdown 内容：
+[[tab:使用帮助]]
+**快捷键：**
+1. **Ctrl + S** / **Cmd + S** — 保存内容
+2. **F11** — 切换全屏编辑
+3. **F10** — 切换预览模式
+4. **Ctrl + F** / **Cmd + F** — 搜索
+5. **Ctrl + Shift + F** / **Cmd + Option + F** — 替换
+6. **Ctrl + Q** / **Cmd + Q** — 代码折叠
 
+欢迎通过 GitHub 提交 Issue 和 PR 参与共建！
+[[/tab]]
+[[/tabs]]
+
+### 5.2 标签页内嵌套复杂内容
+
+以下演示在标签页内部嵌套代码块、表格、图表、任务列表等复杂内容：
+
+[[tabs]]
+[[tab:代码示例]]
 ```javascript
-function inTab() {
-    return "代码块正常渲染";
+// 在 Tab 内编写代码
+class TabDemo {
+    constructor(name) {
+        this.name = name;
+    }
+
+    greet() {
+        return `Hello from tab "${this.name}"!`;
+    }
+}
+
+const demo = new TabDemo("Code Demo");
+console.log(demo.greet());
+```
+[[/tab]]
+
+[[tab:表格示例]]
+| 功能 | 最低版本 | 状态 |
+|------|----------|------|
+| Tabs 标签页 | v1.7.0 | ✅ 已发布 |
+| ECharts 图表 | v1.7.0 | ✅ 已发布 |
+| 多列排版 | v1.7.0 | ✅ 已发布 |
+| 悬浮提示 | v1.7.0 | ✅ 已发布 |
+| 视频嵌入 | v1.7.0 | ✅ 已发布 |
+| 附件链接 | v1.7.0 | ✅ 已发布 |
+[[/tab]]
+
+[[tab:图表示例]]
+Tab 内部也可以嵌入 ECharts 图表：
+
+```echarts
+{
+  "type": "bar",
+  "title": {"text": "Tab 内图表"},
+  "xAxis": {"data": ["Q1", "Q2", "Q3", "Q4"]},
+  "yAxis": {},
+  "series": [
+    {"type": "bar", "data": [320, 450, 280, 510], "name": "收入"},
+    {"type": "bar", "data": [220, 380, 250, 420], "name": "支出"}
+  ]
 }
 ```
+[[/tab]]
 
-| 功能 | 状态 |
-|------|------|
-| 代码块 | 支持 |
-| 表格 | 支持 |
-| 图表 | 支持 |
+[[tab:任务列表]]
+- [x] 代码块嵌套 ✅
+- [x] 表格嵌套 ✅
+- [x] 图表嵌套 ✅
+- [x] 任务列表嵌套 ✅
+- [ ] 更多嵌套组合测试中...
 [[/tab]]
 [[/tabs]]
 
 ---
 
-## 六、多列排版（v1.7.0 新增）
+## 六、多列排版 <span class="badge badge-new">NEW</span>
 
 [[columns:3]]
 ### 第一栏
@@ -292,7 +471,7 @@ function inTab() {
 ### 第二栏
 使用 `[[columns:3]]` 语法即可开启三栏排版，数字可根据需要调整为 2、3、4 等。
 
-> 提示：每一栏的内容都会独立渲染 Markdown，包括标题、列表、图片等。
+> 提示：每一栏的内容都会独立渲染 Markdown，包括标题、列表、图片、代码等。
 
 ### 第三栏
 您可以在每一栏中放入不同的产品介绍、功能特性或服务说明，让读者一目了然。
@@ -304,29 +483,25 @@ function inTab() {
 
 ---
 
-## 七、悬浮提示 Tooltip（v1.7.0 新增）
+## 七、悬浮提示 Tooltip <span class="badge badge-new">NEW</span>
 
 ### 7.1 文本悬浮提示
-
-请将鼠标悬停在此链接上查看效果：[百度](tooltip:百度是全球最大的中文搜索引擎，创立于2000年，总部位于北京。)
+请将鼠标悬停在此链接上查看效果：[百度](tooltip:百度（NASDAQ: BIDU）是全球最大的中文搜索引擎，创立于2000年1月1日，总部位于中国北京。)
 
 ### 7.2 图片悬浮提示
-
-![示例图片](../images/logos/editormd-logo-180x180.png "tooltip:Editor.md 的 Logo 图标，代表着开源、简洁与强大的 Markdown 编辑体验。")
+![Editor.md Logo](../images/logos/editormd-logo-180x180.png "tooltip:这是 Editor.md 的 Logo 图标，代表着开源、简洁与强大的 Markdown 编辑体验。")
 
 ### 7.3 图片型悬浮提示
-
-请将鼠标悬停在此链接上查看图片提示效果：[查看 Logo](tooltip:image:../images/logos/editormd-logo-180x180.png)
+请将鼠标悬停在此链接上查看图片提示：[查看 Logo 图片](tooltip:image:../images/logos/editormd-logo-180x180.png)
 
 ### 7.4 iframe 型悬浮提示
-
-请将鼠标悬停在此链接上查看 iframe 提示效果：[查看示例页面](tooltip:iframe:./simple.html)
+请将鼠标悬停在此链接上查看 iframe：[查看示例页面](tooltip:iframe:./simple.html)
 
 ---
 
-## 八、文本对齐（v1.7.0 推荐 Unicode 行内对齐）
+## 八、文本对齐 <span class="badge badge-new">NEW</span>
 
-工具栏对齐按钮默认插入 Unicode 行内对齐标记，无需换行，可直接在标题、段落、列表项中使用：
+使用 Unicode 行内对齐标记（工具栏按钮插入）：
 
 ⁑⁑欢迎使用 Editor.md — 开源在线 Markdown 编辑器⁑⁑
 
@@ -350,24 +525,41 @@ function inTab() {
 - ⁑⠕列表项中的右对齐⠕⁑
 - ⁑⁛列表项中的两端对齐⁛⁑
 
-
 ---
 
-## 九、拼音标注（v1.6.0 新增）
+## 九、拼音标注 <span class="badge">v1.6.0</span>
 
-{Editor.md | biān jí qì} 是一款非常优秀的 {Markdown | mā kè dáo nà} 编辑器。
+{Editor.md | biān jí qì} 是一款非常优秀的 {Markdown | mā kè dáo nà} 编辑器，支持 {GitHub | jí tè bù} Flavored Markdown。
 
 ---
 
 ## 十、科学公式 TeX / KaTeX
 
-行内公式：$$E=mc^2$$
+行内公式：$$E = mc^{2}$$
 
-块级公式：
+块级公式（二次方程求根）：
 
 $$x = {-b \pm \sqrt{b^2-4ac} \over 2a}$$
 
+积分公式：
+
 $$\int_{a}^{b} f(x) \, dx = F(b) - F(a)$$
+
+矩阵：
+
+$$\begin{pmatrix}
+a_{11} & a_{12} & a_{13} \\
+a_{21} & a_{22} & a_{23} \\
+a_{31} & a_{32} & a_{33}
+\end{pmatrix}$$
+
+分段函数：
+
+$$f(x) =
+\begin{cases}
+x^2 & \text{if } x \geq 0 \\
+-x^2 & \text{if } x < 0
+\end{cases}$$
 
 > 提示：双击预览区的公式可快速定位到 Markdown 源码中的对应位置。
 
@@ -376,16 +568,18 @@ $$\int_{a}^{b} f(x) \, dx = F(b) - F(a)$$
 ## 十一、流程图 Flowchart
 
 ```flow
-st=>start: 开始
-op=>operation: 用户操作
-cond=>condition: 判断条件
-sub=>subroutine: 子流程
-io=>inputoutput: 输入/输出
-ed=>end: 结束
+st=>start: 用户访问
+op1=>operation: 输入 Markdown
+op2=>operation: 实时预览渲染
+cond=>condition: 需要导出？
+sub1=>subroutine: 导出 HTML
+sub2=>subroutine: 导出 Markdown
+io=>inputoutput: 获取内容
+ed=>end: 完成
 
-st->op->cond
-cond(yes)->io->ed
-cond(no)->sub->op
+st->op1->op2->cond
+cond(yes)->sub1->io->ed
+cond(no)->sub2->ed
 ```
 
 ---
@@ -393,16 +587,21 @@ cond(no)->sub->op
 ## 十二、时序图 Sequence Diagram
 
 ```seq
-Alice->Bob: Hello Bob, how are you?
-Note right of Bob: Bob thinks
-Bob-->Alice: I am good thanks!
-Bob-->Jack: How about you?
-Jack-->Bob: Fine too!
+Title: Editor.md 工作流程
+用户->编辑器: 输入 Markdown 文本
+编辑器->Marked解析器: 解析 Markdown
+Marked解析器-->编辑器: 返回 HTML
+编辑器->KaTeX渲染器: 渲染数学公式
+编辑器->ECharts渲染器: 渲染图表
+编辑器->FlowChart渲染器: 渲染流程图
+编辑器-->用户: 展示实时预览
+用户->编辑器: 点击导出按钮
+编辑器-->用户: 导出的文件
 ```
 
 ---
 
-## 十三、视频插入（v1.7.0 新增）
+## 十三、视频嵌入 <span class="badge badge-new">NEW</span>
 
 ### 13.1 video 标签语法
 
@@ -410,51 +609,43 @@ Jack-->Bob: Fine too!
 ./demo.mp4
 [[/video]]
 
-### 13.2 原生 HTML5 video 标签
+### 13.2 原生 HTML5 video
 
-<video src="./demo.mp4" controls width="100%" height="300"></video>
-
-> 提示：使用工具栏「视频」按钮可快速插入 <code>[[video]]</code> 标签，支持本地视频文件和远程 URL。
+<video src="./demo.mp4" controls width="100%" height="320"></video>
 
 ---
 
-## 十四、附件链接（v1.7.0 新增）
-
-### 14.1 file 标签语法
+## 十四、附件链接 <span class="badge badge-new">NEW</span>
 
 [[file]]
-document.pdf | 项目文档
+document.pdf | 项目技术文档
 [[/file]]
 
 [[file]]
-report.xlsx | 数据报表
+report.xlsx | 2024年度数据报表
 [[/file]]
-
-### 14.2 工具栏文件上传
-
-> 提示：点击工具栏「文件」按钮，支持本地上传或填写 URL，上传成功后自动插入 <code>[[file]]</code> 标签。
 
 ---
 
-## 十五、图片编辑与尺寸调整（v1.7.0 增强）
+## 十五、图片尺寸编辑
 
-### 15.1 固定尺寸图片
+### 15.1 固定尺寸
 
-![Editor.md Logo](../images/logos/editormd-logo-180x180.png)<200,200>
+![Editor.md Logo](../images/logos/editormd-logo-180x180.png)<180,180>
 
-### 15.2 拖拽调整尺寸
+### 15.2 可拖拽调整
 
-![可调整尺寸](../images/logos/editormd-logo-64x64.png)
+![可调整尺寸的图片](../images/logos/editormd-logo-64x64.png)
 
-> 提示：在预览区拖拽图片右下角可调整尺寸；按住 **Shift 键** 可保持原始宽高比；双击图片可输入精确尺寸。拖拽后左侧编辑器会自动同步为 `<W,H>` 语法。
+> 提示：预览区拖拽图片右下角调尺寸；按住 **Shift** 保持宽高比；双击输入精确尺寸。
 
 ---
 
 ## 十六、HTML 标签解析
 
-<div style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;">
-    <strong>自定义 HTML 区块</strong><br/>
-    Editor.md 支持识别和解析 HTML 标签，具有可靠的安全性和几乎无限的扩展性。
+<div style="padding: 12px; border: 1px solid #d1d5da; border-radius: 6px; background: #f6f8fa;">
+    <strong style="color: #24292e;">🎨 自定义 HTML 区块</strong><br/>
+    <span style="color: #586069;">Editor.md 支持解析 HTML 标签，并具有可靠的安全性和几乎无限的扩展性。</span>
 </div>
 
 ---
@@ -463,102 +654,137 @@ report.xlsx | 数据报表
 
 [========]
 
+---
+
 ## 十八、@链接
 
 @pandao 作者主页
 
 ---
 
-## 十九、结语
+## 十九、分隔线
 
-Editor.md 持续迭代，致力于为开发者和内容创作者提供最优秀的 Markdown 编辑体验。欢迎通过 GitHub 提交 Issue 和 PR 参与共建！
+---
+
+## 二十、结语
+
+Editor.md 持续迭代，致力于为开发者和内容创作者提供最优秀的 Markdown 编辑体验。
 
 **Open source online markdown editor.**
+
+> Made with ❤️ by Pandao & Contributors
 </textarea>
-            </div>
         </div>
+    </div>
 
-        <script src="js/jquery.min.js"></script>
-        <script src="../editormd.min.js"></script>
-        <script type="text/javascript">
-            var testEditor;
+    <script src="js/jquery.min.js"></script>
+    <script src="../editormd.min.js"></script>
+    <script type="text/javascript">
+        var testEditor;
 
-            $(function() {
-                testEditor = editormd("test-editormd", {
-                    width: "90%",
-                    height: 800,
-                    path: "../lib/",
-                    theme: "default",
-                    previewTheme: "default",
-                    editorTheme: "default",
-                    codeFold: true,
-                    saveHTMLToTextarea: true,
-                    searchReplace: true,
-                    watch: true,
-                    // htmlDecode: "style,script,iframe|on*",
-                    htmlDecode: true,
-                    taskList: true,
-                    tocm: true,
-                    tex: true,
-                    flowChart: true,
-                    sequenceDiagram: true,
-                    pinyin: true,
-                    textAlign: true,
-                    tableEdit: true,
-                    imageResize: true,
-                    echarts: true,
-                    tabs: true,
-                    columns: true,
-                    tooltip: true,
-                    draftAutoSave: true,
-                    draftInterval: 30,
-                    draftMaxDays: 30,
-                    imageUpload: true,
-                    imageUploadURL: "./php/upload.php",
-                    fileUpload: true,
-                    fileUploadURL: "./php/upload.php",
-                    fileFormats: ["doc", "docx", "pdf", "txt", "zip", "rar", "xls", "xlsx", "ppt", "pptx", "mp4", "mp3"],
-                    onload: function() {
-                        console.log("Editor.md v1.7.0 全部功能示例已加载完成");
-                    },
-                    onchange: function() {
-                        console.log("内容发生变化");
-                    }
-                });
-
-                $("#get-md-btn").on("click", function() {
-                    alert(testEditor.getMarkdown());
-                });
-
-                $("#get-html-btn").on("click", function() {
-                    // console.log(testEditor.getHTML());
-                    console.log(testEditor.getPreviewedHTML());
-                });
-
-                $("#watch-btn").on("click", function() {
-                    testEditor.watch();
-                });
-
-                $("#unwatch-btn").on("click", function() {
-                    testEditor.unwatch();
-                });
-
-                $("#fullscreen-btn").on("click", function() {
-                    testEditor.fullscreen();
-                });
-
-                $("#show-toolbar-btn").on("click", function() {
-                    testEditor.showToolbar();
-                });
-
-                $("#hide-toolbar-btn").on("click", function() {
-                    testEditor.hideToolbar();
-                });
-
-                $("#goto-line-btn").on("click", function() {
-                    testEditor.gotoLine(30);
-                });
+        $(function() {
+            testEditor = editormd("test-editormd", {
+                width: "90%",
+                height: 800,
+                path: "../lib/",
+                theme: "default",
+                previewTheme: "default",
+                editorTheme: "default",
+                codeFold: true,
+                saveHTMLToTextarea: true,
+                searchReplace: true,
+                watch: true,
+                htmlDecode: true,
+                taskList: true,
+                tocm: true,
+                tex: true,
+                flowChart: true,
+                sequenceDiagram: true,
+                pinyin: true,
+                textAlign: true,
+                tableEdit: true,
+                imageResize: true,
+                echarts: true,
+                tabs: true,
+                columns: true,
+                tooltip: true,
+                draftAutoSave: true,
+                draftInterval: 30,
+                draftMaxDays: 30,
+                imageUpload: true,
+                imageUploadURL: "./php/upload.php",
+                fileUpload: true,
+                fileUploadURL: "./php/upload.php",
+                fileFormats: ["doc", "docx", "pdf", "txt", "zip", "rar", "xls", "xlsx", "ppt", "pptx", "mp4", "mp3"],
+                onload: function() {
+                    console.log("✅ Editor.md v1.7.0 全部功能完整演示已加载");
+                },
+                onchange: function() {
+                    // 内容变化时更新，此处仅演示事件
+                },
+                onAllAsyncLoad: function() {
+                    console.log("✅ 所有异步资源（ECharts/KaTeX/FlowChart）加载完成");
+                }
             });
-        </script>
-    </body>
+
+            // ＝＝ API 交互按钮 ＝＝
+
+            $("#get-md-btn").on("click", function() {
+                var md = testEditor.getMarkdown();
+                console.log("=== Markdown 内容 ===\n" + md);
+                alert("Markdown 已输出到控制台（" + md.length + " 字符）");
+            });
+
+            $("#get-html-btn").on("click", function() {
+                var html = testEditor.getPreviewedHTML();
+                console.log("=== 预览 HTML ===\n" + html);
+                alert("预览 HTML 已输出到控制台（" + html.length + " 字符）");
+            });
+
+            $("#watch-btn").on("click", function() {
+                testEditor.watch();
+                console.log("实时预览已开启");
+            });
+
+            $("#unwatch-btn").on("click", function() {
+                testEditor.unwatch();
+                console.log("实时预览已关闭");
+            });
+
+            $("#fullscreen-btn").on("click", function() {
+                testEditor.fullscreen();
+            });
+
+            $("#show-toolbar-btn").on("click", function() {
+                testEditor.showToolbar();
+            });
+
+            $("#hide-toolbar-btn").on("click", function() {
+                testEditor.hideToolbar();
+            });
+
+            $("#goto-line-btn").on("click", function() {
+                testEditor.gotoLine(30);
+                console.log("已跳转到第 30 行");
+            });
+
+            $("#preview-btn").on("click", function() {
+                testEditor.previewing();
+            });
+
+            $("#toc-dropdown-btn").on("click", function() {
+                testEditor.config({
+                    tocDropdown: true,
+                    tocTitle: "目录 Table of Contents"
+                });
+                console.log("ToC 模式已切换为下拉菜单");
+            });
+
+            $("#toc-default-btn").on("click", function() {
+                testEditor.config("tocDropdown", false);
+                console.log("ToC 模式已切换为默认内嵌");
+            });
+        });
+    </script>
+</body>
 </html>

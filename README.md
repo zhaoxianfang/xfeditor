@@ -55,7 +55,7 @@
 - 增强 XSS 安全防护、完善事件回调系统
 
 ### Markdown 扩展语法
-ToC 目录 `[TOC]` / `[TOCM]`、Emoji `:smiley:`、任务列表 `- [x]`、@链接 `@username`、KaTeX 数学公式 `$$...$$`、flowchart.js 流程图、sequence-diagram.js 时序图、分页符 `[========]`、HTML 标签过滤解析
+ToC 目录 `[TOC]` / `[TOCM]`、任务列表 `- [x]`、@链接 `@username`、KaTeX 数学公式 `$$...$$`、flowchart.js 流程图、sequence-diagram.js 时序图、分页符 `[========]`、HTML 标签过滤解析
 
 ---
 
@@ -83,7 +83,7 @@ $(function(){
     editormd("editor", {
         width: "100%", height: "600px",
         path: "lib/",
-        tex: true, emoji: true, taskList: true,
+        tex: true, taskList: true,
         echarts: true, tabs: true, columns: true, tooltip: true
     });
 });
@@ -240,7 +240,6 @@ editor.exportFile("文档", "markdown"); // 导出文件
 | `tex` | `false` | KaTeX 公式 |
 | `flowChart` | `false` | 流程图 |
 | `sequenceDiagram` | `false` | 时序图 |
-| `emoji` | `false` | Emoji |
 | `taskList` | `false` | 任务列表 |
 | `toc` | `true` | 目录 |
 | `tocm` | `false` | ToC 下拉菜单 |
@@ -344,7 +343,7 @@ editor.exportFile("文档", "markdown"); // 导出文件
 ```javascript
 editormd.markdownToHTML("preview-container", {
     markdown: "# Hello", htmlDecode: "style,script,iframe",
-    toc: true, emoji: true, tex: true,
+    toc: true, tex: true,
     echarts: true, tabs: true, columns: true, tooltip: true
 });
 ```
@@ -430,11 +429,6 @@ editor.off("onchange");
 $$
 \frac{1}{\sqrt{2\pi\sigma^2}} e^{-\frac{(x-\mu)^2}{2\sigma^2}}
 $$
-```
-
-### Emoji (`emoji: true`)
-```markdown
-:smiley: :heart: :thumbsup: :fa-github: :editormd-logo:
 ```
 
 ### 任务列表 (`taskList: true`)

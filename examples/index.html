@@ -1,562 +1,326 @@
 <!DOCTYPE html>
 <html lang="zh">
-    <head>
-        <meta charset="utf-8" />
-        <title>Editor.md examples</title>
-        <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" />
-        <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
-		<style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            
-            body {
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
-                             "Hiragino Sans GB", "Microsoft YaHei", Helvetica, Arial, sans-serif;
-                background: #f0f2f5;
-                color: #333;
-                line-height: 1.6;
-            }
-            
-            #layout {
-                padding-bottom: 80px;
-            }
-            
-            #header {
-                width: 100%;
-                color: #fff;
-                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-                padding: 70px 0;
-                text-align: center;
-                margin-bottom: 40px;
-                position: relative;
-                overflow: hidden;
-            }
-            
-            #header::before {
-                content: '';
-                position: absolute;
-                top: -50%;
-                left: -50%;
-                width: 200%;
-                height: 200%;
-                background: radial-gradient(circle at 30% 50%, rgba(24, 144, 255, 0.15) 0%, transparent 50%),
-                            radial-gradient(circle at 70% 50%, rgba(82, 196, 26, 0.1) 0%, transparent 50%);
-                pointer-events: none;
-            }
-            
-            #header > * {
-                position: relative;
-                z-index: 1;
-            }
-            
-            a {
-                color: #1890ff;
-                text-decoration: none;
-                transition: color 200ms ease;
-            }
-            
-            a:hover {
-                color: #40a9ff;
-            }
-            
-            #header h1 {
-                font-size: 42px;
-                font-weight: 700;
-                letter-spacing: -0.5px;
-                margin-bottom: 12px;
-            }
-            
-            #header p {
-                font-size: 16px;
-                opacity: 0.8;
-                font-weight: 300;
-            }
-            
-            #header .editormd-logo {
-                margin-bottom: 10px;
-            }
-            
-            ul {
-                list-style: none;
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-                gap: 8px;
-                padding-bottom: 30px;
-                width: 92%;
-                max-width: 1200px;
-                margin: 0 auto;
-            }
-            
-            ul li a {
-                display: block;
-                padding: 18px 20px;
-                font-size: 14px;
-                font-weight: 500;
-                text-align: left;
-                color: #333;
-                background: #fff;
-                border-radius: 10px;
-                border: 1px solid #e8e8e8;
-                -webkit-transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
-                transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
-                position: relative;
-                overflow: hidden;
-            }
-            
-            ul li a::before {
-                content: '';
-                position: absolute;
-                left: 0;
-                top: 0;
-                height: 100%;
-                width: 4px;
-                background: #1890ff;
-                border-radius: 10px 0 0 10px;
-                transform: scaleY(0);
-                transition: transform 250ms ease;
-            }
-            
-            ul li a:hover::before {
-                transform: scaleY(1);
-            }
-            
-            ul li a span {
-                color: #999;
-                display: block;
-                padding-top: 4px;
-                font-size: 12px;
-                font-weight: 400;
-            }
-            
-            ul li a:hover {
-                color: #1890ff;
-                background: #e6f7ff;
-                border-color: #91d5ff;
-                box-shadow: 0 4px 16px rgba(24, 144, 255, 0.12);
-                transform: translateY(-2px);
-            }
-            
-            ul li a:hover span {
-                color: #69c0ff;
-            }
-            
-            .category {
-                padding: 20px 0;
-                font-size: 20px;
-                font-weight: 700;
-                color: #1a1a2e;
-                margin: 20px auto 15px;
-                border-bottom: 2px solid #e8e8e8;
-                width: 92%;
-                max-width: 1200px;
-                position: relative;
-            }
-            
-            .footer {
-                border-top: 1px solid #e8e8e8;
-                font-size: 12px;
-                margin-top: 30px;
-                padding-top: 40px;
-                text-align: center;
-                color: #999;
-            }
-            
-            .footer p {
-                margin-bottom: 6px;
-            }
-            
-            .footer img {
-                margin-bottom: 10px;
-                opacity: 0.7;
-                transition: opacity 200ms ease;
-            }
-            
-            .footer img:hover {
-                opacity: 1;
-            }
-            
-            .footer a {
-                color: #666;
-            }
-            
-            .footer a:hover {
-                color: #1890ff;
-            }
-            
-            .menu {
-                margin-top: 25px;
-                text-align: center;
-                display: flex;
-                flex-wrap: wrap;
-                justify-content: center;
-                gap: 6px;
-            }
-            
-            .menu a {
-                color: rgba(255, 255, 255, 0.85);
-                display: inline-block;
-                text-decoration: none;
-                padding: 6px 18px;
-                border-radius: 20px;
-                font-size: 13px;
-                border: 1px solid rgba(255, 255, 255, 0.25);
-                -webkit-transition: all 250ms ease;
-                transition: all 250ms ease;
-            }
-            
-            .menu a:hover {
-                background-color: rgba(255, 255, 255, 0.15);
-                border-color: rgba(255, 255, 255, 0.5);
-                color: #fff;
-            }
-            
-            [href="#top"] {
-                color: #bbb;
-                font-size: 12px;
-                font-weight: 400;
-                text-decoration: none;
-                transition: color 200ms ease;
-            }
-            
-            [href="#top"]:hover {
-                color: #1890ff;
-            }
-            
-            [href="#top"] .fa {
-                margin-left: 6px;
-                font-size: 1.2em;
-            }
-            
-            @media (max-width: 768px) {
-                #header {
-                    padding: 50px 20px;
-                }
-                
-                #header h1 {
-                    font-size: 28px;
-                }
-                
-                ul {
-                    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-                    gap: 6px;
-                }
-                
-                ul li a {
-                    padding: 14px 16px;
-                }
-                
-                .category {
-                    font-size: 17px;
-                }
-            }
-            
-            @media (max-width: 480px) {
-                ul {
-                    grid-template-columns: 1fr;
-                }
-            }
-		</style>
-    </head>
-    <body>
-        <a name="top"></a>
-        <div id="layout">
-            <div id="header">
-                <h1><i class="editormd-logo editormd-logo-3x"></i></h1>
-                <h1>Editor.md Examples</h1>
-                <p>Open source online markdown editor.</p>
-                <div class="menu">
-                    <a href="#basic">Basic</a>
-                    <a href="#v170">v1.7.0 新特性</a>
-                    <a href="#v160">v1.6.0 增强</a>
-                    <a href="#markdown-extras">Markdown Extras</a>
-                    <a href="#customs">自定义 Customs</a>
-                    <a href="#image-upload">Image Upload</a>
-                    <a href="#events">事件处理 Events handle</a>
-                </div>
-            </div>
-			<h1 class="category"><a name="basic"></a>Basic</h1>
-			<ul>
-				<li>
-					<a href="./simple.html">简单示例 <span>Simple example — 最快上手</span></a>
-				</li>
-				<li>
-					<a href="./full.html">完整示例 <span>Full example — 所有功能开启（TeX/Flowchart/Seq/ECharts/Tabs/Columns）</span></a>
-				</li>
-				<li>
-					<a href="./all-features.html">全部功能综合演示 <span>All features demo — ECharts/Tabs/Columns/Tooltip/Align/KaTeX/Draft</span></a>
-				</li>
-				<li>
-					<a href="./full-features-demo.html">交互式全功能示例 <span>Interactive demo — 13 大示例：基础语法/代码高亮/KaTeX/流程图/ECharts/语言切换/事件/销毁</span></a>
-				</li>
-				<li>
-					<a href="./toolbar-reference.html">工具栏功能介绍 <span>Toolbar icons, features & usage reference</span></a>
-				</li>
-				<li>
-					<a href="./api-reference.html">API 接口文档 <span>完整配置项 & API 参考 & 语法速查</span></a>
-				</li>
-				<li>
-					<a href="./use-requirejs.html">使用 Require.js <span>Using Require.js (AMD)</span></a>
-				</li>
-				<li>
-					<a href="./use-seajs.html">使用 Sea.js <span>Using Sea.js (CMD)</span></a>
-				</li>
-				<li>
-					<a href="./use-zepto.html">使用 Zepto.js <span>Using Zepto.js instead of jQuery</span></a>
-				</li>
-				<li>
-					<a href="./form-get-value.html">表单取值与提交 <span>Get/Send Markdown + HTML via form POST</span></a>
-				</li>
-				<li>
-					<a href="./html-preview-markdown-to-html.html">非编辑时 Markdown 转 HTML <span>Static markdownToHTML() 渲染</span></a>
-				</li>
-				<li>
-					<a href="./html-preview-markdown-to-html-custom-toc-container.html">自定义 ToC 容器 <span>Custom ToC container for preview</span></a>
-				</li>
-			</ul>
-			<h1 class="category">
-			    <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
-			    <a name="customs"></a>自定义 Customs
-			</h1>
-			<ul>
-				<li>
-					<a href="./custom-toolbar.html">自定义工具栏 <span>Custom toolbar</span></a>
-				</li>
-				<li>
-					<a href="./multi-languages.html">多语言 <span>Multi-languages for l18n</span></a>
-				</li>
-				<li>
-					<a href="./auto-height.html">自动高度 <span>Auto height</span></a>
-				</li>
-				<li>
-					<a href="./toolbar-auto-fixed.html">工具栏自动固定定位的开启与禁用 <span>Enable / disable toolbar auto fixed position.</span></a>
-				</li>
-				<li>
-					<a href="./dynamic-create-editormd.html">动态创建 Editor.md <span>Dynamic create Editor.md</span></a>
-				</li>
-				<li>
-					<a href="./delay-renderer-preview.html">延迟解析和预览 <span>Delay Rerender & Preview</span></a>
-				</li>
-				<li>
-					<a href="./multi-editormd.html">多个 Editor.md 并存 <span>Multi Editor.md</span></a>
-				</li>
-				<li>
-					<a href="./goto-line.html">跳转到指定的行 <span>Goto line</span></a>
-				</li>
-				<li>
-					<a href="./readonly.html">只读模式 <span>Read only mode</span></a>
-				</li>
-				<li>
-					<a href="./themes.html">自定义编辑器样式主题 <span>Setting / change editor style theme</span></a>
-				</li>
-				<li>
-					<a href="./search-replace.html">搜索替换功能 <span>Search / Replace</span></a>
-				</li>
-				<li>
-					<a href="./code-fold.html">代码折叠功能 <span>Code fold</span></a>
-				</li>
-				<li>
-					<a href="./custom-keyboard-shortcuts.html">自定义键盘快捷键 <span>Custom keyboard shortcuts</span></a>
-				</li>
-				<li>
-				    <a href="./define-plugin.html">自定义插件 <span>Define extention plugins for Editor.md</span></a>
-				</li>
-				<li>
-				    <a href="./manually-load-modules.html">手动加载依赖模块文件 <span>Manually loading dependent module files.</span></a>
-				</li>
-				<li>
-				    <a href="./sync-scrolling.html">双向、单向或禁用同步滚动 <span>Bisync, Single, Disabled sync scrolling</span></a>
-				<li>
-				<li>
-				    <a href="./external-use.html">外部使用工具栏的操作方法和对话框 <span>External use of toolbar handlers / modal dialog</span></a>
-				</li>
-				<li>
-				    <a href="./resettings.html">加载完成且创建成功之后的重配置 <span>loaded resettings</span></a>
-				</li>
-				<li>
-					<a href="./change-mode.html">变身为代码编辑器 <span>Change mode become to the code editor</span></a>
-				</li>
-				<li>
-					<a href="./set-get-replace-selection.html">插入字符 / 设置和获取光标位置 / 设置、获取和替换选中的文本 <span>Insert value & Set / Get cursor & Set / Get / Replace selection</span></a>
-				</li>
-				<li>
-				    <a href="./extends.html">扩展成员方法和属性 <span>Expanded of member methods and properties</span></a>
-				</li>
-            </ul>
-			<h1 class="category">
-			    <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
-			    <a name="v170"></a>v1.7.0 新特性 New Features
-			</h1>
-			<ul>
-				<li>
-					<a href="./echarts.html">Apache ECharts 交互式图表 <span>Bar, Line, Pie, Radar, Funnel 五种图表</span></a>
-				</li>
-				<li>
-					<a href="./tabs.html">Tabs 标签页组件 <span>[[tabs]] ... [[/tabs]] 嵌套 Markdown</span></a>
-				</li>
-				<li>
-					<a href="./columns.html">多列排版 <span>[[columns:N]] ... [[/columns]] 报纸式布局</span></a>
-				</li>
-				<li>
-					<a href="./tooltip.html">悬浮提示 Tooltip <span>[text](tooltip:content) 文本/图片/iframe</span></a>
-				</li>
-				<li>
-					<a href="./formula.html">插入公式 <span>工具栏公式面板 — 11 分类、100+公式、搜索过滤、一键插入、自动关闭</span></a>
-				</li>
-				<li>
-					<a href="./video.html">视频插入 <span>[[video]] ... [[/video]] 多视频列表</span></a>
-				</li>
-				<li>
-					<a href="./full-preview.html">完整独立预览 <span>markdownToHTML() 静态方法，编辑器外的独立渲染</span></a>
-				</li>
-				<li>
-					<a href="./all-features.html">全部功能综合演示 <span>All features (ECharts/Tabs/Columns/Tooltip)</span></a>
-				</li>
-				<li>
-					<a href="./api-reference.html">API 接口文档 <span>所有配置项、方法、事件回调 & 语法参考</span></a>
-				</li>
-            </ul>
-			<h1 class="category">
-			    <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
-			    <a name="v160"></a>v1.6.0 增强功能 Enhancements
-			</h1>
-			<ul>
-				<li>
-					<a href="./pinyin.html">拼音标注语法 <span>Pinyin ruby annotation — {汉字 | hàn zì}</span></a>
-				</li>
-				<li>
-					<a href="./text-align.html">文本对齐语法 <span>Inline text align — left / center / right / justify</span></a>
-				</li>
-				<li>
-					<a href="./table-edit.html">表格行列编辑 <span>Table row/col insert and delete</span></a>
-				</li>
-				<li>
-					<a href="./image-resize.html">图片尺寸编辑与拖拽调整 <span>Image resize by drag or explicit width/height</span></a>
-				</li>
-            </ul>
-			<h1 class="category">
-			    <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
-			    <a name="markdown-extras"></a>Markdown Extras
-			</h1>
-			<ul>
-				<li>
-					<a href="./html-tags-decode.html">识别和（过滤）解析 HTML 标签 <span>HTML tags (fliter) decode</span></a>
-				</li>
-				<li>
-					<a href="./toc.html">自动生成目录(下拉菜单) ToC / ToCM <span>Table of Contents (ToC)</span></a>
-				</li>
-				<li>
-					<a href="./task-lists.html">GFM 任务列表 <span>Github Flavored Markdown (GFM) Task Lists</span></a>
-				</li>
-				<li>
-					<a href="./@links.html">@链接 <span>@links</span></a>
-				</li>
-				<li>
-					<a href="./katex.html">科学公式 TeX <span>TeX / LaTeX (Based on KaTeX)</span> </a>
-				</li>
-				<li>
-					<a href="./flowchart.html">流程图 <span>FlowChart example</span></a>
-				</li>
-				<li>
-					<a href="./sequence-diagram.html">时序图 / 序列图 <span>Sequence Diagram example</span></a>
-				</li>
-				<li>
-					<a href="./page-break.html">分页符 <span>Page break</span></a>
-				</li>
-            </ul>
-			<h1 class="category">
-			    <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
-			    <a name="image-upload"></a>文件上传 File Upload
-			</h1>
-			<ul>
-				<li>
-					<a href="./image-upload.html">图片上传 <span>Image upload — 本地/远程图片插入</span></a>
-				</li>
-				<li>
-					<a href="./image-cross-domain-upload.html">图片跨域上传 <span>Cross-domain image upload</span></a>
-				</li>
-				<li>
-					<a href="./full.html">附件上传 <span>File attachment upload — 支持图片/文件/视频一键上传</span></a>
-				</li>
-            </ul>
-			<h1 class="category">
-			    <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
-			    <a name="events"></a>事件处理 Events handle
-			</h1>
-			<ul>
-				<li>
-				    <a href="./on-off.html">事件注册和解除方法 <span>On / Off (bind/unbind) event handle</span></a>
-				</li>
-				<li>
-					<a href="./onload.html">加载完成事件处理 <span>Onload event handle example</span></a>
-				</li>
-				<li>
-					<a href="./onchange.html">变化监听处理 <span>Onchange event handle example</span></a>
-				</li>
-				<li>
-					<a href="./onfullscreen.html">全屏事件处理 <span>Onfullscreen / onfullscreenExit event handle example</span></a>
-				</li>
-				<li>
-				    <a href="./onresize.html">Onresize<span>Onresize event handle</span></a>
-				</li>
-				<li>
-				    <a href="./onpreviewing-onpreviewed.html">Onpreviewing / Onpreviewed<span>Onpreviewing / Onpreviewed event handle</span></a>
-				</li>
-				<li>
-				    <a href="./onwatch-onunwatch.html">Onwatch / Onunwatch<span>Onwatch / Onunwatch event handle</span></a>
-				</li>
-				<li>
-				    <a href="./onscroll-onpreviewscroll.html">Onscroll / Onpreviewscroll<span>Onscroll / Onpreviewscroll event handle</span></a>
-				</li>
-				<li>
-				    <a href="./formula.html">新事件回调演示 <span>onEditorLoad / onPageLoad / onAllAsyncLoad / onPageAllLoad</span></a>
-				</li>
-			</ul>
-            <div class="clear"></div>
-            <div class="footer">
-                <p>
-                    <a href="./" target="_blank" title="Editor.md">
-                        <img src="../images/logos/editormd-logo-64x64.png"/>
-                    </a>
-                </p>
-                <p>Copyright &copy; 2015-2026 <a href="./" target="_blank" title="Editor.md">Editor.md</a></p>
-                <p>Open source online markdown editor. <a href="https://github.com/pandao/editor.md" class="fa fa-github fa-lg" target="_blank" title="Editor.md in Github"></a></p>
-                <p>The <a href="https://github.com/pandao/editor.md/blob/master/LICENSE" target="_blank">MIT</a> license</p>
+<head>
+    <meta charset="utf-8" />
+    <title>Editor.md v1.7.0 — Examples</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="../css/editormd.min.css" />
+    <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                         "Hiragino Sans GB", "Microsoft YaHei", Helvetica, Arial, sans-serif;
+            background: #f0f2f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        #layout { padding-bottom: 80px; }
+
+        /* ── Header ── */
+        #header {
+            width: 100%;
+            color: #fff;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            padding: 70px 0;
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+        #header::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle at 30% 50%, rgba(24,144,255,0.15) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 50%, rgba(82,196,26,0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        #header > * { position: relative; z-index: 1; }
+
+        #header h1 { font-size: 42px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 12px; }
+        #header p { font-size: 16px; opacity: 0.8; font-weight: 300; }
+        #header .editormd-logo { margin-bottom: 10px; }
+
+        .menu {
+            margin-top: 25px; text-align: center;
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 6px;
+        }
+        .menu a {
+            color: rgba(255,255,255,0.85); display: inline-block;
+            text-decoration: none; padding: 6px 18px; border-radius: 20px;
+            font-size: 13px; border: 1px solid rgba(255,255,255,0.25);
+            transition: all 250ms ease;
+        }
+        .menu a:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.5); color: #fff; }
+
+        /* ── Category titles ── */
+        .category {
+            padding: 20px 0; font-size: 20px; font-weight: 700;
+            color: #1a1a2e; margin: 20px auto 15px;
+            border-bottom: 2px solid #e8e8e8;
+            width: 92%; max-width: 1200px; position: relative;
+        }
+
+        /* ── Card grid ── */
+        ul {
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 8px;
+            padding-bottom: 30px;
+            width: 92%; max-width: 1200px;
+            margin: 0 auto;
+        }
+        ul li a {
+            display: block; padding: 18px 20px; font-size: 14px; font-weight: 500;
+            text-align: left; color: #333; background: #fff;
+            border-radius: 10px; border: 1px solid #e8e8e8;
+            transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative; overflow: hidden;
+        }
+        ul li a::before {
+            content: ''; position: absolute; left: 0; top: 0;
+            height: 100%; width: 4px;
+            background: #1890ff; border-radius: 10px 0 0 10px;
+            transform: scaleY(0); transition: transform 250ms ease;
+        }
+        ul li a:hover::before { transform: scaleY(1); }
+        ul li a span { color: #999; display: block; padding-top: 4px; font-size: 12px; font-weight: 400; }
+        ul li a:hover {
+            color: #1890ff; background: #e6f7ff;
+            border-color: #91d5ff; box-shadow: 0 4px 16px rgba(24,144,255,0.12);
+            transform: translateY(-2px);
+        }
+        ul li a:hover span { color: #69c0ff; }
+
+        /* ── Featured card ── */
+        .featured a {
+            border-color: #52c41a !important;
+            background: linear-gradient(135deg, #f6ffed 0%, #fff 100%) !important;
+        }
+        .featured a::before { background: #52c41a !important; }
+        .featured a:hover {
+            border-color: #73d13d !important;
+            background: #f6ffed !important;
+            box-shadow: 0 4px 16px rgba(82,196,26,0.12) !important;
+            color: #389e0d !important;
+        }
+
+        /* ── Badge ── */
+        .badge {
+            display: inline-block; padding: 1px 8px; font-size: 10px;
+            border-radius: 10px; background: #1890ff; color: #fff;
+            margin-left: 6px; vertical-align: middle; font-weight: 600;
+        }
+        .badge-new { background: #52c41a; }
+
+        /* ── Footer ── */
+        .footer {
+            border-top: 1px solid #e8e8e8; font-size: 12px;
+            margin-top: 30px; padding-top: 40px; text-align: center; color: #999;
+        }
+        .footer p { margin-bottom: 6px; }
+        .footer img { margin-bottom: 10px; opacity: 0.7; transition: opacity 200ms ease; }
+        .footer img:hover { opacity: 1; }
+        .footer a { color: #666; }
+
+        /* ── Top link ── */
+        [href="#top"] {
+            color: #bbb; font-size: 12px; font-weight: 400;
+            text-decoration: none; transition: color 200ms ease;
+        }
+        [href="#top"]:hover { color: #1890ff; }
+        [href="#top"] .fa { margin-left: 6px; font-size: 1.2em; }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            #header { padding: 50px 20px; }
+            #header h1 { font-size: 28px; }
+            ul { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 6px; }
+            ul li a { padding: 14px 16px; }
+            .category { font-size: 17px; }
+        }
+        @media (max-width: 480px) {
+            ul { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <a name="top"></a>
+    <div id="layout">
+        <!-- ═══════════════ HEADER ═══════════════ -->
+        <div id="header">
+            <h1><i class="editormd-logo editormd-logo-3x"></i></h1>
+            <h1>Editor.md Examples</h1>
+            <p>Open source online markdown editor.</p>
+            <div class="menu">
+                <a href="#start">快速上手</a>
+                <a href="#all-features">全部功能演示</a>
+                <a href="#v170">v1.7.0 新特性</a>
+                <a href="#v160">v1.6.0 增强</a>
+                <a href="#markdown">Markdown 语法</a>
+                <a href="#customs">自定义扩展</a>
+                <a href="#upload">文件上传</a>
+                <a href="#events">事件处理</a>
             </div>
         </div>
-        <script src="js/jquery.min.js"></script>
-        <script>
-            var clickOrTouch = function(touchType) {
-                touchType = touchType || "touchend";
-                var eventType = "click";
 
-                try {
-                    document.createEvent("TouchEvent");
-                    eventType = touchType;
-                } catch(e) {}
+        <!-- ═══════════════ 快速上手 ═══════════════ -->
+        <h1 class="category"><a name="start"></a>快速上手 Getting Started</h1>
+        <ul>
+            <li><a href="./simple.html">最简示例 <span>Simple example — 最快上手的入门演示</span></a></li>
+            <li><a href="./use-requirejs.html">Require.js 加载 <span>Using Require.js (AMD)</span></a></li>
+            <li><a href="./use-seajs.html">Sea.js 加载 <span>Using Sea.js (CMD)</span></a></li>
+            <li><a href="./use-zepto.html">Zepto.js 替代 jQuery <span>Using Zepto.js</span></a></li>
+            <li><a href="./dynamic-create-editormd.html">动态创建编辑器 <span>Dynamic create Editor.md</span></a></li>
+            <li><a href="./manually-load-modules.html">手动加载依赖模块 <span>Manually loading dependent modules</span></a></li>
+            <li><a href="./form-get-value.html">表单取值与提交 <span>Get/Send Markdown via form POST</span></a></li>
+        </ul>
 
-                return eventType;
-            };
-            
-            $(function() {
-        
-                $("a[href*='#']").on(clickOrTouch(), function() {
-                    if (location.pathname.replace(/^\//, "") == this.pathname.replace(/^\//, "") && location.hostname == this.hostname) 
-                    {
-                        var hash   = this.hash;
-                        var target = $(hash);
-                        target     = target.length && target || $("[name=" + hash.slice(1) + "]");
+        <!-- ═══════════════ 全部功能综合演示 ═══════════════ -->
+        <h1 class="category">
+            <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
+            <a name="all-features"></a>全部功能综合演示 <span class="badge badge-new">推荐</span>
+        </h1>
+        <ul>
+            <li class="featured"><a href="./all-features.html"><strong>🌟 全部功能完整演示</strong> <span>综合性全功能演示 — 涵盖所有语法: Markdown基础/代码高亮/KaTeX/ECharts/Tabs/Columns/Tooltip/Flowchart/时序图/拼音/对齐/视频/附件/图片/表格编辑/HTML标签 — 并提供 API 交互按钮</span></a></li>
+            <li><a href="./full-preview.html">完整独立预览 <span>markdownToHTML() 静态独立渲染</span></a></li>
+            <li><a href="./api-reference.html">API 接口文档 <span>全部配置项、方法、事件回调 & 语法参考</span></a></li>
+            <li><a href="./toolbar-reference.html">工具栏功能参考 <span>Toolbar icons, features & usage reference</span></a></li>
+        </ul>
 
-                        if (target.length) 
-                        {                            
-                            $("html, body").animate({
-                                scrollTop: target.offset().top
-                            }, 800);
+        <!-- ═══════════════ v1.7.0 新特性 ═══════════════ -->
+        <h1 class="category">
+            <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
+            <a name="v170"></a>v1.7.0 新特性 <span class="badge badge-new">NEW</span>
+        </h1>
+        <ul>
+            <li><a href="./echarts.html">Apache ECharts 交互式图表 <span>柱状图/折线图/饼图/雷达图/漏斗图 五种图表</span></a></li>
+            <li><a href="./tabs.html">Tabs 标签页组件 <span>[[tabs]]...[[/tabs]] 支持嵌套代码块/表格/图表</span></a></li>
+            <li><a href="./columns.html">多列排版 Columns <span>[[columns:N]]...[[/columns]] 报纸式多栏布局</span></a></li>
+            <li><a href="./tooltip.html">悬浮提示 Tooltip <span>文本/图片/iframe 三种悬浮提示类型</span></a></li>
+            <li><a href="./formula.html">公式插入面板 <span>11 分类、100+公式、搜索过滤、一键插入</span></a></li>
+            <li><a href="./video.html">视频插入 <span>[[video]] 标签和 HTML5 video 两种方式</span></a></li>
+        </ul>
 
-                            return false;
-                        }
+        <!-- ═══════════════ v1.6.0 增强功能 ═══════════════ -->
+        <h1 class="category">
+            <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
+            <a name="v160"></a>v1.6.0 增强功能
+        </h1>
+        <ul>
+            <li><a href="./pinyin.html">拼音标注语法 <span>{汉字 | hàn zì} 注音标记</span></a></li>
+            <li><a href="./text-align.html">文本对齐语法 <span>Unicode 行内对齐: 居中/左/右/两端</span></a></li>
+            <li><a href="./table-edit.html">表格行列编辑 <span>Table row/col insert and delete</span></a></li>
+            <li><a href="./image-resize.html">图片尺寸编辑 <span>拖拽调整 + 精确尺寸输入</span></a></li>
+        </ul>
+
+        <!-- ═══════════════ Markdown 扩展语法 ═══════════════ -->
+        <h1 class="category">
+            <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
+            <a name="markdown"></a>Markdown 扩展语法 Extensions
+        </h1>
+        <ul>
+            <li><a href="./formula.html">KaTeX 科学公式 <span>TeX / LaTeX 数学公式渲染</span></a></li>
+            <li><a href="./flowchart.html">流程图 Flowchart <span>基于 flowchart.js 的流程图绘制</span></a></li>
+            <li><a href="./sequence-diagram.html">时序图 Sequence Diagram <span>基于 js-sequence-diagrams 的时序图</span></a></li>
+            <li><a href="./task-lists.html">GFM 任务列表 <span>GitHub Flavored Markdown Task Lists</span></a></li>
+            <li><a href="./@links.html">@链接 <span>@username 提及链接</span></a></li>
+            <li><a href="./toc.html">自动目录 ToC <span>Table of Contents 下拉/内嵌两种模式</span></a></li>
+            <li><a href="./html-tags-decode.html">HTML 标签解析 <span>识别和过滤 HTML 标签</span></a></li>
+            <li><a href="./page-break.html">分页符 Page Break <span>打印分页标记</span></a></li>
+        </ul>
+
+        <!-- ═══════════════ 自定义与扩展 ═══════════════ -->
+        <h1 class="category">
+            <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
+            <a name="customs"></a>自定义与扩展 Customs & Extensions
+        </h1>
+        <ul>
+            <li><a href="./custom-toolbar.html">自定义工具栏 <span>Custom toolbar icons and handlers</span></a></li>
+            <li><a href="./themes.html">编辑器/预览主题 <span>Theme switching — default/dark/pastel-on-dark</span></a></li>
+            <li><a href="./multi-languages.html">多语言国际化 <span>Multi-languages for l18n</span></a></li>
+            <li><a href="./custom-keyboard-shortcuts.html">自定义键盘快捷键 <span>Custom keyboard shortcuts</span></a></li>
+            <li><a href="./define-plugin.html">自定义插件 <span>Define extension plugins</span></a></li>
+            <li><a href="./extends.html">扩展成员方法/属性 <span>Expanded member methods and properties</span></a></li>
+            <li><a href="./auto-height.html">自动高度 <span>Auto height adjust</span></a></li>
+            <li><a href="./change-mode.html">变身为代码编辑器 <span>Change to code editor mode</span></a></li>
+            <li><a href="./readonly.html">只读模式 <span>Read only mode</span></a></li>
+            <li><a href="./multi-editormd.html">多个编辑器并存 <span>Multi Editor.md instances</span></a></li>
+            <li><a href="./sync-scrolling.html">同步滚动 <span>双向/单向/禁用同步滚动</span></a></li>
+            <li><a href="./delay-renderer-preview.html">延迟渲染 <span>Delay renderer and preview</span></a></li>
+            <li><a href="./external-use.html">外部使用工具栏 <span>External use of toolbar handlers</span></a></li>
+            <li><a href="./resettings.html">动态重配置 <span>loaded resettings</span></a></li>
+            <li><a href="./toolbar-auto-fixed.html">工具栏自动固定 <span>Toolbar auto-fixed position</span></a></li>
+            <li><a href="./goto-line.html">跳转到指定行 <span>Goto line</span></a></li>
+            <li><a href="./set-get-replace-selection.html">选区/光标操作 <span>Set/Get cursor & selection</span></a></li>
+            <li><a href="./search-replace.html">搜索替换 <span>Search / Replace</span></a></li>
+            <li><a href="./code-fold.html">代码折叠 <span>Code fold</span></a></li>
+        </ul>
+
+        <!-- ═══════════════ 文件上传 ═══════════════ -->
+        <h1 class="category">
+            <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
+            <a name="upload"></a>文件上传 File Upload
+        </h1>
+        <ul>
+            <li><a href="./image-upload.html">图片上传 <span>Image upload — 本地/远程图片插入</span></a></li>
+            <li><a href="./image-cross-domain-upload.html">图片跨域上传 <span>Cross-domain image upload</span></a></li>
+        </ul>
+
+        <!-- ═══════════════ 事件处理 ═══════════════ -->
+        <h1 class="category">
+            <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
+            <a name="events"></a>事件处理 Events
+        </h1>
+        <ul>
+            <li><a href="./on-off.html">事件注册与解绑 <span>On / Off (bind/unbind)</span></a></li>
+            <li><a href="./onload.html">onload 加载完成 <span>Onload event handle</span></a></li>
+            <li><a href="./onchange.html">onchange 变化监听 <span>Onchange event handle</span></a></li>
+            <li><a href="./onfullscreen.html">全屏进入/退出 <span>Onfullscreen / onfullscreenExit</span></a></li>
+            <li><a href="./onresize.html">窗口尺寸变化 <span>Onresize event handle</span></a></li>
+            <li><a href="./onpreviewing-onpreviewed.html">预览生命周期 <span>Onpreviewing / Onpreviewed</span></a></li>
+            <li><a href="./onwatch-onunwatch.html">实时预览开关 <span>Onwatch / Onunwatch</span></a></li>
+            <li><a href="./onscroll-onpreviewscroll.html">滚动事件同步 <span>Onscroll / Onpreviewscroll</span></a></li>
+            <li><a href="./html-preview-markdown-to-html.html">静态 Markdown→HTML <span>markdownToHTML() 静态渲染 + TOC 容器</span></a></li>
+            <li><a href="./html-preview-markdown-to-html-custom-toc-container.html">自定义 ToC 容器 <span>Custom ToC container for preview</span></a></li>
+        </ul>
+
+        <div class="clear"></div>
+        <div class="footer">
+            <p>
+                <a href="./"><img src="../images/logos/editormd-logo-64x64.png"/></a>
+            </p>
+            <p>Copyright &copy; 2015-2026 <a href="./">Editor.md</a></p>
+            <p>Open source online markdown editor. <a href="https://github.com/pandao/editor.md" class="fa fa-github fa-lg" target="_blank"></a></p>
+            <p>The <a href="https://github.com/pandao/editor.md/blob/master/LICENSE" target="_blank">MIT</a> license</p>
+        </div>
+    </div>
+
+    <script src="js/jquery.min.js"></script>
+    <script>
+        var clickOrTouch = function(touchType) {
+            touchType = touchType || "touchend";
+            var eventType = "click";
+            try { document.createEvent("TouchEvent"); eventType = touchType; } catch(e) {}
+            return eventType;
+        };
+        $(function() {
+            $("a[href*='#']").on(clickOrTouch(), function() {
+                if (location.pathname.replace(/^\//, "") == this.pathname.replace(/^\//, "") && location.hostname == this.hostname) {
+                    var hash = this.hash;
+                    var target = $(hash);
+                    target = target.length && target || $("[name=" + hash.slice(1) + "]");
+                    if (target.length) {
+                        $("html, body").animate({ scrollTop: target.offset().top }, 800);
+                        return false;
                     }
-                });
+                }
             });
-        </script>
-    </body>
+        });
+    </script>
+</body>
 </html>

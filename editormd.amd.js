@@ -25,7 +25,7 @@
 	{
         if (define.amd) // Require.js AMD 加载
         {
-            /* Require.js define replace */
+            define(['jquery'], factory)
         } 
         else 
         {
@@ -202,7 +202,7 @@
         tocDropdown          : false,          // 自动创建目录下拉菜单
         tocContainer         : "",             // 目录容器选择器
         tocStartLevel        : 1,              // 目录起始标题级别（从H1开始）
-        htmlDecode           : false,          // 开启 HTML 标签识别解析
+        htmlDecode           : false,          // 开启 HTML 标签识别解析，XSS 安全过滤始终生效
         pageBreak            : true,           // 启用分页符解析 [========]
         atLink               : true,           // 启用 @link 语法
         emailLink            : true,           // 启用邮件地址自动链接
@@ -1764,87 +1764,203 @@
             var copiedText  = "已复制";
             var failedText  = "复制失败";
 
+            /**
+             * 从 <code> 的 class 中提取语言名称
+             * 例如: "lang-javascript" -> "JavaScript"
+             *       "lang-cpp" -> "C++"
+             *       "echarts" -> "ECharts"
+             */
+            function extractLang($code) {
+                var cls = $code.attr("class") || "";
+                var m = cls.match(/lang(?:uage)?-(\S+)/);
+                if (m) {
+                    var lang = m[1];
+                    // 语言名映射
+                    var langMap = {
+                        "js": "JavaScript", "javascript": "JavaScript",
+                        "ts": "TypeScript", "typescript": "TypeScript",
+                        "py": "Python", "python": "Python",
+                        "rb": "Ruby", "ruby": "Ruby",
+                        "java": "Java",
+                        "cpp": "C++", "c++": "C++",
+                        "c": "C",
+                        "cs": "C#", "csharp": "C#",
+                        "go": "Go", "golang": "Go",
+                        "rs": "Rust", "rust": "Rust",
+                        "swift": "Swift",
+                        "kt": "Kotlin", "kotlin": "Kotlin",
+                        "scala": "Scala",
+                        "php": "PHP",
+                        "html": "HTML",
+                        "css": "CSS",
+                        "scss": "SCSS", "sass": "Sass",
+                        "less": "Less",
+                        "json": "JSON",
+                        "xml": "XML",
+                        "yaml": "YAML", "yml": "YAML",
+                        "md": "Markdown", "markdown": "Markdown",
+                        "sql": "SQL",
+                        "sh": "Shell", "bash": "Bash", "shell": "Shell",
+                        "ps1": "PowerShell", "powershell": "PowerShell",
+                        "dockerfile": "Dockerfile", "docker": "Docker",
+                        "nginx": "Nginx",
+                        "vim": "Vim",
+                        "diff": "Diff",
+                        "plaintext": "Plain Text", "text": "Plain Text",
+                        "ini": "INI", "toml": "TOML",
+                        "makefile": "Makefile",
+                        "cmake": "CMake",
+                        "graphql": "GraphQL",
+                        "proto": "Protobuf"
+                    };
+                    return langMap[lang] || lang.charAt(0).toUpperCase() + lang.slice(1);
+                }
+                // 特殊类型（流程图、时序图等有自己的渲染方式，不加标题栏）
+                return null;
+            }
+
             $container.find("pre").each(function() {
                 var $pre = $(this);
 
-                // 避免重复创建按钮
+                // 避免重复创建
                 if ($pre.data("_copyBtnReady")) return;
                 $pre.data("_copyBtnReady", true);
 
-                // 确保 pre 元素为 relative 定位，以便按钮 absolute 定位
+                // 获取语言名称
+                var $code = $pre.find("code");
+                var langName = $code.length > 0 ? extractLang($code) : null;
+
+                // 确保 pre 元素为 relative 定位
                 if ($pre.css("position") === "static") {
                     $pre.css("position", "relative");
                 }
 
-                // Wrap existing content in scrollable container so the
-                // copy button stays fixed at the top-right regardless of scroll
-                var $scrollWrap = $pre.find("." + classPrefix + "code-scroll-wrap");
-                if ($scrollWrap.length === 0) {
-                    $scrollWrap = $("<div>")
-                        .addClass(classPrefix + "code-scroll-wrap");
-                    // 将所有现有子元素移入滚动包装容器
-                    $pre.children().wrapAll($scrollWrap);
+                // ＝＝ JetBrains 风格标题栏 ＝＝
+                if (langName !== null) {
+                    // 添加 jetbrains 样式类
+                    $pre.addClass(classPrefix + "code-jetbrains");
+
+                    var $header = $("<div>")
+                        .addClass(classPrefix + "code-header");
+
+                    // 文件名区域（JetBrains 标签风格）
+                    var $fileLabel = $("<span>")
+                        .addClass(classPrefix + "code-file-label")
+                        .html('<i class="fa fa-file-code-o"></i> ' + langName);
+
+                    // 复制按钮（放到标题栏中）
+                    var $btn = $("<span>")
+                        .addClass(classPrefix + "code-copy-btn")
+                        .text(copyText)
+                        .attr("title", copyText);
+
+                    $header.append($fileLabel).append($btn);
+                    $pre.prepend($header);
+
+                    // 绑定复制事件
+                    (function(btn) {
+                        btn.on("click", function(e) {
+                            e.stopPropagation();
+                            e.preventDefault();
+
+                            if (btn.hasClass("copied") || btn.hasClass("failed")) return;
+
+                            var code = $code.length > 0 ? $code.text() : $pre.find("." + classPrefix + "code-scroll-wrap").text();
+
+                            var done = function(success) {
+                                btn.removeClass("copied failed")
+                                    .addClass(success ? "copied" : "failed")
+                                    .text(success ? copiedText : failedText);
+                                clearTimeout(btn.data("_timer"));
+                                btn.data("_timer", setTimeout(function() {
+                                    btn.removeClass("copied failed").text(copyText);
+                                }, 2500));
+                            };
+
+                            if (navigator.clipboard && navigator.clipboard.writeText) {
+                                navigator.clipboard.writeText(code).then(function() {
+                                    done(true);
+                                }).catch(function() { done(false); });
+                            } else {
+                                var textarea = document.createElement("textarea");
+                                textarea.value = code;
+                                textarea.style.position = "fixed";
+                                textarea.style.left = "-9999px";
+                                textarea.style.top = "-9999px";
+                                document.body.appendChild(textarea);
+                                textarea.focus();
+                                textarea.select();
+                                try {
+                                    var ok = document.execCommand("copy");
+                                    done(ok);
+                                } catch (ex) { done(false); }
+                                document.body.removeChild(textarea);
+                            }
+                        });
+                    })($btn);
+                } else {
+                    // 无语言识别的 pre（如 katex/echarts 的输出 pre），使用原来的浮动复制按钮
+                    var $scrollWrap = $pre.find("." + classPrefix + "code-scroll-wrap");
+                    if ($scrollWrap.length === 0) {
+                        $scrollWrap = $("<div>")
+                            .addClass(classPrefix + "code-scroll-wrap");
+                        $pre.children().wrapAll($scrollWrap);
+                    }
+
+                    var $btn = $("<span>")
+                        .addClass(classPrefix + "code-copy-btn")
+                        .text(copyText)
+                        .attr("title", copyText);
+
+                    (function(btn) {
+                        btn.on("click", function(e) {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            if (btn.hasClass("copied") || btn.hasClass("failed")) return;
+
+                            var sw = $pre.find("." + classPrefix + "code-scroll-wrap");
+                            var code = sw.find("code").length > 0 ? sw.find("code").text() : sw.text();
+
+                            var done = function(success) {
+                                btn.removeClass("copied failed")
+                                    .addClass(success ? "copied" : "failed")
+                                    .text(success ? copiedText : failedText);
+                                clearTimeout(btn.data("_timer"));
+                                btn.data("_timer", setTimeout(function() {
+                                    btn.removeClass("copied failed").text(copyText);
+                                }, 2500));
+                            };
+
+                            if (navigator.clipboard && navigator.clipboard.writeText) {
+                                navigator.clipboard.writeText(code).then(function() {
+                                    done(true);
+                                }).catch(function() { done(false); });
+                            } else {
+                                var textarea = document.createElement("textarea");
+                                textarea.value = code;
+                                textarea.style.position = "fixed";
+                                textarea.style.left = "-9999px";
+                                textarea.style.top = "-9999px";
+                                document.body.appendChild(textarea);
+                                textarea.focus();
+                                textarea.select();
+                                try { var ok = document.execCommand("copy"); done(ok); }
+                                catch (ex) { done(false); }
+                                document.body.removeChild(textarea);
+                            }
+                        });
+                    })($btn);
+
+                    $pre.append($btn);
                 }
 
-                var $btn = $("<span>")
-                    .addClass(classPrefix + "code-copy-btn")
-                    .text(copyText)
-                    .attr("title", copyText);
-
-                $btn.on("click", function(e) {
-                    e.stopPropagation();
-                    e.preventDefault();
-
-                    if ($btn.hasClass("copied") || $btn.hasClass("failed")) {
-                        return;
-                    }
-
-                    // 从滚动包装容器中的 code 元素获取代码文本
-                    var $scrollWrap = $pre.find("." + classPrefix + "code-scroll-wrap");
-                    var code = $scrollWrap.find("code").length > 0
-                        ? $scrollWrap.find("code").text()
-                        : $scrollWrap.text();
-
-                    var done = function(success) {
-                        $btn.removeClass("copied failed")
-                            .addClass(success ? "copied" : "failed")
-                            .text(success ? copiedText : failedText);
-                        clearTimeout($btn.data("_timer"));
-                        $btn.data("_timer", setTimeout(function() {
-                            $btn.removeClass("copied failed").text(copyText);
-                        }, 2500));
-                    };
-
-                    // 优先使用 Clipboard API
-                    if (navigator.clipboard && navigator.clipboard.writeText) {
-                        navigator.clipboard.writeText(code).then(function() {
-                            done(true);
-                        }).catch(function() {
-                            // 降级处理
-                            done(false);
-                        });
-                    } else {
-                        // 降级方案：使用 textarea + execCommand
-                        var textarea = document.createElement("textarea");
-                        textarea.value = code;
-                        textarea.style.position = "fixed";
-                        textarea.style.left = "-9999px";
-                        textarea.style.top = "-9999px";
-                        document.body.appendChild(textarea);
-                        textarea.focus();
-                        textarea.select();
-                        try {
-                            var ok = document.execCommand("copy");
-                            done(ok);
-                        } catch (ex) {
-                            done(false);
-                        }
-                        document.body.removeChild(textarea);
-                    }
-                });
-
-                // 将复制按钮追加到 pre 元素（位于滚动包装容器外部）
-                $pre.append($btn);
+                // 确保有滚动包装容器
+                if ($pre.find("." + classPrefix + "code-scroll-wrap").length === 0) {
+                    var $sw = $("<div>").addClass(classPrefix + "code-scroll-wrap");
+                    // 保留 header，把其他子元素移入
+                    var $header = $pre.find("." + classPrefix + "code-header");
+                    $pre.children().not($header).wrapAll($sw);
+                }
             });
 
             return this;
@@ -2515,6 +2631,7 @@
             var newMarkdownDoc = editormd.$marked(preprocessResult.markdown, markedOptions);
             newMarkdownDoc = editormd.restorePlaceholders(newMarkdownDoc, preprocessResult.placeholders);
             newMarkdownDoc = editormd.restoreTeXSyntax(newMarkdownDoc);
+            newMarkdownDoc = editormd.fixSmartypantsHTML(newMarkdownDoc);
 
             //console.info("cmValue", cmValue, newMarkdownDoc);
 
@@ -3116,7 +3233,100 @@
          * Initialize Tabs in preview area
          */
         initTabs : function() {
+            var _this       = this;
             var previewContainer = this.previewContainer;
+            
+            /**
+             * 当标签页面板变为可见时，重新初始化之前因 display:none
+             * 而被跳过的 ECharts 图表。
+             */
+            function reInitHiddenContent($panel) {
+                // 重新初始化 ECharts
+                $panel.find(".editormd-echarts").each(function() {
+                    var $chart = $(this);
+                    // 已经初始化过的跳过
+                    if ($chart.attr("data-initialized") === "true") return;
+                    // 仍然隐藏或零尺寸的跳过
+                    if ($chart.is(":hidden") || $chart.width() === 0 || $chart.height() === 0) return;
+
+                    var config = {};
+                    try {
+                        config = JSON.parse($chart.attr("data-config"));
+                    } catch(e) { return; }
+
+                    if (typeof echarts !== "undefined") {
+                        var chartInstance = echarts.init(this);
+                        var option = {
+                            title: config.title || {},
+                            tooltip: config.tooltip || {},
+                            legend: config.legend || {},
+                            radar: config.radar || {},
+                            series: config.series || []
+                        };
+                        var chartType = config.type || (config.series && config.series[0] && config.series[0].type) || "";
+                        var noAxisTypes = ["pie", "funnel", "gauge", "graph", "treemap", "sunburst"];
+                        if ($.inArray(chartType, noAxisTypes) === -1) {
+                            option.xAxis = config.xAxis || {};
+                            option.yAxis = config.yAxis || {};
+                        }
+                        if (config.tooltip === undefined) {
+                            option.tooltip = { trigger: "axis" };
+                        }
+                        chartInstance.setOption(option);
+                        $chart.attr("data-initialized", "true");
+                        $(window).on("resize.editormd-echarts", function() {
+                            chartInstance.resize();
+                        });
+                    }
+                });
+
+                // 重新渲染 KaTeX 公式（虽然 KaTeX 在隐藏元素中也能正常渲染，
+                // 但有些浏览器可能在元素变为可见时需要重新布局）
+                if (_this.settings.tex && typeof editormd.$katex !== "undefined") {
+                    $panel.find(".editormd-tex").each(function() {
+                        var $tex = $(this);
+                        if ($tex.attr("data-initialized") === "true") return;
+                        $tex.attr("data-initialized", "true");
+                        // KaTeX 已在首次渲染时处理，此处确保字体大小
+                        $tex.find(".katex").css("font-size", "1.6em");
+                    });
+                }
+
+                // 重新渲染流程图和时序图（在隐藏面板中 SVG 尺寸为零）
+                if (_this.settings.flowChart) {
+                    $panel.find(".flowchart").each(function() {
+                        var $fc = $(this);
+                        if ($fc.attr("data-fc-initialized") === "true") return;
+                        // 确保元素可见且容器有尺寸
+                        if ($fc.is(":hidden") || $fc.width() === 0) return;
+                        try {
+                            $fc.flowChart();
+                            $fc.attr("data-fc-initialized", "true");
+                        } catch(e) {}
+                    });
+                }
+                if (_this.settings.sequenceDiagram) {
+                    $panel.find(".sequence-diagram").each(function() {
+                        var $sd = $(this);
+                        if ($sd.attr("data-sd-initialized") === "true") return;
+                        if ($sd.is(":hidden") || $sd.width() === 0) return;
+                        try {
+                            $sd.sequenceDiagram({theme: "simple"});
+                            $sd.attr("data-sd-initialized", "true");
+                        } catch(e) {}
+                    });
+                }
+
+                // 重新高亮代码（prettify 在隐藏元素中可能不完整）
+                if (_this.settings.previewCodeHighlight && typeof prettyPrint !== "undefined") {
+                    $panel.find("pre.prettyprint").each(function() {
+                        var $pre = $(this);
+                        // 跳过已经包含 linenums 处理过的
+                        if ($pre.find("li").length > 0) return;
+                        prettyPrint();
+                    });
+                }
+            }
             
             previewContainer.find(".editormd-tabs").each(function() {
                 var $tabs = $(this);
@@ -3127,6 +3337,14 @@
                 var $nav = $tabs.find(".editormd-tab-nav");
                 var $body = $tabs.find(".editormd-tab-body");
                 
+                // 初次初始化时，对第一个（默认激活的）面板中的内容进行渲染
+                var $firstPanel = $body.find(".editormd-tab-panel.active");
+                if ($firstPanel.length > 0) {
+                    setTimeout(function() {
+                        reInitHiddenContent($firstPanel);
+                    }, 50);
+                }
+                
                 $nav.on("click", "li", function() {
                     var $li = $(this);
                     var index = $li.attr("data-index");
@@ -3135,7 +3353,13 @@
                     $li.addClass("active");
                     
                     $body.find(".editormd-tab-panel").removeClass("active");
-                    $body.find('.editormd-tab-panel[data-index="' + index + '"]').addClass("active");
+                    var $panel = $body.find('.editormd-tab-panel[data-index="' + index + '"]');
+                    $panel.addClass("active");
+
+                    // 面板变为可见后，初始化其中被跳过的图表等内容
+                    setTimeout(function() {
+                        reInitHiddenContent($panel);
+                    }, 50);
                 });
                 
                 $tabs.attr("data-initialized", "true");
@@ -4291,6 +4515,7 @@
                     rawHTML = editormd.$marked(mdPreprocess.markdown, markedOptions);
                     rawHTML = editormd.restorePlaceholders(rawHTML, mdPreprocess.placeholders);
                     rawHTML = editormd.restoreTeXSyntax(rawHTML);
+                    rawHTML = editormd.fixSmartypantsHTML(rawHTML);
                     rawHTML = editormd.filterHTMLTags(rawHTML, settings.htmlDecode);
                 }
             }
@@ -6264,6 +6489,22 @@
     };
 
     /**
+     * 修复 marked.js smartypants 导致的 HTML 标签引号弯化问题
+     * smartypants 会把 ASCII 双引号 " 转为弯引号 "（U+201C/U+201D），
+     * 单引号 ' 转为弯引号 '（U+2018/U+2019），这会破坏 HTML 属性值。
+     * 此函数在所有 HTML 标签内将弯引号还原为 ASCII 直引号。
+     *
+     * @param {string} html  marked.js 渲染后的 HTML 字符串
+     * @returns {string}     修复后的 HTML 字符串
+     */
+    editormd.fixSmartypantsHTML = function(html) {
+        if (!html) return html;
+        return html.replace(/<[^>]+>/g, function(tag) {
+            return tag.replace(/[\u201c\u201d]/g, '"').replace(/[\u2018\u2019]/g, "'");
+        });
+    };
+
+    /**
      * Preprocess markdown to extract custom block-level syntax (tabs, columns, align)
      * before passing to marked. This prevents conflicts with fenced code blocks.
      */
@@ -6521,7 +6762,7 @@
                 tabRegex.lastIndex = 0;
                 while ((tabMatch = tabRegex.exec(content)) !== null) {
                     hasTabs = true;
-                    var tabTitle = tabMatch[1].trim();
+                    var tabTitle = tabMatch[1].trim().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
                     var tabContent = tabMatch[2].trim();
                     // 在递归处理前，先恢复上层保护的代码块占位符，避免 marked 渲染时丢失
                     var tabContentRestored = restoreCodeBlocks(tabContent, codeProtection.placeholders);
@@ -6587,7 +6828,7 @@
                 var parts = line.split("|");
                 var url = parts[0].trim();
                 var title = parts[1] ? parts[1].trim() : "";
-                resultHtml += '<video src="' + url + '" controls preload="metadata" class="editormd-video-player">' + (title || "Video") + '</video>';
+                resultHtml += '<video src="' + url.replace(/"/g, "&quot;") + '" controls preload="metadata" class="editormd-video-player">' + (title || "Video").replace(/</g,"&lt;").replace(/>/g,"&gt;") + '</video>';
             }
             return addPlaceholder(resultHtml);
         });
@@ -6603,7 +6844,7 @@
                 var url = parts[0].trim();
                 var name = parts[1] ? parts[1].trim() : url.split("/").pop();
                 var ext = url.split(".").pop().toLowerCase();
-                resultHtml += '<a href="' + url + '" download class="editormd-attachment-link" data-ext="' + ext + '">' + name + '</a>';
+                resultHtml += '<a href="' + url.replace(/"/g, "&quot;") + '" download class="editormd-attachment-link" data-ext="' + ext + '">' + name.replace(/</g,"&lt;").replace(/>/g,"&gt;") + '</a>';
             }
             resultHtml += '</div>';
             return addPlaceholder(resultHtml);
@@ -6909,6 +7150,12 @@
             var hasLinkReg     = /\s*\<a\s*href\=\"(.*)\"\s*([^\>]*)\>(.*)\<\/a\>\s*/;
             var getLinkTextReg = /\s*\<a\s*([^\>]+)\>([^\>]*)\<\/a\>\s*/g;
 
+            // 修复 smartypants 导致的 HTML 属性引号弯化问题（如 class="badge" → class="badge"）
+            // smartypants 会把 ASCII 双引号转为弯引号，破坏 HTML 标签结构
+            text = text.replace(/<[^>]+>/g, function(tag) {
+                return tag.replace(/[\u201c\u201d]/g, '"').replace(/[\u2018\u2019]/g, "'");
+            });
+
             if (hasLinkReg.test(text)) 
             {
                 var tempText = [];
@@ -6949,7 +7196,7 @@
             
             var headingHTML = "<h" + level + " id=\"h"+ level + "-" + this.options.headerPrefix + id +"\">";
             
-            headingHTML    += "<a name=\"" + text + "\" class=\"reference-link\"></a>";
+            headingHTML    += "<a name=\"" + tocText + "\" class=\"reference-link\"></a>";
             headingHTML    += "<span class=\"header-link octicon octicon-link\"></span>";
             var displayText = (hasLinkReg.test(linkText)) ? this.atLink(linkText) : this.atLink(text);
             headingHTML    += this.postProcessInline(displayText);
@@ -7213,41 +7460,29 @@
         if (typeof html !== "string") {
             html = new String(html);
         }
-            
-        if (typeof filters !== "string") {
-            return html;
-        }
 
-        var expression = filters.split("|");
-        var filterTags = expression[0].split(",");
-        var attrs      = expression[1];
-
-        for (var i = 0, len = filterTags.length; i < len; i++)
-        {
-            var tag = filterTags[i];
-
-            html = html.replace(new RegExp("\<\s*" + tag + "\s*([^\>]*)\>([^\>]*)\<\s*\/" + tag + "\s*\>", "igm"), "");
-        }
+        // === XSS 安全过滤（始终执行，与 htmlDecode 配置无关） ===
         
-        // 增强的 XSS 防护（白名单方式）
         var xssWhitelist = {
-            allowedTags: ['p', 'div', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'br', 'hr', 'img', 'a', 'b', 'i', 'strong', 'em', 'code', 'pre', 'blockquote', 'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'sup', 'sub', 'ruby', 'rb', 'rt', 'rp', 'input', 'del', 'ins', 'mark', 'small'],
+            allowedTags: ['p', 'div', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'br', 'hr', 'img', 'a', 'b', 'i', 'strong', 'em', 'code', 'pre', 'blockquote', 'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'sup', 'sub', 'ruby', 'rb', 'rt', 'rp', 'del', 'ins', 'mark', 'small', 'dl', 'dt', 'dd', 'abbr', 'kbd', 'samp', 'var', 'cite', 'q', 'dfn', 'time', 'figure', 'figcaption', 'section', 'nav', 'article', 'aside', 'header', 'footer', 'main', 'details', 'summary'],
             allowedAttributes: {
-                '*': ['class', 'id', 'style', 'title'],
-                'a': ['href', 'target', 'rel'],
-                'img': ['src', 'alt', 'width', 'height', 'title'],
+                '*': ['class', 'id', 'style', 'title', 'lang', 'dir', 'data-*'],
+                'a': ['href', 'target', 'rel', 'name', 'download'],
+                'img': ['src', 'alt', 'width', 'height', 'title', 'loading'],
                 'table': ['border', 'cellpadding', 'cellspacing'],
-                'th': ['colspan', 'rowspan', 'align'],
+                'th': ['colspan', 'rowspan', 'align', 'scope'],
                 'td': ['colspan', 'rowspan', 'align'],
                 'code': ['class', 'data-lang'],
-                'pre': ['class', 'data-lang']
+                'pre': ['class', 'data-lang'],
+                'details': ['open'],
+                'time': ['datetime']
             },
-            allowedSchemes: ['http', 'https', 'mailto', 'tel'],
-            dangerousAttributes: ['onerror', 'onload', 'onclick', 'onmouseover', 'onmouseout', 'onfocus', 'onblur', 'onchange', 'onsubmit', 'onkeydown', 'onkeyup', 'onkeypress', 'ondblclick', 'onmousedown', 'onmouseup', 'onmousemove', 'onmouseenter', 'onmouseleave', 'ontouchstart', 'ontouchend', 'ontouchmove', 'onscroll', 'onresize', 'onselect', 'onreset', 'onformchange', 'onforminput', 'ondrag', 'ondragend', 'ondragenter', 'ondragleave', 'ondragover', 'ondragstart', 'ondrop', 'onabort', 'oncanplay', 'oncanplaythrough', 'oncontextmenu', 'oncuechange', 'ondurationchange', 'onemptied', 'onended', 'oninput', 'oninvalid', 'onpause', 'onplay', 'onplaying', 'onprogress', 'onratechange', 'onreadystatechange', 'onseeked', 'onseeking', 'onstalled', 'onsuspend', 'ontimeupdate', 'onvolumechange', 'onwaiting', 'onwheel'],
-            dangerousTags: ['script', 'style', 'iframe', 'frame', 'frameset', 'object', 'embed', 'applet', 'base', 'basefont', 'link', 'meta', 'noscript', 'template', 'canvas', 'form', 'input', 'textarea', 'button', 'select', 'option', 'optgroup', 'datalist', 'fieldset', 'label', 'legend', 'meter', 'output', 'progress', 'source', 'track']
+            allowedSchemes: ['http', 'https', 'mailto', 'tel', 'ftp'],
+            dangerousAttributes: ['onerror', 'onload', 'onclick', 'onmouseover', 'onmouseout', 'onfocus', 'onblur', 'onchange', 'onsubmit', 'onkeydown', 'onkeyup', 'onkeypress', 'ondblclick', 'onmousedown', 'onmouseup', 'onmousemove', 'onmouseenter', 'onmouseleave', 'ontouchstart', 'ontouchend', 'ontouchmove', 'onscroll', 'onresize', 'onselect', 'onreset', 'onformchange', 'onforminput', 'ondrag', 'ondragend', 'ondragenter', 'ondragleave', 'ondragover', 'ondragstart', 'ondrop', 'onabort', 'oncanplay', 'oncanplaythrough', 'oncontextmenu', 'oncuechange', 'ondurationchange', 'onemptied', 'onended', 'oninput', 'oninvalid', 'onpause', 'onplay', 'onplaying', 'onprogress', 'onratechange', 'onreadystatechange', 'onseeked', 'onseeking', 'onstalled', 'onsuspend', 'ontimeupdate', 'onvolumechange', 'onwaiting', 'onwheel', 'oncopy', 'oncut', 'onpaste', 'onanimationend', 'onanimationiteration', 'onanimationstart', 'ontransitionend'],
+            dangerousTags: ['script', 'style', 'iframe', 'frame', 'frameset', 'object', 'embed', 'applet', 'base', 'basefont', 'link', 'meta', 'noscript', 'template', 'form', 'input', 'textarea', 'button', 'select', 'option', 'optgroup', 'datalist', 'fieldset', 'label', 'legend', 'meter', 'output', 'progress']
         };
         
-        // 彻底移除危险标签
+        // 彻底移除危险标签（始终执行，安全底线）
         for (var dt = 0; dt < xssWhitelist.dangerousTags.length; dt++) {
             var dTag = xssWhitelist.dangerousTags[dt];
             var dTagReg = new RegExp("<\\s*" + dTag + "[^>]*>[\\s\\S]*?<\\s*\\/\\s*" + dTag + "\\s*>", "gi");
@@ -7257,7 +7492,7 @@
             html = html.replace(dTagSelfReg, "");
         }
         
-        // 清洗 href 和 src 属性，防止 javascript: 协议注入
+        // 清洗 href 和 src 属性，防止 javascript: 协议注入（始终执行）
         html = html.replace(/(href|src)\s*=\s*["']?([^"'>\s]*)["']?/gi, function(match, attr, url) {
             var sanitizedUrl = url.replace(/[\x00-\x20\x7f]+/g, "").toLowerCase();
             if (sanitizedUrl.indexOf("javascript:") === 0 || 
@@ -7272,7 +7507,7 @@
             return attr + '="' + url + '"';
         });
         
-        // 移除危险的事件属性
+        // 移除危险的事件属性（始终执行）
         for (var da = 0; da < xssWhitelist.dangerousAttributes.length; da++) {
             var dAttr = xssWhitelist.dangerousAttributes[da];
             var dAttrReg = new RegExp("\\s+" + dAttr + "\\s*=\\s*['\"][^'\"]*['\"]", "gi");
@@ -7282,7 +7517,7 @@
             html = html.replace(dAttrReg2, "");
         }
         
-        // 移除 style 属性中的 expression 和 behavior（IE 特有的 XSS 向量）
+        // 移除 style 属性中的 expression 和 behavior（IE 特有的 XSS 向量，始终执行）
         html = html.replace(/style\s*=\s*["'][^"']*["']/gi, function(match) {
             var sanitized = match.replace(/expression\s*\(/gi, "expr-invalid(");
             sanitized = sanitized.replace(/behavior\s*:/gi, "behavior-invalid:");
@@ -7290,6 +7525,23 @@
             sanitized = sanitized.replace(/vbscript\s*:/gi, "vbscript-invalid:");
             return sanitized;
         });
+
+        // === 用户自定义标签过滤（仅在 htmlDecode 配置了过滤规则时执行） ===
+        
+        if (typeof filters !== "string") {
+            return html;
+        }
+
+        var expression = filters.split("|");
+        var filterTags = expression[0].split(",");
+        var attrs      = expression[1];
+
+        for (var i = 0, len = filterTags.length; i < len; i++)
+        {
+            var tag = filterTags[i];
+
+            html = html.replace(new RegExp("\<\s*" + tag + "\s*([^\>]*)\>([^\>]*)\<\s*\/" + tag + "\s*\>", "igm"), "");
+        }
 
         if (typeof attrs !== "undefined")
         {
@@ -7623,6 +7875,7 @@
         var mdPreprocess = editormd.preprocessMarkdownBlocks(markdownDoc, rendererOptions);
         var markdownParsed = marked(mdPreprocess.markdown, markedOptions);
         markdownParsed = editormd.restorePlaceholders(markdownParsed, mdPreprocess.placeholders);
+        markdownParsed = editormd.fixSmartypantsHTML(markdownParsed);
 
         markdownParsed = editormd.filterHTMLTags(markdownParsed, settings.htmlDecode);
         

@@ -4461,10 +4461,6 @@
 .editormd-preview-container span.editormd-tex, .editormd-html-preview span.editormd-tex {
   margin: 0 5px;
 }
-.editormd-preview-container .emoji, .editormd-html-preview .emoji {
-  width: 24px;
-  height: 24px;
-}
 .editormd-preview-container .katex, .editormd-html-preview .katex {
   font-size: 1.4em;
 }
@@ -4916,9 +4912,6 @@ hr.editormd-page-break {
 }
 .editormd-preview-theme-dark .editormd-preview-container table {
   border: none;
-}
-.editormd-preview-theme-dark .editormd-preview-container .fa-emoji {
-  color: #B4BF42;
 }
 .editormd-preview-theme-dark .editormd-preview-container .katex {
   color: #FEC93F;

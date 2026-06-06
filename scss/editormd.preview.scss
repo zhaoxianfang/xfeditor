@@ -144,6 +144,143 @@
             background: #ffeef0;
         }
     }
+
+    /* ============================================================
+       JetBrains-style Code Blocks
+       ============================================================ */
+
+    /* Container override for JetBrains-style code blocks */
+    #{$prefix}code-jetbrains {
+        border: none !important;
+        border-radius: 8px !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        background: #fff !important;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.06);
+        margin: 16px 0 !important;
+        font-size: 13px !important;
+        line-height: 1.6 !important;
+
+        /* Header bar — JetBrains IDE tab style */
+        #{$prefix}code-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 38px;
+            padding: 0 12px;
+            background: linear-gradient(180deg, #F7F8FA 0%, #EDEFF2 100%);
+            border-bottom: 1px solid #D9DCE0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* File/language label */
+        #{$prefix}code-file-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #6E7681;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+            .fa {
+                font-size: 13px;
+                color: #8B949E;
+            }
+        }
+
+        /* Copy button in JetBrains header */
+        #{$prefix}code-copy-btn {
+            position: static !important;
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 10px;
+            font-size: 11px;
+            font-weight: 500;
+            line-height: 1.5;
+            color: #6E7681;
+            background: transparent;
+            border: 1px solid #D0D7DE;
+            border-radius: 5px;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: all 0.15s ease;
+            opacity: 1;
+            font-family: inherit;
+
+            &:hover {
+                color: #0969DA;
+                border-color: #0969DA;
+                background: #F0F6FF;
+            }
+
+            &.copied {
+                color: #1A7F37;
+                border-color: #1A7F37;
+                background: #DAFBE1;
+                cursor: default;
+                pointer-events: none;
+            }
+
+            &.failed {
+                color: #CF222E;
+                border-color: #CF222E;
+                background: #FFEBE9;
+                cursor: default;
+                pointer-events: none;
+            }
+        }
+
+        /* Scroll wrapper */
+        #{$prefix}code-scroll-wrap {
+            padding: 16px 20px;
+            overflow: auto;
+            max-height: 500px;
+            background: #FAFBFC;
+        }
+
+        #{$prefix}code-scroll-wrap pre,
+        #{$prefix}code-scroll-wrap code {
+            margin: 0;
+            padding: 0;
+            border: none;
+            background: transparent;
+            font-size: 13px;
+            line-height: 1.65;
+            font-family: "JetBrains Mono", "SF Mono", "Fira Code", "Cascadia Code", Consolas, "Liberation Mono", Menlo, Monaco, monospace;
+            color: #24292F;
+            tab-size: 4;
+            -moz-tab-size: 4;
+        }
+
+        /* Line numbers */
+        ol.linenums {
+            margin: 0;
+            padding: 16px 0 16px 3.5em;
+            background: #FAFBFC;
+
+            li {
+                padding-left: 10px;
+                border-left: 1px solid #E4E7EB;
+                list-style: decimal;
+                color: #8B949E;
+                font-size: 12px;
+                line-height: 1.65;
+                font-family: "JetBrains Mono", "SF Mono", "Fira Code", Consolas, monospace;
+
+                code {
+                    padding: 0;
+                    border: none;
+                    background: transparent;
+                    color: #24292F;
+                    font-size: 13px;
+                    line-height: 1.65;
+                }
+            }
+        }
+    }
     
     pre, code, kbd {        
         font-family:  "YaHei Consolas Hybrid", Consolas, "Meiryo UI", "Malgun Gothic", "Segoe UI", "Trebuchet MS", Helvetica, monospace, monospace;
@@ -165,11 +302,6 @@
     
     span#{$prefix}tex {
         margin: 0 5px;
-    }
-    
-    .emoji {
-        width: 24px;
-        height: 24px;
     }
     
     .katex {
