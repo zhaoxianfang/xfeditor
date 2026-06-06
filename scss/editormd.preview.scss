@@ -535,3 +535,145 @@ hr.editormd-page-break {
     width: 100%;
     padding: 40px;
 }
+
+/* ========== 字帖样式 (Copybook) ========== */
+.editormd-copybook {
+    display: block;
+    margin: 1em 0;
+    padding: 12px 8px;
+    background: #fef7e9;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    overflow-x: auto;
+}
+.editormd-copybook-row {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin-bottom: 6px;
+    &:last-child {
+        margin-bottom: 0;
+    }
+}
+.editormd-copybook-cell {
+    position: relative;
+    flex-shrink: 0;
+}
+.editormd-copybook-grid-cell {
+    width: 52px;
+    height: 52px;
+    background: #fff;
+    border: 1px solid #d4c296;
+    border-radius: 0;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+.editormd-copybook-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2;
+}
+.editormd-copybook-hanzi-text {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    font-weight: 550;
+    font-family: 'KaiTi','楷体','华文楷书','Noto Serif CJK SC',serif;
+    color: #3e2a1a;
+    line-height: 1;
+    z-index: 3;
+}
+.editormd-copybook-pinyin-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 52px;
+}
+.editormd-copybook-pinyin-top {
+    position: relative;
+    width: 100%;
+    height: 28px;
+    background: #fffef8;
+    border: none;
+    .editormd-copybook-svg {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        pointer-events: none;
+        z-index: 1;
+    }
+}
+.editormd-copybook-pinyin-text {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    font-family: 'Segoe UI','Lucida Grande','Arial','Noto Sans',sans-serif;
+    color: #2a6b3c;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    z-index: 3;
+    padding: 0;
+    margin: 0;
+}
+.editormd-copybook-pinyin-bottom {
+    position: relative;
+    width: 100%;
+    height: 52px;
+    background: #fff;
+    border: 1px solid #d4c296;
+    border-top: none;
+    margin-top: 2px;
+    .editormd-copybook-svg {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        pointer-events: none;
+        z-index: 2;
+    }
+    .editormd-copybook-hanzi-text {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.6rem;
+        font-weight: 550;
+        font-family: 'KaiTi','楷体','华文楷书','Noto Serif CJK SC',serif;
+        color: #3e2a1a;
+        line-height: 1;
+        z-index: 3;
+    }
+}
+@media (max-width: 600px) {
+    .editormd-copybook-grid-cell {
+        width: 42px;
+        height: 42px;
+    }
+    .editormd-copybook-pinyin-cell {
+        width: 42px;
+    }
+    .editormd-copybook-pinyin-bottom {
+        height: 42px;
+    }
+    .editormd-copybook-hanzi-text {
+        font-size: 1.3rem;
+    }
+    .editormd-copybook-pinyin-text {
+        font-size: 0.65rem;
+    }
+    .editormd-copybook-pinyin-top {
+        height: 24px;
+    }
+}

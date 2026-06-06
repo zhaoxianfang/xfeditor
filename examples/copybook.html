@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8" />
+    <title>字帖演示 - Editor.md Copybook Demo</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="../css/editormd.min.css" />
+    <link rel="stylesheet" href="../css/editormd.preview.min.css" />
+    <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
+</head>
+<body>
+    <div id="layout">
+        <header>
+            <h1>字帖 Copybook 演示</h1>
+            <p>田字格 · 米字格 · 拼音格（四线三格） — 工具栏一键插入</p>
+        </header>
+        <div class="btns">
+            <button id="get-btn">获取 HTML</button>
+            <button id="preview-btn">弹出预览</button>
+        </div>
+        <div id="test-editormd">
+            <textarea style="display:none;">## 字帖功能演示
+
+工具栏中点击 **字帖** 按钮（📝图标），可选择插入：
+- **田字格**：传统书法练习格，十字辅助线
+- **米字格**：增加对角辅助线，更适合初学者
+- **拼音格**：上方中式四线三格 + 下方米字格，汉字与拼音对照
+
+---
+
+### 田字格（传统十字格）
+
+[[copybookTian]]
+(春眠不觉晓)(处处闻啼鸟)
+(夜来风雨声)(花落知多少)
+[[/copybookTian]]
+
+---
+
+### 米字格（含对角辅助线）
+
+[[copybookMi]]
+(床前明月光)(疑是地上霜)
+(举头望明月)(低头思故乡)
+[[/copybookMi]]
+
+---
+
+### 拼音格（四线三格 + 米字格）
+
+[[copybookPinyin]]
+(春眠不觉晓|chūn mián bù jué xiǎo)(处处闻啼鸟|chù chù wén tí niǎo)
+(夜来风雨声|yè lái fēng yǔ shēng)(花落知多少|huā luò zhī duō shǎo)
+[[/copybookPinyin]]
+
+---
+
+### 拼音格 — 单字练习示例
+
+[[copybookPinyin]]
+(人|rén)(口|kǒu)(手|shǒu)(足|zú)
+(山|shān)(水|shuǐ)(日|rì)(月|yuè)
+[[/copybookPinyin]]
+
+---
+
+### 在标签页中使用字帖
+
+[[tabs]]
+[[tab:田字格]]
+[[copybookTian]]
+(人)(口)(手)(足)
+(山)(水)(日)(月)
+[[/copybookTian]]
+[[/tab]]
+[[tab:米字格]]
+[[copybookMi]]
+(人)(口)(手)(足)
+(山)(水)(日)(月)
+[[/copybookMi]]
+[[/tab]]
+[[tab:拼音格]]
+[[copybookPinyin]]
+(人|rén)(口|kǒu)(手|shǒu)(足|zú)
+(山|shān)(水|shuǐ)(日|rì)(月|yuè)
+[[/copybookPinyin]]
+[[/tab]]
+[[/tabs]]
+
+---
+
+## 语法说明
+
+### 田字格 / 米字格语法
+
+```markdown
+[[copybookTian]]
+(春眠不觉晓)(处处闻啼鸟)
+(夜来风雨声)(花落知多少)
+[[/copybookTian]]
+
+[[copybookMi]]
+(春眠不觉晓)(处处闻啼鸟)
+(夜来风雨声)(花落知多少)
+[[/copybookMi]]
+```
+
+- 每个 `()` 为一组，组内每个汉字单独一个格子
+- 每组内的字会在同一行连续显示
+- 不同 `()` 组之间有自然分隔
+- 每行对应一行格子
+
+### 拼音格语法
+
+```markdown
+[[copybookPinyin]]
+(春眠不觉晓|chūn mián bù jué xiǎo)(处处闻啼鸟|chù chù wén tí niǎo)
+[[/copybookPinyin]]
+```
+
+- `()` 内用 `|` 分隔汉字和拼音
+- `|` 左边是汉字，右边是对应的拼音（空格分隔）
+- 上方显示中式四线三格拼音，下方显示米字格汉字
+</textarea>
+        </div>
+    </div>
+
+    <script src="js/jquery.min.js"></script>
+    <script src="../editormd.min.js"></script>
+    <script type="text/javascript">
+        var testEditor;
+
+        $(function() {
+            testEditor = editormd("test-editormd", {
+                width: "100%",
+                height: "800px",
+                path: "../lib/",
+                codeFold: true,
+                searchReplace: true,
+                toolbar: true,
+                emoji: false,
+                taskList: true,
+                tocm: true,
+                tex: true,
+                echarts: true,
+                tabs: true,
+                columns: true,
+                tooltip: true,
+                copybook: true,
+                pinyin: true,
+                textAlign: true,
+                flowChart: true,
+                sequenceDiagram: true,
+                htmlDecode: "style,script,iframe|on*",
+                imageUpload: false,
+                saveHTMLToTextarea: true
+            });
+
+            $("#get-btn").click(function() {
+                var html = testEditor.getHTML();
+                alert("HTML 已生成！可在控制台查看");
+                console.log(html);
+            });
+
+            $("#preview-btn").click(function() {
+                testEditor.previewing();
+            });
+        });
+    </script>
+</body>
+</html>

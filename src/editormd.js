@@ -82,6 +82,8 @@
             "|",
             { "chart" : ["echarts-bar", "echarts-line", "echarts-pie", "echarts-radar", "echarts-funnel"] },
             "|",
+            { "copybook" : ["copybook-tian", "copybook-mi", "copybook-pinyin"] },
+            "|",
             "tabs", "columns", "tooltip", "formula", "|",
             "color", "bg-color", "|",
             "goto-line", "watch", "preview", "fullscreen", "clear", "search", "|",
@@ -297,7 +299,11 @@
             "tooltip"        : "fa-comment-o",
             "color"          : "fa-font",
             "bg-color"       : "fa-paint-brush",
-            "formula"         : ""
+            "formula"         : "",
+            "copybook"       : "fa-pencil-square",
+            "copybook-tian"  : "fa-pencil-square",
+            "copybook-mi"    : "fa-pencil-square",
+            "copybook-pinyin": "fa-pencil-square"
         },        
         toolbarIconTexts     : {},
         
@@ -364,7 +370,11 @@
                 tooltip          : "悬浮提示",
                 color            : "文字颜色",
                 "bg-color"       : "背景颜色",
-                formula          : "插入公式"
+                formula          : "插入公式",
+                copybook         : "字帖",
+                "copybook-tian"  : "田字格",
+                "copybook-mi"    : "米字格",
+                "copybook-pinyin": "拼音格"
             },
             buttons : {
                 enter  : "确定",
@@ -6286,6 +6296,36 @@
                     insertCustom();
                 }
             });
+        },
+
+        /**
+         * 插入田字格字帖语法
+         */
+        "copybook-tian" : function() {
+            var cm = this.cm;
+            var cursor = cm.getCursor();
+            cm.replaceSelection("\n[[copybookTian]]\n(春眠不觉晓)(处处闻啼鸟)\n(夜来风雨声)(花落知多少)\n[[/copybookTian]]\n");
+            cm.setCursor(cursor.line + 2, 0);
+        },
+
+        /**
+         * 插入米字格字帖语法
+         */
+        "copybook-mi" : function() {
+            var cm = this.cm;
+            var cursor = cm.getCursor();
+            cm.replaceSelection("\n[[copybookMi]]\n(春眠不觉晓)(处处闻啼鸟)\n(夜来风雨声)(花落知多少)\n[[/copybookMi]]\n");
+            cm.setCursor(cursor.line + 2, 0);
+        },
+
+        /**
+         * 插入拼音格字帖语法（上方四线三格+下方米字格）
+         */
+        "copybook-pinyin" : function() {
+            var cm = this.cm;
+            var cursor = cm.getCursor();
+            cm.replaceSelection("\n[[copybookPinyin]]\n(春眠不觉晓| chūn mián bù jué xiǎo)(处处闻啼鸟| chù chù wén tí niǎo)\n(夜来风雨声| yè lái fēng yǔ shēng)(花落知多少| huā luò zhī duō shǎo)\n[[/copybookPinyin]]\n");
+            cm.setCursor(cursor.line + 2, 0);
         }
     };
 
@@ -6453,6 +6493,12 @@
         tabs            : /\[\[tabs\]\]([\s\S]*?)\[\[\/tabs\]\]/g,
         tabItem       : /\[\[tab:([^\]]+)\]\]([\s\S]*?)\[\[\/tab\]\]/g,
         columns       : /\[\[columns:(\d+)\]\]([\s\S]*?)\[\[\/columns\]\]/g,
+        copybookTian   : /\[\[copybookTian\]\]/g,
+        copybookMi     : /\[\[copybookMi\]\]/g,
+        copybookPinyin : /\[\[copybookPinyin\]\]/g,
+        copybookTianEnd   : /\[\[\/copybookTian\]\]/g,
+        copybookMiEnd     : /\[\[\/copybookMi\]\]/g,
+        copybookPinyinEnd : /\[\[\/copybookPinyin\]\]/g,
         videoBlock    : /\[\[video\]\]\s*\n?([\s\S]*?)\n?\s*\[\[\/video\]\]/g,
         fileBlock     : /\[\[file\]\]\s*\n?([\s\S]*?)\n?\s*\[\[\/file\]\]/g,
         tooltipLink   : /\[([^\]]+)\]\(tooltip:([^)]+)\)/g,
@@ -6818,6 +6864,124 @@
             }
         }
 
+        /**
+         * 渲染字帖网格 HTML
+         * @param {string} type    字帖类型：tian / mi / pinyin
+         * @param {string} content 字帖内容（含括号分组）
+         * @returns {string} 渲染后的 HTML
+         */
+        function renderCopybookGrid(type, content) {
+            var lines = content.trim().split('\n');
+            var html = '<div class="editormd-copybook editormd-copybook-' + type + '">';
+            var isMi = (type === 'mi');
+            var isPinyin = (type === 'pinyin');
+
+            for (var li = 0; li < lines.length; li++) {
+                var line = lines[li].trim();
+                if (!line) continue;
+
+                // 匹配所有 (内容) 分组
+                var groups = [];
+                var groupRegex = /\(([^)]*)\)/g;
+                var gm;
+                while ((gm = groupRegex.exec(line)) !== null) {
+                    groups.push(gm[1]);
+                }
+                if (groups.length === 0) continue;
+
+                html += '<div class="editormd-copybook-row">';
+
+                for (var gi = 0; gi < groups.length; gi++) {
+                    var groupContent = groups[gi].trim();
+                    if (!groupContent) continue;
+
+                    if (isPinyin) {
+                        // 拼音格：汉字|拼音 → 上方四线三格 + 下方米字格
+                        var parts = groupContent.split('|');
+                        var chars = (parts[0] || '').split('');
+                        var pinyins = (parts[1] || '').trim().split(/\s+/);
+
+                        for (var ci = 0; ci < chars.length; ci++) {
+                            var ch = chars[ci];
+                            var py = pinyins[ci] || '';
+                            html += '<div class="editormd-copybook-cell editormd-copybook-pinyin-cell">';
+                            // 上方拼音四线三格
+                            html += '<div class="editormd-copybook-pinyin-top">';
+                            html += '<svg viewBox="0 0 100 100" preserveAspectRatio="none" class="editormd-copybook-svg">';
+                            html += '<line x1="2" y1="0" x2="98" y2="0" stroke="#2f7d4a" stroke-width="1.2" opacity="0.9"/>';
+                            html += '<line x1="2" y1="30" x2="98" y2="30" stroke="#2f7d4a" stroke-width="1" opacity="0.85"/>';
+                            html += '<line x1="2" y1="63" x2="98" y2="63" stroke="#2f7d4a" stroke-width="1" opacity="0.85"/>';
+                            html += '<line x1="2" y1="100" x2="98" y2="100" stroke="#2f7d4a" stroke-width="1.2" opacity="0.9"/>';
+                            html += '</svg>';
+                            html += '<span class="editormd-copybook-pinyin-text">' + py + '</span>';
+                            html += '</div>';
+                            // 下方米字格汉字
+                            html += '<div class="editormd-copybook-pinyin-bottom">';
+                            html += '<svg viewBox="0 0 100 100" preserveAspectRatio="none" class="editormd-copybook-svg">';
+                            html += '<line x1="1" y1="1" x2="99" y2="99" stroke="#b8823a" stroke-width="0.7" stroke-dasharray="4 3" opacity="0.6"/>';
+                            html += '<line x1="99" y1="1" x2="1" y2="99" stroke="#b8823a" stroke-width="0.7" stroke-dasharray="4 3" opacity="0.6"/>';
+                            html += '<line x1="50" y1="0" x2="50" y2="100" stroke="#c69654" stroke-width="0.7" stroke-dasharray="3 3" opacity="0.6"/>';
+                            html += '<line x1="0" y1="50" x2="100" y2="50" stroke="#c69654" stroke-width="0.7" stroke-dasharray="3 3" opacity="0.6"/>';
+                            html += '<rect x="1" y="1" width="98" height="98" fill="none" stroke="#a57a42" stroke-width="0.5" opacity="0.5"/>';
+                            html += '</svg>';
+                            html += '<span class="editormd-copybook-hanzi-text">' + ch + '</span>';
+                            html += '</div>';
+                            html += '</div>';
+                        }
+                    } else {
+                        // 田字格 / 米字格
+                        var chars = groupContent.split('');
+                        for (var cj = 0; cj < chars.length; cj++) {
+                            var ch2 = chars[cj];
+                            html += '<div class="editormd-copybook-cell editormd-copybook-grid-cell">';
+                            html += '<svg viewBox="0 0 100 100" preserveAspectRatio="none" class="editormd-copybook-svg">';
+                            if (isMi) {
+                                // 米字格：横+竖+两条对角线
+                                html += '<line x1="1" y1="1" x2="99" y2="99" stroke="#b8823a" stroke-width="0.8" stroke-dasharray="4 3" opacity="0.65"/>';
+                                html += '<line x1="99" y1="1" x2="1" y2="99" stroke="#b8823a" stroke-width="0.8" stroke-dasharray="4 3" opacity="0.65"/>';
+                                html += '<line x1="50" y1="0" x2="50" y2="100" stroke="#c69654" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.65"/>';
+                                html += '<line x1="0" y1="50" x2="100" y2="50" stroke="#c69654" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.65"/>';
+                                html += '<rect x="1" y="1" width="98" height="98" fill="none" stroke="#a57a42" stroke-width="0.7" opacity="0.55"/>';
+                            } else {
+                                // 田字格：横+竖
+                                html += '<line x1="50" y1="0" x2="50" y2="100" stroke="#c2995b" stroke-width="0.85" stroke-dasharray="3 3" opacity="0.75"/>';
+                                html += '<line x1="0" y1="50" x2="100" y2="50" stroke="#c2995b" stroke-width="0.85" stroke-dasharray="3 3" opacity="0.75"/>';
+                                html += '<rect x="1" y="1" width="98" height="98" fill="none" stroke="#b58f53" stroke-width="0.7" opacity="0.55"/>';
+                            }
+                            html += '</svg>';
+                            html += '<span class="editormd-copybook-hanzi-text">' + ch2 + '</span>';
+                            html += '</div>';
+                        }
+                    }
+                }
+                html += '</div>';
+            }
+            html += '</div>';
+            return html;
+        }
+
+        /**
+         * 处理单个字帖块（通用）
+         * @param {Array} blocks findBalancedBlocks 返回的块列表
+         * @param {string} type   字帖类型
+         */
+        function processCopybookBlocks(blocks, type) {
+            for (var bi = blocks.length - 1; bi >= 0; bi--) {
+                var block = blocks[bi];
+                var html = renderCopybookGrid(type, block.content);
+                var placeholder = addPlaceholder(html);
+                markdown = markdown.substring(0, block.start) + placeholder + markdown.substring(block.end);
+            }
+        }
+
+        // 处理字帖语法：[[copybookTian]]...[[/copybookTian]]、[[copybookMi]]...[[/copybookMi]]、[[copybookPinyin]]...[[/copybookPinyin]]
+        // 各种字帖类型可以彼此嵌套，也可以嵌套在 tabs/columns 内使用
+        if (options.copybook !== false) {
+            processCopybookBlocks(findBalancedBlocks(markdown, editormd.regexs.copybookTian, editormd.regexs.copybookTianEnd), 'tian');
+            processCopybookBlocks(findBalancedBlocks(markdown, editormd.regexs.copybookMi, editormd.regexs.copybookMiEnd), 'mi');
+            processCopybookBlocks(findBalancedBlocks(markdown, editormd.regexs.copybookPinyin, editormd.regexs.copybookPinyinEnd), 'pinyin');
+        }
+
         // 处理视频列表语法：[[video]]...[[/video]]
         markdown = markdown.replace(editormd.regexs.videoBlock, function(match, content) {
             var lines = content.trim().split("\n");
@@ -6900,7 +7064,8 @@
             echarts              : false,          // 启用 Apache ECharts 图表
             tabs                 : true,           // 启用标签页 [[tabs]] 语法
             columns              : true,           // 启用多栏布局 [[columns:N]] 语法
-            tooltip              : true            // 启用悬浮提示 [text](tooltip:content) 语法
+            tooltip              : true,           // 启用悬浮提示 [text](tooltip:content) 语法
+            copybook             : true            // 启用字帖语法 [[copybookTian]]、[[copybookMi]]、[[copybookPinyin]]
         };
         
         var settings        = $.extend(defaults, options || {});    

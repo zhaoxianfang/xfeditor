@@ -84,7 +84,7 @@ $(function(){
         width: "100%", height: "600px",
         path: "lib/",
         tex: true, taskList: true,
-        echarts: true, tabs: true, columns: true, tooltip: true
+        echarts: true, tabs: true, columns: true, tooltip: true, copybook: true
     });
 });
 </script>
@@ -256,6 +256,7 @@ editor.exportFile("文档", "markdown"); // 导出文件
 | `tabs` | `true` | Tabs 标签页 |
 | `columns` | `true` | 多列排版 |
 | `tooltip` | `true` | 悬浮提示 |
+| `copybook` | `true` | 字帖（田字格、米字格、拼音格） |
 
 ### 草稿
 | 选项 | 默认值 | 说明 |
@@ -344,7 +345,7 @@ editor.exportFile("文档", "markdown"); // 导出文件
 editormd.markdownToHTML("preview-container", {
     markdown: "# Hello", htmlDecode: "style,script,iframe",
     toc: true, tex: true,
-    echarts: true, tabs: true, columns: true, tooltip: true
+    echarts: true, tabs: true, columns: true, tooltip: true, copybook: true
 });
 ```
 
@@ -445,6 +446,34 @@ $$
 ### 行内对齐 (`textAlign: true`)
 ```markdown
 ⁑⁑居中⁑⁑  ⁑⁖左对齐⁖⁑  ⁑⠕右对齐⠕⁑  ⁑⁛两端对齐⁛⁑
+```
+
+### 字帖 (`copybook: true`)
+
+田字格、米字格、拼音格字帖，用于展示汉字书写范例。
+
+**田字格**：
+```markdown
+[[copybookTian]]
+(春眠不觉晓)(处处闻啼鸟)
+(夜来风雨声)(花落知多少)
+[[/copybookTian]]
+```
+
+**米字格**：
+```markdown
+[[copybookMi]]
+(春眠不觉晓)(处处闻啼鸟)
+(夜来风雨声)(花落知多少)
+[[/copybookMi]]
+```
+
+**拼音格**（上方四线三格 + 下方米字格，用 `|` 分隔汉字与拼音）：
+```markdown
+[[copybookPinyin]]
+(春眠不觉晓|chūn mián bù jué xiǎo)(处处闻啼鸟|chù chù wén tí niǎo)
+(夜来风雨声|yè lái fēng yǔ shēng)(花落知多少|huā luò zhī duō shǎo)
+[[/copybookPinyin]]
 ```
 
 ### 流程图 (`flowChart: true`)
