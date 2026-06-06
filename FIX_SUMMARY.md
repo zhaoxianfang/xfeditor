@@ -1,6 +1,6 @@
 # Editor.md 修复与优化总结
 
-**当前版本**: v1.7.0  
+**当前版本**: v1.8.0  
 **修复日期**: 2026-06-06  
 **jQuery 版本**: 3.7.1  
 **KaTeX 版本**: v0.16.9（已从旧版本升级）
@@ -8,6 +8,25 @@
 ---
 
 ## 📊 修复统计
+
+### 第十二轮修复（全面系统审查与优化）
+- ✅ **Tooltip 核心修复** — `pointer-events:none` → `auto`，popup 与 trigger 平滑交互，支持点击 popup 内元素，独立导出支持
+- ✅ **Task List 渲染修复** — `dangerousTags` 移除 `input`，`allowedTags` 新增 `input`/`video`/`source`
+- ✅ **XSS 安全增强** — 白名单新增 `video`、`source`、`input` 标签及属性
+- ✅ **KaTeX 安全防护** — else 分支 `typeof katex !== "undefined"` 检查
+- ✅ **ECharts 内存优化** — resize 事件使用命名空间+debounce 防重复绑定
+- ✅ **Columns 独立导出** — 独立 HTML 新增 `initColumns` 函数，`reInitHiddenContent` 支持 Columns 重新初始化
+- ✅ **loadScript 失败告警** — onerror 记录失败脚本到 `loadFiles.failed`，警告输出
+- ✅ **initTabs 事件修复** — 实例方法添加 `.off()` 防止重复绑定
+- ✅ **katexRender 守卫优化** — 放宽 timer 检查，支持异步回调时渲染
+- ✅ **flowchartTimer 守卫一致性** — FlowChart/SequenceDiagram 独立判断
+- ✅ **静默错误告警** — FlowChart/SequenceDiagram 重渲染 catch 块输出 console.warn
+- ✅ **废弃 API 更新** — `escape()` → `encodeURIComponent()`，`substr()` → `slice()`
+- ✅ **非标准 CSS 修复** — `inline-ruby` → `ruby`（pinyin 显示）
+- ✅ **死代码清理** — 移除 image renderer 中未使用的 `style` 变量
+- ✅ **Tooltip 样式完善** — preview SCSS 添加完整 Tooltip 样式（trigger/popup/arrow/image/iframe/loading）
+- ✅ **示例文件更新** — 4 个示例文件新增 v1.7.0+ 功能配置
+- ✅ **文档更新** — README.md v1.8.0 改进记录，FIX_SUMMARY.md 本次修复日志
 
 ### 核心文件修复
 - ✅ `src/editormd.js` - 核心源文件（多轮修复）
@@ -464,7 +483,7 @@ editormd("editor", {
 > 此次在 `restoreTeXBreaks` 中增加 `\<br>` → `\\<br>` 步骤修复 `\\` 问题，但该方案只能修复 `\\`，无法解决其他被 marked.js 转义的 LaTeX 命令（如 `\{` → `{`、`\}` → `}`、`\#` → `#` 等）。
 >
 > ⚠️ **第十一轮修复 2 的第四次修正（同日·最终）**：改为**预处理方案** —— 在 marked.js 处理前保护所有 `$...$`/`$$...$$` 内的反斜杠，处理后再恢复：
-> - 新增 `protectTeXSyntax(markdown)` ：将公式内所有 `\` 替换为唯一占位符 `EDITORMDBSLHPLACEHOLDER7F3A`
+> - 新增 `protectTeXSyntax(markdown)` ：将公式内所有 `\` 替换为唯一占位符 `EDITORMD_TEX_BACKSLASH_7F3A`
 > - 新增 `restoreTeXSyntax(html)` ：将占位符还原为 `\`
 > - 在所有 3 个 marked.js 处理管线中集成（预览、HTML导出、getHTML）
 > - 简化 `restoreTeXBreaks` 为仅处理 `<br>` → 空格
@@ -530,6 +549,124 @@ git push origin master
 - **破坏性变更**: 无（已完全向后兼容）
 - **性能影响**: 正面（优化递归逻辑）
 - **兼容性**: 提升（支持现代浏览器）
+
+---
+
+## 🔧 第十二轮修复详解：全面系统审查与优化
+
+### 1. Tooltip 悬浮提示核心修复
+
+**问题 1：文本型 Tooltip popup 无法拦截鼠标交互**
+
+根因：CSS `pointer-events: none` 导致文本 Tooltip popup 的 `mouseenter`/`mouseleave` 事件不触发，鼠标从 trigger 移到 popup 时立即关闭（`hideTooltip` 200ms 定时器未被 popup 取消）。
+
+修复：
+- `pointer-events: none` → `auto`（文本 Tooltip 无交互元素，`auto` 无害）
+- 静态 `editormd.initTooltips` popup `mouseleave` 使用延迟隐藏（与 trigger 相同行为）
+- 添加 popup `mousedown` 事件清空隐藏定时器，支持点击内部链接
+- 内联脚本版 `initTooltips` 移除 `ty==="image"||ty==="iframe"` 限制，所有类型统一处理
+- SCSS 添加完整 Tooltip 样式（trigger focus、popup arrow、image/iframe/loading）
+
+**问题 2：独立预览 HTML 无 Tooltip 样式**
+
+根因：`editormd.preview.css` 缺少 `.editormd-tooltip-trigger` 和 `.editormd-tooltip-popup` 样式。
+
+修复：`scss/editormd.preview.scss` 添加完整 Tooltip 样式，编译后所有使用 `editormd.preview.css` 的场景都能正常显示。
+
+### 2. Task List `<input>` 被 XSS 过滤误删
+
+根因：`filterHTMLTags` 的 `dangerousTags` 包含 `'input'`，导致 `postProcessTaskLists` 注入的 `<input type="checkbox">` 被正则删除。
+
+修复：`dangerousTags` 移除 `'input'`，`allowedTags` 新增 `'input'`（含 `type`/`checked`/`disabled` 属性白名单）。
+
+### 3. XSS 安全白名单增强
+
+根因：`allowedTags` 缺少 `video`、`source` 标签，但渲染器可生成 `<video>` 元素（视频文件链接），会被 XSS 过滤器移除。
+
+修复：
+- 白名单新增 `'input'`、`'video'`、`'source'`
+- 新增 `input` 允许属性：`type`、`checked`、`disabled`、`class`
+- 新增 `video` 允许属性：`src`、`controls`、`preload`、`class`、`title`
+
+### 4. KaTeX 安全防护
+
+**问题**：`settings.tex` else 分支直接 `editormd.$katex = katex`，若 `katex` 全局变量不存在（`autoLoadModules: false` 且未预加载），后续 `katexRender` 崩溃。
+
+修复：两处赋值均添加 `typeof katex !== "undefined"` 前置检查。
+
+### 5. katexRender timer 守卫放宽
+
+**问题**：`this.timer === null` 直接返回，异步回调中 timer 可能尚未赋值，导致 KaTeX 公式跳过渲染。
+
+修复：添加 `typeof editormd.$katex === "undefined"` 条件，仅在 KaTeX 完全未加载时跳过。
+
+### 6. ECharts resize 事件内存优化
+
+**问题**：
+- 每次预览刷新时 `$(window).on("resize.editormd-echarts", ...)` 累积多个 handler
+- `reInitHiddenContent` 中同样累积（Tab 切换多次）
+
+修复：
+- 使用唯一命名空间 `resize.editormd-echarts-<id>` 避免冲突
+- `data-resize-bound` 属性标记，每个 chart instance 只绑定一次
+- 150ms debounce 减少频繁 resize 开销
+
+### 7. Columns 独立导出支持
+
+**问题**：`getHTML()` 导出的独立 HTML 中 `initTabs`/`initTooltips`/`initCodeCopy`/`initECharts` 均已内联，唯独缺少 `initColumns`。
+
+修复：
+- 内联脚本新增 `initColumns` 函数（遍历 `.editormd-columns` 添加分隔线）
+- DOM Ready 添加 `initColumns($c)` 调用
+- `reInitHiddenContent` 新增 Columns 重新初始化（Tab 面板显示后）
+
+### 8. loadScript 失败处理
+
+**问题**：`script.onerror` 静默调用 `callback()`，下游代码假设库已成功加载，导致运行时错误（如 `flowChart()` 方法不存在）。
+
+修复：
+- onerror 记录失败文件名到 `editormd.loadFiles.failed` 数组
+- 控制台输出 `console.warn("[Editor.md] Failed to load script: ...")`
+- 调用方可通过检查 `loadFiles.failed` 判断加载状态
+
+### 9. initTabs 事件绑定优化
+
+**问题**：实例方法 `initTabs` 使用 `.on("click", "li", ...)` 无 `.off()`，若 `data-initialized` 被重置会导致重复绑定。
+
+修复：添加 `.off("click", "li")` 先解绑再绑定（与独立 HTML 版本一致）。
+
+### 10. FlowChart/SequenceDiagram 守卫一致性
+
+**问题**：`flowchartTimer === null` 时整个渲染函数返回，若仅启用 SequenceDiagram（FlowChart 关闭），SequenceDiagram 也被跳过。
+
+修复：FlowChart 和 SequenceDiagram 分别判断，SequenceDiagram 额外检查 `typeof Diagram !== "undefined"`。
+
+### 11. 静默错误迁移至可见告警
+
+**问题**：`reInitHiddenContent` 中 FlowChart/SequenceDiagram 重渲染 `try { ... } catch(e) {}` 完全吞掉错误。
+
+修复：catch 块输出 `console.warn("[Editor.md] ... render failed:", e)`。
+
+### 12. 废弃 API 现代化
+
+| 废弃 API | 替换 | 位置 |
+|----------|------|------|
+| `escape()` | `encodeURIComponent()` | heading slug 生成 |
+| `String.prototype.substr()` | `String.prototype.slice()` | ECharts ID 生成 |
+| `display: inline-ruby` | `display: ruby` | pinyin CSS |
+
+### 13. 死代码清理
+
+- image renderer：移除声明但从未赋值的 `style` 变量（图片尺寸在预处理阶段已处理）
+
+### 14. 示例文件完善
+
+| 文件 | 更新内容 |
+|------|----------|
+| `html-preview-markdown-to-html.html` | 两个 `markdownToHTML` 调用均添加 tooltip/echarts/tabs/columns/pinyin/textAlign/imageResize/pageBreak/atLink/copybook 配置 |
+| `html-preview-...-custom-toc-container.html` | 同上，两个调用均补充缺失配置 |
+| `all-features.html` | 添加 `pageBreak: true` 和 `atLink: true` 配置 |
+| `full-preview.html` | 已完整，无需修改 |
 
 ---
 

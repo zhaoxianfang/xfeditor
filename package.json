@@ -1,6 +1,6 @@
 {
   "name": "editor.md",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "开源可嵌入 Markdown 在线编辑器 - 基于 pandao/editor.md 的改进增强版 | Open source embeddable online Markdown editor (improved fork of pandao/editor.md)",
   "directories": {
     "example": "examples",
@@ -14,7 +14,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/pandao/editor.md.git"
+    "url": "https://github.com/zhaoxianfang/editor.git"
   },
   "keywords": [
     "editor.md",
@@ -23,14 +23,16 @@
     "echarts",
     "katex",
     "wysiwyg",
-    "markdown-editor"
+    "markdown-editor",
+    "hanzi",
+    "javascript"
   ],
-  "author": "Pandao (original), with improvements and extensions",
+  "author": "yoc,zhaoxianfang",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/pandao/editor.md/issues"
+    "url": "https://github.com/zhaoxianfang/editor/issues"
   },
-  "homepage": "https://github.com/pandao/editor.md",
+  "homepage": "https://github.com/zhaoxianfang/editor",
   "devDependencies": {
     "dateformatter": "^0.1.0",
     "gulp": "^3.8.11",

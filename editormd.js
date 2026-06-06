@@ -208,7 +208,7 @@
         pageBreak            : true,           // 启用分页符解析 [========]
         atLink               : true,           // 启用 @link 语法
         emailLink            : true,           // 启用邮件地址自动链接
-        taskList             : false,          // 启用 GitHub Flavored Markdown 任务列表
+        taskList             : true,           // 启用 GitHub Flavored Markdown 任务列表
         tex                  : false,          // 启用 TeX/LaTeX 数学公式（基于 KaTeX）
         flowChart            : false,          // 启用流程图（仅支持 IE9+）
         sequenceDiagram      : false,          // 启用时序图（仅支持 IE9+）
@@ -300,10 +300,10 @@
             "color"          : "fa-font",
             "bg-color"       : "fa-paint-brush",
             "formula"         : "",
-            "copybook"       : "fa-pencil-square",
-            "copybook-tian"  : "fa-pencil-square",
-            "copybook-mi"    : "fa-pencil-square",
-            "copybook-pinyin": "fa-pencil-square"
+            "copybook"       : "editormd-icon-copybook",
+            "copybook-tian"  : "editormd-icon-tian",
+            "copybook-mi"    : "editormd-icon-mi",
+            "copybook-pinyin": "editormd-icon-pinyin"
         },        
         toolbarIconTexts     : {},
         
@@ -1354,8 +1354,9 @@
                         }
                         else
                         {
+                            var displayText = subIsHeader ? subName.toUpperCase() : subTitle;
                             dropdownHTML += "<a href=\"javascript:;\" title=\"" + subTitle + "\" unselectable=\"on\">";
-                            dropdownHTML += "<i class=\"fa " + subIconClass + "\" name=\""+subName+"\" unselectable=\"on\">"+((subIsHeader) ? subName.toUpperCase() : ( (subIconClass === "") ? subIconTexts : "") ) + "</i>";
+                            dropdownHTML += "<i class=\"fa " + subIconClass + "\" name=\""+subName+"\" unselectable=\"on\"></i> " + displayText;
                             dropdownHTML += "</a>";
                         }
                         dropdownHTML += "</li>";
@@ -1747,6 +1748,16 @@
             
             if (settings.previewCodeHighlight) 
             {
+                // Store original code text BEFORE prettyPrint modifies the DOM,
+                // so copy buttons can access the unmodified source
+                previewContainer.find("pre").each(function() {
+                    var $pre = $(this);
+                    var $code = $pre.find("code");
+                    if ($code.length > 0 && $pre.data("_originalCode") === undefined) {
+                        $pre.data("_originalCode", $code.text());
+                    }
+                });
+                
                 previewContainer.find("pre").addClass("prettyprint linenums");
                 
                 if (typeof prettyPrint !== "undefined")
@@ -1774,61 +1785,6 @@
             var copiedText  = "已复制";
             var failedText  = "复制失败";
 
-            /**
-             * 从 <code> 的 class 中提取语言名称
-             * 例如: "lang-javascript" -> "JavaScript"
-             *       "lang-cpp" -> "C++"
-             *       "echarts" -> "ECharts"
-             */
-            function extractLang($code) {
-                var cls = $code.attr("class") || "";
-                var m = cls.match(/lang(?:uage)?-(\S+)/);
-                if (m) {
-                    var lang = m[1];
-                    // 语言名映射
-                    var langMap = {
-                        "js": "JavaScript", "javascript": "JavaScript",
-                        "ts": "TypeScript", "typescript": "TypeScript",
-                        "py": "Python", "python": "Python",
-                        "rb": "Ruby", "ruby": "Ruby",
-                        "java": "Java",
-                        "cpp": "C++", "c++": "C++",
-                        "c": "C",
-                        "cs": "C#", "csharp": "C#",
-                        "go": "Go", "golang": "Go",
-                        "rs": "Rust", "rust": "Rust",
-                        "swift": "Swift",
-                        "kt": "Kotlin", "kotlin": "Kotlin",
-                        "scala": "Scala",
-                        "php": "PHP",
-                        "html": "HTML",
-                        "css": "CSS",
-                        "scss": "SCSS", "sass": "Sass",
-                        "less": "Less",
-                        "json": "JSON",
-                        "xml": "XML",
-                        "yaml": "YAML", "yml": "YAML",
-                        "md": "Markdown", "markdown": "Markdown",
-                        "sql": "SQL",
-                        "sh": "Shell", "bash": "Bash", "shell": "Shell",
-                        "ps1": "PowerShell", "powershell": "PowerShell",
-                        "dockerfile": "Dockerfile", "docker": "Docker",
-                        "nginx": "Nginx",
-                        "vim": "Vim",
-                        "diff": "Diff",
-                        "plaintext": "Plain Text", "text": "Plain Text",
-                        "ini": "INI", "toml": "TOML",
-                        "makefile": "Makefile",
-                        "cmake": "CMake",
-                        "graphql": "GraphQL",
-                        "proto": "Protobuf"
-                    };
-                    return langMap[lang] || lang.charAt(0).toUpperCase() + lang.slice(1);
-                }
-                // 特殊类型（流程图、时序图等有自己的渲染方式，不加标题栏）
-                return null;
-            }
-
             $container.find("pre").each(function() {
                 var $pre = $(this);
 
@@ -1836,141 +1792,63 @@
                 if ($pre.data("_copyBtnReady")) return;
                 $pre.data("_copyBtnReady", true);
 
-                // 获取语言名称
-                var $code = $pre.find("code");
-                var langName = $code.length > 0 ? extractLang($code) : null;
-
                 // 确保 pre 元素为 relative 定位
                 if ($pre.css("position") === "static") {
                     $pre.css("position", "relative");
                 }
 
-                // ＝＝ JetBrains 风格标题栏 ＝＝
-                if (langName !== null) {
-                    // 添加 jetbrains 样式类
-                    $pre.addClass(classPrefix + "code-jetbrains");
+                var $btn = $("<span>")
+                    .addClass(classPrefix + "code-copy-btn")
+                    .text(copyText)
+                    .attr("title", copyText);
 
-                    var $header = $("<div>")
-                        .addClass(classPrefix + "code-header");
+                $btn.on("click", function(e) {
+                    e.stopPropagation();
+                    e.preventDefault();
 
-                    // 文件名区域（JetBrains 标签风格）
-                    var $fileLabel = $("<span>")
-                        .addClass(classPrefix + "code-file-label")
-                        .html('<i class="fa fa-file-code-o"></i> ' + langName);
+                    if ($btn.hasClass("copied") || $btn.hasClass("failed")) return;
 
-                    // 复制按钮（放到标题栏中）
-                    var $btn = $("<span>")
-                        .addClass(classPrefix + "code-copy-btn")
-                        .text(copyText)
-                        .attr("title", copyText);
-
-                    $header.append($fileLabel).append($btn);
-                    $pre.prepend($header);
-
-                    // 绑定复制事件
-                    (function(btn) {
-                        btn.on("click", function(e) {
-                            e.stopPropagation();
-                            e.preventDefault();
-
-                            if (btn.hasClass("copied") || btn.hasClass("failed")) return;
-
-                            var code = $code.length > 0 ? $code.text() : $pre.find("." + classPrefix + "code-scroll-wrap").text();
-
-                            var done = function(success) {
-                                btn.removeClass("copied failed")
-                                    .addClass(success ? "copied" : "failed")
-                                    .text(success ? copiedText : failedText);
-                                clearTimeout(btn.data("_timer"));
-                                btn.data("_timer", setTimeout(function() {
-                                    btn.removeClass("copied failed").text(copyText);
-                                }, 2500));
-                            };
-
-                            if (navigator.clipboard && navigator.clipboard.writeText) {
-                                navigator.clipboard.writeText(code).then(function() {
-                                    done(true);
-                                }).catch(function() { done(false); });
-                            } else {
-                                var textarea = document.createElement("textarea");
-                                textarea.value = code;
-                                textarea.style.position = "fixed";
-                                textarea.style.left = "-9999px";
-                                textarea.style.top = "-9999px";
-                                document.body.appendChild(textarea);
-                                textarea.focus();
-                                textarea.select();
-                                try {
-                                    var ok = document.execCommand("copy");
-                                    done(ok);
-                                } catch (ex) { done(false); }
-                                document.body.removeChild(textarea);
-                            }
-                        });
-                    })($btn);
-                } else {
-                    // 无语言识别的 pre（如 katex/echarts 的输出 pre），使用原来的浮动复制按钮
-                    var $scrollWrap = $pre.find("." + classPrefix + "code-scroll-wrap");
-                    if ($scrollWrap.length === 0) {
-                        $scrollWrap = $("<div>")
-                            .addClass(classPrefix + "code-scroll-wrap");
-                        $pre.children().wrapAll($scrollWrap);
+                    // Use stored original code text (set before prettyPrint), fallback to live extraction
+                    var code = $pre.data("_originalCode");
+                    if (!code) {
+                        var $code = $pre.find("code");
+                        code = $code.length > 0
+                            ? $code.text()
+                            : $pre.clone().find("." + classPrefix + "code-copy-btn").remove().end().text();
                     }
 
-                    var $btn = $("<span>")
-                        .addClass(classPrefix + "code-copy-btn")
-                        .text(copyText)
-                        .attr("title", copyText);
+                    var done = function(success) {
+                        $btn.removeClass("copied failed")
+                            .addClass(success ? "copied" : "failed")
+                            .text(success ? copiedText : failedText);
+                        clearTimeout($btn.data("_timer"));
+                        $btn.data("_timer", setTimeout(function() {
+                            $btn.removeClass("copied failed").text(copyText);
+                        }, 2500));
+                    };
 
-                    (function(btn) {
-                        btn.on("click", function(e) {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            if (btn.hasClass("copied") || btn.hasClass("failed")) return;
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(code).then(function() {
+                            done(true);
+                        }).catch(function() { done(false); });
+                    } else {
+                        var textarea = document.createElement("textarea");
+                        textarea.value = code;
+                        textarea.style.position = "fixed";
+                        textarea.style.left = "-9999px";
+                        textarea.style.top = "-9999px";
+                        document.body.appendChild(textarea);
+                        textarea.focus();
+                        textarea.select();
+                        try {
+                            var ok = document.execCommand("copy");
+                            done(ok);
+                        } catch (ex) { done(false); }
+                        document.body.removeChild(textarea);
+                    }
+                });
 
-                            var sw = $pre.find("." + classPrefix + "code-scroll-wrap");
-                            var code = sw.find("code").length > 0 ? sw.find("code").text() : sw.text();
-
-                            var done = function(success) {
-                                btn.removeClass("copied failed")
-                                    .addClass(success ? "copied" : "failed")
-                                    .text(success ? copiedText : failedText);
-                                clearTimeout(btn.data("_timer"));
-                                btn.data("_timer", setTimeout(function() {
-                                    btn.removeClass("copied failed").text(copyText);
-                                }, 2500));
-                            };
-
-                            if (navigator.clipboard && navigator.clipboard.writeText) {
-                                navigator.clipboard.writeText(code).then(function() {
-                                    done(true);
-                                }).catch(function() { done(false); });
-                            } else {
-                                var textarea = document.createElement("textarea");
-                                textarea.value = code;
-                                textarea.style.position = "fixed";
-                                textarea.style.left = "-9999px";
-                                textarea.style.top = "-9999px";
-                                document.body.appendChild(textarea);
-                                textarea.focus();
-                                textarea.select();
-                                try { var ok = document.execCommand("copy"); done(ok); }
-                                catch (ex) { done(false); }
-                                document.body.removeChild(textarea);
-                            }
-                        });
-                    })($btn);
-
-                    $pre.append($btn);
-                }
-
-                // 确保有滚动包装容器
-                if ($pre.find("." + classPrefix + "code-scroll-wrap").length === 0) {
-                    var $sw = $("<div>").addClass(classPrefix + "code-scroll-wrap");
-                    // 保留 header，把其他子元素移入
-                    var $header = $pre.find("." + classPrefix + "code-header");
-                    $pre.children().not($header).wrapAll($sw);
-                }
+                $pre.append($btn);
             });
 
             return this;
@@ -1985,7 +1863,9 @@
         
         katexRender : function() {
             
-            if (this.timer === null)
+            // 仅在编辑器实例尚未初始化完成且非异步回调时跳过
+            // 异步加载回调中 timer 可能尚未赋值，这种情况下应继续渲染
+            if (this.timer === null && typeof editormd.$katex === "undefined")
             {
                 return this;
             }
@@ -2039,14 +1919,19 @@
 
             if (settings.flowChart) {
                 if (this.flowchartTimer === null) {
-                    return this;
+                    // 异步加载尚未完成，跳过流程图渲染
+                } else {
+                    previewContainer.find(".flowchart").flowChart();
                 }
-                
-                previewContainer.find(".flowchart").flowChart(); 
             }
 
             if (settings.sequenceDiagram) {
-                previewContainer.find(".sequence-diagram").sequenceDiagram({theme: "simple"});
+                // 时序图只依赖 raphael + sequence-diagram，不依赖 flowchartTimer
+                // 如果 flowchartTimer 为 null 但 flowchart 未开启，不会进入上面分支
+                // 时序图库可能已通过其他方式加载，尝试渲染
+                if (typeof Diagram !== "undefined" || (this.flowchartTimer !== null)) {
+                    previewContainer.find(".sequence-diagram").sequenceDiagram({theme: "simple"});
+                }
             }
                     
             var preview    = $this.preview;
@@ -2513,7 +2398,8 @@
                 
                 if (state.fullscreen)
                 {
-                    editor.height($(window).height());
+                    // CSS 中 .editormd-fullscreen 已通过 !important 控制尺寸
+                    // 无需手动设置 width/height，CSS width:100%!important 自适配
                 }
 
                 if (settings.toolbar && !settings.readOnly) 
@@ -2618,7 +2504,8 @@
                 echarts              : settings.echarts,
                 tabs                 : settings.tabs,
                 columns              : settings.columns,
-                tooltip              : settings.tooltip
+                tooltip              : settings.tooltip,
+                copybook             : settings.copybook
             };
             
             var markedOptions = this.markedOptions = {
@@ -2642,6 +2529,7 @@
             newMarkdownDoc = editormd.restorePlaceholders(newMarkdownDoc, preprocessResult.placeholders);
             newMarkdownDoc = editormd.restoreTeXSyntax(newMarkdownDoc);
             newMarkdownDoc = editormd.fixSmartypantsHTML(newMarkdownDoc);
+            if (settings.taskList) newMarkdownDoc = editormd.postProcessTaskLists(newMarkdownDoc);
 
             //console.info("cmValue", cmValue, newMarkdownDoc);
 
@@ -2696,8 +2584,10 @@
                         // 传入 settings.path 作为前缀，解决 examples 子目录下 KaTeX 资源 404 问题
                         _this._asyncLoadCount++;
                         editormd.loadKaTeX(settings.path, function() {
-                            editormd.$katex = katex;
-                            editormd.kaTeXLoaded = true;
+                            if (typeof katex !== "undefined") {
+                                editormd.$katex = katex;
+                                editormd.kaTeXLoaded = true;
+                            }
                             _this.katexRender();
                             _this._asyncLoadCount--;
                             _this._checkAllAsyncLoaded();
@@ -2705,7 +2595,9 @@
                     } 
                     else 
                     {
-                        editormd.$katex = katex;
+                        if (typeof katex !== "undefined") {
+                            editormd.$katex = katex;
+                        }
                         this.katexRender();
                     }
                 }                
@@ -3221,7 +3113,7 @@
 
                     var chartType = config.type || (config.series && config.series[0] && config.series[0].type) || "";
                     var noAxisTypes = ["pie", "funnel", "gauge", "graph", "treemap", "sunburst"];
-                    if ($.inArray(chartType, noAxisTypes) === -1) {
+                    if (noAxisTypes.indexOf(chartType) === -1) {
                         option.xAxis = config.xAxis || {};
                         option.yAxis = config.yAxis || {};
                     }
@@ -3232,9 +3124,18 @@
                     chartInstance.setOption(option);
                     $chart.attr("data-initialized", "true");
 
-                    $(window).on("resize.editormd-echarts", function() {
-                        chartInstance.resize();
-                    });
+                    // 使用命名空间+debounce避免累积大量 resize handler
+                    // 每个 chart instance 只绑定一次 resize
+                    if (!$chart.attr("data-resize-bound")) {
+                        $chart.attr("data-resize-bound", "true");
+                        var resizeTimer = null;
+                        $(window).on("resize.editormd-echarts-" + ($chart.attr("id") || Math.random()), function() {
+                            if (resizeTimer) clearTimeout(resizeTimer);
+                            resizeTimer = setTimeout(function() {
+                                chartInstance.resize();
+                            }, 150);
+                        });
+                    }
                 }
             });
         },
@@ -3265,28 +3166,35 @@
                     } catch(e) { return; }
 
                     if (typeof echarts !== "undefined") {
-                        var chartInstance = echarts.init(this);
-                        var option = {
+                        var chartInstance2 = echarts.init(this);
+                        var option2 = {
                             title: config.title || {},
                             tooltip: config.tooltip || {},
                             legend: config.legend || {},
                             radar: config.radar || {},
                             series: config.series || []
                         };
-                        var chartType = config.type || (config.series && config.series[0] && config.series[0].type) || "";
-                        var noAxisTypes = ["pie", "funnel", "gauge", "graph", "treemap", "sunburst"];
-                        if ($.inArray(chartType, noAxisTypes) === -1) {
-                            option.xAxis = config.xAxis || {};
-                            option.yAxis = config.yAxis || {};
+                        var chartType2 = config.type || (config.series && config.series[0] && config.series[0].type) || "";
+                        var noAxisTypes2 = ["pie", "funnel", "gauge", "graph", "treemap", "sunburst"];
+                        if (noAxisTypes2.indexOf(chartType2) === -1) {
+                            option2.xAxis = config.xAxis || {};
+                            option2.yAxis = config.yAxis || {};
                         }
                         if (config.tooltip === undefined) {
-                            option.tooltip = { trigger: "axis" };
+                            option2.tooltip = { trigger: "axis" };
                         }
-                        chartInstance.setOption(option);
+                        chartInstance2.setOption(option2);
                         $chart.attr("data-initialized", "true");
-                        $(window).on("resize.editormd-echarts", function() {
-                            chartInstance.resize();
-                        });
+                        if (!$chart.attr("data-resize-bound")) {
+                            $chart.attr("data-resize-bound", "true");
+                            var resizeTimer2 = null;
+                            $(window).on("resize.editormd-echarts-" + ($chart.attr("id") || Math.random()), function() {
+                                if (resizeTimer2) clearTimeout(resizeTimer2);
+                                resizeTimer2 = setTimeout(function() {
+                                    chartInstance2.resize();
+                                }, 150);
+                            });
+                        }
                     }
                 });
 
@@ -3312,7 +3220,9 @@
                         try {
                             $fc.flowChart();
                             $fc.attr("data-fc-initialized", "true");
-                        } catch(e) {}
+                        } catch(e) {
+                            if (typeof console !== "undefined" && console.warn) console.warn("[Editor.md] FlowChart re-render failed:", e);
+                        }
                     });
                 }
                 if (_this.settings.sequenceDiagram) {
@@ -3323,7 +3233,9 @@
                         try {
                             $sd.sequenceDiagram({theme: "simple"});
                             $sd.attr("data-sd-initialized", "true");
-                        } catch(e) {}
+                        } catch(e) {
+                            if (typeof console !== "undefined" && console.warn) console.warn("[Editor.md] SequenceDiagram re-render failed:", e);
+                        }
                     });
                 }
 
@@ -3334,6 +3246,20 @@
                         // 跳过已经包含 linenums 处理过的
                         if ($pre.find("li").length > 0) return;
                         prettyPrint();
+                    });
+                }
+
+                // 重新计算多栏布局分隔线（隐藏元素中尺寸可能为零）
+                if (_this.settings.columns) {
+                    $panel.find(".editormd-columns").each(function() {
+                        var $cols = $(this);
+                        if ($cols.attr("data-initialized") === "true") return;
+                        var count = parseInt($cols.attr("data-count"), 10) || 2;
+                        $cols.find(".editormd-column-divider").remove();
+                        for (var ci = 1; ci < count; ci++) {
+                            $cols.append('<div class="editormd-column-divider" style="position:absolute;top:8px;bottom:8px;width:0;transform:translateX(-50%);border-left:1px dashed #bbb;pointer-events:none;z-index:1"></div>');
+                        }
+                        $cols.attr("data-initialized", "true");
                     });
                 }
             }
@@ -3355,7 +3281,7 @@
                     }, 50);
                 }
                 
-                $nav.on("click", "li", function() {
+                $nav.off("click", "li").on("click", "li", function() {
                     var $li = $(this);
                     var index = $li.attr("data-index");
                     
@@ -3946,20 +3872,7 @@
             if (!contentHTML || contentHTML === '<div class="markdown-body editormd-html-preview">\n  \n</div>') {
                 var markdownText = this.getMarkdown();
                 if (markdownText) {
-                    var rendererOptions = {
-                        toc: false, tocm: false, tocStartLevel: 1,
-                        taskList: settings.taskList,
-                        tex: settings.tex, pageBreak: settings.pageBreak,
-                        atLink: settings.atLink, emailLink: settings.emailLink,
-                        flowChart: settings.flowChart, sequenceDiagram: settings.sequenceDiagram,
-                        previewCodeHighlight: settings.previewCodeHighlight,
-                        pinyin: settings.pinyin,
-                        imageResize: settings.imageResize,
-                        echarts: settings.echarts,
-                        tabs: settings.tabs,
-                        columns: settings.columns,
-                        tooltip: settings.tooltip
-                    };
+                    var rendererOptions = this._buildRendererOptions(settings, {toc: false, tocm: false});
                     var markedOptions = {
                         renderer: editormd.markedRenderer([], rendererOptions),
                         gfm: settings.gfm, tables: true, breaks: true,
@@ -4008,6 +3921,37 @@
         },
         
         /**
+         * 构建渲染选项（统一所有 rendererOptions 创建点，避免遗漏配置项）
+         * @private
+         * @param {Object} settings 编辑器设置
+         * @param {Object} [overrides={}] 覆盖项
+         * @returns {Object}
+         */
+        _buildRendererOptions : function(settings, overrides) {
+            return $.extend({
+                toc           : false,
+                tocm          : false,
+                tocStartLevel : 1,
+                taskList      : settings.taskList,
+                tex           : settings.tex,
+                pageBreak     : settings.pageBreak,
+                atLink        : settings.atLink,
+                emailLink     : settings.emailLink,
+                flowChart     : settings.flowChart,
+                sequenceDiagram : settings.sequenceDiagram,
+                previewCodeHighlight : settings.previewCodeHighlight,
+                pinyin             : settings.pinyin,
+                textAlign          : settings.textAlign,
+                imageResize        : settings.imageResize,
+                echarts            : settings.echarts,
+                tabs               : settings.tabs,
+                columns            : settings.columns,
+                tooltip            : settings.tooltip,
+                copybook           : settings.copybook
+            }, overrides || {});
+        },
+
+        /**
          * 获取核心 CSS 样式（内联版本，用于 getHTML() 输出独立页面）
          * @private
          * @returns {String}
@@ -4016,7 +3960,7 @@
             var css = [];
             
             // Pinyin ruby annotation
-            css.push('.editormd-pinyin{display:inline-ruby;ruby-align:center;line-height:2.2;}');
+            css.push('.editormd-pinyin{display:ruby;ruby-align:center;line-height:2.2;}');
             css.push('.editormd-pinyin rb{display:ruby-base;}');
             css.push('.editormd-pinyin rt{display:ruby-text;font-size:0.65em;color:#666;line-height:1;}');
             css.push('.editormd-pinyin rp{display:none;}');
@@ -4024,7 +3968,7 @@
             // Tooltip / Popover
             css.push('.editormd-tooltip-trigger{border-bottom:1px dashed #2C7EEA;color:#2C7EEA;cursor:help;position:relative;display:inline;}');
             css.push('.editormd-tooltip-trigger:focus{outline:2px solid #2C7EEA;outline-offset:2px;border-radius:2px;}');
-            css.push('.editormd-tooltip-popup{position:absolute;z-index:9999;background:#333;color:#fff;padding:8px 12px;border-radius:6px;font-size:13px;line-height:1.5;max-width:320px;word-wrap:break-word;display:none;opacity:0;transition:opacity 0.2s;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,0.18);}');
+            css.push('.editormd-tooltip-popup{position:fixed;z-index:99999;background:#333;color:#fff;padding:8px 12px;border-radius:6px;font-size:13px;line-height:1.5;max-width:320px;word-wrap:break-word;display:none;opacity:0;transition:opacity 0.2s;pointer-events:auto;box-shadow:0 4px 16px rgba(0,0,0,0.18);}');
             css.push('.editormd-tooltip-popup.show{opacity:1;}');
             css.push('.editormd-tooltip-text-content{white-space:pre-wrap;}');
             // Arrow styles
@@ -4082,11 +4026,10 @@
             css.push('.editormd-html-preview blockquote{padding:0 1em;color:#6a737d;border-left:0.25em solid #dfe2e5;margin:0 0 16px 0;}');
             css.push('.editormd-html-preview blockquote>:first-child{margin-top:0;}');
             css.push('.editormd-html-preview blockquote>:last-child{margin-bottom:0;}');
-            css.push('.editormd-html-preview pre{position:relative;border:1px solid #e1e4e8;background:#f6f8fa;padding:16px;margin-bottom:16px;overflow:hidden;line-height:1.5;font-size:13px;font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,Courier,monospace;word-wrap:normal;border-radius:6px;}');
-            css.push('.editormd-html-preview pre code{border:none;background:transparent;padding:0;font-size:13px;line-height:1.5;color:#24292e;white-space:pre;word-break:normal;font-family:inherit;}');
-            css.push('.editormd-html-preview code{font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,Courier,monospace;}');
+            css.push('.editormd-html-preview pre{position:relative;border:1px solid #e1e4e8;background:#f6f8fa;padding:16px;margin-bottom:16px;overflow:auto;line-height:1.6;font-size:13px;font-family:"SF Mono","Fira Code",Consolas,"Liberation Mono",Menlo,monospace;color:#24292e;word-wrap:normal;border-radius:6px;}');
+            css.push('.editormd-html-preview pre code{border:none;background:transparent;padding:0;font-size:13px;line-height:1.6;color:inherit;white-space:pre;word-break:normal;font-family:inherit;}');
+            css.push('.editormd-html-preview code{font-family:"SF Mono","Fira Code",Consolas,"Liberation Mono",Menlo,monospace;}');
             css.push('.editormd-html-preview code:not(pre code){color:#c7254e;background:#f9f2f4;border:1px solid #f0d0d8;padding:2px 6px;border-radius:3px;font-size:85%;white-space:nowrap;}');
-            css.push('.editormd-code-scroll-wrap{overflow:auto;max-height:100%;}');
             css.push('.editormd-html-preview img{max-width:100%;}');
             css.push('.editormd-html-preview table{border-collapse:collapse;border-spacing:0;width:100%;margin-bottom:16px;display:block;overflow:auto;}');
             css.push('.editormd-html-preview table th,.editormd-html-preview table td{padding:6px 13px;border:1px solid #dfe2e5;}');
@@ -4110,12 +4053,16 @@
             css.push('.editormd-html-preview li>p{margin-top:16px;}');
             css.push('.editormd-html-preview li+li{margin-top:0.25em;}');
             
-            // Code copy button (inside pre)
-            css.push('.editormd-code-copy-btn{position:absolute;top:8px;right:8px;z-index:10;display:inline-block;padding:3px 10px;font-size:12px;line-height:1.4;color:#586069;background:#fff;border:1px solid #d1d5da;border-radius:4px;cursor:pointer;user-select:none;-webkit-user-select:none;transition:all 0.2s ease;opacity:0;}');
+            // Code copy button (floating at top-right inside pre)
+            css.push('.editormd-code-copy-btn{position:absolute;top:6px;right:6px;z-index:10;display:inline-flex;align-items:center;padding:4px 8px;font-size:11px;line-height:1.3;color:#57606a;background:#fff;border:1px solid #d0d7de;border-radius:5px;cursor:pointer;user-select:none;-webkit-user-select:none;transition:all 0.15s ease;opacity:0;box-shadow:0 1px 2px rgba(0,0,0,0.04);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}');
             css.push('pre:hover .editormd-code-copy-btn{opacity:1;}');
-            css.push('.editormd-code-copy-btn:hover{color:#0366d6;border-color:#0366d6;background:#f1f8ff;}');
-            css.push('.editormd-code-copy-btn.copied{color:#22863a;border-color:#22863a;background:#f0fff4;cursor:not-allowed;pointer-events:none;opacity:1;}');
-            css.push('.editormd-code-copy-btn.failed{color:#cb2431;border-color:#cb2431;background:#ffeef0;cursor:not-allowed;pointer-events:none;opacity:1;}');
+            css.push('.editormd-code-copy-btn:hover{color:#0969da;border-color:#0969da;background:#f6f8fe;opacity:1;}');
+            css.push('.editormd-code-copy-btn.copied{color:#1a7f37;border-color:#1a7f37;background:#dafbe1;cursor:default;pointer-events:none;opacity:1;}');
+            css.push('.editormd-code-copy-btn.failed{color:#cf222e;border-color:#cf222e;background:#ffebe9;cursor:default;pointer-events:none;opacity:1;}');
+            // Task list styling for standalone HTML preview
+            css.push('.editormd-html-preview li.task-list-item{list-style:none;}');
+            css.push('.editormd-html-preview li.task-list-item+li.task-list-item{margin-top:3px;}');
+            css.push('.editormd-html-preview .task-list-item-checkbox{float:left;margin:0.35em 0 0.25em -1.6em;vertical-align:middle;}');
             
             // Flow chart & sequence
             css.push('.editormd-html-preview .flowchart,.editormd-html-preview .sequence-diagram{margin:0 auto;text-align:center;}');
@@ -4228,12 +4175,46 @@
             css.push('.prettyprint .lit,.prettyprint .pun{color:#005cc5;}');
             css.push('.prettyprint .opn,.prettyprint .clo{color:#d73a49;}');
             css.push('.prettyprint .fun{color:#6f42c1;}');
-            css.push('pre.prettyprint{position:relative !important;padding:16px !important;overflow:visible !important;}');
-            css.push('pre.prettyprint .editormd-code-scroll-wrap{max-height:600px;overflow:auto;}');
-            css.push('ol.linenums{margin:0 !important;padding-left:3.5em !important;color:#999;}');
-            css.push('ol.linenums li{list-style-type:decimal !important;padding-left:5px;min-height:1.5em;}');
+            css.push('pre.prettyprint{position:relative !important;padding:16px !important;overflow:auto !important;}');
+            css.push('ol.linenums{margin:0 !important;padding:0 0 0 3.5em !important;color:#8b949e;}');
+            css.push('ol.linenums li{list-style-type:decimal !important;padding-left:6px;min-height:1.5em;line-height:1.6;}');
             css.push('ol.linenums li.L0,ol.linenums li.L1,ol.linenums li.L2,ol.linenums li.L3,ol.linenums li.L4,ol.linenums li.L5,ol.linenums li.L6,ol.linenums li.L7,ol.linenums li.L8,ol.linenums li.L9{list-style-type:decimal !important;}');
             css.push('ol.linenums li:nth-child(odd){background:#fafbfc;}');
+            
+            // ═══════════════ 自定义工具栏图标：字帖系列 ═══════════════
+            css.push('.fa.editormd-icon-copybook,.fa.editormd-icon-tian,.fa.editormd-icon-mi,.fa.editormd-icon-pinyin{width:15px;height:15px;vertical-align:middle;position:relative;font-family:inherit!important;overflow:visible;margin-top:-1px;}');
+            // 字帖 - 文档/笔记本
+            css.push('.fa.editormd-icon-copybook{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 14 14%27%3E%3Cpath d=%27M2 1h7l3 3v9a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z%27 fill=%27none%27 stroke=%27%23555%27 stroke-width=%271.2%27/%3E%3Cpath d=%27M9 1v3h3%27 fill=%27none%27 stroke=%27%23555%27 stroke-width=%271.2%27/%3E%3Cline x1=%274%27 y1=%276%27 x2=%2710%27 y2=%276%27 stroke=%27%23999%27 stroke-width=%270.6%27/%3E%3Cline x1=%274%27 y1=%278%27 x2=%279%27 y2=%278%27 stroke=%27%23999%27 stroke-width=%270.5%27/%3E%3Cline x1=%274%27 y1=%2710%27 x2=%278%27 y2=%2710%27 stroke=%27%23999%27 stroke-width=%270.5%27/%3E%3C/svg%3E");background-size:contain;background-repeat:no-repeat;background-position:center;}');
+            // 田字格 - 四等分网格
+            css.push('.fa.editormd-icon-tian{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 14 14%27%3E%3Crect x=%270.5%27 y=%270.5%27 width=%2713%27 height=%2713%27 fill=%27none%27 stroke=%27%23555%27 stroke-width=%271.5%27 rx=%271.5%27/%3E%3Cline x1=%270.5%27 y1=%277%27 x2=%2713.5%27 y2=%277%27 stroke=%27%23555%27 stroke-width=%271%27/%3E%3Cline x1=%277%27 y1=%270.5%27 x2=%277%27 y2=%2713.5%27 stroke=%27%23555%27 stroke-width=%271%27/%3E%3C/svg%3E");background-size:contain;background-repeat:no-repeat;background-position:center;}');
+            // 米字格 - 四等分+对角线
+            css.push('.fa.editormd-icon-mi{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 14 14%27%3E%3Crect x=%270.5%27 y=%270.5%27 width=%2713%27 height=%2713%27 fill=%27none%27 stroke=%27%23555%27 stroke-width=%271.5%27 rx=%271.5%27/%3E%3Cline x1=%270.5%27 y1=%277%27 x2=%2713.5%27 y2=%277%27 stroke=%27%23555%27 stroke-width=%270.8%27/%3E%3Cline x1=%277%27 y1=%270.5%27 x2=%277%27 y2=%2713.5%27 stroke=%27%23555%27 stroke-width=%270.8%27/%3E%3Cline x1=%270.5%27 y1=%270.5%27 x2=%2713.5%27 y2=%2713.5%27 stroke=%27%23555%27 stroke-width=%270.8%27/%3E%3Cline x1=%2713.5%27 y1=%270.5%27 x2=%270.5%27 y2=%2713.5%27 stroke=%27%23555%27 stroke-width=%270.8%27/%3E%3C/svg%3E");background-size:contain;background-repeat:no-repeat;background-position:center;}');
+            // 拼音格 - 四线格
+            css.push('.fa.editormd-icon-pinyin{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 14 14%27%3E%3Cline x1=%271%27 y1=%272%27 x2=%2713%27 y2=%272%27 stroke=%27%23555%27 stroke-width=%270.8%27/%3E%3Cline x1=%271%27 y1=%276%27 x2=%2713%27 y2=%276%27 stroke=%27%23555%27 stroke-width=%271.2%27/%3E%3Cline x1=%271%27 y1=%2710%27 x2=%2713%27 y2=%2710%27 stroke=%27%23555%27 stroke-width=%270.8%27/%3E%3Cline x1=%271%27 y1=%2712%27 x2=%2713%27 y2=%2712%27 stroke=%27%23555%27 stroke-width=%271.2%27/%3E%3C/svg%3E");background-size:contain;background-repeat:no-repeat;background-position:center;}');
+            
+            // ═══════════════ ToC 目录样式 ═══════════════
+            css.push('.markdown-toc.editormd-markdown-toc{padding:16px 20px;margin:16px 0;background:#f8f9fb;border:1px solid #e1e4e8;border-radius:8px;font-size:14px;}');
+            css.push('.markdown-toc.editormd-markdown-toc .markdown-toc-list{margin:0;padding:0 0 0 4px;list-style:none;}');
+            css.push('.markdown-toc.editormd-markdown-toc .markdown-toc-list ul{padding-left:18px;list-style:none;}');
+            css.push('.markdown-toc.editormd-markdown-toc .markdown-toc-list li{margin:4px 0;position:relative;}');
+            css.push('.markdown-toc.editormd-markdown-toc .markdown-toc-list a{color:#0366d6;text-decoration:none;font-size:13px;line-height:1.6;display:inline-block;padding:2px 0;transition:all 150ms ease;}');
+            css.push('.markdown-toc.editormd-markdown-toc .markdown-toc-list a:hover{color:#005cc5;text-decoration:underline;}');
+            css.push('.markdown-toc.editormd-markdown-toc .markdown-toc-list a.toc-level-1{font-weight:600;font-size:14px;}');
+            css.push('.markdown-toc.editormd-markdown-toc .markdown-toc-list a.toc-level-2{font-weight:500;font-size:13px;padding-left:4px;}');
+            css.push('.markdown-toc.editormd-markdown-toc .markdown-toc-list a.toc-level-3{font-weight:400;font-size:12.5px;padding-left:8px;color:#586069;}');
+            css.push('.markdown-toc.editormd-markdown-toc .markdown-toc-list a.toc-level-4,.markdown-toc.editormd-markdown-toc .markdown-toc-list a.toc-level-5,.markdown-toc.editormd-markdown-toc .markdown-toc-list a.toc-level-6{font-size:12px;padding-left:12px;color:#6a737d;}');
+            // ToC dropdown menu
+            css.push('.editormd-toc-menu{position:relative;display:inline-block;margin:8px 0;}');
+            css.push('.editormd-toc-menu .toc-menu-btn{display:inline-block;padding:6px 14px;background:#f6f8fa;border:1px solid #d1d5da;border-radius:6px;font-size:13px;color:#24292e;cursor:pointer;text-decoration:none!important;transition:all 200ms ease;}');
+            css.push('.editormd-toc-menu .toc-menu-btn:hover{background:#e1e4e8;border-color:#c6cbd1;}');
+            css.push('.editormd-toc-menu .toc-menu-btn .fa{margin-right:5px;font-size:12px;}');
+            css.push('.editormd-toc-menu .markdown-toc-list{display:none;position:absolute;top:100%;left:0;min-width:220px;max-height:460px;overflow-y:auto;background:#fff;border:1px solid #d1d5da;border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.12);z-index:400;margin-top:4px;padding:8px 0;}');
+            css.push('.editormd-toc-menu .markdown-toc-list li{padding:0;}');
+            css.push('.editormd-toc-menu .markdown-toc-list a{display:block;padding:5px 16px;color:#24292e;font-size:13px;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background 150ms ease;}');
+            css.push('.editormd-toc-menu .markdown-toc-list a:hover{background:#f1f8ff;color:#0366d6;}');
+            css.push('.editormd-toc-menu .markdown-toc-list a.toc-level-1{font-weight:600;}');
+            css.push('.editormd-toc-menu .markdown-toc-list a.toc-level-2{padding-left:24px;font-weight:500;}');
+            css.push('.editormd-toc-menu .markdown-toc-list a.toc-level-3{padding-left:32px;font-size:12.5px;}');
             
             return css.join('\n');
         },
@@ -4325,6 +4306,8 @@
             scripts.push('  function getViewport(){var d=document,e=d.documentElement;return{w:Math.max(e.clientWidth,window.innerWidth||0),h:Math.max(e.clientHeight,window.innerHeight||0),sl:window.pageXOffset||e.scrollLeft||0,st:window.pageYOffset||e.scrollTop||0};}');
             scripts.push('  function initTooltips(container){');
             scripts.push('    if(!container||container.length===0) return;');
+            // 清理旧的 popup，避免 DOM 碎片累积
+            scripts.push('    $(".editormd-tooltip-popup").not(":has(+ script)").remove();');
             // 重置 tooltip 初始化标记
             scripts.push('    container.find(".editormd-tooltip-trigger").removeAttr("data-tooltip-init");');
             scripts.push('    container.find(".editormd-tooltip-trigger").each(function(){');
@@ -4344,13 +4327,15 @@
             scripts.push('      var show=function(){clearTimeout(hideTimer);clearTimeout(showTimer);');
             scripts.push('        showTimer=setTimeout(function(){');
             scripts.push('          $p.css({display:"block",visibility:"hidden"});');
-            scripts.push('          var o=$t.offset();var pw=$p.outerWidth();var ph=$p.outerHeight();');
+            scripts.push('          var pw=$p.outerWidth();var ph=$p.outerHeight();');
             scripts.push('          var tw=$t.outerWidth();var th=$t.outerHeight();');
+            // 使用 getBoundingClientRect 获取视口相对坐标（适配 position:fixed）
+            scripts.push('          var r=$t[0].getBoundingClientRect();');
+            scripts.push('          var l=r.left+(tw/2)-(pw/2);');
+            scripts.push('          var tp=r.top-ph-10;');
             scripts.push('          var vp=getViewport();');
-            scripts.push('          var l=o.left+(tw/2)-(pw/2);');
-            scripts.push('          var tp=o.top-ph-10;');
             scripts.push('          var arrowPos="bottom";');
-            scripts.push('          if(tp<vp.st+10){tp=o.top+th+10;arrowPos="top";}');
+            scripts.push('          if(tp<10){tp=r.bottom+10;arrowPos="top";if(tp+ph>vp.h-10) tp=vp.h-ph-10;}');
             scripts.push('          if(l<10) l=10;');
             scripts.push('          if(l+pw>vp.w-10) l=vp.w-pw-10;');
             scripts.push('          $p.removeClass("editormd-tooltip-arrow-top editormd-tooltip-arrow-bottom");');
@@ -4366,7 +4351,7 @@
             scripts.push('      };');
             scripts.push('      $t.on("mouseenter",show).on("mouseleave",hide);');
             scripts.push('      $t.on("focus",show).on("blur",hide);');
-            scripts.push('      $p.on("mouseenter",function(){if(ty==="image"||ty==="iframe"){clearTimeout(hideTimer);clearTimeout(showTimer);}}).on("mouseleave",function(){if(ty==="image"||ty==="iframe"){hide();}});');
+            scripts.push('      $p.on("mouseenter",function(){clearTimeout(hideTimer);clearTimeout(showTimer);}).on("mouseleave",function(){hide();});');
             scripts.push('      $t.on("click",function(e){if("ontouchstart" in window||navigator.maxTouchPoints){e.preventDefault();$p.hasClass("show")?hide():show();}});');
             scripts.push('      $(document).on("click.tooltip",function(e){if(!$(e.target).closest(".editormd-tooltip-trigger, .editormd-tooltip-popup").length) hide();});');
             scripts.push('      $(document).on("keydown.tooltip",function(e){if(e.key==="Escape"&&$p.hasClass("show")){e.preventDefault();hide();}});');
@@ -4395,6 +4380,22 @@
             scripts.push('    });');
             scripts.push('  }');
             
+            // 初始化多栏布局分隔线（Columns）
+            scripts.push('  function initColumns(container){');
+            scripts.push('    if(!container||container.length===0) return;');
+            scripts.push('    container.find(".editormd-columns").each(function(){');
+            scripts.push('      var $c=$(this);');
+            scripts.push('      if($c.attr("data-initialized")==="true") return;');
+            scripts.push('      var count=parseInt($c.attr("data-count"),10)||2;');
+            scripts.push('      $c.find(".editormd-column-divider").remove();');
+            scripts.push('      $c.css("position","relative");');
+            scripts.push('      for(var i=1;i<count;i++){');
+            scripts.push('        $c.append(\'<div class="editormd-column-divider" style="position:absolute;top:8px;bottom:8px;width:0;transform:translateX(-50%);border-left:1px dashed #bbb;pointer-events:none;z-index:1;" data-colidx="\'+i+\'"></div>\');');
+            scripts.push('      }');
+            scripts.push('      $c.attr("data-initialized","true");');
+            scripts.push('    });');
+            scripts.push('  }');
+            
             scripts.push('  function initCodeCopy(container){');
             scripts.push('    if(!container||container.length===0) return;');
             scripts.push('    container.find("pre").each(function(){');
@@ -4402,21 +4403,17 @@
             scripts.push('      if($pre.data("_copyBtnReady")) return;');
             scripts.push('      $pre.data("_copyBtnReady",true);');
             scripts.push('      if($pre.css("position")==="static") $pre.css("position","relative");');
-            scripts.push('      var $wrap=$pre.find(".editormd-code-scroll-wrap");');
-            scripts.push('      if($wrap.length===0){');
-            scripts.push('        $wrap=$("<div>").addClass("editormd-code-scroll-wrap");');
-            scripts.push('        $pre.children().wrapAll($wrap);');
-            scripts.push('      }');
+            // Store original code text at creation time for reliable copy
+            scripts.push('      if($pre.data("_originalCode")===undefined){var $c=$pre.find("code");if($c.length) $pre.data("_originalCode",$c.text());}');
             scripts.push('      var $btn=$("<span>").addClass("editormd-code-copy-btn").text("复制").attr("title","复制");');
             scripts.push('      $btn.on("click",function(e){');
             scripts.push('        e.stopPropagation();e.preventDefault();');
             scripts.push('        if($btn.hasClass("copied")||$btn.hasClass("failed")) return;');
-            scripts.push('        var code=$pre.find(".editormd-code-scroll-wrap code").length>0?$pre.find(".editormd-code-scroll-wrap code").text():$pre.find(".editormd-code-scroll-wrap").text();');
-            scripts.push('        var done=function(success){');
-            scripts.push('          $btn.removeClass("copied failed").addClass(success?"copied":"failed").text(success?"已复制":"复制失败");');
+            scripts.push('        var code=$pre.data("_originalCode");if(!code){var $c=$pre.find("code");code=$c.length?$c.text():$pre.clone().find(".editormd-code-copy-btn").remove().end().text();}');
+            scripts.push('        var done=function(s){');
+            scripts.push('          $btn.removeClass("copied failed").addClass(s?"copied":"failed").text(s?"已复制":"复制失败");');
             scripts.push('          clearTimeout($btn.data("_timer"));');
-            scripts.push('          $btn.data("_timer",setTimeout(function(){$btn.removeClass("copied failed").text("复制");},2500));');
-            scripts.push('        };');
+            scripts.push('          $btn.data("_timer",setTimeout(function(){$btn.removeClass("copied failed").text("复制");},2500));};');
             scripts.push('        if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(code).then(function(){done(true);}).catch(function(){done(false);});}');
             scripts.push('        else{var t=document.createElement("textarea");t.value=code;t.style.position="fixed";t.style.left="-9999px";document.body.appendChild(t);t.select();try{done(document.execCommand("copy"));}catch(e){done(false);}document.body.removeChild(t);}');
             scripts.push('      });');
@@ -4433,6 +4430,7 @@
             // 初始化不需要外部库的组件
             scripts.push('      initTooltips($c);');
             scripts.push('      initTabs($c);');
+            scripts.push('      initColumns($c);');
             scripts.push('      initCodeCopy($c);');
             // ECharts 异步加载（需要外部 echarts.min.js）
             scripts.push('      initECharts($c);');
@@ -4500,20 +4498,7 @@
                 var markdownText = this.getMarkdown();
                 if (markdownText) {
                     var settings = this.settings;
-                    var rendererOptions = {
-                        toc: false, tocm: false, tocStartLevel: 1,
-                        taskList: settings.taskList,
-                        tex: settings.tex, pageBreak: settings.pageBreak,
-                        atLink: settings.atLink, emailLink: settings.emailLink,
-                        flowChart: settings.flowChart, sequenceDiagram: settings.sequenceDiagram,
-                        previewCodeHighlight: settings.previewCodeHighlight,
-                        pinyin: settings.pinyin,
-                        imageResize: settings.imageResize,
-                        echarts: settings.echarts,
-                        tabs: settings.tabs,
-                        columns: settings.columns,
-                        tooltip: settings.tooltip
-                    };
+                    var rendererOptions = this._buildRendererOptions(settings, {toc: false, tocm: false});
                     var markedOptions = {
                         renderer: editormd.markedRenderer([], rendererOptions),
                         gfm: settings.gfm, tables: true, breaks: true,
@@ -4526,6 +4511,7 @@
                     rawHTML = editormd.restorePlaceholders(rawHTML, mdPreprocess.placeholders);
                     rawHTML = editormd.restoreTeXSyntax(rawHTML);
                     rawHTML = editormd.fixSmartypantsHTML(rawHTML);
+                    if (settings.taskList) rawHTML = editormd.postProcessTaskLists(rawHTML);
                     rawHTML = editormd.filterHTMLTags(rawHTML, settings.htmlDecode);
                 }
             }
@@ -4717,12 +4703,6 @@
             
             codeMirror.toggle();
             
-            var escHandle = function(event) {
-                if (event.shiftKey && event.keyCode === 27) {
-                    _this.previewed();
-                }
-            };
-
             if (codeMirror.css("display") === "none") // 使用 css("display") 替代 is(":hidden") 以兼容 Zepto
             {
                 this.state.preview = true;
@@ -4758,11 +4738,15 @@
                     settings.onpreviewing.call(this);
                 }
 
-                $(window).on("keyup", escHandle);
+                // 使用命名空间绑定 ESC 事件（Shift+ESC 退出预览模式）
+                $(document).on("keyup.editormd-preview", function(event) {
+                    if (event.shiftKey && event.keyCode === 27) {
+                        _this.previewed();
+                    }
+                });
             } 
             else 
             {
-                $(window).off("keyup", escHandle);
                 this.previewed();
             }
         },
@@ -4784,6 +4768,9 @@
             var previewCloseBtn  = editor.find("." + this.classPrefix + "preview-close-btn");
 
             this.state.preview   = false;
+
+            // 移除 ESC 键监听（使用命名空间精确解绑）
+            $(document).off("keyup.editormd-preview");
             
             this.codeMirror.show();
             
@@ -4838,37 +4825,36 @@
             if (toolbar) {
                 toolbar.find(".fa[name=fullscreen]").parent().toggleClass("active"); 
             }
-            
-            var escHandle = function(event) {
-                if (!event.shiftKey && event.keyCode === 27) 
-                {
-                    if (state.fullscreen)
-                    {
-                        _this.fullscreenExit();
-                    }
-                }
-            };
 
             if (!editor.hasClass(fullscreenClass)) 
             {
                 state.fullscreen = true;
 
+                // 保存当前尺寸，用于退出时恢复
+                editor.data("oldWidth", editor.width()).data("oldHeight", editor.height());
+
                 $("html,body").css("overflow", "hidden");
                 
-                editor.css({
-                    width    : $(window).width(),
-                    height   : $(window).height()
-                }).addClass(fullscreenClass);
+                // 添加 fullscreen CSS class（CSS 中已用 !important 控制尺寸）
+                editor.addClass(fullscreenClass);
 
                 this.resize();
     
                 settings.onfullscreen.call(this);
 
-                $(window).on("keyup", escHandle);
+                // 使用命名空间绑定 ESC 事件，便于精确解绑
+                $(document).on("keyup.editormd-fs", function(event) {
+                    if (!event.shiftKey && event.keyCode === 27) 
+                    {
+                        if (_this.state.fullscreen)
+                        {
+                            _this.fullscreenExit();
+                        }
+                    }
+                });
             }
             else
             {           
-                $(window).off("keyup", escHandle); 
                 this.fullscreenExit();
             }
 
@@ -4891,16 +4877,30 @@
             
             this.state.fullscreen = false;
             
+            // 移除 ESC 键监听（使用命名空间精确解绑）
+            $(document).off("keyup.editormd-fs");
+            
             if (toolbar) {
                 toolbar.find(".fa[name=fullscreen]").parent().removeClass("active"); 
             }
 
             $("html,body").css("overflow", "");
 
-            editor.css({
-                width    : editor.data("oldWidth"),
-                height   : editor.data("oldHeight")
-            }).removeClass(fullscreenClass);
+            // 恢复保存的原始尺寸
+            var oldWidth = editor.data("oldWidth");
+            var oldHeight = editor.data("oldHeight");
+            if (oldWidth || oldHeight) {
+                editor.css({
+                    width    : oldWidth || "",
+                    height   : oldHeight || ""
+                });
+            } else {
+                editor.css({
+                    width    : "",
+                    height   : ""
+                });
+            }
+            editor.removeClass(fullscreenClass);
 
             this.resize();
             
@@ -5174,6 +5174,7 @@
             $(document).off("mousemove.editormd-img mouseup.editormd-img");
             $(document).off("keydown.editormdDraft");
             $(document).off("mousedown.editormd-colorpicker");
+            $(document).off("keyup.editormd-fs keyup.editormd-preview");
 
             // 3. 解绑所有窗口 resize 事件（命名空间）
             $(window).off("resize.editormd-echarts");
@@ -5184,7 +5185,7 @@
 
             // 4. 如果处于全屏状态则退出全屏
             if (this.state.fullscreen) {
-                this.fullscreen();
+                this.fullscreenExit();
             }
 
             // 5. 销毁 CodeMirror 并恢复原始 textarea
@@ -6520,9 +6521,15 @@
             return "$$" + tex.replace(/\\/g, TEX_BSLASH_PLACEHOLDER) + "$$";
         });
 
-        // Protect remaining $...$ inline formulas (skip lines that look like $$ remnants)
-        markdown = markdown.replace(/\$([^$\n]+?)\$/g, function(match, tex) {
-            return "$" + tex.replace(/\\/g, TEX_BSLASH_PLACEHOLDER) + "$";
+        // Protect remaining $...$ inline formulas
+        // 只匹配包含 TeX 命令（以反斜杠开头）或 TeX 特殊字符（^、_、{、}等）的内容
+        // 避免误匹配货币符号（如 $5.00 或 Cost: $100）
+        markdown = markdown.replace(/\$(?=[^$\n\r]{1,200}\$)([^$\n\r]+?)\$/g, function(match, tex) {
+            // 只有当内容包含 LaTeX 特征时才保护（反斜杠命令、花括号、下划线、上标等）
+            if (/[\\{}_^]/.test(tex)) {
+                return "$" + tex.replace(/\\/g, TEX_BSLASH_PLACEHOLDER) + "$";
+            }
+            return match;
         });
 
         return markdown;
@@ -6548,6 +6555,44 @@
         return html.replace(/<[^>]+>/g, function(tag) {
             return tag.replace(/[\u201c\u201d]/g, '"').replace(/[\u2018\u2019]/g, "'");
         });
+    };
+
+    /**
+     * Post-process HTML to convert task list markers ([ ] / [x]) into proper
+     * checkbox HTML.  This runs after marked has finished rendering, so it is
+     * immune to any inline transformations marked may have applied.
+     *
+     * @param {string} html  marked.js 渲染后的 HTML 字符串
+     * @returns {string}     转换后的 HTML 字符串
+     */
+    editormd.postProcessTaskLists = function(html) {
+        if (!html) return html;
+
+        // Pattern 1: <li>[ ] rest     → task-list-item with unchecked checkbox
+        html = html.replace(
+            /<li>\s*\[\s\]\s+/g,
+            '<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" /> '
+        );
+
+        // Pattern 2: <li>[x] rest     → task-list-item with checked checkbox
+        html = html.replace(
+            /<li>\s*\[x\]\s+/gi,
+            '<li class="task-list-item"><input type="checkbox" class="task-list-item-checkbox" checked disabled /> '
+        );
+
+        // Pattern 3: <li><p>[ ] rest  → task-list-item with <p> and unchecked checkbox
+        html = html.replace(
+            /<li>\s*<p>\s*\[\s\]\s+/g,
+            '<li class="task-list-item"><p><input type="checkbox" class="task-list-item-checkbox" /> '
+        );
+
+        // Pattern 4: <li><p>[x] rest  → task-list-item with <p> and checked checkbox
+        html = html.replace(
+            /<li>\s*<p>\s*\[x\]\s+/gi,
+            '<li class="task-list-item"><p><input type="checkbox" class="task-list-item-checkbox" checked disabled /> '
+        );
+
+        return html;
     };
 
     /**
@@ -6577,7 +6622,8 @@
                 echarts: opts.echarts,
                 tabs: disableBlocks ? false : opts.tabs,
                 columns: disableBlocks ? false : opts.columns,
-                tooltip: opts.tooltip
+                tooltip: opts.tooltip,
+                copybook: opts.copybook
             };
             return {
                 renderer: editormd.markedRenderer([], ro),
@@ -6666,7 +6712,11 @@
 
             // 辅助函数：判断从指定位置开始是否真的存在匹配的闭标签对
             // 用于验证嵌套语法是否有效（避免将普通文本中的 [[columns:3]] 误判为嵌套）
-            function hasMatchingPair(fromPos) {
+            // 添加 recursionDepth 参数防止无限递归（限制最大嵌套层数为 20）
+            function hasMatchingPair(fromPos, recursionDepth) {
+                if (recursionDepth === undefined) recursionDepth = 0;
+                if (recursionDepth > 20) return false; // 防止过多嵌套导致栈溢出
+                
                 var tmpOpen = new RegExp(openRegex.source, openRegex.flags.replace('g', '') + 'g');
                 var tmpClose = new RegExp(closeRegex.source, closeRegex.flags.replace('g', '') + 'g');
                 var tmpDepth = 1;
@@ -6679,7 +6729,7 @@
                     var tmpOpenMatch;
                     while ((tmpOpenMatch = tmpOpen.exec(text)) !== null && tmpOpenMatch.index < tmpCloseMatch.index) {
                         // 对每个嵌套的开标签，验证它是否有对应的闭标签
-                        if (hasMatchingPair(tmpOpen.lastIndex)) {
+                        if (hasMatchingPair(tmpOpen.lastIndex, recursionDepth + 1)) {
                             tmpDepth++;
                             tmpPos = tmpOpen.lastIndex;
                             tmpOpen.lastIndex = tmpPos;
@@ -6724,7 +6774,7 @@
                     var nestedOpen;
                     while ((nestedOpen = openRe.exec(text)) !== null && nestedOpen.index < closeMatch.index) {
                         // 验证这个嵌套开标签是否有对应的闭标签
-                        if (hasMatchingPair(openRe.lastIndex)) {
+                        if (hasMatchingPair(openRe.lastIndex, 0)) {
                             depth++;
                             searchPos = openRe.lastIndex;
                             openRe.lastIndex = searchPos;
@@ -7053,7 +7103,7 @@
             pageBreak            : true,
             atLink               : true,           // 是否解析 @用户名 链接
             emailLink            : true,           // 是否解析邮箱地址自动链接
-            taskList             : false,          // 启用 GitHub Flavored Markdown 任务列表
+            taskList             : true,           // 启用 GitHub Flavored Markdown 任务列表
 
             tex                  : false,          // 启用 TeX / LaTeX 数学公式（基于 KaTeX）
             flowChart            : false,          // 启用流程图（flowChart.js 仅支持 IE9+）
@@ -7279,7 +7329,6 @@
             }
             
             var out = "<img src=\"" + href + "\" alt=\"" + text + "\"";
-            var style = "";
             var tooltipAttr = "";
             
             // 图片悬浮提示语法：![alt](url){tooltip:内容} / {tooltip:image:图片URL} / {tooltip:iframe:页面URL}
@@ -7299,10 +7348,6 @@
             
             if (title) {
                 out += " title=\"" + title + "\"";
-            }
-            
-            if (style) {
-                out += " style=\"" + style + "\"";
             }
             
             out += " />";
@@ -7355,7 +7400,7 @@
             };
             
             var isChinese = /^[\u4e00-\u9fa5]+$/.test(tocText);
-            var id        = (isChinese) ? escape(tocText).replace(/\%/g, "") : tocText.toLowerCase().replace(/[^\w]+/g, "-");
+            var id        = (isChinese) ? encodeURIComponent(tocText).replace(/\%/g, "") : tocText.toLowerCase().replace(/[^\w]+/g, "-");
 
             markdownToC.push(toc);
             
@@ -7437,7 +7482,7 @@
             }
             else if (lang === "echarts" && settings.echarts)
             {
-                var chartId = "editormd-echarts-" + Math.random().toString(36).substr(2, 9);
+                var chartId = "editormd-echarts-" + Math.random().toString(36).slice(2, 11);
                 var config = {};
                 try {
                     config = JSON.parse(code);
@@ -7461,17 +7506,20 @@
         };
 
         markedRenderer.listitem = function(text) {
-            if (settings.taskList && /^\s*\[[x\s]\]\s*/.test(text)) 
+            if (settings.taskList) 
             {
-                text = text.replace(/^\s*\[\s\]\s*/, "<input type=\"checkbox\" class=\"task-list-item-checkbox\" /> ")
-                           .replace(/^\s*\[x\]\s*/,  "<input type=\"checkbox\" class=\"task-list-item-checkbox\" checked disabled /> ");
-
-                return "<li style=\"list-style: none;\">" + this.postProcessInline(this.atLink(text)) + "</li>";
+                // Handle task list markers: [ ] (unchecked) and [x] (checked)
+                // marked v0.3.x may wrap list item text in <p> tags; strip them for reliable matching
+                var stripped = text.replace(/<\/?p>/g, '').trim();
+                if (/^\[([x\s])\]/.test(stripped))
+                {
+                    stripped = stripped.replace(/^\[\s\]\s*/, '<input type="checkbox" class="task-list-item-checkbox" /> ')
+                                       .replace(/^\[x\]\s*/,  '<input type="checkbox" class="task-list-item-checkbox" checked disabled /> ');
+                    return "<li class=\"task-list-item\">" + this.postProcessInline(this.atLink(stripped)) + "</li>";
+                }
             }
-            else 
-            {
-                return "<li>" + this.postProcessInline(this.atLink(text)) + "</li>";
-            }
+            
+            return "<li>" + this.postProcessInline(this.atLink(text)) + "</li>";
         };
         
         return markedRenderer;
@@ -7629,7 +7677,7 @@
         // === XSS 安全过滤（始终执行，与 htmlDecode 配置无关） ===
         
         var xssWhitelist = {
-            allowedTags: ['p', 'div', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'br', 'hr', 'img', 'a', 'b', 'i', 'strong', 'em', 'code', 'pre', 'blockquote', 'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'sup', 'sub', 'ruby', 'rb', 'rt', 'rp', 'del', 'ins', 'mark', 'small', 'dl', 'dt', 'dd', 'abbr', 'kbd', 'samp', 'var', 'cite', 'q', 'dfn', 'time', 'figure', 'figcaption', 'section', 'nav', 'article', 'aside', 'header', 'footer', 'main', 'details', 'summary'],
+            allowedTags: ['p', 'div', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'br', 'hr', 'img', 'a', 'b', 'i', 'strong', 'em', 'code', 'pre', 'blockquote', 'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'sup', 'sub', 'ruby', 'rb', 'rt', 'rp', 'del', 'ins', 'mark', 'small', 'dl', 'dt', 'dd', 'abbr', 'kbd', 'samp', 'var', 'cite', 'q', 'dfn', 'time', 'figure', 'figcaption', 'section', 'nav', 'article', 'aside', 'header', 'footer', 'main', 'details', 'summary', 'input', 'video', 'source'],
             allowedAttributes: {
                 '*': ['class', 'id', 'style', 'title', 'lang', 'dir', 'data-*'],
                 'a': ['href', 'target', 'rel', 'name', 'download'],
@@ -7639,12 +7687,14 @@
                 'td': ['colspan', 'rowspan', 'align'],
                 'code': ['class', 'data-lang'],
                 'pre': ['class', 'data-lang'],
+                'input': ['type', 'checked', 'disabled', 'class'],
+                'video': ['src', 'controls', 'preload', 'class', 'title'],
                 'details': ['open'],
                 'time': ['datetime']
             },
             allowedSchemes: ['http', 'https', 'mailto', 'tel', 'ftp'],
             dangerousAttributes: ['onerror', 'onload', 'onclick', 'onmouseover', 'onmouseout', 'onfocus', 'onblur', 'onchange', 'onsubmit', 'onkeydown', 'onkeyup', 'onkeypress', 'ondblclick', 'onmousedown', 'onmouseup', 'onmousemove', 'onmouseenter', 'onmouseleave', 'ontouchstart', 'ontouchend', 'ontouchmove', 'onscroll', 'onresize', 'onselect', 'onreset', 'onformchange', 'onforminput', 'ondrag', 'ondragend', 'ondragenter', 'ondragleave', 'ondragover', 'ondragstart', 'ondrop', 'onabort', 'oncanplay', 'oncanplaythrough', 'oncontextmenu', 'oncuechange', 'ondurationchange', 'onemptied', 'onended', 'oninput', 'oninvalid', 'onpause', 'onplay', 'onplaying', 'onprogress', 'onratechange', 'onreadystatechange', 'onseeked', 'onseeking', 'onstalled', 'onsuspend', 'ontimeupdate', 'onvolumechange', 'onwaiting', 'onwheel', 'oncopy', 'oncut', 'onpaste', 'onanimationend', 'onanimationiteration', 'onanimationstart', 'ontransitionend'],
-            dangerousTags: ['script', 'style', 'iframe', 'frame', 'frameset', 'object', 'embed', 'applet', 'base', 'basefont', 'link', 'meta', 'noscript', 'template', 'form', 'input', 'textarea', 'button', 'select', 'option', 'optgroup', 'datalist', 'fieldset', 'label', 'legend', 'meter', 'output', 'progress']
+            dangerousTags: ['script', 'style', 'iframe', 'frame', 'frameset', 'object', 'embed', 'applet', 'base', 'basefont', 'link', 'meta', 'noscript', 'template', 'form', 'textarea', 'button', 'select', 'option', 'optgroup', 'datalist', 'fieldset', 'label', 'legend', 'meter', 'output', 'progress']
         };
         
         // 彻底移除危险标签（始终执行，安全底线）
@@ -7763,7 +7813,8 @@
 
     /**
      * Static helper: Inject "Copy" buttons into every <pre> block inside a container.
-     * Used by both the editor preview and the standalone markdownToHTML renderer.
+     * Places a floating copy button at the top-right corner of each pre.
+     * The button is absolute-positioned and does not scroll with code content.
      *
      * @param {jQuery} $container  The container element (jQuery object)
      */
@@ -7785,16 +7836,6 @@
                 $pre.css("position", "relative");
             }
 
-            // Wrap existing content in scrollable container so the
-            // copy button stays fixed at the top-right regardless of scroll
-            var $scrollWrap = $pre.find("." + classPrefix + "code-scroll-wrap");
-            if ($scrollWrap.length === 0) {
-                $scrollWrap = $("<div>")
-                    .addClass(classPrefix + "code-scroll-wrap");
-                // Move all existing children into the scroll wrapper
-                $pre.children().wrapAll($scrollWrap);
-            }
-
             var $btn = $("<span>")
                 .addClass(classPrefix + "code-copy-btn")
                 .text(copyText)
@@ -7803,16 +7844,16 @@
             $btn.on("click", function(e) {
                 e.stopPropagation();
                 e.preventDefault();
+                if ($btn.hasClass("copied") || $btn.hasClass("failed")) return;
 
-                if ($btn.hasClass("copied") || $btn.hasClass("failed")) {
-                    return;
+                // Use stored original code text (set before prettyPrint), fallback to live extraction
+                var code = $pre.data("_originalCode");
+                if (!code) {
+                    var $code = $pre.find("code");
+                    code = $code.length > 0
+                        ? $code.text()
+                        : $pre.clone().find("." + classPrefix + "code-copy-btn").remove().end().text();
                 }
-
-                // Get code text from the scroll wrapper's code element
-                var $scrollWrap = $pre.find("." + classPrefix + "code-scroll-wrap");
-                var code = $scrollWrap.find("code").length > 0
-                    ? $scrollWrap.find("code").text()
-                    : $scrollWrap.text();
 
                 var done = function(success) {
                     $btn.removeClass("copied failed")
@@ -7824,34 +7865,17 @@
                     }, 2500));
                 };
 
-                // Use Clipboard API if available
                 if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(code).then(function() {
-                        done(true);
-                    }).catch(function() {
-                        done(false);
-                    });
+                    navigator.clipboard.writeText(code).then(function(){done(true);}).catch(function(){done(false);});
                 } else {
-                    // 降级方案：使用 textarea + execCommand
-                    var textarea = document.createElement("textarea");
-                    textarea.value = code;
-                    textarea.style.position = "fixed";
-                    textarea.style.left = "-9999px";
-                    textarea.style.top = "-9999px";
-                    document.body.appendChild(textarea);
-                    textarea.focus();
-                    textarea.select();
-                    try {
-                        var ok = document.execCommand("copy");
-                        done(ok);
-                    } catch (ex) {
-                        done(false);
-                    }
-                    document.body.removeChild(textarea);
+                    var ta = document.createElement("textarea");
+                    ta.value = code; ta.style.position="fixed"; ta.style.left="-9999px";
+                    document.body.appendChild(ta); ta.select();
+                    try { done(document.execCommand("copy")); } catch(ex) { done(false); }
+                    document.body.removeChild(ta);
                 }
             });
 
-            // 将复制按钮追加到 pre 元素（位于滚动包装容器外部）
             $pre.append($btn);
         });
     };
@@ -7865,6 +7889,9 @@
      */
     editormd.initTooltips = function($container) {
         if (!$container || $container.length === 0) return;
+        
+        // Clean up orphaned tooltip popups from previous renders before re-initializing
+        $("body").children(".editormd-tooltip-popup").remove();
         
         $container.find(".editormd-tooltip-trigger").each(function() {
             var $trigger = $(this);
@@ -7890,33 +7917,50 @@
             $("body").append($tooltip);
             
             /**
-             * 显示 tooltip —— 计算并设置定位，使其居中显示在触发元素上方
+             * 显示 tooltip —— 使用 viewport-relative 定位，使 tooltip 显示在触发元素上方
              */
             var showTooltip = function(e) {
                 clearTimeout($trigger.data("tooltip-timer"));
+                
                 // 先临时显示以获取真实尺寸
                 $tooltip.css({ display: "block", visibility: "hidden" });
-                var offset = $trigger.offset();
-                var left = offset.left + ($trigger.outerWidth() / 2) - ($tooltip.outerWidth() / 2);
-                var top  = offset.top - $tooltip.outerHeight() - 8;
+                
+                // 使用 getBoundingClientRect() 获取 viewport-relative 坐标
+                var triggerRect = $trigger[0].getBoundingClientRect();
+                var tooltipW   = $tooltip.outerWidth();
+                var tooltipH   = $tooltip.outerHeight();
+                
+                // 水平居中于触发元素，垂直置于触发元素上方 8px
+                var left = triggerRect.left + (triggerRect.width / 2) - (tooltipW / 2);
+                var top  = triggerRect.top - tooltipH - 8;
                 
                 // 边界处理：防止 tooltip 超出视口
-                var winW = $(window).width();
-                var winH = $(window).height();
-                var scrollTop = $(window).scrollTop();
+                var winW = window.innerWidth;
+                var winH = window.innerHeight;
+                
                 if (left < 10) left = 10;
-                if (left + $tooltip.outerWidth() > winW - 10) left = winW - $tooltip.outerWidth() - 10;
-                if (top < scrollTop + 10) {
+                if (left + tooltipW > winW - 10) left = winW - tooltipW - 10;
+                
+                if (top < 10) {
                     // 上方空间不足，显示在下方
-                    top = offset.top + $trigger.outerHeight() + 8;
+                    top = triggerRect.bottom + 8;
+                    if (top + tooltipH > winH - 10) {
+                        top = winH - tooltipH - 10;
+                    }
                 }
                 
                 $tooltip.css({
-                    left: left,
-                    top: top,
+                    left: left + "px",
+                    top: top + "px",
                     display: "block",
                     visibility: "visible"
-                }).addClass("show");
+                });
+                
+                // Force reflow so the CSS opacity transition fires
+                // eslint-disable-next-line no-unused-expressions
+                $tooltip[0] && $tooltip[0].offsetHeight;
+                
+                $tooltip.addClass("show");
             };
 
             /**
@@ -7934,13 +7978,25 @@
                 }, 200));
             };
 
-            // 绑定事件
+            // 绑定事件 — popup 与 trigger 之间平滑过渡，避免闪烁关闭
             $trigger.on("mouseenter", showTooltip).on("mouseleave", hideTooltip);
             $tooltip.on("mouseenter", function() {
+                // 鼠标从 trigger 移到 popup：取消隐藏定时器，popup 保持显示
                 clearTimeout($trigger.data("tooltip-timer"));
             }).on("mouseleave", function() {
-                $tooltip.removeClass("show");
-                $tooltip.css({ display: "none" });
+                // 鼠标离开 popup：同样使用延迟隐藏，给用户回到 trigger 的机会
+                $trigger.data("tooltip-timer", setTimeout(function() {
+                    $tooltip.removeClass("show");
+                    setTimeout(function() {
+                        if (!$tooltip.hasClass("show")) {
+                            $tooltip.css({ display: "none" });
+                        }
+                    }, 220);
+                }, 200));
+            });
+            // 点击 popup 内部链接或按钮时保持 popup 显示
+            $tooltip.on("mousedown", function(e) {
+                clearTimeout($trigger.data("tooltip-timer"));
             });
             $trigger.on("focus", showTooltip).on("blur", hideTooltip);
 
@@ -7974,7 +8030,7 @@
             atLink               : true,    // 是否解析 @用户名 链接
             emailLink            : true,    // 是否解析邮箱地址自动链接
             tex                  : false,
-            taskList             : false,   // GitHub Flavored Markdown 任务列表
+            taskList             : true,    // GitHub Flavored Markdown 任务列表
             pinyin               : false,   // 拼音标注 {文本|拼音}
             textAlign            : true,    // 文本对齐
             imageResize          : true,    // 图片尺寸
@@ -7984,7 +8040,8 @@
             echarts              : false,
             tabs                 : true,
             columns              : true,
-            tooltip              : true
+            tooltip              : true,
+            copybook             : true
         };
         
         editormd.$marked  = marked;
@@ -8020,7 +8077,8 @@
             echarts              : settings.echarts,
             tabs                 : settings.tabs,
             columns              : settings.columns,
-            tooltip              : settings.tooltip
+            tooltip              : settings.tooltip,
+            copybook             : settings.copybook
         };
 
         var markedOptions = {
@@ -8041,6 +8099,7 @@
         var markdownParsed = marked(mdPreprocess.markdown, markedOptions);
         markdownParsed = editormd.restorePlaceholders(markdownParsed, mdPreprocess.placeholders);
         markdownParsed = editormd.fixSmartypantsHTML(markdownParsed);
+        if (settings.taskList) markdownParsed = editormd.postProcessTaskLists(markdownParsed);
 
         markdownParsed = editormd.filterHTMLTags(markdownParsed, settings.htmlDecode);
         
@@ -8184,7 +8243,7 @@
 
                     var chartType = config.type || (config.series && config.series[0] && config.series[0].type) || "";
                     var noAxisTypes = ["pie", "funnel", "gauge", "graph", "treemap", "sunburst"];
-                    if ($.inArray(chartType, noAxisTypes) === -1) {
+                    if (noAxisTypes.indexOf(chartType) === -1) {
                         option.xAxis = config.xAxis || {};
                         option.yAxis = config.yAxis || {};
                     }
@@ -8426,6 +8485,14 @@
         
         // 优雅处理脚本加载失败
         script.onerror = function() {
+            // 记录加载失败，让调用方能够感知
+            if (!editormd.loadFiles.failed) {
+                editormd.loadFiles.failed = [];
+            }
+            editormd.loadFiles.failed.push(fileName);
+            if (typeof console !== "undefined" && console.warn) {
+                console.warn("[Editor.md] Failed to load script: " + fileName);
+            }
             // 即使脚本加载失败，也继续执行加载链
             callback();
         };

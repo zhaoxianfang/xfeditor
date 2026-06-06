@@ -35,6 +35,27 @@
 - 支持 AMD/CMD 模块加载（Require.js / Sea.js）
 - 兼容 IE8+、iPad、Zepto.js
 
+### v1.8.0 改进
+| 特性 | 说明 |
+|------|------|
+| **悬浮提示修复** | 修复文本型 Tooltip `pointer-events:none` 导致 popup 无法拦截鼠标事件的问题，popup 与 trigger 之间鼠标平滑过渡 |
+| **任务列表渲染修复** | `dangerousTags` 中移除 `input`，修复 Task List checkbox 被 XSS 过滤误删 |
+| **独立预览 Tooltip** | editormd.preview.css 添加完整 Tooltip 样式（含箭头、图片/iframe 型） |
+| **KaTeX 安全防护** | else 分支添加 `typeof katex !== "undefined"` 检查，防止未加载时崩溃 |
+| **ECharts 内存优化** | resize 事件使用命名空间+debounce 防重复绑定，避免累积大量 handler |
+| **Columns 独立导出** | 独立 HTML 导出新增 `initColumns` 函数，多栏分隔线正确初始化 |
+| **XSS 安全增强** | 白名单新增 `video`、`source`、`input` 标签及属性，防止合法元素被过滤 |
+| **加载失败告警** | `loadScript` onerror 记录失败脚本到 `loadFiles.failed`，控制台输出 warn |
+| **initTabs 事件修复** | 实例方法 `initTabs` 添加 `.off()` 防止重复绑定 click handler |
+| **全屏修复** | CSS `width:100%!important; max-width:none!important` 确保全屏宽度填充，命名空间事件管理 |
+| **代码块重构** | 移除 JetBrains 标题栏结构，简化为右上角浮动复制按钮；pre `::before` 语言标签已移除 |
+| **任务列表CSS修复** | 预览容器下 `.task-list-item` CSS 选择器正确匹配，checkbox 正常渲染 |
+| **工具栏修复** | 下拉按钮图标 `<i>` 与箭头 `<span>` 改为 `inline-block` 同行对齐 |
+| **linenums 优化** | 移除过大 padding（`padding: 0 0 0 3.5em; margin: 0`），消除白色边距 |
+| **LaTeX 保护** | 改进 protectTeXSyntax 防货币符号误匹配，仅保护含 TeX 命令的公式 |
+| **嵌套限制** | hasMatchingPair 添加递归深度上限（20层），防止极端嵌套导致栈溢出 |
+| **事件清理** | 预览/全屏 ESC 统一使用命名空间事件，destroy 时完整清理 |
+
 ### v1.7.0 新增
 | 特性 | 说明 |
 |------|------|
@@ -47,8 +68,9 @@
 | **文件上传** | `fileFormats` 白名单 + 工具栏上传 |
 | **Unicode 行内对齐** | `⁑⁑居中⁑⁑` `⁑⁖左对齐⁖⁑` `⁑⠕右对齐⠕⁑` `⁑⁛两端对齐⁛⁑` |
 | **公式插入面板** | 工具栏"∑"按钮，11 分类浏览/搜索过滤/一键插入 $...$ 或 $$...$$ 公式/自动关闭弹窗 |
+| **字帖** | 田字格/米字格/拼音格三种字帖，SVG 辅助线，工具栏一键插入 |
 | **事件系统增强** | 新增 onEditorLoad / onPageLoad / onAllAsyncLoad / onPageAllLoad 四个事件回调 |
-| **其他增强** | 图片粘贴上传、Shift等比缩放、公式双击定位、代码复制按钮、insert下拉工具栏 |
+| **其他增强** | 图片粘贴上传、Shift等比缩放、公式双击定位、代码复制按钮、insert下拉工具栏、下拉菜单文字描述、美化代码块 |
 
 ### v1.6.0 新增
 - 拼音标注 `{文本 | pinyin}`、表格行列编辑、工具栏下拉分组
@@ -534,6 +556,16 @@ editormd("editor", {
     }
 });
 ```
+
+### 工具栏下拉图标文本
+
+所有下拉菜单的子项现在都会自动在图标后显示对应的本地化文字描述。例如：
+- 插入 → `[+] 行内代码`、`[icon] 代码块`、`[icon] 表格` 等
+- 图表 → `[icon] 柱状图`、`[icon] 折线图`、`[icon] 饼图` 等
+- 字帖 → `[⊞] 田字格`、`[*] 米字格`、`[A↓] 拼音格`
+- 标题 → `H1`、`H2`、`H3`、`H4`、`H5`、`H6`
+
+下拉菜单宽度自适应内容，图标行内显示，文字不换行。
 
 ---
 

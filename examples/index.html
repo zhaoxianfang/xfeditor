@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
     <meta charset="utf-8" />
-    <title>Editor.md v1.7.0 — Examples</title>
+    <title>Editor.md v1.8.0 — Examples</title>
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="../css/editormd.min.css" />
     <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
@@ -12,7 +12,7 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
                          "Hiragino Sans GB", "Microsoft YaHei", Helvetica, Arial, sans-serif;
-            background: #f0f2f5;
+            background: #f5f6f8;
             color: #333;
             line-height: 1.6;
         }
@@ -22,10 +22,10 @@
         #header {
             width: 100%;
             color: #fff;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            padding: 70px 0;
+            background: linear-gradient(135deg, #0d1117 0%, #161b22 30%, #1a1a2e 60%, #16213e 100%);
+            padding: 80px 0 60px;
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 48px;
             position: relative;
             overflow: hidden;
         }
@@ -34,117 +34,142 @@
             position: absolute;
             top: -50%; left: -50%;
             width: 200%; height: 200%;
-            background: radial-gradient(circle at 30% 50%, rgba(24,144,255,0.15) 0%, transparent 50%),
-                        radial-gradient(circle at 70% 50%, rgba(82,196,26,0.1) 0%, transparent 50%);
+            background: radial-gradient(circle at 25% 45%, rgba(88,166,255,0.12) 0%, transparent 50%),
+                        radial-gradient(circle at 75% 55%, rgba(63,185,80,0.08) 0%, transparent 50%),
+                        radial-gradient(circle at 50% 30%, rgba(188,140,255,0.06) 0%, transparent 50%);
             pointer-events: none;
+            animation: headerGlow 12s ease-in-out infinite alternate;
+        }
+        @keyframes headerGlow {
+            0% { opacity: 0.8; transform: scale(1); }
+            100% { opacity: 1; transform: scale(1.05); }
         }
         #header > * { position: relative; z-index: 1; }
 
-        #header h1 { font-size: 42px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 12px; }
-        #header p { font-size: 16px; opacity: 0.8; font-weight: 300; }
-        #header .editormd-logo { margin-bottom: 10px; }
+        #header h1 { font-size: 44px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
+        #header .subtitle { font-size: 17px; opacity: 0.75; font-weight: 300; margin-bottom: 8px; }
+        #header .version { font-size: 13px; opacity: 0.5; margin-top: 6px; letter-spacing: 0.5px; }
+        #header .editormd-logo { margin-bottom: 12px; }
 
         .menu {
-            margin-top: 25px; text-align: center;
-            display: flex; flex-wrap: wrap; justify-content: center; gap: 6px;
+            margin-top: 28px; text-align: center;
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;
         }
         .menu a {
-            color: rgba(255,255,255,0.85); display: inline-block;
-            text-decoration: none; padding: 6px 18px; border-radius: 20px;
-            font-size: 13px; border: 1px solid rgba(255,255,255,0.25);
-            transition: all 250ms ease;
+            color: rgba(255,255,255,0.8); display: inline-block;
+            text-decoration: none; padding: 7px 20px; border-radius: 20px;
+            font-size: 13.5px; border: 1px solid rgba(255,255,255,0.22);
+            transition: all 250ms ease; backdrop-filter: blur(4px); letter-spacing: 0.3px;
         }
-        .menu a:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.5); color: #fff; }
+        .menu a:hover { background: rgba(255,255,255,0.13); border-color: rgba(255,255,255,0.45); color: #fff; transform: translateY(-1px); }
+
+        /* ── Container ── */
+        .content-wrap { width: 92%; max-width: 1260px; margin: 0 auto; }
 
         /* ── Category titles ── */
         .category {
-            padding: 20px 0; font-size: 20px; font-weight: 700;
-            color: #1a1a2e; margin: 20px auto 15px;
-            border-bottom: 2px solid #e8e8e8;
-            width: 92%; max-width: 1200px; position: relative;
+            padding: 18px 0; font-size: 21px; font-weight: 700;
+            color: #1a1a2e; margin: 28px 0 16px;
+            border-bottom: 2px solid #e2e4e8;
+            position: relative; display: flex; align-items: center; justify-content: space-between;
         }
+        .category::after{
+            content: ''; position: absolute; bottom: -2px; left: 0;
+            width: 48px; height: 3px; background: linear-gradient(90deg, #58a6ff, #3fb950);
+            border-radius: 2px;
+        }
+        .category [href="#top"] {
+            color: #bbb; font-size: 12px; font-weight: 400;
+            text-decoration: none; transition: color 200ms ease;
+        }
+        .category [href="#top"]:hover { color: #58a6ff; }
+        .category [href="#top"] .fa { margin-left: 5px; font-size: 1.2em; }
 
         /* ── Card grid ── */
         ul {
             list-style: none;
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 8px;
-            padding-bottom: 30px;
-            width: 92%; max-width: 1200px;
+            grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+            gap: 10px;
+            padding-bottom: 20px;
             margin: 0 auto;
         }
         ul li a {
-            display: block; padding: 18px 20px; font-size: 14px; font-weight: 500;
-            text-align: left; color: #333; background: #fff;
-            border-radius: 10px; border: 1px solid #e8e8e8;
-            transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative; overflow: hidden;
+            display: flex; flex-direction: column;
+            padding: 18px 22px; font-size: 14px; font-weight: 600;
+            text-align: left; color: #24292e; background: #fff;
+            border-radius: 12px; border: 1px solid #e8eaed;
+            transition: all 220ms cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
         }
         ul li a::before {
             content: ''; position: absolute; left: 0; top: 0;
-            height: 100%; width: 4px;
-            background: #1890ff; border-radius: 10px 0 0 10px;
-            transform: scaleY(0); transition: transform 250ms ease;
+            height: 100%; width: 3px;
+            background: linear-gradient(180deg, #58a6ff, #3fb950);
+            border-radius: 0; opacity: 0;
+            transition: opacity 220ms ease;
         }
-        ul li a:hover::before { transform: scaleY(1); }
-        ul li a span { color: #999; display: block; padding-top: 4px; font-size: 12px; font-weight: 400; }
+        ul li a:hover::before { opacity: 1; }
+        ul li a span { color: #8b949e; display: block; padding-top: 5px; font-size: 12px; font-weight: 400; line-height: 1.5; }
         ul li a:hover {
-            color: #1890ff; background: #e6f7ff;
-            border-color: #91d5ff; box-shadow: 0 4px 16px rgba(24,144,255,0.12);
+            color: #0969da; background: #f6f8fe;
+            border-color: #b6d4fe; box-shadow: 0 6px 20px rgba(9,105,218,0.1);
             transform: translateY(-2px);
         }
-        ul li a:hover span { color: #69c0ff; }
+        ul li a:hover span { color: #58a6ff; }
 
         /* ── Featured card ── */
         .featured a {
-            border-color: #52c41a !important;
-            background: linear-gradient(135deg, #f6ffed 0%, #fff 100%) !important;
+            border-color: #3fb950 !important;
+            background: linear-gradient(135deg, #f0fff4 0%, #fff 60%) !important;
+            box-shadow: 0 2px 8px rgba(63,185,80,0.08) !important;
         }
-        .featured a::before { background: #52c41a !important; }
+        .featured a::before { background: linear-gradient(180deg, #3fb950, #2ea043) !important; }
         .featured a:hover {
-            border-color: #73d13d !important;
-            background: #f6ffed !important;
-            box-shadow: 0 4px 16px rgba(82,196,26,0.12) !important;
-            color: #389e0d !important;
+            border-color: #2ea043 !important;
+            background: #f0fff4 !important;
+            box-shadow: 0 6px 20px rgba(63,185,80,0.15) !important;
+            color: #1a7f37 !important;
         }
 
         /* ── Badge ── */
         .badge {
-            display: inline-block; padding: 1px 8px; font-size: 10px;
-            border-radius: 10px; background: #1890ff; color: #fff;
-            margin-left: 6px; vertical-align: middle; font-weight: 600;
+            display: inline-flex; align-items: center; gap: 3px;
+            padding: 2px 10px; font-size: 11px;
+            border-radius: 12px; color: #fff;
+            margin-left: 9px; vertical-align: middle; font-weight: 600;
+            letter-spacing: 0.3px;
         }
-        .badge-new { background: #52c41a; }
+        .badge-main { background: linear-gradient(135deg, #58a6ff, #1f6feb); }
+        .badge-new { background: linear-gradient(135deg, #3fb950, #2ea043); }
+        .badge-hot { background: linear-gradient(135deg, #f778ba, #db61a2); }
+
+        /* ── Category icon ── */
+        .cat-icon { font-size: 1.1em; margin-right: 8px; opacity: 0.7; }
 
         /* ── Footer ── */
         .footer {
-            border-top: 1px solid #e8e8e8; font-size: 12px;
-            margin-top: 30px; padding-top: 40px; text-align: center; color: #999;
+            border-top: 1px solid #e8eaed; font-size: 12px;
+            margin-top: 40px; padding-top: 36px; text-align: center; color: #8b949e;
         }
         .footer p { margin-bottom: 6px; }
-        .footer img { margin-bottom: 10px; opacity: 0.7; transition: opacity 200ms ease; }
+        .footer img { margin-bottom: 10px; opacity: 0.65; transition: opacity 200ms ease; }
         .footer img:hover { opacity: 1; }
-        .footer a { color: #666; }
-
-        /* ── Top link ── */
-        [href="#top"] {
-            color: #bbb; font-size: 12px; font-weight: 400;
-            text-decoration: none; transition: color 200ms ease;
-        }
-        [href="#top"]:hover { color: #1890ff; }
-        [href="#top"] .fa { margin-left: 6px; font-size: 1.2em; }
+        .footer a { color: #58a6ff; text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
 
         /* ── Responsive ── */
         @media (max-width: 768px) {
-            #header { padding: 50px 20px; }
+            #header { padding: 50px 20px 40px; }
             #header h1 { font-size: 28px; }
-            ul { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 6px; }
-            ul li a { padding: 14px 16px; }
-            .category { font-size: 17px; }
+            ul { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
+            ul li a { padding: 14px 18px; }
+            .category { font-size: 18px; }
         }
         @media (max-width: 480px) {
             ul { grid-template-columns: 1fr; }
+            #header h1 { font-size: 24px; }
+            .menu a { padding: 5px 14px; font-size: 12px; }
         }
     </style>
 </head>
@@ -155,11 +180,12 @@
         <div id="header">
             <h1><i class="editormd-logo editormd-logo-3x"></i></h1>
             <h1>Editor.md Examples</h1>
-            <p>Open source online markdown editor.</p>
+            <p class="subtitle">开源在线 Markdown 编辑器 · 功能示例大全</p>
+            <p class="version">v1.8.0 — 50+ 示例 · 所有功能开箱即用</p>
             <div class="menu">
                 <a href="#start">快速上手</a>
-                <a href="#all-features">全部功能演示</a>
-                <a href="#v170">v1.7.0 新特性</a>
+                <a href="#all-features">全部功能</a>
+                <a href="#v170">v1.8.0 新特性</a>
                 <a href="#v160">v1.6.0 增强</a>
                 <a href="#markdown">Markdown 语法</a>
                 <a href="#customs">自定义扩展</a>
@@ -168,8 +194,9 @@
             </div>
         </div>
 
+        <div class="content-wrap">
         <!-- ═══════════════ 快速上手 ═══════════════ -->
-        <h1 class="category"><a name="start"></a>快速上手 Getting Started</h1>
+        <h1 class="category"><span><span class="cat-icon">&#9889;</span><a name="start"></a>快速上手 Getting Started</span><a href="#top">TOP<i class="fa fa-angle-up"></i></a></h1>
         <ul>
             <li><a href="./simple.html">最简示例 <span>Simple example — 最快上手的入门演示</span></a></li>
             <li><a href="./use-requirejs.html">Require.js 加载 <span>Using Require.js (AMD)</span></a></li>
@@ -182,35 +209,35 @@
 
         <!-- ═══════════════ 全部功能综合演示 ═══════════════ -->
         <h1 class="category">
+            <span><span class="cat-icon">&#127775;</span><a name="all-features"></a>全部功能综合演示 <span class="badge badge-main">推荐</span></span>
             <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
-            <a name="all-features"></a>全部功能综合演示 <span class="badge badge-new">推荐</span>
         </h1>
         <ul>
-            <li class="featured"><a href="./all-features.html"><strong>🌟 全部功能完整演示</strong> <span>综合性全功能演示 — 涵盖所有语法: Markdown基础/代码高亮/KaTeX/ECharts/Tabs/Columns/Tooltip/Flowchart/时序图/拼音/对齐/视频/附件/图片/表格编辑/HTML标签 — 并提供 API 交互按钮</span></a></li>
+            <li class="featured"><a href="./all-features.html"><strong>🌟 全部功能完整演示</strong> <span>综合性全功能演示 — 涵盖所有语法: Markdown基础/代码高亮/KaTeX/ECharts/Tabs/Columns/Tooltip/Flowchart/时序图/拼音/对齐/视频/附件/图片/表格编辑/HTML标签/公式面板 — 并提供 API 交互按钮</span></a></li>
             <li><a href="./full-preview.html">完整独立预览 <span>markdownToHTML() 静态独立渲染</span></a></li>
             <li><a href="./api-reference.html">API 接口文档 <span>全部配置项、方法、事件回调 & 语法参考</span></a></li>
             <li><a href="./toolbar-reference.html">工具栏功能参考 <span>Toolbar icons, features & usage reference</span></a></li>
         </ul>
 
-        <!-- ═══════════════ v1.7.0 新特性 ═══════════════ -->
+        <!-- ═══════════════ v1.8.0 新特性 ═══════════════ -->
         <h1 class="category">
+            <span><span class="cat-icon">&#10024;</span><a name="v170"></a>v1.8.0 新特性 <span class="badge badge-new">NEW</span></span>
             <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
-            <a name="v170"></a>v1.7.0 新特性 <span class="badge badge-new">NEW</span>
         </h1>
         <ul>
+            <li class="featured"><a href="./copybook.html"><strong>📝 字帖 Copybook</strong> <span>田字格/米字格/拼音格 — 三种汉字书写字帖模板，SVG辅助线</span></a></li>
             <li><a href="./echarts.html">Apache ECharts 交互式图表 <span>柱状图/折线图/饼图/雷达图/漏斗图 五种图表</span></a></li>
             <li><a href="./tabs.html">Tabs 标签页组件 <span>[[tabs]]...[[/tabs]] 支持嵌套代码块/表格/图表</span></a></li>
             <li><a href="./columns.html">多列排版 Columns <span>[[columns:N]]...[[/columns]] 报纸式多栏布局</span></a></li>
             <li><a href="./tooltip.html">悬浮提示 Tooltip <span>文本/图片/iframe 三种悬浮提示类型</span></a></li>
-            <li><a href="./copybook.html">字帖 Copybook <span>田字格/米字格/拼音格 汉字书写字帖模板</span></a></li>
             <li><a href="./formula.html">公式插入面板 <span>11 分类、100+公式、搜索过滤、一键插入</span></a></li>
             <li><a href="./video.html">视频插入 <span>[[video]] 标签和 HTML5 video 两种方式</span></a></li>
         </ul>
 
         <!-- ═══════════════ v1.6.0 增强功能 ═══════════════ -->
         <h1 class="category">
+            <span><span class="cat-icon">&#128736;</span><a name="v160"></a>v1.6.0 增强功能</span>
             <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
-            <a name="v160"></a>v1.6.0 增强功能
         </h1>
         <ul>
             <li><a href="./pinyin.html">拼音标注语法 <span>{汉字 | hàn zì} 注音标记</span></a></li>
@@ -221,8 +248,8 @@
 
         <!-- ═══════════════ Markdown 扩展语法 ═══════════════ -->
         <h1 class="category">
+            <span><span class="cat-icon">&#128216;</span><a name="markdown"></a>Markdown 扩展语法 Extensions</span>
             <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
-            <a name="markdown"></a>Markdown 扩展语法 Extensions
         </h1>
         <ul>
             <li><a href="./formula.html">KaTeX 科学公式 <span>TeX / LaTeX 数学公式渲染</span></a></li>
@@ -237,8 +264,8 @@
 
         <!-- ═══════════════ 自定义与扩展 ═══════════════ -->
         <h1 class="category">
+            <span><span class="cat-icon">&#128295;</span><a name="customs"></a>自定义与扩展 Customs & Extensions</span>
             <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
-            <a name="customs"></a>自定义与扩展 Customs & Extensions
         </h1>
         <ul>
             <li><a href="./custom-toolbar.html">自定义工具栏 <span>Custom toolbar icons and handlers</span></a></li>
@@ -264,8 +291,8 @@
 
         <!-- ═══════════════ 文件上传 ═══════════════ -->
         <h1 class="category">
+            <span><span class="cat-icon">&#128193;</span><a name="upload"></a>文件上传 File Upload</span>
             <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
-            <a name="upload"></a>文件上传 File Upload
         </h1>
         <ul>
             <li><a href="./image-upload.html">图片上传 <span>Image upload — 本地/远程图片插入</span></a></li>
@@ -274,8 +301,8 @@
 
         <!-- ═══════════════ 事件处理 ═══════════════ -->
         <h1 class="category">
+            <span><span class="cat-icon">&#128226;</span><a name="events"></a>事件处理 Events</span>
             <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
-            <a name="events"></a>事件处理 Events
         </h1>
         <ul>
             <li><a href="./on-off.html">事件注册与解绑 <span>On / Off (bind/unbind)</span></a></li>
@@ -289,6 +316,7 @@
             <li><a href="./html-preview-markdown-to-html.html">静态 Markdown→HTML <span>markdownToHTML() 静态渲染 + TOC 容器</span></a></li>
             <li><a href="./html-preview-markdown-to-html-custom-toc-container.html">自定义 ToC 容器 <span>Custom ToC container for preview</span></a></li>
         </ul>
+        </div>
 
         <div class="clear"></div>
         <div class="footer">
