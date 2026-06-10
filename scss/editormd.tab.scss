@@ -1,9 +1,9 @@
 @charset "utf-8";
 
-.editormd-tab {
+#{$prefix}tab {
 }
 
-.editormd-tab-head {
+#{$prefix}tab-head {
     list-style: none;
     border-bottom: 1px solid #ddd;
 
@@ -41,9 +41,9 @@
     }
 }
 
-.editormd-tab-container {
+#{$prefix}tab-container {
 }
 
-.editormd-tab-box {
+#{$prefix}tab-box {
     padding: 20px 0;
 }

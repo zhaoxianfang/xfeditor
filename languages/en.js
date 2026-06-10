@@ -1,5 +1,5 @@
 /**
- * Editor.md 英文语言包
+ * xfEditor 英文语言包
  * 
  * @file        en.js
  * @description English language pack
@@ -77,9 +77,9 @@
                 draft            : "Draft",
                 restoreDraft     : "Restore Draft",
                 clearDraft       : "Clear All Drafts",
-                draftRestoreTip  : "The following auto-saved drafts were found. Click to restore:",
-                draftClearBtn    : "Clear All Drafts",
-                draftCancelBtn   : "Cancel"
+                draftRestoreTip  : "Found auto-saved drafts. Click any item to restore:",
+                draftClearBtn    : "Clear All",
+                draftCancelBtn   : "Not Now"
             },
 
             buttons : {

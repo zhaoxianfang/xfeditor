@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>拼音参照表 - xfEditor</title>
+    <link rel="stylesheet" href="../css/editormd.css" />
+    <link rel="stylesheet" href="../css/editormd.preview.css" />
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+    <script src="../editormd.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0 0 10px;
+            font-size: 32px;
+            font-weight: 600;
+        }
+        .header p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .section-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+        .pinyin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .pinyin-item {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 8px;
+            padding: 15px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        .pinyin-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+            border-color: #667eea;
+        }
+        .pinyin-item .char {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .pinyin-item .sound {
+            font-size: 14px;
+            color: #666;
+        }
+        .tone-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .tone-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+        }
+        .tone-item {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .tone-item .tone-name {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .tone-item .tone-examples {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .tone-item .tone-mark {
+            font-size: 16px;
+            color: #667eea;
+        }
+        .usage-tip {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+        .usage-tip h3 {
+            margin: 0 0 15px;
+            font-size: 18px;
+        }
+        .usage-tip ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .usage-tip li {
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+        .usage-tip code {
+            background: rgba(255,255,255,0.2);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: "Courier New", monospace;
+        }
+        .category-badge {
+            display: inline-block;
+            background: #667eea;
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-bottom: 15px;
+        }
+        .example-box {
+            background: #fff;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .example-box h4 {
+            margin: 0 0 15px;
+            color: #333;
+        }
+        #editor-container {
+            min-height: 300px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>📖 汉语拼音参照表</h1>
+        <p>声母 · 韵母 · 声调 · 使用示例</p>
+    </div>
+    
+    <div class="content">
+        <!-- 声母部分 -->
+        <div class="section">
+            <div class="section-title">🔤 声母（21个）</div>
+            <span class="category-badge">辅音声母</span>
+            <div class="pinyin-grid" id="shengmu-grid">
+                <!-- 声母将由 JavaScript 动态生成 -->
+            </div>
+        </div>
+        
+        <!-- 韵母部分 -->
+        <div class="section">
+            <div class="section-title">🎵 韵母（39个）</div>
+            
+            <span class="category-badge">单韵母（6个）</span>
+            <div class="pinyin-grid" id="danyunmu-grid"></div>
+            
+            <span class="category-badge">复韵母（13个）</span>
+            <div class="pinyin-grid" id="fuyunmu-grid"></div>
+            
+            <span class="category-badge">鼻韵母（16个）</span>
+            <div class="pinyin-grid" id="biyunmu-grid"></div>
+            
+            <span class="category-badge">特殊韵母（4个）</span>
+            <div class="pinyin-grid" id="teshuyunmu-grid"></div>
+        </div>
+        
+        <!-- 声调部分 -->
+        <div class="section">
+            <div class="section-title">🎼 声调（4个 + 轻声）</div>
+            <div class="tone-section">
+                <div class="tone-grid" id="tone-grid">
+                    <!-- 声调将由 JavaScript 动态生成 -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- 使用示例 -->
+        <div class="section">
+            <div class="section-title">✍️ 拼音标注使用示例</div>
+            <div class="example-box">
+                <h4>Markdown 语法</h4>
+                <div id="editor-container">
+                    <textarea id="editor" style="display:none;">
+# 拼音标注示例
+
+## 基础用法
+
+在 xfEditor 中，使用 `{文本 | 拼音}` 语法进行拼音标注：
+
+- {你 | nǐ} - 第三声
+- {好 | hǎo} - 第三声
+- {世 | shì} - 第四声
+- {界 | jiè} - 第四声
+
+## 组合示例
+
+**常用词语**：
+- {中国 | zhōng guó}
+- {北京 | běi jīng}
+- {学习 | xué xí}
+- {工作 | gōng zuò}
+
+**成语**：
+- {一帆风顺 | yī fān fēng shùn}
+- {心想事成 | xīn xiǎng shì chéng}
+- {万事如意 | wàn shì rú yì}
+
+**句子**：
+- {你 | nǐ}{好 | hǎo}，{欢 | huān}{迎 | yíng}{使 | shǐ}{用 | yòng} xfEditor！
+- {祝 | zhù}{大 | dà}{家 | jiā}{学 | xué}{习 | xí}{愉 | yú}{快 | kuài}！
+
+## 注意事项
+
+1. 拼音中的声调用数字表示：1(阴平)、2(阳平)、3(上声)、4(去声)
+2. 也可以直接使用带声调符号的字母：ā á ǎ à
+3. 多个汉字的拼音用空格分隔
+4. 拼音会自动显示在汉字上方
+
+## 快速插入
+
+点击工具栏的"拼"按钮，或使用快捷键快速插入拼音语法。
+</textarea>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 使用提示 -->
+        <div class="usage-tip">
+            <h3>💡 使用提示</h3>
+            <ul>
+                <li>点击上方的声母、韵母可快速复制到剪贴板</li>
+                <li>拼音语法：<code>{汉字 | 拼音}</code>，例如 <code>{你 | nǐ}</code></li>
+                <li>多字词语：<code>{中国 | zhōng guó}</code>，拼音用空格分隔</li>
+                <li>声调符号：ā(一声) á(二声) ǎ(三声) à(四声)</li>
+                <li>轻声不标调：{的 | de}</li>
+                <li>工具栏"拼"按钮可快速插入拼音语法</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+$(function() {
+    // 声母数据
+    const shengmu = [
+        { char: 'b', sound: '玻' },
+        { char: 'p', sound: '坡' },
+        { char: 'm', sound: '摸' },
+        { char: 'f', sound: '佛' },
+        { char: 'd', sound: '得' },
+        { char: 't', sound: '特' },
+        { char: 'n', sound: '讷' },
+        { char: 'l', sound: '勒' },
+        { char: 'g', sound: '哥' },
+        { char: 'k', sound: '科' },
+        { char: 'h', sound: '喝' },
+        { char: 'j', sound: '基' },
+        { char: 'q', sound: '欺' },
+        { char: 'x', sound: '希' },
+        { char: 'zh', sound: '知' },
+        { char: 'ch', sound: '吃' },
+        { char: 'sh', sound: '诗' },
+        { char: 'r', sound: '日' },
+        { char: 'z', sound: '资' },
+        { char: 'c', sound: '次' },
+        { char: 's', sound: '思' }
+    ];
+    
+    // 单韵母
+    const danyunmu = [
+        { char: 'a', sound: '啊' },
+        { char: 'o', sound: '哦' },
+        { char: 'e', sound: '鹅' },
+        { char: 'i', sound: '衣' },
+        { char: 'u', sound: '乌' },
+        { char: 'ü', sound: '迂' }
+    ];
+    
+    // 复韵母
+    const fuyunmu = [
+        { char: 'ai', sound: '爱' },
+        { char: 'ei', sound: '诶' },
+        { char: 'ui', sound: '威' },
+        { char: 'ao', sound: '熬' },
+        { char: 'ou', sound: '欧' },
+        { char: 'iu', sound: '优' },
+        { char: 'ie', sound: '耶' },
+        { char: 'üe', sound: '约' },
+        { char: 'er', sound: '耳' },
+        { char: 'an', sound: '安' },
+        { char: 'en', sound: '恩' },
+        { char: 'in', sound: '因' },
+        { char: 'un', sound: '温' }
+    ];
+    
+    // 鼻韵母
+    const biyunmu = [
+        { char: 'ang', sound: '昂' },
+        { char: 'eng', sound: '鞥' },
+        { char: 'ing', sound: '英' },
+        { char: 'ong', sound: '轰' },
+        { char: 'ian', sound: '烟' },
+        { char: 'uan', sound: '弯' },
+        { char: 'üan', sound: '冤' },
+        { char: 'iang', sound: '央' },
+        { char: 'uang', sound: '汪' },
+        { char: 'ueng', sound: '翁' },
+        { char: 'iong', sound: '雍' },
+        { char: 'uen', sound: '温' },
+        { char: 'ün', sound: '晕' },
+        { char: 'üan', sound: '冤' },
+        { char: 'iang', sound: '央' },
+        { char: 'uang', sound: '汪' }
+    ];
+    
+    // 特殊韵母
+    const teshuyunmu = [
+        { char: 'ia', sound: '呀' },
+        { char: 'ua', sound: '蛙' },
+        { char: 'uo', sound: '窝' },
+        { char: 'uai', sound: '歪' }
+    ];
+    
+    // 声调数据
+    const tones = [
+        { name: '第一声（阴平）', examples: 'ā ē ī ō ū ǖ', mark: '¯' },
+        { name: '第二声（阳平）', examples: 'á é í ó ú ǘ', mark: '´' },
+        { name: '第三声（上声）', examples: 'ǎ ě ǐ ǒ ǔ ǚ', mark: 'ˇ' },
+        { name: '第四声（去声）', examples: 'à è ì ò ù ǜ', mark: '`' },
+        { name: '轻声', examples: 'a e i o u ü', mark: '不标调' }
+    ];
+    
+    // 生成拼音网格
+    function createPinyinGrid(containerId, data) {
+        const container = $('#' + containerId);
+        data.forEach(item => {
+            const div = $('<div class="pinyin-item" data-pinyin="' + item.char + '"></div>');
+            div.append('<div class="char">' + item.char + '</div>');
+            div.append('<div class="sound">' + item.sound + '</div>');
+            div.on('click', function() {
+                const pinyin = $(this).data('pinyin');
+                copyToClipboard(pinyin);
+            });
+            container.append(div);
+        });
+    }
+    
+    // 生成声调网格
+    function createToneGrid() {
+        const container = $('#tone-grid');
+        tones.forEach(tone => {
+            const div = $('<div class="tone-item"></div>');
+            div.append('<div class="tone-name">' + tone.name + '</div>');
+            div.append('<div class="tone-examples">' + tone.examples + '</div>');
+            div.append('<div class="tone-mark">调号：' + tone.mark + '</div>');
+            container.append(div);
+        });
+    }
+    
+    // 复制到剪贴板
+    function copyToClipboard(text) {
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(text).then(() => {
+                showCopyNotification(text);
+            });
+        } else {
+            // Fallback for older browsers
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            showCopyNotification(text);
+        }
+    }
+    
+    // 显示复制通知
+    function showCopyNotification(text) {
+        const notification = $('<div style="position:fixed;top:20px;right:20px;background:#667eea;color:#fff;padding:12px 24px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:9999;">已复制: ' + text + '</div>');
+        $('body').append(notification);
+        setTimeout(() => {
+            notification.fadeOut(300, function() {
+                $(this).remove();
+            });
+        }, 2000);
+    }
+    
+    // 初始化
+    createPinyinGrid('shengmu-grid', shengmu);
+    createPinyinGrid('danyunmu-grid', danyunmu);
+    createPinyinGrid('fuyunmu-grid', fuyunmu);
+    createPinyinGrid('biyunmu-grid', biyunmu);
+    createPinyinGrid('teshuyunmu-grid', teshuyunmu);
+    createToneGrid();
+    
+    // 初始化编辑器
+    var editor = editormd("editor-container", {
+        width: "100%",
+        height: 400,
+        path: "../lib/",
+        markdown: $("#editor").text(),
+        pinyin: true,
+        tex: false,
+        flowChart: false,
+        sequenceDiagram: false,
+        codeFold: true,
+        searchReplace: true,
+        htmlDecode: "style,script,iframe|on*",
+        emoji: true,
+        taskList: true,
+        tocm: true,
+        tocContainer: "",
+        tocDropdown: false,
+        tocTitle: "目录",
+        toolbarIcons: function() {
+            return [
+                "undo", "redo", "|",
+                "bold", "del", "italic", "|",
+                "h1", "h2", "h3", "|",
+                "list-ul", "list-ol", "hr", "|",
+                "link", "image", "code", "table", "|",
+                "pinyin", "|",
+                "watch", "preview", "fullscreen"
+            ];
+        },
+        onload: function() {
+            console.log("拼音参照表示例已加载");
+        }
+    });
+});
+</script>
+</body>
+</html>

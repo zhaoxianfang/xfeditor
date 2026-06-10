@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh">
+    <head>
+        <meta charset="utf-8" />
+        <title>上标与下标 - xfEditor v1.10.0</title>
+        <link rel="stylesheet" href="css/style.css" />
+        <link rel="stylesheet" href="../css/editormd.min.css" />
+        <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
+        <style>
+            .intro { width: 90%; margin: 15px auto; padding: 15px 20px; background: #f5f7fa; border-left: 4px solid #2196F3; border-radius: 4px; font-size: 14px; line-height: 1.8; color: #555; }
+            .intro h2 { margin: 0 0 8px; font-size: 16px; color: #333; }
+            .intro code { background: #e8e8e8; padding: 2px 6px; border-radius: 3px; font-family: Consolas, Monaco, monospace; font-size: 12px; color: #c7254e; }
+        </style>
+    </head>
+    <body>
+        <div id="layout">
+            <header>
+                <h1>上标与下标 示例</h1>
+                <p>使用 <code>^上标^</code> 和 <code>^^下标^^</code> 语法创建上下角标</p>
+            </header>
+
+            <div class="intro">
+                <h2>使用说明</h2>
+                <p><strong>上标（单 ^）：</strong>使用 <code>^内容^</code> 包裹，内容渲染在右上角。如 <code>x^2^</code>、<code>E=mc^2^</code>。</p>
+                <p><strong>下标（双 ^^）：</strong>使用 <code>^^内容^^</code> 包裹，内容渲染在右下角。如 <code>H^^2^^O</code>、<code>CO^^2^^</code>。</p>
+                <p>也支持 <strong>组合使用</strong>：<code>U^235^^92^^</code>（同位素）。文本长度限制 100 字符。</p>
+            </div>
+
+            <div id="test-editormd">
+                <textarea style="display:none;"># 上标与下标示例
+
+## 一、上标（单 ^ 包裹）
+
+使用 `^内容^` 语法，内容显示在右上角：
+
+### 数学公式
+
+- 指数运算：x^2^ + y^3^ = z^n^
+- 质能方程：E = mc^2^
+- 幂次：2^10^ = 1024，a^b+c^ = d
+- 多项式：x^n^ + y^m^ = 1
+
+### 实用场景
+
+- 面积：100m^2^ 建筑面积
+- 体积：3m^3^ 储水量
+- 版权：Copyright © 2024^All Rights Reserved^
+- 注释：重要说明^Footnote 1^ 和补充信息^Note 2^
+
+---
+
+## 二、下标（双 ^^ 包裹）
+
+使用 `^^内容^^` 语法，内容显示在右下角：
+
+### 化学式
+
+- 水：H^^2^^O
+- 二氧化碳：CO^^2^^
+- 硫酸：H^^2^^SO^^4^^
+- 葡萄糖：C^^6^^H^^12^^O^^6^^
+- 硝酸：HNO^^3^^
+
+### 数学
+
+- 数列：a^^0^^ + a^^1^^x + a^^2^^x^2^
+- 序列：元素^^1^^、元素^^2^^、...、元素^^n^^
+- 对数底数：log^^10^^(100) = 2
+- 极限下标：lim^^x→0^^ (sin x)/x = 1
+
+### 其他
+
+- DNA 结构：5'^^端^^ 到 3'^^端^^
+- 下标变量：var^^min^^ = 0, var^^max^^ = 100
+
+---
+
+## 三、上标与下标组合使用
+
+### 同位素
+
+- 铀-235：U^235^^92^^
+- 碳-14：C^14^^6^^
+- 氘（重氢）：H^2^^1^^
+
+### 化学方程式
+
+C^^6^^H^^12^^O^^6^^ + 6O^^2^^ → 6CO^^2^^ + 6H^^2^^O
+
+### 数列公式
+
+S^^n^^ = a^^1^^ + a^^2^^ + ... + a^^n^^
+
+A^m^^n^^ 表示 n 选 m 的排列数
+
+---
+
+## 四、边界情况与限制
+
+### 内容长度上限 100 字符
+
+- 正常：^这是一个简短的上标^
+- 超出：^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 超长内容不会被解析
+
+### 和其他语法组合
+
+- 上标中的粗体：**E = mc^2^**  — 粗体包裹上标
+- 下标中的链接：H^^2^^O 是 [水](tooltip:H₂O 是生命之源)的化学式
+- 列表项中：- 第 n^^2^ 项：值为 x^^n^^
+
+### 特殊字符
+
+- 带空格：x^2n+1^  （空格正常显示）
+- 带括号：x^(n+1)^  （括号正常显示）
+</textarea>
+            </div>
+        </div>
+
+        <script src="js/jquery.min.js"></script>
+        <script src="../editormd.min.js"></script>
+        <script type="text/javascript">
+            $(function() {
+                editormd("test-editormd", {
+                    width: "90%",
+                    height: 640,
+                    path: "../lib/",
+                    theme: "default",
+                    previewTheme: "default",
+                    editorTheme: "default",
+                    codeFold: true,
+                    saveHTMLToTextarea: true,
+                    searchReplace: true,
+                    watch: true,
+                    htmlDecode: "style,script,iframe|on*",
+                    taskList: true,
+                    tex: true,
+                    flowChart: true,
+                    sequenceDiagram: true,
+                    onload: function() {
+                        console.log("上标与下标示例已加载完成");
+                    }
+                });
+            });
+        </script>
+    </body>
+</html>

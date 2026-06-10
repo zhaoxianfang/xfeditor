@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>[[page:AN]] 纸张页面语法示例 — xfEditor v1.10.0</title>
+    <link rel="stylesheet" href="../css/editormd.css" />
+    <link rel="stylesheet" href="../css/editormd.preview.css" />
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+    <script src="../editormd.js"></script>
+    <style>
+        body { background: #f0f2f5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif; margin: 0; padding: 20px; }
+        .demo-header { text-align: center; padding: 30px 20px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; margin: -20px -20px 20px; }
+        .demo-header h1 { margin: 0 0 8px; font-size: 24px; font-weight: 600; }
+        .demo-header p { margin: 0; opacity: 0.85; font-size: 14px; }
+        .demo-header a { color: #fff; text-decoration: underline; opacity: 0.9; }
+        .layout { display: flex; gap: 16px; max-width: 1400px; margin: 0 auto; }
+        .layout > div { flex: 1; min-width: 0; background: #fff; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); overflow: hidden; }
+        .layout h3 { margin: 0; padding: 12px 16px; background: #f8f9fa; border-bottom: 1px solid #e9ecef; font-size: 13px; font-weight: 600; color: #555; }
+        #editor-container { min-height: 600px; }
+        .note { max-width: 1400px; margin: 20px auto 0; padding: 16px 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); font-size: 13px; color: #666; line-height: 1.7; }
+        .note code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-size: 12px; color: #e94560; }
+        .note h4 { color: #333; margin: 12px 0 6px; }
+    </style>
+</head>
+<body>
+<div class="demo-header">
+    <h1>📄 [[page:AN]] 纸张页面语法</h1>
+    <p>以标准纸张尺寸展示内容 · 自动换行 · 超页高分页 · 支持嵌套</p>
+</div>
+
+<div class="layout">
+    <div>
+        <h3>📝 Markdown 源码</h3>
+        <div id="editor-container">
+            <textarea id="editor" style="display:none;">
+# [[page:A4]] / [[page:A5]] / [[page:AN]] 语法演示
+
+---
+
+## 📐 基础 A4 纸张页面（带页头页脚）
+
+[[page:A4 header="2024年度工作总结报告" footer="第 {page} 页 / 共 {total} 页"]]
+
+# 2024年度工作总结报告
+
+## 一、项目概述
+
+本年度我们完成了以下核心项目：
+
+1. **编辑器重构** — 基于 xfEditor 进行了全面优化和功能增强
+2. **语法扩展** — 新增多种 Markdown 扩展语法，提升文档表达能力
+3. **性能优化** — 渲染速度提升 40%，内存占用降低 30%
+
+## 二、详细数据
+
+| 指标 | Q1 | Q2 | Q3 | Q4 |
+|------|----|----|----|----|
+| 代码提交 | 120 | 95 | 138 | 105 |
+| Bug修复 | 45 | 32 | 28 | 19 |
+| 新功能 | 8 | 12 | 15 | 10 |
+
+## 三、技术栈升级
+
+- jQuery 升级至 3.7.1
+- KaTeX 升级至 v0.16.9
+- 新增 ECharts 图表集成
+- 优化 XSS 安全防护
+
+## 四、团队建设
+
+本年度团队规模从 5 人扩展到 8 人，新增：
+- 前端开发工程师 2 名
+- 测试工程师 1 名
+
+团队培训计划：
+- 每月技术分享会
+- 季度代码审查
+- 年度技术大会参与
+
+## 五、下年度规划
+
+1. 完成 v2.0 版本重构
+2. 新增协作编辑功能
+3. 移动端适配优化
+4. 国际化支持扩展
+
+> 本报告在 A4 纸张页面内展示，内容超出一页高度时将自动分页。
+
+[[/page]]
+
+---
+
+## 📐 AN 纸张页面演示（等同于 A4 尺寸）
+
+[[page:AN header="AN 纸张文档" footer="xfEditor v1.10.0 · 第 {page} 页 / 共 {total} 页"]]
+
+### 关于 AN 纸张
+
+**AN 纸张** 是 ISO 216 标准中 A 系列的特殊规格，其尺寸等同于 A4（794×1123px）。
+
+**适用场景**：
+- 企业内部标准化文档
+- 报告模板统一管理
+- 与 A4 混排时使用别名区分
+
+### AN 纸张特性
+
+| 特性 | 说明 |
+|------|------|
+| 尺寸 | 794 × 1123 像素（@96dpi） |
+| 别名 | 等同于 A4 |
+| 页头页脚 | 支持 header/footer 模板 |
+| 自动分页 | 内容超出一页自动分割 |
+| 嵌套支持 | 支持 tabs/columns 嵌套 |
+| 占位符 | {page} 当前页, {total} 总页数 |
+
+[[/page]]
+
+---
+
+## 📐 A5 纸张页面演示
+
+[[page:A5 header="会议纪要" footer="机密文件 · 第 {page} 页"]]
+
+### 小会议纪要
+
+**日期**: 2024-01-15
+**地点**: 3号会议室
+**参会人**: 张三、李四、王五
+
+**议题**:
+1. Q1 技术规划评审
+2. 编辑器项目进度汇报
+3. 资源协调与排期
+
+**决议**:
+- 本月底完成编辑器 v1.10.0 发布
+- 下月初启动用户测试
+- 每周五进行进度同步
+
+[[/page]]
+
+---
+
+## 📐 嵌套语法：A4 页面内使用 Tabs
+
+[[page:A4 header="功能特性文档" footer="xfEditor v1.10.0"]]
+
+[[tabs]]
+[[tab:功能特性]]
+### ✨ 主要功能特性
+
+- 🔤 **拼音标注** — `{你好 | nǐ hǎo}` 自动渲染
+- 📊 **ECharts 图表** — 柱状图、折线图、饼图等
+- 📝 **字帖** — 田字格、米字格、拼音格
+- 🔗 **悬浮提示** — [查看详情](tooltip:这是悬停提示的内容)
+- 📐 **多列排版** — 报纸式多栏布局
+- 📄 **纸张页面** — 您现在看到的功能！
+
+[[/tab]]
+[[tab:使用说明]]
+### 📖 如何使用
+
+1. 在 Markdown 中使用 `[[page:A4]]...[[/page]]` 包裹内容
+2. 系统自动将内容渲染为 A4 纸张尺寸
+3. 内容超出一页高度时自动分页
+4. 支持在页面内嵌套 `[[tabs]]`、`[[columns]]` 等语法
+5. 页面内也可以使用分页符 `[========]` 手动分页
+
+[========]
+
+### 📖 支持纸张规格
+
+| 规格 | 宽度(px) | 高度(px) | 说明 |
+|------|----------|----------|------|
+| A0 | 3179 | 4494 | 大幅面 |
+| A1 | 2245 | 3179 | 海报尺寸 |
+| A2 | 1587 | 2245 | 挂图尺寸 |
+| A3 | 1123 | 1587 | 画册尺寸 |
+| **A4** | **794** | **1123** | 标准文档（默认） |
+| **AN** | **794** | **1123** | **等同于 A4** |
+| **A5** | **559** | **794** | 手册尺寸 |
+| A6 | 397 | 559 | 明信片 |
+| A7 | 280 | 397 | 便签 |
+| A8 | 198 | 280 | 名片 |
+| LETTER | 816 | 1056 | 美式信纸 |
+| LEGAL | 816 | 1344 | 美式法律文书 |
+
+[[/tab]]
+[[tab:代码示例]]
+### 💻 代码示例
+
+```markdown
+编辑器中输入：
+[[page:A4 header="文档标题" footer="第 {page} 页 / 共 {total} 页"]]
+# 文档标题
+## 章节内容
+...
+[========]  <!-- 手动分页符 -->
+...
+[[/page]]
+```
+
+**页头页脚支持**:
+- `header="标题"` — 设置页头
+- `footer="第 {page} 页"` — 设置页脚，`{page}` 为当前页码
+- `footer="共 {total} 页"` — `{total}` 为总页数
+
+**可用纸张类型**:
+- `A0` ~ `A8` — ISO 216 A 系列标准纸张
+- `AN` — 等同于 A4 的特殊规格
+- `LETTER` / `LEGAL` — 美式纸张规格
+
+[[/tab]]
+[[/tabs]]
+
+[[/page]]
+
+---
+
+## 📐 页面内使用多列排版
+
+[[page:A4 header="技术文档" footer="xfEditor"]]
+
+[[columns:2]]
+
+### 左侧内容
+
+这是左侧栏的内容，可以包含：
+- 文本段落
+- 代码片段
+- `行内代码`
+- 链接和图片
+
+### 右侧内容
+
+这是右侧栏的内容，同样支持：
+- **粗体文字**
+- *斜体文字*
+- [链接示例](https://github.com)
+- 更多 Markdown 元素
+
+[[/columns]]
+
+---
+
+### 全宽内容
+
+多列排版之后回到全宽模式，这段文字横跨整个 A4 纸张宽度的内容。
+
+图片在纸张页面内会自动适配宽度：
+
+![示例图片](https://via.placeholder.com/600x200/667eea/fff?text=Example+Image)
+
+[[/page]]
+</textarea>
+        </div>
+    </div>
+</div>
+
+<div class="note">
+    <strong>💡 使用提示：</strong><br>
+    1. <code>[[page:A4]]...[[/page]]</code> 以 A4 纸张尺寸（794×1123px）展示内容<br>
+    2. <code>[[page:AN]]...[[/page]]</code> 以 AN 纸张尺寸展示（等同于 A4，794×1123px）<br>
+    3. <code>[[page:A5]]...[[/page]]</code> 以 A5 纸张尺寸（559×794px）展示内容<br>
+    4. 支持 <code>A0</code> ~ <code>A8</code>、<code>AN</code>、<code>LETTER</code>、<code>LEGAL</code> 多种纸张规格<br>
+    5. <strong>页头页脚：</strong><code>[[page:A4 header="标题" footer="第 {page} 页 / 共 {total} 页"]]</code><br>
+    6. 页面内可以嵌套 <code>[[tabs]]</code>、<code>[[columns]]</code>、<code>[[copybook]]</code> 等语法<br>
+    7. 使用 <code>[========]</code> 分页符可以在页面内手动分页<br>
+    8. 内容超出页面高度时自动分割为多页，连续页面间距 4px<br>
+    9. 配置项 <code>pageBlock: false</code> 可以禁用此语法<br>
+    10. 支持 @media print 打印样式<br>
+    11. 正则匹配支持大小写不敏感，<code>[[page:a4]]</code> 和 <code>[[page:A4]]</code> 均有效
+
+    <h4>🔧 配置方式</h4>
+```javascript
+var editor = editormd("editor-container", {
+    path: "../lib/",
+    pageBlock: true,      // 启用纸张页面语法（默认开启）
+    pageBreak: true,      // 启用分页符语法（默认开启）
+    tabs: true,           // 启用 Tabs 组件（在页面内嵌套时需要）
+    columns: true,        // 启用多列排版（在页面内嵌套时需要）
+    toolbarIcons: function() {
+        return [
+            // ... 其他按钮 ...
+            "pagebreak",     // 分页符按钮
+            "page"           // 页面尺寸下拉菜单
+        ];
+    }
+});
+```
+</div>
+
+<script type="text/javascript">
+    $(function() {
+        var editor = editormd("editor-container", {
+            width: "100%",
+            height: 800,
+            path: "../lib/",
+            markdown: $("#editor").text(),
+            pageBlock: true,
+            pageBreak: true,
+            tabs: true,
+            columns: true,
+            tooltip: true,
+            copybook: true,
+            tex: true,
+            taskList: true,
+            flowChart: false,
+            sequenceDiagram: false,
+            codeFold: true,
+            searchReplace: true,
+            htmlDecode: "style,script,iframe|on*",
+            emoji: true,
+            tocm: true,
+            tocContainer: "",
+            tocDropdown: false,
+            tocTitle: "目录",
+            toolbarIcons: function() {
+                return [
+                    "undo", "redo", "|",
+                    "bold", "del", "italic", "|",
+                    "h1", "h2", "h3", "|",
+                    "list-ul", "list-ol", "hr", "|",
+                    "link", "reference-link", "image", "code", "code-block", "table", "|",
+                    "pagebreak", "page", "|",
+                    "watch", "preview", "fullscreen", "search", "help"
+                ];
+            },
+            onload: function() {
+                console.log("xfEditor [[page:A4/AN]] 纸张页面语法演示已加载");
+            }
+        });
+    });
+</script>
+</body>
+</html>

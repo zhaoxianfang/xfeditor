@@ -78,10 +78,10 @@ const modeNames = [
 // 表头注释
 const headerComment = [
     '/*',
-    ' * Editor.md',
+    ' * xfEditor',
     ' *',
     ' * @file        <%= fileName %>',
-    ' * @description CodeMirror <%= type %> bundle for Editor.md',
+    ' * @description CodeMirror <%= type %> bundle for xfEditor',
     ' * @license     MIT License',
     ' * @updateTime  ' + new Date().toISOString().split('T')[0],
     ' */',

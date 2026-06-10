@@ -11,7 +11,7 @@
  * @version   2.0.0
  * @author    Pandao
  * @license   MIT
- * @link      https://pandao.github.io/editor.md/
+ * @link      https://github.com/zhaoxianfang/editor
  */
 
 declare(strict_types=1);

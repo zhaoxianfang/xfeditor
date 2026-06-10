@@ -16,7 +16,7 @@ define(function(require){
             htmlDecode : true,            // 开启HTML标签解析，为了安全性，默认不开启
             tex : true,                   // 开启科学公式TeX语言支持，默认关闭
             //previewCodeHighlight : false,  // 关闭预览窗口的代码高亮，默认开启
-            flowChart : true,              // 疑似Sea.js与Raphael.js有冲突，必须先加载Raphael.js，Editor.md才能在Sea.js下正常进行；
+            flowChart : true,              // 疑似Sea.js与Raphael.js有冲突，必须先加载Raphael.js，xfEditor才能在Sea.js下正常进行；
             sequenceDiagram : true,        // 同上
             onload : function() {
                 console.log('onload', this);

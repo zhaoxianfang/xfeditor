@@ -1,13 +1,636 @@
-# Editor.md 修复与优化总结
+# xfEditor 修复与优化总结
 
-**当前版本**: v1.8.0  
-**修复日期**: 2026-06-06  
+**当前版本**: v1.10.0  
+**修复日期**: 2026-06-10  
 **jQuery 版本**: 3.7.1  
 **KaTeX 版本**: v0.16.9（已从旧版本升级）
 
 ---
 
 ## 📊 修复统计
+
+### 第三十一轮修复（全面代码审计 + 正则优化 + 事件泄漏修复 + 构建产物重建）
+
+**修复日期**: 2026-06-10
+
+#### 1. 🐛 Email 正则全面改进（兼容性修复）
+- **文件**: `src/editormd.js` (regexs 定义)
+- **问题**: 原 email 正则 `/(\w+)@(\w+)\.(\w+)\.?(\w+)?/g` 过于严格
+  - 域名部分不允许连字符 `-`（如 `user@my-domain.com` 无法匹配）
+  - 本地部分不支持 `.` 和 `+`（如 `user.name@domain.com`、`user+tag@domain.com` 无法匹配）
+  - 不支持多级 TLD（如 `.co.uk` 只匹配到 `.co`）
+- **修复**: 更新为 `/([\w\.\+\-]+)@([\w\-]+)\.([\w\-]{2,})\.?(\w+)?/g`
+  - 本地部分支持 `+`、`-`、`.` 字符
+  - 域名/TLD 支持连字符
+  - 保持捕获组结构兼容回调函数
+
+#### 2. 🔤 tooltipLink/tooltipImg 大小写修复
+- **修复**: 添加 `i` 大小写不敏感标志
+  - `tooltipLink`: `/\[([^\]]+)\]\(tooltip:([^)]+)\)/g` → `/gi`
+  - `tooltipImg`: `/\{tooltip:([^}]+)\}/g` → `/gi`
+  - 现在 `TOOLTIP:`、`Tooltip:` 等变体均能正确匹配
+
+#### 3. 🔤 `atLink` 正则增强
+- **修复**: `@(\w+)` → `@([\w\-]+)`，支持含连字符的用户名（如 `@user-name`）
+
+#### 4. 🐛 `fontSize` 与图片语法冲突修复
+- **问题**: `!32 text!` 语法可能误匹配图片语法 `![alt](url)` 中的 `!`
+- **修复**: 在 fontSize 替换回调中添加前置检查 `if (typeof match === "string" && /^\[/.test(match)) return match;`，当匹配以 `[` 开头（即属于图片语法）时跳过
+- **额外改进**: 正则增加 `\n` 排除，防止跨行匹配
+
+#### 5. 🐛 `initColumns` 重复变量声明 Bug 修复（关键修复）
+- **问题**: 第 3615 行存在重复的 `var count = parseInt(...)` 声明，**覆盖**了第 3607-3612 行的范围验证修正值
+  - 如果列数超出 1-12 范围被修正为 2，第 3615 行又读回原始错误值
+- **修复**: 删除第 3615 行的重复声明，保留已验证后的正确值
+
+#### 6. 🧹 事件内存泄漏全面修复（6 个泄漏点全部修复）
+
+| 泄漏点 | 原代码 | 修复后 | 清理位置 |
+|--------|--------|--------|----------|
+| 工具栏滚动跟随 | `$(window).on("scroll", ...)` | `$(window).on("scroll.editormd-autofixed", ...)` | destroy |
+| F9/F10/F11 快捷键 | `$(window).keydown(...)` | `$(window).on("keydown.editormd-fkeys", ...)` | destroy |
+| 草稿对话框 resize | `$(window).on("resize.editormdDraft", ...)` | ✅ 已有命名空间，**补充** closeDialog 中的 `$(window).off(...)` | closeDialog |
+| 通用对话框 resize | `$(window).resize(dialogPosition)` | `$(window).on("resize.editormd-dialog", dialogPosition)` | destroy |
+| 下拉菜单关闭 | `$(document).on("click", closeDropdown)` | `$(document).on("click.editormd-dropdown", closeDropdown)` | destroy |
+| Tooltip 事件 | `$(document).on("click.tooltip", ...)` | ✅ 已有命名空间，补充 destroy 清理 | destroy |
+
+**destroy 方法新增清理**:
+```javascript
+$(window).off("resize.editormdDraft");
+$(window).off("scroll.editormd-autofixed");
+$(window).off("keydown.editormd-fkeys");
+$(window).off("resize.editormd-dialog");
+$(document).off("click.editormd-dropdown");
+$(document).off("click.tooltip keydown.tooltip");
+```
+
+#### 7. 📦 构建产物全部重建
+- JS 源码重建：`editormd.js` (458K), `editormd.amd.js` (461K)
+- 全部压缩：`editormd.min.js` (176K), `editormd.amd.min.js` (177K)
+- CSS 编译/压缩：`css/editormd.css/.min.css`, `css/editormd.preview.css/.min.css`, `css/editormd.logo.css/.min.css`
+
+#### 8. 📋 完整代码审计发现
+
+**已确认安全的机制**:
+- ✅ `protectCodeBlocks()` 正确保护三种代码块：围栏(``` )、多反引号(``)、单反引号(`)
+- ✅ 所有代码块在语法解析前被替换为占位符，解析后恢复
+- ✅ `superscript`/`subscript` 已正确处理执行顺序（下标优先）
+- ✅ `findBalancedBlocks` 支持 20 层递归深度嵌套
+- ✅ 多种块语法（tabs/columns/page/copybook）都使用 `findBalancedBlocks` 正确处理嵌套
+- ✅ Tab 数量限制 50、列数限制 1-12、文本长度限制 1M 字符
+- ✅ 所有块处理逻辑均有 try/catch 包裹
+
+**已知限制（设计如此）**:
+- ⚠️ 跨类型交错嵌套未检测（如 `[[tabs]]...[[columns]]...[[/tabs]]...[[/columns]]`）
+- ⚠️ `videoBlock`/`fileBlock` 不支持嵌套（用途不需要）
+- ⚠️ FlowChart/Sequence/KaTeX/ECharts 通过 marked fenced code 处理（不经过 `findBalancedBlocks`）
+- ⚠️ 无手风琴/折叠面板/Emoji 语法（未实现功能）
+
+#### 涉及修改文件
+- `src/editormd.js` — regexs 定义、fontSize 回调、initColumns、所有事件绑定和 destroy
+- 10 个构建产物文件
+
+---
+
+### 第三十轮修复（pageOpen 正则修复 + 全局重命名 + 关闭按钮 + 帮助/关于表更新）
+
+**修复日期**: 2026-06-10
+
+#### 1. 🐛 pageOpen 正则Bug修复（关键修复）
+- **文件**: `src/editormd.js`
+- **问题**: `pageOpen: /\[\[page:(A\d+|AN|LETTER|LEGAL)\]\]/gi` 不匹配带属性的 `[[page:A4 header="..." footer="..."]]` 语法（如 `[[page:A4 header="2024年度工作总结报告" footer="第 {page} 页 / 共 {total} 页"]]`），导致 `findBalancedBlocks` 找不到页面块
+- **修复**: 更新为 `/\[\[page:(A\d+|AN|LETTER|LEGAL)(?:\s[^\]]*)?\]\]/gi`，支持可选属性匹配
+
+#### 2. 🌐 全局重命名 `pandao` → `zhaoxianfang`
+- **变更范围**: 40+ 文件，包含所有插件 `.js`、示例 `.html`、SCSS/CSS、语言包、文档
+- **具体替换**:
+  - `github.com/pandao` → `github.com/zhaoxianfang`
+  - `pandao.github.io/editor.md/` → `github.com/zhaoxianfang/editor`
+  - `@author pandao` → `@author zhaoxianfang`
+  - `Author: Pandao` → `Author: zhaoxianfang` (SCSS/CSS 注释头)
+- **例外**: 保留关于弹窗中的原项目归属声明（`https://github.com/pandao/editor.md` + `Editor.md`）
+
+#### 3. 📛 全局重命名 `Editor.md` → `xfEditor`
+- **变更范围**: 80+ 文件
+- **修改内容**:
+  - `editormd.title = "xfEditor"`
+  - `editormd.homePage = "https://github.com/zhaoxianfang/editor"`
+  - 所有注释中的 `[Editor.md]` 日志前缀 → `[xfEditor]`
+  - 所有 JSDoc 注释中的 `Editor.md` → `xfEditor`
+  - 语言包中的 `"Editor.md"` → `"xfEditor"`
+  - 所有示例页面标题/描述中的 `Editor.md` → `xfEditor`
+  - `"Editor.md Preview"` → `"xfEditor Preview"`
+- **保留**: 关于弹窗归属声明中的 `Editor.md`
+
+#### 4. 🎨 关闭按钮样式优化
+- **文件**: `scss/editormd.dialog.scss`, `scss/editormd.preview.scss`
+- **修改**:
+  - 移除 `width`/`height` 固定尺寸 → 不强制圆形
+  - 移除 `border-radius(50%)` → 不再圆形
+  - 移除 `background`/`border` → 无边框和背景
+  - **字体大小**: 基础从 `16px` → `24px`，草案弹窗从 `20px` → `24px`，预览从 `18px` → `24px`
+  - hover 仅改变颜色和缩放，不再有背景变化
+
+#### 5. 📖 帮助/关于弹窗内容更新
+- **关于弹窗** (`createInfoDialog`):
+  - 移除 v1.10.0 新特性展示块
+  - 新增声明块：本项目基于 [Editor.md](https://github.com/pandao/editor.md) 改编
+  - 更新仓库地址为 `https://github.com/zhaoxianfang/editor`
+  - 版权更新为 `zhaoxianfang`
+- **帮助弹窗** (`help.md`):
+  - 标题更新为 "xfEditor 使用帮助"
+  - 新增基于 Editor.md 改编的说明
+  - 脚注更新为 "基于 Editor.md 改编"
+
+#### 6. 📦 构建产物全部重建
+- SCSS 重编译：`editormd.css`, `editormd.preview.css`, `editormd.logo.css`
+- JS 源码重建：`editormd.js`, `editormd.amd.js`
+- 全部压缩：所有 `.min.css` 和 `.min.js` 文件
+
+#### 涉及修改文件
+- `src/editormd.js` — pageOpen 正则、title/homePage、About 对话框、全部注释
+- `scss/editormd.dialog.scss` — 基础 + 草案弹窗关闭按钮样式
+- `scss/editormd.preview.scss` — 预览关闭按钮样式
+- `scss/lib/prefixes.scss` — Author 头部
+- `scss/editormd.themes.scss` — Editor.md → xfEditor
+- 12 个插件 `.js` 文件 — `@author` 和 `{@link}` 更新
+- `plugins/help-dialog/help.md` — 标题和归属更新
+- 3 个语言包文件 — 名称和 URL 更新
+- 71 个示例 `.html` 文件 — Editor.md→xfEditor + pandao→zhaoxianfang
+- 示例 `.md`、`.css`、`.php`、`.js` 文件
+- `README.md`、`FIX_SUMMARY.md`、`USAGE_GUIDE.md`、`JQUERY_3_UPGRADE.md`
+- `Gulpfile.js`、`build-codemirror-bundles.js`、`test_comprehensive.js`
+- 全部 10 个构建产物文件
+
+---
+
+### 第二十九轮修复（工具栏帮助/关于重写 + 全部示例完善 + 上传功能优化 + 构建产物重建）
+
+**修复日期**: 2026-06-10
+
+#### 1. 📖 "使用帮助"对话框全面重写
+- **文件**: `plugins/help-dialog/help.md`
+- **变更**: 从英文旧版（2015年）完全重写为中文 v1.10.0 完整参考文档
+- **新增内容**（200+行）:
+  - 核心功能快速参考表
+  - v1.10.0 新语法详解（上标/下标/字体大小/脚注）
+  - 完整键盘快捷键表（50+ 条目，含对齐快捷键）
+  - 配置选项表（25+ 选项）
+  - 事件回调列表（25+ 事件）
+  - API 方法列表（20+ 方法）
+
+#### 2. ℹ️ "关于"对话框增强
+- **文件**: `src/editormd.js` → `createInfoDialog()`
+- **变更**: 新增 v1.10.0 新特性高亮展示块、技术栈组件列表
+- **版权**: 从 "2015" 更新为 "2015-2026"
+
+#### 3. 🆕 新增 3 个专属示例页面
+| 文件 | 功能 | 内容覆盖 |
+|------|------|----------|
+| `examples/file-upload.html` | 文件上传 | 6 章节：概述/格式/用法/上传流程/后端规范/安全建议 |
+| `examples/video-upload.html` | 视频上传 | 7 章节：格式/用法/语法/HTML5播放器/后端API/注意事项 |
+| `examples/event-handlers.html` | 事件系统 | 实时事件日志面板，演示所有 28 个事件回调 |
+
+#### 4. 📄 示例页面全面重写
+- **`examples/image-upload.html`**: 完全重写为 8 章节：概述/格式/用法/尺寸/粘贴上传/配置/后端API/安全
+- **`examples/page-syntax.html`**: 新增完整 AN 纸张演示区、AN 特性表、配置代码示例；工具栏新增 page 下拉按钮
+- **`examples/@links.html`**: 完全重写为中文详解，含功能说明表、配置方式、语法规则表、注意事项
+
+#### 5. 🛠️ PHP 后端全面优化
+- **`examples/php/upload.php`**: 新增 OPTIONS 预检、auto-creation 目录、扩展名检测 fallback、空文件检测、`expected_input_name` 错误提示
+- **`examples/php/cross-domain-upload.php`**: 新增 OPTIONS 预检、auto-creation 目录、`name` 参数文档
+- **`examples/php/post.php`**: 全新 UI（渐变/阴影/卡片）、行数/字符统计、debug 模式、安全转义
+- **`examples/php/upload_callback.html`**: 全新状态图标 UI、文件名显示、延迟跳转反馈
+
+#### 6. 📋 index.html 导航更新
+- 事件区新增 `event-handlers.html` 为推荐链接
+- 上传区新增 `file-upload.html`、`video-upload.html` 为推荐链接
+- `image-upload.html` 描述更新
+
+#### 7. 📦 构建产物全部重建
+- `editormd.min.js` (176K) / `editormd.amd.min.js` (177K)
+- `css/editormd.min.css` (105K) / `editormd.preview.min.css` (61K) / `editormd.logo.min.css` (1.5K)
+
+#### 8. 📝 文档更新
+- **`README.md`**: v1.10.0 改进表新增 5 行（新语法支持/帮助系统重写/关于增强/上传优化/示例和文档）
+- **`USAGE_GUIDE.md`**: 日期更新至 2026-06-10
+
+#### 涉及修改文件
+- `plugins/help-dialog/help.md` — 完全重写为中文 v1.10.0 参考
+- `src/editormd.js` — createInfoDialog 增强
+- `examples/file-upload.html` / `video-upload.html` / `event-handlers.html` — **新建**
+- `examples/image-upload.html` / `@links.html` / `page-syntax.html` / `index.html` — 重写/增强
+- `examples/php/upload.php` / `cross-domain-upload.php` / `post.php` / `upload_callback.html` — 全面优化
+- `README.md` / `USAGE_GUIDE.md` / `FIX_SUMMARY.md` — 文档更新
+- 全部 10 个构建产物文件已重建
+
+---
+
+### 第二十八轮修复（示例页面完善 + 版本统一 + 新示例创建）
+
+**修复日期**: 2026-06-10
+
+#### 1. 📄 版本引用全面统一
+- **全局搜索**: 15+ 个示例文件中存在旧版本 `v1.6.0` / `v1.7.0` / `v1.8.0` 引用
+- **修复文件**:
+  - `examples/all-features.html` — Tabs 变更日志扩展至 v1.10.0、JSON 版本号、行内版本文字
+  - `examples/full-preview.html` — title/h1 标题、JS 代码示例、Tabs 变更日志、行内版本文字
+  - `examples/api-reference.html` — title/h1 标题、文件上传章节标记
+  - `examples/tabs.html` / `tooltip.html` / `video.html` — title 标题
+  - `examples/image-resize.html` / `text-align.html` / `pinyin.html` / `table-edit.html` — title 标题
+  - `examples/toolbar-reference.html` — title/h1 标题
+  - `examples/echarts.html` / `columns.html` / `page-syntax.html` / `@links.html` — title/内容版本
+- **保留**: Tabs 变更日志中的 "### v1.8.0" 等历史版本标记为正确
+
+#### 2. 🆕 新增 3 个专属示例页面
+| 文件 | 功能 | 内容覆盖 |
+|------|------|----------|
+| `examples/superscript-subscript.html` | 上标与下标 | 4 章节：数学公式上标、化学式下标、同位素组合、边界情况 |
+| `examples/font-size.html` | 字体大小 | 4 章节：8-64px 基础演示、实用场景、与 Markdown 组合、边界测试 |
+| `examples/footnote.html` | 脚注功能 | 5 章节：基础脚注、内联格式、标题脚注、多脚注、列表嵌套 |
+
+#### 3. 📋 index.html 导航更新
+- v1.10.0 新特性区新增 3 个 `featured` 推荐链接：上标与下标、字体大小、脚注功能
+- 所有新增页面均带有图标和详细描述
+
+#### 4. 📦 构建产物全部重建
+- `editormd.min.js` (175.2 KB) / `editormd.amd.min.js` (176.5 KB)
+- `css/editormd.min.css` (105.2 KB) / `editormd.preview.min.css` (61.1 KB) / `editormd.logo.min.css` (1.5 KB)
+
+#### 涉及修改文件
+- `examples/index.html` — 新增 3 个 v1.10.0 推荐链接
+- `examples/all-features.html` — 版本更新 + 变更日志扩展
+- `examples/full-preview.html` — 版本更新 + 变更日志扩展
+- `examples/api-reference.html` — 版本更新
+- `examples/tabs.html` / `tooltip.html` / `video.html` / `image-resize.html` / `text-align.html` / `pinyin.html` / `table-edit.html` / `toolbar-reference.html` — title 版本更新
+- `examples/echarts.html` / `columns.html` / `page-syntax.html` / `@links.html` — 版本更新
+- `examples/superscript-subscript.html` / `font-size.html` / `footnote.html` — **新建**
+- 全部 14 个构建产物文件已重建
+
+---
+
+### 第二十七轮修复（公式弹窗去搜索 + 下拉菜单全方向溢出 + 示例完善 + 文档更新）
+
+**修复日期**: 2026-06-10
+
+#### 1. 🔍 公式弹窗删除搜索功能
+- **变更**: 移除公式弹窗中的搜索栏（HTML 生成代码 + JS 搜索过滤事件处理 + SCSS 搜索样式）
+- **删除位置**:
+  - `src/editormd.js`: 移除 `formula-search-bar` HTML 生成（搜索框 + 搜索图标）
+  - `src/editormd.js`: 移除 `$searchInput` 变量、`input` 和 `keydown` 事件处理（约 30 行）
+  - `scss/editormd.dialog.scss`: 移除 `formula-search-bar`、`formula-search`、`formula-search-icon` 三组样式（约 35 行）
+- **保留**: Tab 导航栏、分类面板、公式网格、底部自定义输入栏全部保留
+
+#### 2. 🔧 下拉菜单全方向溢出彻底修复
+- **根因分析**: 上轮已修复 `overflow: hidden` → `visible`，但仅做了右边缘检测；当菜单靠近底部边缘时，仍会被视口底部裁剪
+- **修复措施**:
+  - **CSS** 新增 `.editormd-dropdown-menu-up` 类（向上展开，top→bottom:33px，箭头翻转向下）
+  - **JS** 双阶段检测：
+    1. 第一阶段：检测右边缘 → 右对齐 (`.dropdown-menu-right`)
+    2. 第二阶段（`requestAnimationFrame` 嵌套）：重新测量后检测底部溢出 → 向上展开 (`.dropdown-menu-up`)
+    3. 最终：计算可用高度，动态设置 `max-height` 兜底
+  - **清理**: 关闭时完整重置所有位置类和内联样式
+- **效果**: 无论菜单在哪个位置打开（角落/边缘/小屏），都能自动适配方向
+
+#### 3. 📄 示例页面全面完善
+- **`examples/index.html`**:
+  - 版本号 1.8.0 → 1.10.0
+  - 重新组织分类：v1.10.0 新特性 / v1.7.0 增强功能
+  - 新增"全部功能完整演示"置顶推荐链接
+  - 公式面板描述更新为"11 分类、100+LaTeX、Tab切换、一键插入"
+- **`examples/all-features.html`**:
+  - 已覆盖所有 24 种语法：Markdown基础/表格/代码高亮(JS+Python+TS+Go+JSON)/ECharts 5类/Tabs/Columns/Tooltip/对齐/拼音/KaTeX/Flowchart/时序图/Video/附件/Image/HTML/分页/@链接/Copybook 3类/上标下标/字体大小/脚注
+- **`examples/full-preview.html`**:
+  - 版本号 1.8.0 → 1.10.0
+  - 新增章节：上标与下标（^语法^/^^语法^^/组合）、字体大小（!字号!）、脚注功能
+
+#### 4. 📦 构建与压缩
+- 所有 SCSS → CSS 编译完成
+- 所有 CSS → .min.css 压缩完成
+- `build-amd.js` → `editormd.amd.js` 完成
+- `editormd.js` + `editormd.amd.js` → `.min.js` 压缩完成
+- 共 12 个文件全部重建
+
+#### 涉及修改文件
+- `src/editormd.js` — 删除公式搜索HTML+JS事件；增强下拉菜单全方向溢出检测
+- `scss/editormd.dialog.scss` — 删除搜索相关样式（~35行）
+- `scss/editormd.menu.scss` — 新增 `dropdown-menu-up` 向上展开类
+- `examples/index.html` — 版本号 + 分类重组 + 描述更新
+- `examples/all-features.html` — 保持完整覆盖
+- `examples/full-preview.html` — 新增上标/下标/字号/脚注 + 版本号
+- `FIX_SUMMARY.md` — 本更新记录
+- 全部 12 个编译输出文件已重建
+
+---
+
+### 第二十六轮修复（公式弹窗样式 + 下拉菜单溢出 + 全面优化）
+
+**修复日期**: 2026-06-10
+
+#### 1. 🎨 公式弹窗全面样式化
+- **根因**: 公式弹窗（`editormd-formula-*` 系列类）在项目中**没有任何 SCSS 样式定义**，完全依赖浏览器默认样式
+- **修复**: 新增 17 组完整的公式弹窗样式规则（~250 行 SCSS），覆盖所有子组件：
+  - **Tab 导航栏**：横向滚动 + 活跃态紫色下划线 + hover 高亮
+  - **搜索栏**：图标定位 + focus 紫色边框 + 阴影光晕
+  - **内容区**：可滚动 + 自定义滚动条
+  - **公式网格**：`grid-template-columns: repeat(auto-fill, minmax(155px, 1fr))` 响应式网格
+  - **公式卡片**：hover 上浮动画 + 紫色边框 + 阴影；块级公式（矩阵等）自动跨两列
+  - **KaTeX 容器**：居中渲染 + 字号适配
+  - **公式名称**：底部标签 + 分隔线
+  - **底部栏**：flex 布局 + 模式切换 radio 按钮（选中态紫色高亮）
+  - **自定义输入**：等宽字体 + focus 紫光 + 插入按钮渐变
+- **效果**: 公式弹窗从裸 HTML 变为精美、功能完备的现代化 UI
+
+#### 2. 🔧 下拉菜单溢出裁剪彻底修复
+- **根因**: `.editormd` 容器设置 `overflow: hidden`，内部绝对定位的下拉菜单即使 `z-index: 10000` 也无法突破父容器的裁剪边界
+- **修复**:
+  - `.editormd` → `overflow: visible`（允许下拉菜单溢出）
+  - `.editormd-container` 保持 `overflow: hidden`（编辑器内容区继续正确裁剪）
+  - `.editormd-toolbar` → 显式 `overflow: visible`
+  - 下拉菜单自身 `overflow-y: auto`（长列表可滚动）
+- **JS 自动定位**: 新增 `requestAnimationFrame` 检测右边缘溢出 → 自动追加 `.editormd-dropdown-menu-right` 类（`left: auto; right: 0`）
+- **动态高度限制**: 检测视口底部空间，自动设置 `max-height` 防止底部溢出
+
+#### 3. ✅ 全面验证通过
+- 所有 25 项 CSS 修复验证通过（公式弹窗 16 项 + 溢出/样式 9 项）
+- 所有 JS 修复验证通过（自动定位 + 公式分类 + cm 安全）
+- 编译后 CSS 含 50 处 `editormd-formula-*` 引用规则
+
+#### 涉及修改文件
+- `scss/editormd.scss` — `.editormd` overflow → visible；`.editormd-toolbar` overflow → visible
+- `scss/editormd.dialog.scss` — 新增 250+ 行公式弹窗完整样式
+- `scss/editormd.menu.scss` — 下拉菜单 `overflow-y: auto` + `.dropdown-menu-right` 右对齐
+- `src/editormd.js` — 下拉菜单自动右边缘检测 + 动态 max-height
+- 全部 12 个编译输出文件已重建
+
+---
+
+### 第二十五轮修复（全面验证 + 性能优化 + cm安全防护）
+
+**修复日期**: 2026-06-10
+
+#### 1. 🚀 同步滚动性能大幅优化
+- **根因**: `buildLineMap()` 每次滚动都执行 DOM 查询（`.find()`），严重消耗性能
+- **修复**: 实现智能缓存机制，基于 `scrollHeight + 元素数量` 哈希判断是否需要重建
+- **效果**: 缓存命中时仅更新元素位置偏移，避免重复 DOM 遍历
+
+#### 2. 🛡️ `cm` 空值安全防护
+- **根因**: 某些边缘情况下 `this.cm` 可能为 `null`
+- **修复**: `bindScrollEvent` 方法增加 `if (!cm) return this;` 空值守卫
+
+#### 3. 🔄 全面重新构建
+- 所有 SCSS → CSS 重新编译（editormd.css, preview.css, logo.css）
+- 所有 JS 重新构建（editormd.js, editormd.min.js, editormd.amd.js, editormd.amd.min.js）
+- 所有 CSS 重新压缩（editormd.min.css, preview.min.css, logo.min.css）
+
+#### 4. ✅ 全面验证通过
+- `cm is not defined` 错误已修复（`var cm = this.cm;` + null guard）
+- Dialog container/Footer padding 正确（`4px 10px` / `4px 14px`）
+- Form submit padding 正确（`6px 12px`）
+- Dialog close 按钮样式优化（24x24px, hover 缩放效果）
+- 下拉菜单 z-index 提升至 `10000` + `overflow: visible`
+- 工具栏新增 A3/A4/A5 页面尺寸 + 流程图/时序图
+- 颜色选择器样式完整编译
+
+#### 涉及修改文件
+- `src/editormd.js` — 同步滚动缓存优化 + cm 空值守卫
+- 所有 CSS/JS 输出文件重新构建
+
+---
+
+### 第二十四轮修复（颜色选择器 + 弹窗样式 + 同步滚动 + 工具栏增强）
+
+**修复日期**: 2026-06-10
+
+#### 1. 🐛 颜色选择器CSS缺失修复
+- **根因**: 颜色选择器样式未添加到 SCSS 文件中
+- **修复**: 在 `scss/editormd.scss` 中添加完整的颜色选择器样式
+- **样式**: 每行4个方格、渐变确认按钮、hover 上浮效果
+
+#### 2. 🎨 弹窗样式优化
+- `.editormd-dialog-container` padding 改为 `4px 10px`
+- `.editormd-dialog-footer` padding 改为 `4px 14px`
+- `.editormd-form input[type=submit]` padding 改为 `6px 12px`
+- `.editormd-dialog-close` 尺寸调整为 `24x24px`，添加半透明背景
+
+#### 3. 🐛 下拉菜单被遮挡修复
+- **根因**: 下拉菜单 `z-index: 100` 太低
+- **修复**: 提升至 `z-index: 10000`，添加 `overflow: visible`
+
+#### 4. 🔧 工具栏新增功能
+- 新增页面尺寸下拉菜单：A3、A4、A5 页面
+- 新增流程图插入功能（`insert-flowchart`）
+- 新增时序图插入功能（`insert-sequence`）
+- 页面语法自动插入开始和结束标签
+
+#### 5. 🐛 同步滚动 `cm is not defined` 修复
+- **根因**: `bindScrollEvent` 方法中 `buildLineMap` 函数使用了未定义的 `cm` 变量
+- **修复**: 在方法开头添加 `var cm = this.cm;`
+
+#### 6. 📝 脚注样式优化
+- 删除脚注返回链接（`.editormd-footnote-backref`）
+- 删除脚注内容中的 `<br>` 换行显示
+- 删除脚注引用悬浮虚线效果
+- 脚注内容支持表格、代码块、引用、tabs、多栏等语法
+- 优化脚注区 margin 和行高，减少空白
+
+#### 涉及修改文件
+- `src/editormd.js` — 工具栏配置、处理函数、同步滚动修复
+- `scss/editormd.scss` — 颜色选择器样式
+- `scss/editormd.dialog.scss` — 弹窗样式优化
+- `scss/editormd.form.scss` — 按钮样式优化
+- `scss/editormd.menu.scss` — 下拉菜单 z-index 修复
+- `scss/editormd.preview.scss` — 脚注样式优化
+
+---
+
+### 第二十三轮修复（工具栏修复 + 弹窗美化 + 安全加固 + 全面审计）
+
+**修复日期**: 2026-06-09
+
+#### 1. 🐛 工具栏图片/视频/文件按钮失效（超级关键）
+- **根因**: `image-dialog.js`、`video-dialog.js`、`file-dialog.js` 三个插件中 `if (!settings.imageUpload) { return; }` 在 `dialog.show()` 之前提前返回，导致弹窗创建但从未显示
+- **修复**: 将上传相关代码包裹在条件判断内，`dialog.show()` 始终可执行
+
+#### 2. 🐛 executePlugin 未捕获异常导致工具栏静默失败
+- **根因**: `loadScript.onerror` 在加载失败时仍调用 callback，callback 中 `_this[name](cm)` 因 `_this[name]` 为 `undefined` 抛 `TypeError`
+- **修复**: 添加 `typeof _this[name] !== "function"` 检查 + 所有插件调用包裹 try/catch + notify 错误提示
+
+#### 3. 🔒 XSS 安全加固（6 项）
+- **Tooltip `data-tooltip` 属性注入**: 用户可控 `tooltipContent` 直接拼入 HTML 属性 → 使用 `editormd.escapeAttr()` 转义
+- **Link renderer `href`/`title` 注入**: `sanitize: false` 使死代码协议检查失效 → 添加活跃 `javascript:`/`data:`/`vbscript:` 协议阻断 + `editormd.escapeAttr()` 全属性转义
+- **`editormd.notify()` 原始 HTML 注入**: `message` 拼接入 HTML → 改用 `.text()` 安全插入
+- **`applyColor()` 选区注入**: 编辑器选区未转义插入 HTML → 颜色值验证 + HTML 转义
+- **图片/视频/文件块 URL 转义不完整**: 仅转义 `"` → 使用 `editormd.escapeAttr()` 完整转义 `&<>"'`
+- **新增工具函数**: `editormd.escapeHtml()` 和 `editormd.escapeAttr()`
+
+#### 4. 🧠 ECharts resize 事件内存泄漏
+- **根因**: 随机后缀命名空间 `resize.editormd-echarts-{random}` 导致 `.off()` 无法匹配清理
+- **修复**: 改为基于 chart ID 的命名空间 `resize.editormd-echarts.{id}`，支持统一 `.off("resize.editormd-echarts")` 清理
+
+#### 5. 🎨 编辑模式弹窗全面美化
+- **Dialog 基础样式**: `border-radius: 3px→8px`、多层柔和阴影、`overflow:hidden`、系统字体
+- **Dialog Header**: 紫色渐变 `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`、白色标题、装饰符号
+- **Dialog Close**: 圆形按钮 + 半透明 hover 背景
+- **Dialog Container**: 优化 padding `24px`、标题样式、表单输入美化（圆角 6px、focus 发光环）
+- **Dialog Footer**: flex 布局 + `gap: 10px` + 浅灰背景
+- **Dialog Info**: 蓝色渐变头部 + 优化链接样式
+- **Form 按钮**: 渐变色 primary 按钮 + hover 上浮 + `box-shadow` 光晕
+- **表单输入**: border-color 过渡 + focus `box-shadow` 紫色发光环
+- **危险按钮**: 红框 outline 样式 + hover 填充
+
+#### 6. ✅ 脚注编号验证
+- 经审计确认脚注使用 `push` 方法按顺序添加，编号顺序正确
+
+#### 涉及修改文件
+- `plugins/image-dialog/image-dialog.js` — 上传条件修复
+- `plugins/video-dialog/video-dialog.js` — 上传条件修复
+- `plugins/file-dialog/file-dialog.js` — 上传条件修复
+- `src/editormd.js` — executePlugin / XSS / 内存泄漏 / URL转义 / 工具函数 / 版本号
+- `scss/editormd.dialog.scss` — 弹窗样式全面美化
+- `scss/editormd.form.scss` — 表单按钮样式美化
+- `css/editormd.css` / `css/editormd.min.css` — 重新编译
+- `css/editormd.preview.css` / `css/editormd.preview.min.css` — 重新编译
+- `editormd.js` / `editormd.min.js` — 重新构建
+- `editormd.amd.min.js` — 重新构建
+- `package.json` — 版本号更新至 1.10.0
+
+---
+
+### 第十九轮修复（脚注系统全面重写 + 占位符修复 + 样式优化）
+- 🐛 **修复上标/下标显示为 `<!--editormd-cb-N-->`** — 根本原因：代码块占位符 `<!--...-->` 被 smartypants 将 `--` 转为 `—`，且脚注处理在代码块恢复之前执行导致占位符泄露到脚注内容中
+- ✅ **脚注处理移至 `restoreCodeBlocks` 之后** — 确保代码块先恢复，脚注内容不再包含占位符
+- ✅ **脚注定义边界重写** — 使用 `\n\n`（空行）作为定义内容边界，不再吞噬相邻段落
+- ✅ **脚注内容不会跨越到下一个定义** — 最近的空行或下一个定义作为内容终点
+- ✅ **脚注 HTML 格式优化** — 内容中换行转 `<br>`，避免 marked.js `breaks:true` 产生多余 `<br>` 标签
+- ✅ **脚注锚点 ID 加前缀** — `editormd-fnref-N` / `editormd-fn-N`，避免与页面其他元素冲突
+- ✅ **点击跳转修复** — 统一的 `<a href="#...">` 锚点，支持双向跳转（引用↔定义）
+- ✅ **正则 `lastIndex` 显式重置** — 上标/下标/脚注引用正则使用时重置状态，防止全局匹配异常
+- ✅ **脚注引用样式独立** — `.editormd-footnote-ref-wrapper` 区分于普通 `<sup>` 标签
+- ✅ **脚注 CSS 全面重写** — 圆标编号、卡片式布局、柔和高亮动画、hover 交互
+- ✅ **all-features.html 脚注示例格式优化** — 确保定义间有空行分隔
+
+### 第十八轮修复（新语法支持 + 同步滚动优化 + 脚注系统）
+- ✅ **上标语法 `^内容^`** — 正则为 `\^([^^]+)\^`，渲染为 `<sup>` 标签
+- ✅ **下标语法 `^^内容^^`** — 正则为 `\^\^([^^]+)\^\^`，渲染为 `<sub>` 标签
+- ✅ **字体大小语法 `!数字 文本!`** — 正则为 `!(\d+)\s+([^!]+)!`，字号范围 8-200px
+- ✅ **脚注引用 `[^名称]`** — 渲染为可点击上标链接，跳转到页面底部
+- ✅ **脚注定义 `[^名称]:内容`** — 手动解析定义锚点，提取多行内容，文末有序列表展示
+- ✅ **脚注自动编号** — 定义按出现顺序编号，未定义引用保持原样
+- ✅ **脚注 CSS 样式** — 完整的脚注列表样式、链接样式、target 高亮动画
+- ✅ **同步滚动算法优化** — 编辑器→预览：使用实际滚动比例替代行号比例
+- ✅ **同步滚动预览→编辑器** — 使用实际像素比例映射，不再依赖行坐标计算
+- ✅ **同步滚动边界处理** — 优化顶部/底部检测，滚动更精准
+- ✅ **脚注解析健壮性** — 从后往前处理定义避免索引偏移
+- ✅ **脚注 XSS 防护** — 内容转义 `&<>`，内联格式白名单（粗体/斜体/代码）
+- ✅ **all-features.html 全面更新** — 添加新语法示例（二十二~二十四节）
+- ✅ **README.md 文档更新** — 添加上标/下标/字体大小/脚注使用说明
+- ✅ **全部文件重新构建** — JS/CSS 编译压缩
+
+### 第二十二轮修复（全面代码审计 + 5 项关键修复）
+
+- 🔍 **全面代码审计** — 使用 code-explorer 对 `src/editormd.js` 和 `examples/all-features.html` 进行逐行审计
+- 🐛 **围栏代码块正则不支持 CommonMark 闭合规则** — 原 `\1` 反向引用要求精确匹配，闭合围栏数量多于开启围栏时匹配失败
+- ✅ **修复围栏代码块正则** — 改用独立捕获 + 类型/数量验证 + `(?=\s*(?:\n|$))` 换行断言，支持 CommonMark 规范
+- 🐛 **脚注内联 Markdown 处理顺序错误** — 粗体/斜体先行导致 `` `**MIT**` `` 被错误解析为 `<code><strong>MIT</strong></code>`
+- ✅ **修复脚注内联处理顺序** — 行内代码优先处理，并用占位符保护 `<code>` 块防止粗体/斜体二次匹配
+- 🐛 **pageFooter 属性转义不完整** — 缺少 `&` → `&amp;` 步骤，裸 `&` 在 HTML 属性中不合法
+- ✅ **完善 pageFooter 转义链** — 添加 `replace(/&/g, "&amp;")` 为首步
+- 🐛 **函数命名拼写错误** — `getToolbarHandles` 缺少字母 'r'（应为 `getToolbarHandlers`）
+- ✅ **修正函数命名** — 函数定义 + 2 处调用点统一改为 `getToolbarHandlers`
+- ✅ **22 项综合功能测试全部通过** — 脚注顺序、围栏代码块、上标/下标、内联处理、HTML 转义、工具栏处理器
+- ✅ **全部编译通过** — JS/CSS/AMD
+
+### 第二十一轮修复（工具栏失效 + 脚注顺序 + 占位符泄露 — 超级关键 Bug）
+
+- 🐛 **根因：`getToolbarHandles` 使用未定义变量** — 第1441行使用 `toolbarIconHandlers[name]`，但该变量不存在，导致整个工具栏处理器系统失效，所有工具栏按钮点击无响应
+- ✅ **修复工具栏处理器** — 将 `toolbarIconHandlers[name]` 改为 `toolbarHandlers[name]`
+- 🐛 **脚注编号顺序反转** — 使用 `unshift` 在数组开头插入，导致脚注顺序为 3, 2, 1 而非 1, 2, 3
+- ✅ **修复脚注顺序** — 将 `footnoteOrder.unshift(dm.name)` 改为 `push`，保持原始出现顺序
+- 🐛 **脚注内容中显示占位符** — 脚注内容在代码块保护阶段被提取，其中的行内代码 `` `MIT` `` 还是占位符形式 `<!--editormd-cb-N-->`
+- ✅ **恢复脚注内容中的占位符** — 在处理脚注内容时调用 `restoreCodeBlocks(fnContent, codeProtection.placeholders)` 恢复行内代码等
+- ✅ **全部编译通过**
+
+### 第二十轮修复（上标/脚注互扰修复 — 关键 Bug）
+
+- 🐛 **根因：上标正则贪婪匹配跨文本** — `/\^([^^]+)\^/g` 从 `[^fn1]` 中的 `^` 匹配到 `[^fn2]` 的 `^`，吞掉中间所有内容，同时也破坏脚注定义的解析
+- ✅ **处理顺序重排** — 脚注处理移到上标/下标之前，确保 `[^name]` 先被替换为 HTML，上标正则运行时不再看到 `[^name]` 中的 `^` 字符
+- ✅ **正则在 `[^^]` 中排除换行符** — `/[^^\n]+/` 防止上标/下标跨行贪婪匹配
+- ✅ **sub/sup 正则限行** — `superscript: /\^([^^\n]+)\^/g`，`subscript: /\^\^([^^\n]+)\^\^/g`
+- ✅ **完全重构 `preprocessMarkdownBlocks` 内部顺序**：
+  1. 保护代码块（`protectCodeBlocks`）
+  2. 块级语法（tabs/columns/page）
+  3. **脚注定义解析 + 引用替换**（新位置）
+  4. 下标 → 上标 → 字体大小
+  5. 恢复占位符 + 代码块
+- ✅ **全部编译通过**
+
+### 第十七轮修复（事件处理增强 + 语法处理优化 + 边界检查完善）
+- ✅ **findBalancedBlocks 边界检查** — 参数验证、正则异常捕获、文本长度限制
+- ✅ **递归深度警告** — 嵌套超过 20 层时输出警告日志
+- ✅ **文本长度安全限制** — 100万字符上限防止性能问题
+- ✅ **initTabs/initColumns/initPages 边界检查** — 容器存在验证
+- ✅ **列数范围验证** — columns 限制 1-12 列，超出时自动修正
+- ✅ **标签页数量限制** — tabs 最多 50 个标签页
+- ✅ **图片尺寸验证** — imageResize 参数校验、XSS 防护增强
+- ✅ **字帖类型验证** — copybook 类型白名单检查
+- ✅ **纸张类型验证** — page 纸张规格白名单检查
+- ✅ **视频/文件数量限制** — video 最多 50 个、file 最多 100 个
+- ✅ **URL 长度验证** — 视频/文件 URL 最大 2000 字符
+- ✅ **全面 try-catch 包裹** — 所有语法处理添加异常捕获
+- ✅ **console.warn 日志** — 所有异常输出友好警告信息
+- ✅ **全部文件重新构建** — JS/CSS 编译压缩
+
+### 第十六轮修复（纸张页面语法增强 + 快捷键完善 + 文档更新）
+- ✅ **修复 `[[page:AN]]` 语法无法识别** — 正则更新支持 AN/LETTER/LEGAL
+- ✅ **添加 AN 纸张尺寸定义** — 等同于 A4（794×1123px）
+- ✅ **添加对齐快捷键** — Ctrl+Alt+L/C/R/J 四种对齐方式
+- ✅ **创建拼音参照表页面** — 声母/韵母/声调完整列表
+- ✅ **创建 USAGE_GUIDE.md** — 完整使用指南文档
+- ✅ **更新 examples/index.html** — 添加拼音参照表链接
+- ✅ **全部文件重新构建** — JS/CSS 编译压缩
+
+### 第十五轮修复（表格编辑修复 + 页面语法增强 + 预览模式优化）
+- ✅ **表格编辑按钮定位修复** — 移除 `editormd.scss` 中旧版冲突 CSS（~50 行）
+- ✅ **表格编辑 CSS 整合** — 将表格编辑样式移至 `editormd.preview.scss`，纳入 SCSS 编译管道
+- ✅ **初始化顺序修正** — `initPages()` 在 `initTableEdit()` 之前执行，避免 DOM 重建导致事件丢失
+- ✅ **按钮定位边界保护** — 增加 `Math.max()` 防止负值偏移
+- ✅ **页头页脚支持** — `[[page:A4 header="标题" footer="第 {page} 页"]]` 支持配置页头页脚
+- ✅ **页码占位符** — `{page}` 当前页码、`{total}` 总页数自动替换
+- ✅ **分页后页头页脚渲染** — 自动分页后每页正确显示页头页脚
+- ✅ **预览模式编辑禁用** — 新增 `previewOnly` 配置项，纯预览模式禁用表格编辑/图片缩放
+- ✅ **自动检测预览模式** — 当 `watch: false` 且 `toolbar: false` 时自动禁用编辑功能
+- ✅ **examples/index.html 完善** — 添加纸张页面示例链接，优化展示布局
+- ✅ **page-syntax.html 更新** — 展示页头页脚功能，完善使用说明
+- ✅ **README 文档更新** — 页头页脚语法说明、配置项文档
+- ✅ **全部文件重新构建** — JS/CSS 编译压缩
+
+### 第十四轮修复（代码去重 + 新语法 + 嵌套增强 + 全面优化）
+- ✅ **CSS 代码去重** — 移除 `editormd.scss` 与 `editormd.preview.scss` 重复的 tooltip 样式定义（~40行重复代码）
+- ✅ **SCSS 变量规范化** — `editormd.grid.scss` 和 `editormd.tab.scss` 硬编码类名改为 `$prefix` 变量
+- ✅ **新增 `[[page:A4]]` / `[[page:A5]]` 语法** — 纸张页面布局，支持 A0~A8、LETTER、LEGAL 规格
+- ✅ **页面内容自动换行** — 超出纸张宽度内容自动换行展示
+- ✅ **高度溢出自动分页** — 内容超过纸张高度时智能分割为多页，页间距 4px
+- ✅ **纸张水印** — 每页右下角显示纸张规格标识
+- ✅ **嵌套语法增强** — `[[page]]` 内可嵌套 `[[tabs]]` / `[[columns]]` / `[[copybook]]`，反之亦然
+- ✅ **递归渲染支持** — 页面内容通过完整的 markdown 渲染管道递归处理
+- ✅ **打印样式** — @media print 适配，分页打印支持
+- ✅ **响应式适配** — 小屏幕自动缩放纸张尺寸
+- ✅ **`pageBlock` 配置选项** — 新增设置项控制纸张页面语法启用/禁用
+- ✅ **文档完善** — README 新增纸张页面语法说明和示例
+- ✅ **全部文件重新构建** — JS/CSS 编译压缩
+
+### 第十三轮修复（草稿弹窗 UI/UX 全面升级）
+- ✅ **草稿弹窗美化** — 全新现代化 UI 设计，渐变头部、卡片式列表、悬停动画
+- ✅ **时间标签优化** — 智能时间显示（刚刚、N分钟前、N小时前、N天前）
+- ✅ **入场/退场动画** — 平滑缩放淡入淡出效果，支持 ESC 关闭动画
+- ✅ **响应式定位** — 窗口大小改变自动重新居中
+- ✅ **确认提示增强** — 清除草稿前增加确认对话框
+- ✅ **选中视觉反馈** — 点击草稿时高亮显示恢复状态
+- ✅ **语言文案优化** — 中文/英文/繁中更友好的按钮文案
+- ✅ **CSS 样式增强** — SCSS 添加完整的 `.editormd-draft-*` 样式族
+- ✅ **滚动条美化** — 草稿列表自定义滚动条样式
+- ✅ **文件构建更新** — 所有 .js/.css 重新编译压缩
 
 ### 第十二轮修复（全面系统审查与优化）
 - ✅ **Tooltip 核心修复** — `pointer-events:none` → `auto`，popup 与 trigger 平滑交互，支持点击 popup 内元素，独立导出支持
@@ -34,6 +657,12 @@
 - ✅ `editormd.min.js` - 压缩版
 - ✅ `editormd.amd.js` - AMD 模块版本
 - ✅ `editormd.amd.min.js` - AMD 压缩版
+
+### 草稿弹窗相关文件
+- ✅ `src/editormd.js` - `showDraftRecovery()` 方法全面重构
+- ✅ `scss/editormd.dialog.scss` - 新增草稿弹窗完整样式
+- ✅ `css/editormd.css` / `css/editormd.min.css` - 重新编译
+- ✅ `languages/zh-cn.js` / `zh-tw.js` / `en.js` - 更新多语言文案
 
 ### KaTeX 升级
 - ✅ `lib/katex/katex.min.js` - 升级至 v0.16.9
@@ -670,11 +1299,98 @@ git push origin master
 
 ---
 
+## 第十六轮修复：纸张页面语法增强与快捷键完善
+
+### 1. 修复 `[[page:AN]]` 语法无法识别的问题
+
+**问题根源**：
+- `editormd.regexs.pageOpen` 正则表达式只支持 `A\d+` 格式（如 A4, A5）
+- 不匹配 `AN`、`LETTER`、`LEGAL` 等纸张规格
+- 导致 `[[page:AN]]...[[/page]]` 无法被识别为页面块
+
+**修复方案**：
+| 位置 | 修改内容 |
+|------|----------|
+| 第 6802 行 | `pageOpen: /\[\[page:(A\d+|AN|LETTER|LEGAL)\]\]/gi` |
+| 第 3392 行 | 添加 `"AN": { w: 794, h: 1123 }` 纸张尺寸定义 |
+| 第 7355 行 | 添加 `"AN": { w: 794, h: 1123 }` 纸张尺寸定义 |
+| 第 7361 行 | 正则匹配模式更新为 `(A\d+|AN|LETTER|LEGAL)` |
+
+**支持的纸张规格**：
+- A系列：A0 ~ A8
+- AN：等同于 A4（794×1123px）
+- LETTER：美国信纸（816×1056px）
+- LEGAL：美国法律用纸（816×1344px）
+
+### 2. 添加对齐功能键盘快捷键
+
+**新增快捷键**：
+| 快捷键 | 功能 | 说明 |
+|--------|------|------|
+| `Ctrl+Alt+L` | 左对齐 | 插入 `⁑⁖...⁖⁑` 语法 |
+| `Ctrl+Alt+C` | 居中对齐 | 插入 `⁑⁑...⁑⁑` 语法 |
+| `Ctrl+Alt+R` | 右对齐 | 插入 `⁑⠕...⠕⁑` 语法 |
+| `Ctrl+Alt+J` | 两端对齐 | 插入 `⁑⁛...⁛⁑` 语法 |
+
+**代码位置**：第 6682-6685 行
+
+### 3. 文档更新
+
+**README.md 更新内容**：
+- 添加纸张页面支持的纸张规格说明
+- 添加对齐功能的键盘快捷键说明
+
+### 4. 嵌套语法支持
+
+**已支持的嵌套场景**：
+- ✅ `[[page:A4]]` 内嵌套 `[[tabs]]`
+- ✅ `[[page:A4]]` 内嵌套 `[[columns:N]]`
+- ✅ `[[tabs]]` 内嵌套 `[[columns:N]]`
+- ✅ `[[columns:N]]` 内嵌套 `[[tabs]]`
+- ✅ 多级嵌套（最多 20 层）
+
+**嵌套处理机制**：
+- `findBalancedBlocks` 函数支持嵌套检测
+- `hasMatchingPair` 递归验证嵌套有效性
+- 递归深度限制为 20 层，防止栈溢出
+
+### 5. 代码质量
+
+**Linter 检查结果**：
+- ✅ 无新增错误
+- ✅ 所有修改符合代码规范
+- ℹ️ 存在 79 个 HINT 级别提示（均为预存在，非本次引入）
+
+### 6. 新增文件
+
+| 文件 | 说明 |
+|------|------|
+| `examples/pinyin-reference.html` | 拼音参照表页面，包含所有声母、韵母、声调 |
+| `USAGE_GUIDE.md` | 完整使用指南文档 |
+
+### 7. 文档完善
+
+**README.md 更新**：
+- 添加纸张页面支持的纸张规格说明
+- 添加对齐功能的键盘快捷键说明
+
+**examples/index.html 更新**：
+- 添加拼音参照表页面链接
+
+**编译文件**：
+- ✅ `editormd.min.js` - 已重新编译
+- ✅ `editormd.amd.min.js` - 已重新编译
+- ✅ `css/editormd.min.css` - 已重新编译
+- ✅ `css/editormd.preview.min.css` - 已重新编译
+- ✅ `css/editormd.logo.min.css` - 已重新编译
+
+---
+
 ## 📚 参考资源
 
 - [jQuery 3.x 升级指南](https://jquery.com/upgrade-guide/3.0/)
 - [marked v0.3.3 文档](https://github.com/markedjs/marked)
-- [Editor.md GitHub](https://github.com/pandao/editor.md)
+- [Editor.md GitHub](https://github.com/zhaoxianfang/editor)
 
 ---
 

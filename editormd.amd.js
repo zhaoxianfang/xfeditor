@@ -132,10 +132,34 @@
         return new editormd.fn.init(id, options);
     };
     
-    editormd.title        = editormd.$name = "Editor.md";
-    editormd.version      = "1.7.0";
-    editormd.homePage     = "https://pandao.github.io/editor.md/";
+    editormd.title        = editormd.$name = "xfEditor";
+    editormd.version      = "1.10.0";
+    editormd.homePage     = "https://github.com/zhaoxianfang/editor";
     editormd.classPrefix  = "editormd-";
+    
+    /**
+     * HTML 实体转义工具函数
+     * 将特殊字符转义为 HTML 实体，防止 XSS 攻击
+     */
+    editormd.escapeHtml = function(str) {
+        if (str == null || typeof str !== "string") return "";
+        return str.replace(/&/g, "&amp;")
+                  .replace(/</g, "&lt;")
+                  .replace(/>/g, "&gt;")
+                  .replace(/"/g, "&quot;")
+                  .replace(/'/g, "&#39;");
+    };
+    
+    /**
+     * HTML 属性值转义（仅转义引号相关，保留 &<> 供 link href 等场景使用）
+     */
+    editormd.escapeAttr = function(str) {
+        if (str == null || typeof str !== "string") return "";
+        return str.replace(/&/g, "&amp;")
+                  .replace(/"/g, "&quot;")
+                  .replace(/</g, "&lt;")
+                  .replace(/>/g, "&gt;");
+    };
     
     editormd.toolbarModes = {
         full : [
@@ -145,7 +169,9 @@
             "|", 
             "list-ul", "list-ol", "hr", "|",
             "link", "reference-link", "image", "video", "file", "|",
-            { "insert" : ["code", "preformatted-text", "code-block", "table", "datetime", "html-entities", "pagebreak"] },
+            { "insert" : ["code", "preformatted-text", "code-block", "table", "datetime", "html-entities", "pagebreak", "insert-flowchart", "insert-sequence"] },
+            "|",
+            { "page" : ["page-a3", "page-a4", "page-a5"] },
             "|",
             { "align" : ["align-left", "align-center", "align-right", "align-justify"] },
             "|",
@@ -180,7 +206,7 @@
         mode                 : "gfm",          // 编辑器模式：gfm 或 markdown
         name                 : "",             // 表单元素 name 属性值
         value                : "",             // CodeMirror 初始值（当 mode 不是 gfm/markdown 时使用）
-        theme                : "",             // Editor.md 编辑器主题（v1.5.0 之前为 CodeMirror 主题）
+        theme                : "",             // xfEditor 编辑器主题（v1.5.0 之前为 CodeMirror 主题）
         editorTheme          : "default",      // 编辑区主题，即 CodeMirror 主题（v1.5.0 起）
         previewTheme         : "",             // 预览区主题
         markdown             : "",             // Markdown 源内容
@@ -291,7 +317,9 @@
         echarts              : false,          // 启用 Apache ECharts 图表支持
         tabs                 : true,           // 启用标签页语法 [[tabs]]
         columns              : true,           // 启用多栏布局语法 [[columns:N]]
+        pageBlock            : true,           // 启用纸张页面语法 [[page:A4]] / [[page:A5]]
         tooltip              : true,           // 启用悬浮提示语法 [text](tooltip:tip)
+        previewOnly          : false,          // 纯预览模式（禁用表格编辑、图片缩放等交互功能）
         draftAutoSave        : false,          // 启用浏览器草稿自动保存
         draftInterval        : 30,             // 草稿自动保存间隔（秒）
         draftMaxDays         : 30,             // 草稿最大保留天数（过期自动清理）
@@ -374,7 +402,13 @@
             "copybook"       : "editormd-icon-copybook",
             "copybook-tian"  : "editormd-icon-tian",
             "copybook-mi"    : "editormd-icon-mi",
-            "copybook-pinyin": "editormd-icon-pinyin"
+            "copybook-pinyin": "editormd-icon-pinyin",
+            "page-a3"        : "fa-file-o",
+            "page-a4"        : "fa-file-text-o",
+            "page-a5"        : "fa-file-o",
+            "page"           : "fa-file-o",
+            "insert-flowchart" : "fa-sitemap",
+            "insert-sequence"  : "fa-exchange"
         },        
         toolbarIconTexts     : {},
         
@@ -445,7 +479,16 @@
                 copybook         : "字帖",
                 "copybook-tian"  : "田字格",
                 "copybook-mi"    : "米字格",
-                "copybook-pinyin": "拼音格"
+                "copybook-pinyin": "拼音格",
+                "page-a3"        : "插入A3页面",
+                "page-a4"        : "插入A4页面",
+                "page-a5"        : "插入A5页面",
+                "insert-flowchart" : "插入流程图",
+                "insert-sequence"  : "插入时序图",
+                "page"             : "页面尺寸",
+                "page-a3"          : "插入A3页面",
+                "page-a4"          : "插入A4页面",
+                "page-a5"          : "插入A5页面"
             },
             buttons : {
                 enter  : "确定",
@@ -821,8 +864,8 @@
         },
         
         /**
-         * 设置 Editor.md 的整体主题，主要是工具栏
-         * Setting Editor.md theme
+         * 设置 xfEditor 的整体主题，主要是工具栏
+         * Setting xfEditor theme
          * 
          * @returns {editormd}  返回editormd的实例对象
          */
@@ -891,8 +934,8 @@
         },
         
         /**
-         * 设置 Editor.md 的主题
-         * Setting Editor.md theme
+         * 设置 xfEditor 的主题
+         * Setting xfEditor theme
          * 
          * @returns {editormd}  返回editormd的实例对象
          */
@@ -1328,7 +1371,7 @@
             
             if (!state.fullscreen && !state.preview && settings.toolbar && settings.toolbarAutoFixed)
             {
-                $(window).on("scroll", autoFixedHandle);
+                $(window).on("scroll.editormd-autofixed", autoFixedHandle);
             }
 
             return this;
@@ -1504,10 +1547,10 @@
             return this;
         },
         
-        getToolbarHandles : function(name) {  
+        getToolbarHandlers : function(name) {
             var toolbarHandlers = this.toolbarHandlers = editormd.toolbarHandlers;
-            
-            return (name && typeof toolbarIconHandlers[name] !== "undefined") ? toolbarHandlers[name] : toolbarHandlers;
+
+            return (name && typeof toolbarHandlers[name] !== "undefined") ? toolbarHandlers[name] : toolbarHandlers;
         },
         
         /**
@@ -1529,9 +1572,9 @@
             var cm                  = this.cm;
             var classPrefix         = this.classPrefix;           
             var toolbarIcons        = this.toolbarIcons = toolbar.find("." + classPrefix + "menu > li > a");  
-            var toolbarIconHandlers = this.getToolbarHandles();  
+            var toolbarIconHandlers = this.getToolbarHandlers();  
             
-            // 下拉菜单切换事件处理器
+            // 下拉菜单切换事件处理器 — 四方向溢出自动适配
             toolbar.find("." + classPrefix + "toolbar-dropdown > ." + classPrefix + "dropdown-toggle").on(editormd.mouseOrTouch("click", "touchend"), function(event) {
                 var $this = $(this);
                 var $dropdown = $this.parent();
@@ -1542,15 +1585,55 @@
                 
                 $dropdown.toggleClass("open");
                 
+                // 全方向溢出自动检测
+                if ($dropdown.hasClass("open") && $menu.length) {
+                    // 先重置所有位置类
+                    $menu.css({ right: "", left: "", "max-height": "", top: "", bottom: "" })
+                         .removeClass(classPrefix + "dropdown-menu-right")
+                         .removeClass(classPrefix + "dropdown-menu-up");
+                    
+                    requestAnimationFrame(function() {
+                        var rect = $menu[0].getBoundingClientRect();
+                        var vpW = window.innerWidth || document.documentElement.clientWidth;
+                        var vpH = window.innerHeight || document.documentElement.clientHeight;
+                        
+                        // 右边缘溢出 → 右对齐
+                        if (rect.right > vpW - 8) {
+                            $menu.addClass(classPrefix + "dropdown-menu-right");
+                        }
+                        
+                        // 重新测量（切换右对齐后位置变了）
+                        requestAnimationFrame(function() {
+                            var rect2 = $menu[0].getBoundingClientRect();
+                            
+                            // 底部溢出 → 向上展开
+                            if (rect2.bottom > vpH - 8) {
+                                $menu.addClass(classPrefix + "dropdown-menu-up");
+                            }
+                            
+                            // 最终高度限制（防止极端小屏）
+                            var finalTop = $menu[0].getBoundingClientRect().top;
+                            var availH = vpH - finalTop - 16;
+                            if (availH < rect2.height) {
+                                $menu.css("max-height", Math.max(100, availH) + "px");
+                            }
+                        });
+                    });
+                }
+                
                 var closeDropdown = function(e) {
                     if (!$(e.target).closest($dropdown).length) {
                         $dropdown.removeClass("open");
-                        $(document).off("click", closeDropdown);
+                        // 清理所有内联样式和位置类
+                        $menu.css({ right: "", left: "", "max-height": "", top: "", bottom: "" })
+                             .removeClass(classPrefix + "dropdown-menu-right")
+                             .removeClass(classPrefix + "dropdown-menu-up");
+                        $(document).off("click.editormd-dropdown", closeDropdown);
                     }
                 };
                 
                 if ($dropdown.hasClass("open")) {
-                    $(document).on("click", closeDropdown);
+                    $(document).on("click.editormd-dropdown", closeDropdown);
                 }
                 
                 return false;
@@ -1644,8 +1727,8 @@
         },
         
         /**
-         * 创建关于Editor.md的对话框
-         * Create about Editor.md dialog
+         * 创建关于xfEditor的对话框
+         * Create about xfEditor dialog
          * 
          * @returns {editormd}  返回editormd的实例对象
          */
@@ -1660,8 +1743,13 @@
                 "<div class=\"" + classPrefix + "dialog-container\">",
                 "<h1><i class=\"editormd-logo editormd-logo-lg editormd-logo-color\"></i> " + editormd.title + "<small>v" + editormd.version + "</small></h1>",
                 "<p>" + this.lang.description + "</p>",
-                "<p style=\"margin: 10px 0 20px 0;\"><a href=\"" + editormd.homePage + "\" target=\"_blank\">" + editormd.homePage + " <i class=\"fa fa-external-link\"></i></a></p>",
-                "<p style=\"font-size: 0.85em;\">Copyright &copy; 2015 <a href=\"https://github.com/pandao\" target=\"_blank\" class=\"hover-link\">Pandao</a>, The <a href=\"https://github.com/pandao/editor.md/blob/master/LICENSE\" target=\"_blank\" class=\"hover-link\">MIT</a> License.</p>",
+                "<p style=\"margin: 10px 0 20px 0;\">仓库地址：<a href=\"" + editormd.homePage + "\" target=\"_blank\">" + editormd.homePage + " <i class=\"fa fa-external-link\"></i></a></p>",
+                "<div style=\"background:#f6f8fa;border-radius:6px;padding:12px 16px;margin:12px 0;font-size:13px;line-height:1.7;\">",
+                "<strong>声明</strong><br>",
+                "本编辑器基于开源项目 <a href=\"https://github.com/pandao/editor.md\" target=\"_blank\" class=\"hover-link\">Editor.md</a> 改编而来，感谢原作者 Pandao 的杰出贡献。",
+                "</div>",
+                "<p style=\"font-size: 0.85em;\">Copyright &copy; 2015-2026 <a href=\"https://github.com/zhaoxianfang\" target=\"_blank\" class=\"hover-link\">zhaoxianfang</a>, The <a href=\"https://github.com/zhaoxianfang/editor/blob/master/LICENSE\" target=\"_blank\" class=\"hover-link\">MIT</a> License.</p>",
+                "<p style=\"font-size: 0.75em;color:#8b949e;margin-top:8px;\">Powered by CodeMirror, marked.js, KaTeX, ECharts, Flowchart.js, js-sequence-diagrams</p>",
                 "</div>",
                 "<a href=\"javascript:;\" class=\"fa fa-close " + classPrefix + "dialog-close\"></a>",
                 "</div>"
@@ -1683,8 +1771,8 @@
         },
         
         /**
-         * 关于Editor.md对话居中定位
-         * Editor.md dialog position handle
+         * 关于xfEditor对话居中定位
+         * xfEditor dialog position handle
          * 
          * @returns {editormd}  返回editormd的实例对象
          */
@@ -1707,8 +1795,8 @@
         },
         
         /**
-         * 显示关于Editor.md
-         * Display about Editor.md dialog
+         * 显示关于xfEditor
+         * Display about xfEditor dialog
          * 
          * @returns {editormd}  返回editormd的实例对象
          */
@@ -1742,8 +1830,8 @@
         },
         
         /**
-         * 隐藏关于Editor.md
-         * Hide about Editor.md dialog
+         * 隐藏关于xfEditor
+         * Hide about xfEditor dialog
          * 
          * @returns {editormd}  返回editormd的实例对象
          */
@@ -1796,7 +1884,7 @@
                 
                 if (settings.toolbar) 
                 {  
-                    this.getToolbarHandles();                  
+                    this.getToolbarHandlers();                  
                     this.setToolbar();
                 }
             }
@@ -1932,6 +2020,80 @@
          * @returns {editormd}             返回editormd的实例对象
          */
         
+        /**
+         * 构建源行号映射，为预览元素添加 data-source-line 属性
+         * Build source line map for sync scrolling
+         */
+        _buildSourceLineMap : function() {
+            var cm = this.cm;
+            var previewContainer = this.previewContainer;
+            var markdown = cm.getValue();
+            var lines = markdown.split('\n');
+            
+            // 为标题添加行号
+            previewContainer.find('h1, h2, h3, h4, h5, h6').each(function() {
+                var $heading = $(this);
+                var headingText = $heading.text().replace(/^#+\s*/, '').trim();
+                
+                // 在源码中查找对应的标题行
+                for (var i = 0; i < lines.length; i++) {
+                    var line = lines[i].trim();
+                    var headingMatch = line.match(/^#{1,6}\s+(.+)$/);
+                    if (headingMatch && headingMatch[1].trim() === headingText) {
+                        $heading.attr('data-source-line', i);
+                        break;
+                    }
+                    // 也匹配下划线风格的标题
+                    if (i < lines.length - 1) {
+                        var nextLine = lines[i + 1].trim();
+                        if ((nextLine.match(/^(=+)$/) && $heading.is('h1')) ||
+                            (nextLine.match(/^-+$/) && $heading.is('h2'))) {
+                            if (line === headingText) {
+                                $heading.attr('data-source-line', i);
+                                break;
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 为代码块添加行号
+            var codeBlockStart = -1;
+            for (var i = 0; i < lines.length; i++) {
+                if (lines[i].match(/^```/)) {
+                    if (codeBlockStart === -1) {
+                        codeBlockStart = i;
+                    } else {
+                        codeBlockStart = -1;
+                    }
+                }
+            }
+            
+            previewContainer.find('pre').each(function(idx) {
+                $(this).attr('data-source-line', idx * 5); // 近似行号
+            });
+            
+            // 为段落添加行号（近似）
+            previewContainer.find('p').each(function(idx) {
+                $(this).attr('data-source-line', idx * 2); // 近似行号
+            });
+            
+            // 为表格添加行号
+            previewContainer.find('table').each(function(idx) {
+                $(this).attr('data-source-line', idx * 5);
+            });
+            
+            // 为引用块添加行号
+            previewContainer.find('blockquote').each(function(idx) {
+                $(this).attr('data-source-line', idx * 3);
+            });
+            
+            // 为列表添加行号
+            previewContainer.find('ul, ol').each(function(idx) {
+                $(this).attr('data-source-line', idx * 2);
+            });
+        },
+
         katexRender : function() {
             
             // 仅在编辑器实例尚未初始化完成且非异步回调时跳过
@@ -2084,7 +2246,7 @@
                     }
                 }
                 
-                $(window).keydown(function(event) {
+                $(window).on("keydown.editormd-fkeys", function(event) {
                     
                     var keymaps = {
                         "120" : "F9",
@@ -2133,51 +2295,105 @@
             var preview          = this.preview;
             var settings         = this.settings;
             var codeMirror       = this.codeMirror;
+            var cm               = this.cm;
             var mouseOrTouch     = editormd.mouseOrTouch;
             
-            if (!settings.syncScrolling) {
+            if (!settings.syncScrolling || !cm) {
                 return this;
             }
                 
             var _isSyncing = false; // 互斥锁，防止编辑区和预览区滚动事件循环触发
+            var _cachedLineMap = null; // 缓存行映射，避免每次滚动都重建
+            var _previewHash = ''; // 预览区内容哈希，用于判断是否需要重建缓存
+            
+            // 构建行号到预览元素的映射（带缓存）
+            var buildLineMap = function() {
+                // 快速检查预览区内容是否变化（通过高度和元素数量判断）
+                var currentHash = preview[0].scrollHeight + '|' + preview.find('h1,h2,h3,h4,h5,h6,p,pre,blockquote,ul,ol,table,hr,div[class*="editormd-"]').length;
+                
+                if (_cachedLineMap && _previewHash === currentHash) {
+                    // 只需要更新 top 定位（滚动偏移可能变了）
+                    for (var k = 0; k < _cachedLineMap.length; k++) {
+                        _cachedLineMap[k].top = _cachedLineMap[k]._el.offset().top - preview.offset().top + preview.scrollTop();
+                    }
+                    return _cachedLineMap;
+                }
+                _previewHash = currentHash;
+                
+                var lineMap = [];
+                
+                // 遍历预览区的块级元素，找到对应的源行号
+                preview.find('h1, h2, h3, h4, h5, h6, p, pre, blockquote, ul, ol, table, hr, div[class*="editormd-"]').each(function() {
+                    var $el = $(this);
+                    var dataLine = $el.attr('data-source-line') || $el.data('sourceLine');
+                    if (dataLine !== undefined) {
+                        lineMap.push({
+                            line: parseInt(dataLine, 10),
+                            top: $el.offset().top - preview.offset().top + preview.scrollTop(),
+                            height: $el.outerHeight(true),
+                            _el: $el // 缓存 DOM 引用用于更新位置
+                        });
+                    }
+                });
+                
+                // 按行号排序
+                lineMap.sort(function(a, b) { return a.line - b.line; });
+                _cachedLineMap = lineMap;
+                return lineMap;
+            };
             
             var cmBindScroll = function() {    
                 codeMirror.find(".CodeMirror-scroll").on(mouseOrTouch("scroll", "touchmove"), function(event) {
                     if (_isSyncing) return;
                     _isSyncing = true;
                     
-                    var height    = $(this).height();
-                    var scrollTop = $(this).scrollTop();
-                    var cm        = _this.cm;
-                    var totalLines = cm.lineCount();
-                    var topLine   = cm.lineAtHeight(scrollTop, "local");
-                    var linePercent = totalLines > 1 ? (topLine / (totalLines - 1)) : 0;
+                    var $this = $(this);
+                    var scrollTop = $this.scrollTop();
+                    var height = $this.height();
+                    var scrollHeight = $this[0].scrollHeight;
                     
-                    var tocHeight = 0;
+                    // 获取当前可见的中间行号
+                    var lineHeight = cm.defaultTextHeight ? cm.defaultTextHeight() : 20;
+                    var visibleTopLine = Math.floor(scrollTop / lineHeight);
+                    var visibleBottomLine = Math.ceil((scrollTop + height) / lineHeight);
+                    var centerLine = Math.floor((visibleTopLine + visibleBottomLine) / 2);
                     
-                    preview.find(".markdown-toc-list").each(function(){
-                        tocHeight += $(this).height();
-                    });
+                    // 使用百分比作为基础，但根据行号进行微调
+                    var maxScroll = Math.max(1, scrollHeight - height);
+                    var scrollPercent = Math.min(1, Math.max(0, scrollTop / maxScroll));
                     
-                    var tocMenuHeight = preview.find(".editormd-toc-menu").height();
-                    tocMenuHeight = (!tocMenuHeight) ? 0 : tocMenuHeight;
-
-                    if (scrollTop === 0) 
-                    {
+                    // 计算预览区目标位置
+                    var previewScrollHeight = preview[0].scrollHeight;
+                    var previewH = preview.height();
+                    var previewMaxScroll = Math.max(1, previewScrollHeight - previewH);
+                    var baseTargetScroll = scrollPercent * previewMaxScroll;
+                    
+                    // 尝试找到对应的预览元素
+                    var lineMap = buildLineMap();
+                    var targetScroll = baseTargetScroll;
+                    
+                    // 找到最接近当前行号的预览元素
+                    for (var i = 0; i < lineMap.length; i++) {
+                        if (lineMap[i].line <= centerLine && (i === lineMap.length - 1 || lineMap[i + 1].line > centerLine)) {
+                            var elTop = lineMap[i].top;
+                            var elHeight = lineMap[i].height;
+                            // 将元素滚动到预览区中间
+                            targetScroll = Math.max(0, elTop - previewH / 3);
+                            break;
+                        }
+                    }
+                    
+                    if (scrollTop <= 0) {
                         preview.scrollTop(0);
-                    } 
-                    else if (scrollTop + height >= $(this)[0].scrollHeight - 16)
-                    { 
-                        preview.scrollTop(preview[0].scrollHeight);                        
-                    } 
-                    else
-                    {
-                        preview.scrollTop((preview[0].scrollHeight + tocHeight + tocMenuHeight) * linePercent);
+                    } else if (scrollTop + height >= scrollHeight - 16) {
+                        preview.scrollTop(previewScrollHeight);
+                    } else {
+                        preview.scrollTop(targetScroll);
                     }
                     
                     settings.onscroll.call(_this, event);
                     
-                    setTimeout(function() { _isSyncing = false; }, 30);
+                    setTimeout(function() { _isSyncing = false; }, 50);
                 });
             };
 
@@ -2191,32 +2407,50 @@
                     if (_isSyncing) return;
                     _isSyncing = true;
                     
-                    var height    = $(this).height();
-                    var scrollTop = $(this).scrollTop();         
-                    var codeView  = codeMirror.find(".CodeMirror-scroll");
-                    var cm        = _this.cm;
-                    var totalLines = cm.lineCount();
-                    var previewHeight = $(this)[0].scrollHeight;
-                    var linePercent = previewHeight > 0 ? (scrollTop / previewHeight) : 0;
-                    var targetLine  = Math.min(totalLines - 1, Math.floor(linePercent * totalLines));
-                    var targetY     = cm.charCoords({line: targetLine, ch: 0}, "local").top;
-
-                    if(scrollTop === 0) 
-                    {
+                    var $this = $(this);
+                    var scrollTop = $this.scrollTop();
+                    var height = $this.height();
+                    var previewScrollHeight = $this[0].scrollHeight;
+                    var codeView = codeMirror.find(".CodeMirror-scroll");
+                    
+                    // 计算预览区滚动百分比
+                    var maxPreviewScroll = Math.max(1, previewScrollHeight - height);
+                    var scrollPercent = Math.min(1, Math.max(0, scrollTop / maxPreviewScroll));
+                    
+                    // 映射到编辑器
+                    var codeScrollHeight = codeView[0].scrollHeight;
+                    var codeViewHeight = codeView.height();
+                    var maxCodeScroll = Math.max(1, codeScrollHeight - codeViewHeight);
+                    var targetScrollTop = scrollPercent * maxCodeScroll;
+                    
+                    // 尝试根据可见的预览元素找到对应的编辑器行
+                    var lineMap = buildLineMap();
+                    var previewOffset = preview.offset().top;
+                    
+                    // 找到当前在预览区中间可见的元素
+                    var viewportCenter = scrollTop + height / 2;
+                    for (var i = 0; i < lineMap.length; i++) {
+                        var elCenter = lineMap[i].top + lineMap[i].height / 2;
+                        if (elCenter >= viewportCenter - 50 && elCenter <= viewportCenter + 50) {
+                            // 找到对应的编辑器行
+                            var targetLine = lineMap[i].line;
+                            var lineTop = cm.heightAtLine ? cm.heightAtLine(targetLine, 'local') : targetLine * (cm.defaultTextHeight ? cm.defaultTextHeight() : 20);
+                            targetScrollTop = Math.max(0, lineTop - codeViewHeight / 3);
+                            break;
+                        }
+                    }
+                    
+                    if (scrollTop <= 0) {
                         codeView.scrollTop(0);
-                    }
-                    else if (scrollTop + height >= previewHeight)
-                    {
-                        codeView.scrollTop(codeView[0].scrollHeight);                        
-                    }
-                    else 
-                    {
-                        codeView.scrollTop(targetY);
+                    } else if (scrollTop + height >= previewScrollHeight - 16) {
+                        codeView.scrollTop(codeScrollHeight);
+                    } else {
+                        codeView.scrollTop(targetScrollTop);
                     }
                     
                     settings.onpreviewscroll.call(_this, event);
                     
-                    setTimeout(function() { _isSyncing = false; }, 30);
+                    setTimeout(function() { _isSyncing = false; }, 50);
                 });
 
             };
@@ -2620,6 +2854,11 @@
             if(settings.watch || (!settings.watch && state.preview))
             {
                 previewContainer.html(newMarkdownDoc);
+                
+                // 为预览元素添加源行号映射，用于同步滚动
+                if (settings.syncScrolling) {
+                    this._buildSourceLineMap();
+                }
 
                 this.previewCodeHighlight();
                 
@@ -2728,11 +2967,24 @@
                     settings.onchange.call(this);
                 }
                 
-                // 初始化预览区中的表格编辑和图片缩放功能
-                if (settings.tableEdit) {
+                // 初始化预览区中的页面分页、表格编辑和图片缩放功能
+                // 注意：initPages 必须在 initTableEdit 之前执行，
+                // 因为 initPages 会拆分页面并重建 DOM，之后 initTableEdit
+                // 才能正确设置表格编辑的事件处理器
+                
+                // 检测是否为纯预览模式（无编辑器，仅渲染预览）
+                // 当 watch=false 且 toolbar=false 时，视为纯预览模式
+                // 纯预览模式下禁用表格编辑、图片缩放等交互功能
+                var isPreviewOnly = settings.previewOnly || (!settings.watch && !settings.toolbar);
+                
+                if (settings.pageBlock) {
+                    _this.initPages();
+                }
+                // 纯预览模式下跳过表格编辑和图片缩放初始化
+                if (settings.tableEdit && !isPreviewOnly) {
                     _this.initTableEdit();
                 }
-                if (settings.imageResize) {
+                if (settings.imageResize && !isPreviewOnly) {
                     _this.initImageResize();
                 }
                 if (settings.echarts) {
@@ -2861,17 +3113,32 @@
                     var cellOffset = currentCell.offset();
                     var relTop = cellOffset.top - wrapperOffset.top;
                     var relLeft = cellOffset.left - wrapperOffset.left;
+                    
+                    // 先隐藏所有控件，再显示当前表格的控件
                     previewContainer.find(".editormd-table-col-controls, .editormd-table-row-controls").hide();
+                    
+                    // 计算列控件位置（显示在选中列上方）
+                    var colTop = relTop - 28;
+                    var colLeft = relLeft;
+                    var colWidth = currentCell.outerWidth();
+                    
+                    // 计算行控件位置（显示在选中行左侧）
+                    var rowTop = relTop;
+                    var rowLeft = relLeft - 32;
+                    var rowHeight = Math.max(currentCell.outerHeight(), 60);
+                    
+                    // 列控件：显示在单元格上方
                     $wrapper.find(".editormd-table-col-controls").css({
-                        top: relTop - 28,
-                        left: relLeft,
-                        width: currentCell.outerWidth(),
+                        top: Math.max(colTop, -28),   // 防止过度偏移
+                        left: colLeft,
+                        width: colWidth,
                         display: "flex"
                     });
+                    // 行控件：显示在单元格左侧
                     $wrapper.find(".editormd-table-row-controls").css({
-                        top: relTop,
-                        left: relLeft - 32,
-                        height: Math.max(currentCell.outerHeight(), 60),
+                        top: rowTop,
+                        left: Math.max(rowLeft, -32), // 防止过度偏移
+                        height: rowHeight,
                         display: "flex"
                     });
                 });
@@ -3200,7 +3467,9 @@
                     if (!$chart.attr("data-resize-bound")) {
                         $chart.attr("data-resize-bound", "true");
                         var resizeTimer = null;
-                        $(window).on("resize.editormd-echarts-" + ($chart.attr("id") || Math.random()), function() {
+                        // 使用 chart id 作为命名空间后缀，便于清理（destroy 时统一解绑）
+                        var ecNsId = $chart.attr("id") || ("ec-" + Date.now());
+                        $(window).on("resize.editormd-echarts." + ecNsId, function() {
                             if (resizeTimer) clearTimeout(resizeTimer);
                             resizeTimer = setTimeout(function() {
                                 chartInstance.resize();
@@ -3218,11 +3487,22 @@
             var _this       = this;
             var previewContainer = this.previewContainer;
             
+            // 边界检查：确保预览容器存在
+            if (!previewContainer || !previewContainer.length) {
+                if (typeof console !== "undefined" && console.warn) {
+                    console.warn("[xfEditor] initTabs: Preview container not found");
+                }
+                return;
+            }
+            
             /**
              * 当标签页面板变为可见时，重新初始化之前因 display:none
              * 而被跳过的 ECharts 图表。
              */
             function reInitHiddenContent($panel) {
+                // 边界检查：确保面板有效
+                if (!$panel || !$panel.length) return;
+                
                 // 重新初始化 ECharts
                 $panel.find(".editormd-echarts").each(function() {
                     var $chart = $(this);
@@ -3259,7 +3539,8 @@
                         if (!$chart.attr("data-resize-bound")) {
                             $chart.attr("data-resize-bound", "true");
                             var resizeTimer2 = null;
-                            $(window).on("resize.editormd-echarts-" + ($chart.attr("id") || Math.random()), function() {
+                            var ecNsId2 = $chart.attr("id") || ("ec2-" + Date.now());
+                            $(window).on("resize.editormd-echarts." + ecNsId2, function() {
                                 if (resizeTimer2) clearTimeout(resizeTimer2);
                                 resizeTimer2 = setTimeout(function() {
                                     chartInstance2.resize();
@@ -3292,7 +3573,7 @@
                             $fc.flowChart();
                             $fc.attr("data-fc-initialized", "true");
                         } catch(e) {
-                            if (typeof console !== "undefined" && console.warn) console.warn("[Editor.md] FlowChart re-render failed:", e);
+                            if (typeof console !== "undefined" && console.warn) console.warn("[xfEditor] FlowChart re-render failed:", e);
                         }
                     });
                 }
@@ -3305,7 +3586,7 @@
                             $sd.sequenceDiagram({theme: "simple"});
                             $sd.attr("data-sd-initialized", "true");
                         } catch(e) {
-                            if (typeof console !== "undefined" && console.warn) console.warn("[Editor.md] SequenceDiagram re-render failed:", e);
+                            if (typeof console !== "undefined" && console.warn) console.warn("[xfEditor] SequenceDiagram re-render failed:", e);
                         }
                     });
                 }
@@ -3378,14 +3659,30 @@
          */
         initColumns : function() {
             var previewContainer = this.previewContainer;
+            
+            // 边界检查：确保预览容器存在
+            if (!previewContainer || !previewContainer.length) {
+                if (typeof console !== "undefined" && console.warn) {
+                    console.warn("[xfEditor] initColumns: Preview container not found");
+                }
+                return;
+            }
 
             previewContainer.find(".editormd-columns").each(function() {
                 var $cols = $(this);
                 if ($cols.attr("data-initialized") === "true") {
                     return;
                 }
-
+                
+                // 边界检查：确保列数有效
                 var count = parseInt($cols.attr("data-count"), 10) || 2;
+                if (count < 1 || count > 12) {
+                    if (typeof console !== "undefined" && console.warn) {
+                        console.warn("[xfEditor] Invalid column count: " + count + ", using default 2");
+                    }
+                    count = 2;
+                }
+
                 $cols.find(".editormd-column-divider").remove();
                 $cols.css("position", "relative");
 
@@ -3406,6 +3703,203 @@
                 }
 
                 $cols.attr("data-initialized", "true");
+            });
+        },
+
+        /**
+         * Initialize Page blocks in preview area
+         * Splits page content into multiple paper pages if content exceeds one page height.
+         * Also sets up resize handler for responsive page splitting.
+         */
+        initPages : function() {
+            var previewContainer = this.previewContainer;
+            
+            // 边界检查：确保预览容器存在
+            if (!previewContainer || !previewContainer.length) {
+                if (typeof console !== "undefined" && console.warn) {
+                    console.warn("[xfEditor] initPages: Preview container not found");
+                }
+                return;
+            }
+
+            var pagePaperSizes = {
+                "A0": { w: 3179, h: 4494 },
+                "A1": { w: 2245, h: 3179 },
+                "A2": { w: 1587, h: 2245 },
+                "A3": { w: 1123, h: 1587 },
+                "A4": { w: 794,  h: 1123 },
+                "A5": { w: 559,  h: 794  },
+                "A6": { w: 397,  h: 559  },
+                "A7": { w: 280,  h: 397  },
+                "A8": { w: 198,  h: 280  },
+                "AN": { w: 794, h: 1123 },      // AN 纸张（等同于 A4）
+                "LETTER": { w: 816, h: 1056 },
+                "LEGAL":  { w: 816, h: 1344 }
+            };
+
+            /**
+             * Split overflowing page content into multiple pages
+             * @param {jQuery} $pageBlock - The .editormd-page-block element
+             */
+            /**
+             * Process page footer template - replace {page}, {total} placeholders
+             * @param {string} template - Footer template string
+             * @param {number} pageNum - Current page number
+             * @param {number} totalPages - Total page count
+             * @returns {string} Processed footer text
+             */
+            function processFooterTemplate(template, pageNum, totalPages) {
+                if (!template) return "";
+                return template
+                    .replace(/\{page\}/gi, pageNum)
+                    .replace(/\{total\}/gi, totalPages);
+            }
+
+            /**
+             * Split overflowing page content into multiple pages
+             * @param {jQuery} $pageBlock - The .editormd-page-block element
+             */
+            function splitPageContent($pageBlock) {
+                // 边界检查：确保元素有效
+                if (!$pageBlock || !$pageBlock.length) return;
+                
+                // Skip already split pages
+                if ($pageBlock.attr("data-split") === "true") return;
+
+                var paperKey = $pageBlock.attr("data-paper") || "A4";
+                
+                // 验证纸张类型
+                if (!pagePaperSizes[paperKey.toUpperCase()]) {
+                    if (typeof console !== "undefined" && console.warn) {
+                        console.warn("[xfEditor] Unknown paper size: " + paperKey + ", using A4");
+                    }
+                    paperKey = "A4";
+                }
+                
+                var paperSize = pagePaperSizes[paperKey.toUpperCase()] || pagePaperSizes["A4"];
+                var pageContent = $pageBlock.find(".editormd-page-content");
+                
+                // 边界检查：确保内容区域存在
+                if (!pageContent.length) return;
+                
+                var watermark = $pageBlock.find(".editormd-page-watermark").detach();
+                var headerEl = $pageBlock.find(".editormd-page-header");
+                var footerEl = $pageBlock.find(".editormd-page-footer");
+                var headerText = headerEl.length ? headerEl.text() : "";
+                var footerTemplate = footerEl.length ? footerEl.attr("data-footer-template") || "" : "";
+
+                if (pageContent.length === 0) return;
+
+                // Calculate header/footer heights for content area adjustment
+                var headerHeight = headerEl.length ? headerEl.outerHeight(true) : 0;
+                var footerHeight = footerEl.length ? 32 : 0; // Estimated footer height
+
+                var contentHeight = pageContent[0].scrollHeight;
+                var pageHeight = paperSize.h;
+
+                // Adjust available height for header/footer
+                var pageInnerPadding = 96 + headerHeight + footerHeight; // top(48) + bottom(48) + header + footer
+
+                // If content fits in one page, just ensure proper sizing and set page number
+                if (contentHeight <= pageHeight - pageInnerPadding + 5) {
+                    $pageBlock.attr("data-split", "true");
+                    $pageBlock.attr("data-page", "1");
+                    $pageBlock.attr("data-total", "1");
+                    // Set footer text for single page
+                    if (footerEl.length && footerTemplate) {
+                        footerEl.text(processFooterTemplate(footerTemplate, 1, 1));
+                    }
+                    return;
+                }
+
+                // Content overflows - need to split
+                var pageMargin = 4; // margin between pages
+                var containerWidth = paperSize.w;
+                var availableHeight = pageHeight - pageInnerPadding;
+
+                // Create a temporary measure container
+                var $measure = $('<div class="editormd-page-content" style="position:absolute;visibility:hidden;width:' + containerWidth + 'px;left:-9999px;"></div>');
+                $("body").append($measure);
+
+                // Clone child nodes into measure container one by one
+                var $clone = pageContent.clone();
+                $measure.append($clone);
+
+                var pages = [];
+                var currentPage = [];
+                var currentHeight = 0;
+
+                // Split child elements into pages
+                $clone.children().each(function() {
+                    var $child = $(this);
+                    var childHeight = $child.outerHeight(true) || 0;
+
+                    if (currentHeight + childHeight > availableHeight && currentPage.length > 0) {
+                        // Start a new page
+                        pages.push(currentPage);
+                        currentPage = [];
+                        currentHeight = 0;
+                    }
+
+                    currentPage.push(this.outerHTML);
+                    currentHeight += childHeight;
+                });
+
+                if (currentPage.length > 0) {
+                    pages.push(currentPage);
+                }
+
+                // Clean up measure container
+                $measure.remove();
+
+                var totalPages = pages.length;
+
+                // Build page wrappers
+                if (totalPages <= 1) {
+                    $pageBlock.attr("data-split", "true");
+                    $pageBlock.attr("data-page", "1");
+                    $pageBlock.attr("data-total", "1");
+                    if (footerEl.length && footerTemplate) {
+                        footerEl.text(processFooterTemplate(footerTemplate, 1, 1));
+                    }
+                    return;
+                }
+
+                var resultHtml = "";
+                for (var i = 0; i < totalPages; i++) {
+                    var pageNum = i + 1;
+                    resultHtml += '<div class="editormd-page-block editormd-page-split" data-paper="' + paperKey + '" data-page="' + pageNum + '" data-total="' + totalPages + '" style="width:' + containerWidth + 'px;min-height:' + pageHeight + 'px;margin-bottom:' + pageMargin + 'px;">';
+                    
+                    // Add header to each page
+                    if (headerText) {
+                        resultHtml += '<div class="editormd-page-header">' + headerText + '</div>';
+                    }
+                    
+                    resultHtml += '<div class="editormd-page-content">' + pages[i].join("") + '</div>';
+                    
+                    // Add footer to each page with page number
+                    if (footerTemplate) {
+                        resultHtml += '<div class="editormd-page-footer">' + processFooterTemplate(footerTemplate, pageNum, totalPages) + '</div>';
+                    }
+                    
+                    // Add watermark to last page only
+                    if (i === totalPages - 1 && watermark.length) {
+                        resultHtml += '<div class="editormd-page-watermark">' + paperKey + '</div>';
+                    }
+                    resultHtml += '</div>';
+                }
+
+                // Replace original with split pages
+                var $newBlocks = $(resultHtml);
+                $pageBlock.replaceWith($newBlocks);
+
+                // Mark all new blocks as split
+                $newBlocks.attr("data-split", "true");
+            }
+
+            // Process all page blocks
+            previewContainer.find(".editormd-page-block").each(function() {
+                splitPageContent($(this));
             });
         },
 
@@ -3639,7 +4133,7 @@
         
         /**
          * 获取编辑器的markdown源文档
-         * Set Editor.md markdown/CodeMirror value
+         * Set xfEditor markdown/CodeMirror value
          * 
          * @returns {editormd}         返回editormd的实例对象
          */
@@ -3804,88 +4298,180 @@
                 $("#" + dialogId).remove();
             }
 
+            // 格式化草稿列表HTML
             var listHtml = "";
+            var draftCount = drafts.length;
             for (var i = 0; i < drafts.length; i++) {
                 var d = drafts[i];
                 var date = new Date(d.time);
-                var dateStr = date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate() + " " + date.getHours() + ":" + (date.getMinutes() < 10 ? "0" : "") + date.getMinutes() + ":" + (date.getSeconds() < 10 ? "0" : "") + date.getSeconds();
-                var previewText = (d.preview || "").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, " ");
-                if (previewText.length > 80) previewText = previewText.substring(0, 80) + "...";
-                listHtml += '<div class="editormd-draft-item" data-index="' + i + '">' +
-                    '<span class="editormd-draft-time">' + dateStr + '</span>' +
+                // 格式化日期为更友好的显示
+                var now = new Date();
+                var diffMs = now - date;
+                var diffMins = Math.floor(diffMs / 60000);
+                var diffHours = Math.floor(diffMs / 3600000);
+                var diffDays = Math.floor(diffMs / 86400000);
+                
+                var timeLabel;
+                if (diffMins < 1) {
+                    timeLabel = "刚刚";
+                } else if (diffMins < 60) {
+                    timeLabel = diffMins + "分钟前";
+                } else if (diffHours < 24) {
+                    timeLabel = diffHours + "小时前";
+                } else if (diffDays < 7) {
+                    timeLabel = diffDays + "天前";
+                } else {
+                    timeLabel = date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, '0') + "-" + String(date.getDate()).padStart(2, '0');
+                }
+                
+                var dateStr = date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, '0') + "-" + String(date.getDate()).padStart(2, '0') + " " + 
+                             String(date.getHours()).padStart(2, '0') + ":" + String(date.getMinutes()).padStart(2, '0');
+                var previewText = (d.preview || "").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, " ").trim();
+                if (previewText.length === 0) previewText = "(空白草稿)";
+                if (previewText.length > 100) previewText = previewText.substring(0, 100) + "...";
+                
+                listHtml += '<div class="editormd-draft-item" data-index="' + i + '" title="点击恢复此版本 (' + dateStr + ')">' +
+                    '<span class="editormd-draft-time" title="' + dateStr + '">' + timeLabel + '</span>' +
                     '<span class="editormd-draft-preview">' + previewText + '</span>' +
                     '</div>';
             }
 
-            var $mask = $('<div id="' + maskId + '" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.3);z-index:99998;"></div>');
+            // 创建遮罩层
+            var $mask = $('<div id="' + maskId + '" class="editormd-draft-mask" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:99998;opacity:0;transition:opacity 300ms ease;"></div>');
             $("body").append($mask);
 
             var lang = _this.settings.lang;
-            var dialogHtml = '<div id="' + dialogId + '" class="editormd-dialog editormd-draft-dialog">' +
-                '<div class="editormd-dialog-header" style="cursor: move;">' +
-                '<strong class="editormd-dialog-title">' + (lang.toolbar.restoreDraft || "恢复草稿") + '</strong>' +
-                '<a href="javascript:;" class="editormd-dialog-close">&times;</a>' +
+            var dialogHtml = '<div id="' + dialogId + '" class="editormd-dialog editormd-draft-dialog" style="display:block;opacity:0;transform:scale(0.9) translate(-50%, -50%);transition:all 300ms cubic-bezier(0.34, 1.56, 0.64, 1);">' +
+                '<div class="editormd-dialog-header">' +
+                '<strong class="editormd-dialog-title">' + (lang.toolbar.restoreDraft || "恢复草稿") + ' <span style="font-size:12px;font-weight:normal;opacity:0.8;">(' + draftCount + ')</span></strong>' +
+                '<a href="javascript:;" class="editormd-dialog-close" title="关闭">&times;</a>' +
                 '</div>' +
                 '<div class="editormd-dialog-content">' +
-                '<p class="editormd-draft-tip">' + (lang.toolbar.draftRestoreTip || "检测到以下自动保存的草稿，点击可恢复到编辑器：") + '</p>' +
+                '<p class="editormd-draft-tip">' + (lang.toolbar.draftRestoreTip || "检测到以下自动保存的草稿，点击任意草稿可恢复到编辑器：") + '</p>' +
                 '<div class="editormd-draft-list">' + listHtml + '</div>' +
                 '</div>' +
                 '<div class="editormd-dialog-footer">' +
-                '<button type="button" class="editormd-draft-clear editormd-btn">' + (lang.toolbar.draftClearBtn || "清除所有草稿") + '</button>' +
-                '<button type="button" class="editormd-draft-cancel editormd-btn">' + (lang.toolbar.draftCancelBtn || "取消") + '</button>' +
+                '<button type="button" class="editormd-draft-clear" title="清除所有保存的草稿">' + (lang.toolbar.draftClearBtn || "清除所有") + '</button>' +
+                '<button type="button" class="editormd-draft-cancel" title="关闭此对话框">' + (lang.toolbar.draftCancelBtn || "暂不恢复") + '</button>' +
                 '</div>' +
                 '</div>';
 
             var $dialog = $(dialogHtml);
             $("body").append($dialog);
 
+            // 计算居中位置
+            var dialogWidth = 520;
+            var dialogHeight = $dialog.outerHeight() || 400;
+            var windowWidth = $(window).width();
+            var windowHeight = $(window).height();
+            var left = Math.max(20, (windowWidth - dialogWidth) / 2);
+            var top = Math.max(40, (windowHeight - dialogHeight) / 2);
+
             $dialog.css({
-                display: "block",
                 position: "fixed",
-                top: "20%",
-                left: "50%",
-                width: 480,
-                marginLeft: -240,
+                left: left + "px",
+                top: top + "px",
+                width: dialogWidth,
+                maxWidth: "calc(100vw - 40px)",
+                maxHeight: "calc(100vh - 80px)",
                 zIndex: 99999,
-                background: "#fff",
-                border: "1px solid #ddd",
-                borderRadius: "4px",
-                boxShadow: "0 4px 20px rgba(0,0,0,0.2)"
+                transform: "none"
             });
 
-            var closeDialog = function() {
-                $dialog.remove();
-                $mask.remove();
+            // 动画显示
+            setTimeout(function() {
+                $mask.css("opacity", "1");
+                $dialog.css({
+                    opacity: "1",
+                    transform: "scale(1)"
+                });
+            }, 10);
+
+            // 关闭弹窗动画
+            var closeDialog = function(animate) {
+                animate = animate !== false; // 默认启用动画
+                
+                if (animate) {
+                    $mask.css("opacity", "0");
+                    $dialog.css({
+                        opacity: "0",
+                        transform: "scale(0.95)"
+                    });
+                    setTimeout(function() {
+                        $dialog.remove();
+                        $mask.remove();
+                    }, 250);
+                } else {
+                    $dialog.remove();
+                    $mask.remove();
+                }
                 $(document).off("keydown.editormdDraft");
+                $(window).off("resize.editormdDraft");
             };
 
-            $dialog.find(".editormd-dialog-close, .editormd-draft-cancel").on("click", closeDialog);
+            $dialog.find(".editormd-dialog-close, .editormd-draft-cancel").on("click", function() {
+                closeDialog(true);
+            });
 
             $dialog.find(".editormd-draft-clear").on("click", function() {
+                // 添加确认提示
+                if (draftCount > 0 && !confirm("确定要清除所有 " + draftCount + " 个草稿吗？此操作不可恢复。")) {
+                    return;
+                }
                 _this.clearDraft();
-                closeDialog();
+                closeDialog(true);
             });
 
             $dialog.find(".editormd-draft-item").on("click", function() {
-                var idx = parseInt($(this).data("index"), 10);
-                if (drafts[idx] && drafts[idx].content) {
-                    var editorScroll = _this.cm.getScrollInfo();
-                    var previewScroll = _this.preview.scrollTop();
-                    _this.cm.setValue(drafts[idx].content);
-                    _this.cm.scrollTo(editorScroll.left, editorScroll.top);
-                    _this.timer = 0;
-                    _this.save();
-                    _this.preview.scrollTop(previewScroll);
-                }
-                closeDialog();
+                var $item = $(this);
+                var idx = parseInt($item.data("index"), 10);
+                
+                // 添加选中效果
+                $item.css({
+                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                    color: "#fff"
+                });
+                $item.find(".editormd-draft-time").css({
+                    background: "rgba(255,255,255,0.2)",
+                    color: "#fff"
+                });
+                $item.find(".editormd-draft-preview").css("color", "#fff");
+                
+                // 延迟恢复，让用户看到选中效果
+                setTimeout(function() {
+                    if (drafts[idx] && drafts[idx].content) {
+                        var editorScroll = _this.cm.getScrollInfo();
+                        var previewScroll = _this.preview.scrollTop();
+                        _this.cm.setValue(drafts[idx].content);
+                        _this.cm.scrollTo(editorScroll.left, editorScroll.top);
+                        _this.timer = 0;
+                        _this.save();
+                        _this.preview.scrollTop(previewScroll);
+                    }
+                    closeDialog(true);
+                }, 200);
             });
 
-            $mask.on("click", closeDialog);
+            $mask.on("click", function() {
+                closeDialog(true);
+            });
 
             $(document).on("keydown.editormdDraft", function(e) {
                 if (e.keyCode === 27) {
-                    closeDialog();
+                    closeDialog(true);
                 }
+            });
+
+            // 窗口大小改变时重新居中
+            $(window).on("resize.editormdDraft", function() {
+                var newWindowWidth = $(window).width();
+                var newWindowHeight = $(window).height();
+                var newLeft = Math.max(20, (newWindowWidth - dialogWidth) / 2);
+                var newTop = Math.max(40, (newWindowHeight - ($dialog.outerHeight() || 400)) / 2);
+                $dialog.css({
+                    left: newLeft + "px",
+                    top: newTop + "px"
+                });
             });
 
             return this;
@@ -3919,14 +4505,14 @@
          * @param {Object} [options={}] 选项
          * @param {Boolean} [options.includeStyles=true] 是否包含内联样式
          * @param {Boolean} [options.includeScripts=true] 是否包含交互脚本
-         * @param {String}  [options.title="Editor.md Preview"] 页面标题
+         * @param {String}  [options.title="xfEditor Preview"] 页面标题
          * @returns {String} 完整 HTML 文档字符串
          */
         getHTML : function(options) {
             var opts = $.extend({
                 includeStyles  : true,
                 includeScripts : true,
-                title          : "Editor.md Preview"
+                title          : "xfEditor Preview"
             }, options || {});
             
             var _this    = this;
@@ -4017,6 +4603,7 @@
                 echarts            : settings.echarts,
                 tabs               : settings.tabs,
                 columns            : settings.columns,
+                pageBlock          : settings.pageBlock,
                 tooltip            : settings.tooltip,
                 copybook           : settings.copybook
             }, overrides || {});
@@ -5006,7 +5593,14 @@
                     return this;
                 }
                 
-                this[name](cm);
+                try {
+                    this[name](cm);
+                } catch(e) {
+                    editormd.notify("插件执行错误：" + name + " - " + (e.message || "未知错误"), "error");
+                    if (typeof console !== "undefined" && console.error) {
+                        console.error("[xfEditor] Plugin error:", name, e);
+                    }
+                }
                 
                 return this;
             }
@@ -5014,13 +5608,35 @@
             if ($.inArray(path, editormd.loadFiles.plugin) < 0)
             {
                 editormd.loadPlugin(path, function() {
+                    if (typeof _this[name] !== "function") {
+                        editormd.notify("插件加载失败：" + name + "，请检查插件路径", "error");
+                        return;
+                    }
                     editormd.loadPlugins[name] = _this[name];
-                    _this[name](cm);
+                    try {
+                        _this[name](cm);
+                    } catch(e) {
+                        editormd.notify("插件执行错误：" + name + " - " + (e.message || "未知错误"), "error");
+                        if (typeof console !== "undefined" && console.error) {
+                            console.error("[xfEditor] Plugin error:", name, e);
+                        }
+                    }
                 });
             }
             else
             {
-                editormd.loadPlugins[name].call(this, cm);
+                if (typeof editormd.loadPlugins[name] !== "function") {
+                    editormd.notify("插件未就绪：" + name + "，请检查插件文件", "error");
+                    return this;
+                }
+                try {
+                    editormd.loadPlugins[name].call(this, cm);
+                } catch(e) {
+                    editormd.notify("插件执行错误：" + name + " - " + (e.message || "未知错误"), "error");
+                    if (typeof console !== "undefined" && console.error) {
+                        console.error("[xfEditor] Plugin error:", name, e);
+                    }
+                }
             }
             
             return this;
@@ -5210,7 +5826,11 @@
             var cm = this.cm;
             var selection = this._colorPickerSelection || cm.getSelection();
             var styleAttr = (this._colorPickerType === "color") ? "color" : "background-color";
-            cm.replaceSelection('<span style="' + styleAttr + ':' + colorVal + '">' + (selection || "文字") + '</span>');
+            // 校验颜色值安全（仅允许 hex 或 rgb/rgba 格式）
+            var safeColor = /^(#[0-9a-fA-F]{3,6}|rgb\(|rgba\(|hsl\(|hsla\()/i.test(colorVal || "") ? colorVal.replace(/[^#0-9a-fA-Frgbahsl(),.% ]/g, "") : "#000000";
+            // 对选中内容做 HTML 转义，防止破坏标签结构
+            var safeSelection = (selection || "文字").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            cm.replaceSelection('<span style="' + styleAttr + ':' + safeColor + '">' + safeSelection + '</span>');
             this._colorPickerSelection = null;
             cm.focus();
         },
@@ -5250,9 +5870,17 @@
             // 3. 解绑所有窗口 resize 事件（命名空间）
             $(window).off("resize.editormd-echarts");
             $(window).off("resize.editormd-echarts-md");
+            $(window).off("resize.editormdDraft");
+            $(window).off("scroll.editormd-autofixed");
+            $(window).off("keydown.editormd-fkeys");
+            $(window).off("resize.editormd-dialog");
             // 解绑通用 resize（可能影响其他实例， 
             // 但对于匿名处理器这是最优解）
             $(window).off("resize");
+
+            // 解绑未命名空间的全局文档事件
+            $(document).off("click.editormd-dropdown");
+            $(document).off("click.tooltip keydown.tooltip");
 
             // 4. 如果处于全屏状态则退出全屏
             if (this.state.fullscreen) {
@@ -6124,7 +6752,7 @@
                 }
             ];
 
-            // 创建弹窗HTML（Tab导航 + 分类面板 + 搜索 + 自定义输入）
+            // 创建弹窗HTML（Tab导航 + 分类面板 + 自定义输入）
             var dialogHTML = '<div class="' + classPrefix + 'formula-dialog">';
             
             // Tab 导航栏
@@ -6135,12 +6763,6 @@
                 dialogHTML += '<span class="' + classPrefix + 'formula-tab' + actCls + '" data-cat="' + ci + '">';
                 dialogHTML += '<i class="fa ' + cat.icon + '"></i>' + cat.name + '</span>';
             }
-            dialogHTML += '</div>';
-
-            // 搜索栏
-            dialogHTML += '<div class="' + classPrefix + 'formula-search-bar">';
-            dialogHTML += '<input type="text" class="' + classPrefix + 'formula-search" placeholder="搜索公式..." />';
-            dialogHTML += '<span class="' + classPrefix + 'formula-search-icon"><i class="fa fa-search"></i></span>';
             dialogHTML += '</div>';
 
             // 分类内容面板
@@ -6204,7 +6826,6 @@
                 }
             });
             var $formulaItems = $dialog.find("." + classPrefix + "formula-item");
-            var $searchInput = $dialog.find("." + classPrefix + "formula-search");
             var $customInput = $dialog.find("." + classPrefix + "formula-custom-input");
             var $customBtn = $dialog.find("." + classPrefix + "formula-custom-btn");
             var $tabs = $dialog.find("." + classPrefix + "formula-tab");
@@ -6302,38 +6923,6 @@
                 }
             });
 
-            // 搜索过滤
-            $searchInput.off("input").on("input", function() {
-                var keyword = $(this).val().toLowerCase();
-                if (keyword === "") {
-                    var activeCat = $tabs.filter(".active").data("cat");
-                    $tabs.show();
-                    $panels.each(function() {
-                        $(this).toggle(String($(this).data("cat")) === String(activeCat));
-                    });
-                    $formulaItems.show();
-                    return;
-                }
-                $tabs.hide();
-                $panels.show();
-                $formulaItems.each(function() {
-                    var $item = $(this);
-                    var name = $item.find("." + classPrefix + "formula-name").text().toLowerCase();
-                    var latex = ($item.data("latex") || "").toLowerCase();
-                    $item.toggle(name.indexOf(keyword) !== -1 || latex.indexOf(keyword) !== -1);
-                });
-                $panels.each(function() {
-                    $(this).toggle($(this).find("." + classPrefix + "formula-item:visible").length > 0);
-                });
-            });
-            // 搜索框 Enter 键阻止表单提交
-            $searchInput.off("keydown").on("keydown", function(e) {
-                if (e.keyCode === 13) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-            });
-
             // 自定义公式插入
             function insertCustom() {
                 var customLatex = $customInput.val().trim();
@@ -6398,6 +6987,72 @@
             var cursor = cm.getCursor();
             cm.replaceSelection("\n[[copybookPinyin]]\n(春眠不觉晓| chūn mián bù jué xiǎo)(处处闻啼鸟| chù chù wén tí niǎo)\n(夜来风雨声| yè lái fēng yǔ shēng)(花落知多少| huā luò zhī duō shǎo)\n[[/copybookPinyin]]\n");
             cm.setCursor(cursor.line + 2, 0);
+        },
+
+        /**
+         * 插入A3页面语法
+         */
+        "page-a3" : function() {
+            var cm = this.cm;
+            var cursor = cm.getCursor();
+            var selection = cm.getSelection() || "在这里输入A3页面内容";
+            cm.replaceSelection("\n[[page:A3]]\n" + selection + "\n[[/page]]\n");
+            cm.setCursor(cursor.line + 2, 0);
+        },
+
+        /**
+         * 插入A4页面语法
+         */
+        "page-a4" : function() {
+            var cm = this.cm;
+            var cursor = cm.getCursor();
+            var selection = cm.getSelection() || "在这里输入A4页面内容";
+            cm.replaceSelection("\n[[page:A4]]\n" + selection + "\n[[/page]]\n");
+            cm.setCursor(cursor.line + 2, 0);
+        },
+
+        /**
+         * 插入A5页面语法
+         */
+        "page-a5" : function() {
+            var cm = this.cm;
+            var cursor = cm.getCursor();
+            var selection = cm.getSelection() || "在这里输入A5页面内容";
+            cm.replaceSelection("\n[[page:A5]]\n" + selection + "\n[[/page]]\n");
+            cm.setCursor(cursor.line + 2, 0);
+        },
+
+        /**
+         * 插入流程图语法
+         */
+        "insert-flowchart" : function() {
+            var cm = this.cm;
+            var cursor = cm.getCursor();
+            var flowchartTemplate = '\n```flow\nst=>start: 开始\ne=>end: 结束\nop1=>operation: 操作步骤1\nop2=>operation: 操作步骤2\ncond=>condition: 条件判断?\n\nst->op1->cond\ncond(yes)->op2->e\ncond(no)->op1\n```\n';
+            cm.replaceSelection(flowchartTemplate);
+            cm.setCursor(cursor.line + 3, 0);
+        },
+
+        /**
+         * 插入时序图语法
+         */
+        "insert-sequence" : function() {
+            var cm = this.cm;
+            var cursor = cm.getCursor();
+            var sequenceTemplate = '\n```sequence\nAlice->Bob: 你好 Bob\nBob-->Alice: 你好 Alice\nNote right of Bob: 这是备注\nAlice->Bob: 再见\n```\n';
+            cm.replaceSelection(sequenceTemplate);
+            cm.setCursor(cursor.line + 3, 0);
+        },
+
+        /**
+         * 插入页面语法（通用）
+         */
+        "page" : function() {
+            var cm = this.cm;
+            var cursor = cm.getCursor();
+            var selection = cm.getSelection() || "在这里输入页面内容";
+            cm.replaceSelection("\n[[page:A4]]\n" + selection + "\n[[/page]]\n");
+            cm.setCursor(cursor.line + 2, 0);
         }
     };
 
@@ -6452,6 +7107,12 @@
         "Shift-Ctrl-Q"     : "quote",
         "Shift-Ctrl-S"     : "del",
         "Shift-Ctrl-K"     : "tex",  // KaTeX
+        
+        // 对齐快捷键
+        "Ctrl-Alt-L"       : "align-left",      // 左对齐
+        "Ctrl-Alt-C"       : "align-center",    // 居中对齐
+        "Ctrl-Alt-R"       : "align-right",     // 右对齐
+        "Ctrl-Alt-J"       : "align-justify",   // 两端对齐
         
         "Shift-Alt-C"      : function() {
             var cm        = this.cm;
@@ -6551,9 +7212,9 @@
     };
     
     editormd.regexs = {
-        atLink        : /@(\w+)/g,
-        email         : /(\w+)@(\w+)\.(\w+)\.?(\w+)?/g,
-        emailLink     : /(mailto:)?([\w\.\_]+)@(\w+)\.(\w+)\.?(\w+)?/g,
+        atLink        : /@([\w\-]+)/g,
+        email         : /([\w\.\+\-]+)@([\w\-]+)\.([\w\-]{2,})\.?(\w+)?/g,
+        emailLink     : /(mailto:)?([\w\.\+\-]+)@([\w\-]+)\.([\w\-]{2,})\.?(\w+)?/g,
 
         pageBreak     : /^\[[=]{8,}\]$/,
         pinyin        : /\{([^|{}]+)\s*\|\s*([^|{}]+)\}/g,
@@ -6573,8 +7234,23 @@
         copybookPinyinEnd : /\[\[\/copybookPinyin\]\]/g,
         videoBlock    : /\[\[video\]\]\s*\n?([\s\S]*?)\n?\s*\[\[\/video\]\]/g,
         fileBlock     : /\[\[file\]\]\s*\n?([\s\S]*?)\n?\s*\[\[\/file\]\]/g,
-        tooltipLink   : /\[([^\]]+)\]\(tooltip:([^)]+)\)/g,
-        tooltipImg    : /\{tooltip:([^}]+)\}/g
+        tooltipLink   : /\[([^\]]+)\]\(tooltip:([^)]+)\)/gi,
+        tooltipImg    : /\{tooltip:([^}]+)\}/gi,
+        pageOpen      : /\[\[page:(A\d+|AN|LETTER|LEGAL)(?:\s[^\]]*)?\]\]/gi,
+        pageClose     : /\[\[\/page\]\]/gi,
+        
+        // 上标和下标语法：^文本^ 表示上标，^^文本^^ 表示下标
+        // 限制不跨行（[^^\n]）防止贪婪匹配跨越整个文档
+        superscript   : /\^([^^\n]+)\^/g,
+        subscript     : /\^\^([^^\n]+)\^\^/g,
+        
+        // 字体大小语法：!数字 文本! 表示指定字号，例如 !32 特大号!
+        fontSize      : /!(\d+)\s+([^!\n]+)!/g,
+        
+        // 脚注引用：[^脚注名称]
+        footnoteRef   : /\[\^([^\]]+)\]/g,
+        // 脚注定义标记：[^脚注名称]:  -- 用于按行定位定义位置
+        footnoteDefAnchor : /^\[\^([^\]]+)\]:/gm
     };
 
     /**
@@ -6693,6 +7369,7 @@
                 echarts: opts.echarts,
                 tabs: disableBlocks ? false : opts.tabs,
                 columns: disableBlocks ? false : opts.columns,
+                pageBlock: disableBlocks ? false : opts.pageBlock,
                 tooltip: opts.tooltip,
                 copybook: opts.copybook
             };
@@ -6718,9 +7395,15 @@
              * 规则：开标签是 3 个或更多 ` 或 ~，闭标签必须与开标签相同数量的相同字符
              * 支持代码块内包含任意内容（包括嵌套的 [[tabs]]、[[columns]] 等）
              */
-            // 匹配围栏代码块：开标签(3+个 ` 或 ~)，可选语言名，内容，闭标签(相同数量的 ` 或 ~)
-            // 使用非贪婪匹配内容，确保匹配最近的闭标签
-            text = text.replace(/(`{3,}|~{3,})([^\n]*)\n([\s\S]*?)\n?\1/g, function(match, fence, lang, content) {
+            // 匹配围栏代码块：开标签(3+个 ` 或 ~), 可选语言名, 内容, 闭标签(同类型且 >= 开标签数量)
+            // 支持 CommonMark 规范：闭合围栏可以多于开启围栏（如 4 个反引号开启、6 个闭合）
+            // 使用回调验证闭合围栏与开启围栏类型相同且数量足够
+            // 使用 lookahead 确保闭合围栏在独立行上（后跟空白和换行或文档结束）
+            text = text.replace(/(`{3,}|~{3,})([^\n]*)\n([\s\S]*?)\n(`{3,}|~{3,})(?=\s*(?:\n|$))/g, function(match, openFence, lang, content, closeFence) {
+                // 闭合围栏必须与开启围栏类型相同，且数量 >= 开启围栏数量
+                if (openFence[0] !== closeFence[0] || closeFence.length < openFence.length) {
+                    return match; // 不是有效的闭合围栏，保持原样
+                }
                 var id = "editormd-cb-" + (++cid);
                 codePlaceholders.push({ id: id, html: match });
                 return "<!--" + id + "-->";
@@ -6777,16 +7460,42 @@
             var i = 0;
             var openMatch, closeMatch;
 
+            // 边界检查：确保参数有效
+            if (!text || typeof text !== 'string') {
+                if (typeof console !== "undefined" && console.warn) {
+                    console.warn("[xfEditor] findBalancedBlocks: Invalid text parameter");
+                }
+                return blocks;
+            }
+            if (!openRegex || !closeRegex) {
+                if (typeof console !== "undefined" && console.warn) {
+                    console.warn("[xfEditor] findBalancedBlocks: Missing regex parameters");
+                }
+                return blocks;
+            }
+
             // 克隆正则以保证 lastIndex 独立
-            var openRe = new RegExp(openRegex.source, openRegex.flags.replace('g', '') + 'g');
-            var closeRe = new RegExp(closeRegex.source, closeRegex.flags.replace('g', '') + 'g');
+            try {
+                var openRe = new RegExp(openRegex.source, openRegex.flags.replace('g', '') + 'g');
+                var closeRe = new RegExp(closeRegex.source, closeRegex.flags.replace('g', '') + 'g');
+            } catch(e) {
+                if (typeof console !== "undefined" && console.warn) {
+                    console.warn("[xfEditor] findBalancedBlocks: Invalid regex:", e);
+                }
+                return blocks;
+            }
 
             // 辅助函数：判断从指定位置开始是否真的存在匹配的闭标签对
             // 用于验证嵌套语法是否有效（避免将普通文本中的 [[columns:3]] 误判为嵌套）
             // 添加 recursionDepth 参数防止无限递归（限制最大嵌套层数为 20）
             function hasMatchingPair(fromPos, recursionDepth) {
                 if (recursionDepth === undefined) recursionDepth = 0;
-                if (recursionDepth > 20) return false; // 防止过多嵌套导致栈溢出
+                if (recursionDepth > 20) {
+                    if (typeof console !== "undefined" && console.warn) {
+                        console.warn("[xfEditor] Maximum nesting depth (20) exceeded");
+                    }
+                    return false; // 防止过多嵌套导致栈溢出
+                }
                 
                 var tmpOpen = new RegExp(openRegex.source, openRegex.flags.replace('g', '') + 'g');
                 var tmpClose = new RegExp(closeRegex.source, closeRegex.flags.replace('g', '') + 'g');
@@ -6820,9 +7529,25 @@
                 return tmpDepth === 0;
             }
 
+            // 安全检查：限制最大处理长度，防止超长文本导致性能问题
+            var maxProcessLength = 1000000; // 100万字符上限
+            if (text.length > maxProcessLength) {
+                if (typeof console !== "undefined" && console.warn) {
+                    console.warn("[xfEditor] Text length exceeds safety limit, truncating");
+                }
+                text = text.substring(0, maxProcessLength);
+            }
+
             while (i < text.length) {
                 openRe.lastIndex = i;
-                openMatch = openRe.exec(text);
+                try {
+                    openMatch = openRe.exec(text);
+                } catch(e) {
+                    if (typeof console !== "undefined" && console.warn) {
+                        console.warn("[xfEditor] Regex execution error:", e);
+                    }
+                    break;
+                }
                 if (!openMatch) break;
 
                 var openEnd = openRe.lastIndex;
@@ -6885,16 +7610,35 @@
         // 将新的图片/视频尺寸语法转换为内联 HTML 以兼容 marked 渲染器
         if (options.imageResize !== false) {
             var videoExts = /\.(mp4|webm|ogv|mov)(\?.*)?$/i;
-            markdown = markdown.replace(editormd.regexs.imageSizeNew, function(match, alt, url, w, h) {
-                var style = "";
-                if (w) style += "width:" + w + "px;";
-                if (h) style += "height:" + h + "px;";
-                var styleAttr = style ? ' style="' + style + '"' : "";
-                if (videoExts.test(url)) {
-                    return '<video src="' + url + '" controls preload="metadata"' + styleAttr + '>' + alt + '</video>';
+            try {
+                markdown = markdown.replace(editormd.regexs.imageSizeNew, function(match, alt, url, w, h) {
+                    // 边界检查：确保参数有效
+                    if (!url) return match;
+                    
+                    var style = "";
+                    // 验证尺寸参数
+                    if (w && !isNaN(parseInt(w, 10)) && parseInt(w, 10) > 0) {
+                        style += "width:" + parseInt(w, 10) + "px;";
+                    }
+                    if (h && !isNaN(parseInt(h, 10)) && parseInt(h, 10) > 0) {
+                        style += "height:" + parseInt(h, 10) + "px;";
+                    }
+                    var styleAttr = style ? ' style="' + style + '"' : "";
+                    
+                    // XSS 防护：转义特殊字符
+                    var safeAlt = (alt || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+                    var safeUrl = editormd.escapeAttr(url);
+                    
+                    if (videoExts.test(safeUrl)) {
+                        return '<video src="' + safeUrl + '" controls preload="metadata"' + styleAttr + '>' + safeAlt + '</video>';
+                    }
+                    return '<img src="' + safeUrl + '" alt="' + safeAlt + '"' + styleAttr + '>';
+                });
+            } catch(e) {
+                if (typeof console !== "undefined" && console.warn) {
+                    console.warn("[xfEditor] Image resize processing error:", e);
                 }
-                return '<img src="' + url + '" alt="' + alt + '"' + styleAttr + '>';
-            });
+            }
         }
 
         // 处理转义语法：\[\[ 和 \]\] → 用占位符保护，防止被 tabs/columns 解析
@@ -6914,6 +7658,10 @@
             var tabBlocks = findBalancedBlocks(markdown, /\[\[tabs\]\]/g, /\[\[\/tabs\]\]/g);
             for (var bi = tabBlocks.length - 1; bi >= 0; bi--) {
                 var block = tabBlocks[bi];
+                
+                // 边界检查：确保块数据有效
+                if (!block || !block.content) continue;
+                
                 var content = block.content;
                 var originalEnd = block.end;
                 var tabHtml = '<div class="editormd-tabs">';
@@ -6925,41 +7673,55 @@
                 var hasTabs = false;
                 var tabMarkedOptions = createMarkedOptions(options, true);
 
-                // 重置 regex lastIndex
-                tabRegex.lastIndex = 0;
-                while ((tabMatch = tabRegex.exec(content)) !== null) {
-                    hasTabs = true;
-                    var tabTitle = tabMatch[1].trim().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-                    var tabContent = tabMatch[2].trim();
-                    // 在递归处理前，先恢复上层保护的代码块占位符，避免 marked 渲染时丢失
-                    var tabContentRestored = restoreCodeBlocks(tabContent, codeProtection.placeholders);
-                    var preprocessed = editormd.preprocessMarkdownBlocks(tabContentRestored, options);
-                    var tabContentHtml = editormd.$marked(preprocessed.markdown, tabMarkedOptions);
-                    tabContentHtml = editormd.restorePlaceholders(tabContentHtml, preprocessed.placeholders);
+                try {
+                    // 重置 regex lastIndex
+                    tabRegex.lastIndex = 0;
+                    while ((tabMatch = tabRegex.exec(content)) !== null) {
+                        hasTabs = true;
+                        var tabTitle = tabMatch[1].trim().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+                        var tabContent = tabMatch[2].trim();
+                        // 在递归处理前，先恢复上层保护的代码块占位符，避免 marked 渲染时丢失
+                        var tabContentRestored = restoreCodeBlocks(tabContent, codeProtection.placeholders);
+                        var preprocessed = editormd.preprocessMarkdownBlocks(tabContentRestored, options);
+                        var tabContentHtml = editormd.$marked(preprocessed.markdown, tabMarkedOptions);
+                        tabContentHtml = editormd.restorePlaceholders(tabContentHtml, preprocessed.placeholders);
 
-                    var activeClass = (tabIndex === 0) ? ' class="active"' : '';
-                    var activeBodyClass = (tabIndex === 0) ? ' class="editormd-tab-panel active"' : ' class="editormd-tab-panel"';
-                    tabHeaders += '<li' + activeClass + ' data-index="' + tabIndex + '">' + tabTitle + '</li>';
-                    tabBodies += '<div' + activeBodyClass + ' data-index="' + tabIndex + '">' + tabContentHtml + '</div>';
-                    tabIndex++;
+                        var activeClass = (tabIndex === 0) ? ' class="active"' : '';
+                        var activeBodyClass = (tabIndex === 0) ? ' class="editormd-tab-panel active"' : ' class="editormd-tab-panel"';
+                        tabHeaders += '<li' + activeClass + ' data-index="' + tabIndex + '">' + tabTitle + '</li>';
+                        tabBodies += '<div' + activeBodyClass + ' data-index="' + tabIndex + '">' + tabContentHtml + '</div>';
+                        tabIndex++;
+                        
+                        // 安全限制：最多支持 50 个标签页
+                        if (tabIndex > 50) {
+                            if (typeof console !== "undefined" && console.warn) {
+                                console.warn("[xfEditor] Maximum tabs limit (50) exceeded");
+                            }
+                            break;
+                        }
+                    }
+
+                    if (!hasTabs) {
+                        // 在递归处理前，先恢复上层保护的代码块占位符
+                        var contentRestored = restoreCodeBlocks(content.trim(), codeProtection.placeholders);
+                        var preprocessed2 = editormd.preprocessMarkdownBlocks(contentRestored, options);
+                        var defaultHtml = editormd.$marked(preprocessed2.markdown, tabMarkedOptions);
+                        defaultHtml = editormd.restorePlaceholders(defaultHtml, preprocessed2.placeholders);
+                        tabHeaders += '<li class="active" data-index="0">Tab1</li>';
+                        tabBodies += '<div class="editormd-tab-panel active" data-index="0">' + defaultHtml + '</div>';
+                    }
+
+                    tabHeaders += '</ul>';
+                    tabBodies += '</div>';
+                    tabHtml += tabHeaders + tabBodies + '</div>';
+
+                    var placeholder = addPlaceholder(tabHtml);
+                    markdown = markdown.substring(0, block.start) + placeholder + markdown.substring(originalEnd);
+                } catch(e) {
+                    if (typeof console !== "undefined" && console.warn) {
+                        console.warn("[xfEditor] Tabs processing error:", e);
+                    }
                 }
-
-                if (!hasTabs) {
-                    // 在递归处理前，先恢复上层保护的代码块占位符
-                    var contentRestored = restoreCodeBlocks(content.trim(), codeProtection.placeholders);
-                    var preprocessed2 = editormd.preprocessMarkdownBlocks(contentRestored, options);
-                    var defaultHtml = editormd.$marked(preprocessed2.markdown, tabMarkedOptions);
-                    defaultHtml = editormd.restorePlaceholders(defaultHtml, preprocessed2.placeholders);
-                    tabHeaders += '<li class="active" data-index="0">Tab1</li>';
-                    tabBodies += '<div class="editormd-tab-panel active" data-index="0">' + defaultHtml + '</div>';
-                }
-
-                tabHeaders += '</ul>';
-                tabBodies += '</div>';
-                tabHtml += tabHeaders + tabBodies + '</div>';
-
-                var placeholder = addPlaceholder(tabHtml);
-                markdown = markdown.substring(0, block.start) + placeholder + markdown.substring(originalEnd);
             }
         }
 
@@ -6969,19 +7731,39 @@
             var colBlocks = findBalancedBlocks(markdown, /\[\[columns:(\d+)\]\]/g, /\[\[\/columns\]\]/g);
             for (var ci = colBlocks.length - 1; ci >= 0; ci--) {
                 var colBlock = colBlocks[ci];
+                
+                // 边界检查：确保块数据有效
+                if (!colBlock || !colBlock.fullMatch) continue;
+                
                 var colMatch = colBlock.fullMatch.match(/\[\[columns:(\d+)\]\]/);
                 var colCount = colMatch ? parseInt(colMatch[1], 10) || 3 : 3;
+                
+                // 验证列数范围
+                if (colCount < 1 || colCount > 12) {
+                    if (typeof console !== "undefined" && console.warn) {
+                        console.warn("[xfEditor] Invalid column count: " + colCount + ", using default 3");
+                    }
+                    colCount = Math.max(1, Math.min(12, colCount || 3));
+                }
+                
                 var colContent = colBlock.content;
                 var colOriginalEnd = colBlock.end;
                 var colMarkedOptions = createMarkedOptions(options, true);
-                // 在递归处理前，先恢复上层保护的代码块占位符，避免 marked 渲染时丢失
-                var colContentRestored = restoreCodeBlocks(colContent.trim(), codeProtection.placeholders);
-                var preprocessed = editormd.preprocessMarkdownBlocks(colContentRestored, options);
-                var colContentHtml = editormd.$marked(preprocessed.markdown, colMarkedOptions);
-                colContentHtml = editormd.restorePlaceholders(colContentHtml, preprocessed.placeholders);
-                var colHtml = '<div class="editormd-columns" data-count="' + colCount + '" style="-webkit-column-count:' + colCount + ';-moz-column-count:' + colCount + ';column-count:' + colCount + ';">' + colContentHtml + '</div>';
-                var colPlaceholder = addPlaceholder(colHtml);
-                markdown = markdown.substring(0, colBlock.start) + colPlaceholder + markdown.substring(colOriginalEnd);
+                
+                try {
+                    // 在递归处理前，先恢复上层保护的代码块占位符，避免 marked 渲染时丢失
+                    var colContentRestored = restoreCodeBlocks(colContent.trim(), codeProtection.placeholders);
+                    var preprocessed = editormd.preprocessMarkdownBlocks(colContentRestored, options);
+                    var colContentHtml = editormd.$marked(preprocessed.markdown, colMarkedOptions);
+                    colContentHtml = editormd.restorePlaceholders(colContentHtml, preprocessed.placeholders);
+                    var colHtml = '<div class="editormd-columns" data-count="' + colCount + '" style="-webkit-column-count:' + colCount + ';-moz-column-count:' + colCount + ';column-count:' + colCount + ';">' + colContentHtml + '</div>';
+                    var colPlaceholder = addPlaceholder(colHtml);
+                    markdown = markdown.substring(0, colBlock.start) + colPlaceholder + markdown.substring(colOriginalEnd);
+                } catch(e) {
+                    if (typeof console !== "undefined" && console.warn) {
+                        console.warn("[xfEditor] Columns processing error:", e);
+                    }
+                }
             }
         }
 
@@ -7087,53 +7869,401 @@
          * @param {string} type   字帖类型
          */
         function processCopybookBlocks(blocks, type) {
+            // 边界检查：确保参数有效
+            if (!blocks || !blocks.length) return;
+            if (!type || !['tian', 'mi', 'pinyin'].includes(type)) {
+                if (typeof console !== "undefined" && console.warn) {
+                    console.warn("[xfEditor] Invalid copybook type: " + type);
+                }
+                return;
+            }
+            
             for (var bi = blocks.length - 1; bi >= 0; bi--) {
                 var block = blocks[bi];
-                var html = renderCopybookGrid(type, block.content);
-                var placeholder = addPlaceholder(html);
-                markdown = markdown.substring(0, block.start) + placeholder + markdown.substring(block.end);
+                
+                // 边界检查：确保块数据有效
+                if (!block || !block.content) continue;
+                
+                try {
+                    var html = renderCopybookGrid(type, block.content);
+                    var placeholder = addPlaceholder(html);
+                    markdown = markdown.substring(0, block.start) + placeholder + markdown.substring(block.end);
+                } catch(e) {
+                    if (typeof console !== "undefined" && console.warn) {
+                        console.warn("[xfEditor] Copybook processing error:", e);
+                    }
+                }
             }
         }
 
         // 处理字帖语法：[[copybookTian]]...[[/copybookTian]]、[[copybookMi]]...[[/copybookMi]]、[[copybookPinyin]]...[[/copybookPinyin]]
         // 各种字帖类型可以彼此嵌套，也可以嵌套在 tabs/columns 内使用
         if (options.copybook !== false) {
-            processCopybookBlocks(findBalancedBlocks(markdown, editormd.regexs.copybookTian, editormd.regexs.copybookTianEnd), 'tian');
-            processCopybookBlocks(findBalancedBlocks(markdown, editormd.regexs.copybookMi, editormd.regexs.copybookMiEnd), 'mi');
-            processCopybookBlocks(findBalancedBlocks(markdown, editormd.regexs.copybookPinyin, editormd.regexs.copybookPinyinEnd), 'pinyin');
+            try {
+                processCopybookBlocks(findBalancedBlocks(markdown, editormd.regexs.copybookTian, editormd.regexs.copybookTianEnd), 'tian');
+                processCopybookBlocks(findBalancedBlocks(markdown, editormd.regexs.copybookMi, editormd.regexs.copybookMiEnd), 'mi');
+                processCopybookBlocks(findBalancedBlocks(markdown, editormd.regexs.copybookPinyin, editormd.regexs.copybookPinyinEnd), 'pinyin');
+            } catch(e) {
+                if (typeof console !== "undefined" && console.warn) {
+                    console.warn("[xfEditor] Copybook blocks processing error:", e);
+                }
+            }
+        }
+
+        // 处理纸张页面语法：[[page:A4]]...[[/page]]、[[page:A5]]...[[/page]]
+        // 支持嵌套在 tabs/columns 内，也可以在 page 内嵌套 tabs/columns
+        // 纸张尺寸定义（px @ 96dpi）：A4 = 794×1123, A5 = 559×794
+        if (options.pageBlock !== false) {
+            var pagePaperSizes = {
+                "A0": { w: 3179, h: 4494 },
+                "A1": { w: 2245, h: 3179 },
+                "A2": { w: 1587, h: 2245 },
+                "A3": { w: 1123, h: 1587 },
+                "A4": { w: 794,  h: 1123 },
+                "A5": { w: 559,  h: 794  },
+                "A6": { w: 397,  h: 559  },
+                "A7": { w: 280,  h: 397  },
+                "A8": { w: 198,  h: 280  },
+                "AN": { w: 794, h: 1123 },      // AN 纸张（等同于 A4）
+                "LETTER": { w: 816, h: 1056 },
+                "LEGAL":  { w: 816, h: 1344 }
+            };
+
+            var pageBlocks = findBalancedBlocks(markdown, editormd.regexs.pageOpen, editormd.regexs.pageClose);
+            for (var pi = pageBlocks.length - 1; pi >= 0; pi--) {
+                var pb = pageBlocks[pi];
+                
+                // 边界检查：确保块数据有效
+                if (!pb || !pb.fullMatch) continue;
+                
+                try {
+                    // 支持扩展属性：[[page:A4 header="标题" footer="第 {page} 页 / 共 {total} 页"]]
+                    var pageMatch = pb.fullMatch.match(/\[\[page:(A\d+|AN|LETTER|LEGAL)(?:\s+header="([^"]*)")?(?:\s+footer="([^"]*)")?\s*\]\]/i);
+                    var paperKey = pageMatch ? pageMatch[1].toUpperCase() : "A4";
+                    
+                    // 验证纸张类型
+                    if (!pagePaperSizes[paperKey]) {
+                        if (typeof console !== "undefined" && console.warn) {
+                            console.warn("[xfEditor] Unknown paper size: " + paperKey + ", using A4");
+                        }
+                        paperKey = "A4";
+                    }
+                    
+                    var pageHeader = pageMatch && pageMatch[2] ? pageMatch[2] : "";
+                    var pageFooter = pageMatch && pageMatch[3] ? pageMatch[3] : "";
+                    var paperSize = pagePaperSizes[paperKey] || pagePaperSizes["A4"];
+                    var pageContent = pb.content;
+
+                    // 递归处理嵌套内容（支持 page 内嵌套 tabs/columns/copybook 等）
+                    var pageRestored = restoreCodeBlocks(pageContent, codeProtection.placeholders);
+                    var pagePreprocessed = editormd.preprocessMarkdownBlocks(pageRestored, options);
+                    var pageMarkedOptions = createMarkedOptions(options, true);
+                    var pageContentHtml = editormd.$marked(pagePreprocessed.markdown, pageMarkedOptions);
+                    pageContentHtml = editormd.restorePlaceholders(pageContentHtml, pagePreprocessed.placeholders);
+
+                    // 构建页面HTML，包含页头、页脚区域
+                    var headerHtml = pageHeader ? '<div class="editormd-page-header">' + pageHeader.replace(/</g, "&lt;").replace(/>/g, "&gt;") + '</div>' : '';
+                    var footerHtml = pageFooter ? '<div class="editormd-page-footer" data-footer-template="' + pageFooter.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + '"></div>' : '';
+
+                    var pageHtml = '<div class="editormd-page-block" data-paper="' + paperKey + '" data-width="' + paperSize.w + '" data-height="' + paperSize.h + '" style="width:' + paperSize.w + 'px;min-height:' + paperSize.h + 'px;">' +
+                        headerHtml +
+                        '<div class="editormd-page-content">' + pageContentHtml + '</div>' +
+                        footerHtml +
+                        '<div class="editormd-page-watermark">' + paperKey + '</div>' +
+                        '</div>';
+
+                    var pagePlaceholder = addPlaceholder(pageHtml);
+                    markdown = markdown.substring(0, pb.start) + pagePlaceholder + markdown.substring(pb.end);
+                } catch(e) {
+                    if (typeof console !== "undefined" && console.warn) {
+                        console.warn("[xfEditor] Page block processing error:", e);
+                    }
+                }
+            }
         }
 
         // 处理视频列表语法：[[video]]...[[/video]]
-        markdown = markdown.replace(editormd.regexs.videoBlock, function(match, content) {
-            var lines = content.trim().split("\n");
-            var resultHtml = "";
-            for (var i = 0; i < lines.length; i++) {
-                var line = lines[i].trim();
-                if (!line) continue;
-                var parts = line.split("|");
-                var url = parts[0].trim();
-                var title = parts[1] ? parts[1].trim() : "";
-                resultHtml += '<video src="' + url.replace(/"/g, "&quot;") + '" controls preload="metadata" class="editormd-video-player">' + (title || "Video").replace(/</g,"&lt;").replace(/>/g,"&gt;") + '</video>';
+        try {
+            markdown = markdown.replace(editormd.regexs.videoBlock, function(match, content) {
+                // 边界检查：确保内容有效
+                if (!content || typeof content !== 'string') return match;
+                
+                var lines = content.trim().split("\n");
+                var resultHtml = "";
+                for (var i = 0; i < lines.length; i++) {
+                    var line = lines[i].trim();
+                    if (!line) continue;
+                    var parts = line.split("|");
+                    var url = parts[0].trim();
+                    
+                    // XSS 防护：验证 URL
+                    if (!url || url.length > 2000) continue;
+                    
+                    var title = parts[1] ? parts[1].trim() : "";
+                    resultHtml += '<video src="' + editormd.escapeAttr(url) + '" controls preload="metadata" class="editormd-video-player">' + editormd.escapeHtml(title || "Video") + '</video>';
+                    
+                    // 安全限制：最多支持 50 个视频
+                    if (i >= 49) {
+                        if (typeof console !== "undefined" && console.warn) {
+                            console.warn("[xfEditor] Maximum videos limit (50) exceeded");
+                        }
+                        break;
+                    }
+                }
+                return addPlaceholder(resultHtml);
+            });
+        } catch(e) {
+            if (typeof console !== "undefined" && console.warn) {
+                console.warn("[xfEditor] Video block processing error:", e);
             }
-            return addPlaceholder(resultHtml);
-        });
+        }
 
         // 处理文件列表语法：[[file]]...[[/file]]
-        markdown = markdown.replace(editormd.regexs.fileBlock, function(match, content) {
-            var lines = content.trim().split("\n");
-            var resultHtml = '<div class="editormd-file-list">';
-            for (var i = 0; i < lines.length; i++) {
-                var line = lines[i].trim();
-                if (!line) continue;
-                var parts = line.split("|");
-                var url = parts[0].trim();
-                var name = parts[1] ? parts[1].trim() : url.split("/").pop();
-                var ext = url.split(".").pop().toLowerCase();
-                resultHtml += '<a href="' + url.replace(/"/g, "&quot;") + '" download class="editormd-attachment-link" data-ext="' + ext + '">' + name.replace(/</g,"&lt;").replace(/>/g,"&gt;") + '</a>';
+        try {
+            markdown = markdown.replace(editormd.regexs.fileBlock, function(match, content) {
+                // 边界检查：确保内容有效
+                if (!content || typeof content !== 'string') return match;
+                
+                var lines = content.trim().split("\n");
+                var resultHtml = '<div class="editormd-file-list">';
+                for (var i = 0; i < lines.length; i++) {
+                    var line = lines[i].trim();
+                    if (!line) continue;
+                    var parts = line.split("|");
+                    var url = parts[0].trim();
+                    
+                    // XSS 防护：验证 URL
+                    if (!url || url.length > 2000) continue;
+                    
+                    var name = parts[1] ? parts[1].trim() : url.split("/").pop();
+                    var ext = url.split(".").pop().toLowerCase();
+                    resultHtml += '<a href="' + url.replace(/"/g, "&quot;") + '" download class="editormd-attachment-link" data-ext="' + ext + '">' + name.replace(/</g,"&lt;").replace(/>/g,"&gt;") + '</a>';
+                    
+                    // 安全限制：最多支持 100 个文件
+                    if (i >= 99) {
+                        if (typeof console !== "undefined" && console.warn) {
+                            console.warn("[xfEditor] Maximum files limit (100) exceeded");
+                        }
+                        break;
+                    }
+                }
+                resultHtml += '</div>';
+                return addPlaceholder(resultHtml);
+            });
+        } catch(e) {
+            if (typeof console !== "undefined" && console.warn) {
+                console.warn("[xfEditor] File block processing error:", e);
             }
-            resultHtml += '</div>';
-            return addPlaceholder(resultHtml);
-        });
+        }
+
+
+        // ========== 脚注处理（必须在上标/下标之前，避免 [^name] 中的 ^ 被上标正则误匹配）==========
+        // 收集脚注定义，然后替换脚注引用
+        var footnotes = {};
+        var footnoteOrder = [];
+        var footnoteIndex = 0;
+
+        try {
+            // 第一步：在 markdown 文本中解析脚注定义
+            // 定义格式：[^name]: content\n 内容持续到空行（\n\n）或下一个定义或文档结束
+            // 此时代码块已被保护为占位符，不会误匹配
+            var fnDefRegex = editormd.regexs.footnoteDefAnchor;
+            fnDefRegex.lastIndex = 0;
+            var defMatches = [];
+            var defMatch;
+
+            // 收集所有定义锚点的位置
+            while ((defMatch = fnDefRegex.exec(markdown)) !== null) {
+                var name = defMatch[1].trim().replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]/g, '');
+                if (name && name.length <= 50) {
+                    defMatches.push({
+                        name: name,
+                        start: defMatch.index,
+                        anchorEnd: defMatch.index + defMatch[0].length
+                    });
+                }
+            }
+
+            if (defMatches.length > 0) {
+                // 第二步：为每个定义计算内容结束位置
+                // 内容结束于：下一个 \n\n（空行）、下一个定义起始处、或文档末尾
+                for (var di = 0; di < defMatches.length; di++) {
+                    var dm = defMatches[di];
+                    var contentStart = dm.anchorEnd;
+
+                    // 跳过锚点行后的空白字符（空格、单个换行，但不超过一个换行）
+                    var afterAnchor = markdown.substring(contentStart);
+                    var leadingWs = afterAnchor.match(/^[ \t]*\n?/);
+                    if (leadingWs) {
+                        contentStart += leadingWs[0].length;
+                    }
+
+                    // 确定内容结束位置
+                    var contentEnd;
+
+                    // 1. 查找最近的空行（\n\n）
+                    var blankLineIdx = markdown.indexOf('\n\n', contentStart);
+
+                    // 2. 查找下一个脚注定义（如果有）
+                    var nextDefIdx = (di + 1 < defMatches.length) ? defMatches[di + 1].start : -1;
+
+                    // 3. 取两者中较小的（或文档末尾）
+                    if (blankLineIdx !== -1) {
+                        contentEnd = blankLineIdx;
+                    } else {
+                        contentEnd = markdown.length;
+                    }
+
+                    // 如果下一个定义在空行之前，则以定义边界为准
+                    if (nextDefIdx !== -1 && nextDefIdx < contentEnd) {
+                        contentEnd = nextDefIdx;
+                    }
+
+                    // 确保不超出文档边界
+                    if (contentEnd > markdown.length) contentEnd = markdown.length;
+                    if (contentEnd < contentStart) contentEnd = contentStart;
+
+                    dm.contentEnd = contentEnd;
+                    dm.content = markdown.substring(contentStart, contentEnd).trim();
+                }
+
+
+                // 第三步：先从前往后记录所有脚注（保持原始顺序）
+                for (var di = 0; di < defMatches.length; di++) {
+                    var dm = defMatches[di];
+                    if (!footnotes[dm.name]) {
+                        footnoteIndex++;
+                        footnotes[dm.name] = {
+                            index: footnoteIndex,
+                            content: dm.content,
+                            name: dm.name
+                        };
+                        footnoteOrder.push(dm.name);
+                    }
+                }
+
+                // 第四步：从后往前移除定义区域（保持索引正确）
+                for (var di = defMatches.length - 1; di >= 0; di--) {
+                    var dm = defMatches[di];
+                    markdown = markdown.substring(0, dm.start) + markdown.substring(dm.contentEnd);
+                }
+
+                // 第五步：替换所有脚注引用为可点击链接
+                editormd.regexs.footnoteRef.lastIndex = 0;
+                markdown = markdown.replace(editormd.regexs.footnoteRef, function(match, name) {
+                    if (!name || name.length > 50) return match;
+
+                    var cleanName = name.trim().replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]/g, '');
+                    if (!cleanName || !footnotes[cleanName]) {
+                        return match;
+                    }
+
+                    var fn = footnotes[cleanName];
+                    // 使用行内 HTML，与 sup 标签区分；提供完整的锚点跳转
+                    return '<sup class="editormd-footnote-ref-wrapper"><a href="#editormd-fn-' + fn.index + '" id="editormd-fnref-' + fn.index + '">[' + fn.index + ']</a></sup>';
+                });
+
+                // 第六步：在文档末尾添加脚注列表（紧凑 HTML 避免 marked breaks:true 产生多余 <br>）
+                if (footnoteOrder.length > 0) {
+                    var footnoteHtml = '\n\n<div class="editormd-footnotes-section">';
+                    footnoteHtml += '<hr class="editormd-footnote-sep">';
+                    footnoteHtml += '<div class="editormd-footnote-title"><strong>脚注</strong></div>';
+                    footnoteHtml += '<ol class="editormd-footnote-list">';
+
+                    for (var fi = 0; fi < footnoteOrder.length; fi++) {
+                        var fnName = footnoteOrder[fi];
+                        var fn = footnotes[fnName];
+
+                        // 对脚注内容做 XSS 防护和内联 Markdown 处理
+                        var fnContent = fn.content;
+
+                        // 0. 先恢复脚注内容中的代码块占位符（行内代码等）
+                        // 因为脚注内容是在代码块保护阶段之后提取的，其中可能包含占位符
+                        fnContent = restoreCodeBlocks(fnContent, codeProtection.placeholders);
+
+                        // 1. 先转义 < 和 >（主要 XSS 向量）
+                        fnContent = fnContent.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                        // 2. 内联 Markdown 转换（代码优先于粗体/斜体，符合标准 Markdown 规范）
+                        //    注意：先用占位符保护 <code> 块，避免粗体/斜体正则二次匹配已转换的标签
+                        fnContent = fnContent.replace(/`([^`]+)`/g, '<code>$1</code>');
+                        var codeBlocks = [];
+                        fnContent = fnContent.replace(/<code>[^<]*<\/code>/g, function(m) {
+                            codeBlocks.push(m);
+                            return '<!--fncode-' + (codeBlocks.length - 1) + '-->';
+                        });
+                        fnContent = fnContent.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+                        fnContent = fnContent.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+                        // 还原 <code> 块
+                        for (var ci = 0; ci < codeBlocks.length; ci++) {
+                            fnContent = fnContent.split('<!--fncode-' + ci + '-->').join(codeBlocks[ci]);
+                        }
+                        // 3. 换行转 <br>（避免 marked.js breaks:true 额外添加）
+                        fnContent = fnContent.replace(/\n/g, '<br>');
+
+                        footnoteHtml += '<li class="editormd-footnote-item" id="editormd-fn-' + fn.index + '" value="' + fn.index + '">';
+                        footnoteHtml += '<span class="editormd-footnote-content">' + fnContent + '</span>';
+                        footnoteHtml += ' <a href="#editormd-fnref-' + fn.index + '" class="editormd-footnote-backref" title="返回引用位置">&#8617;</a>';
+                        footnoteHtml += '</li>';
+                    }
+                    footnoteHtml += '</ol>';
+                    footnoteHtml += '</div>';
+                    markdown += footnoteHtml;
+                }
+            }
+        } catch(e) {
+            if (typeof console !== "undefined" && console.warn) {
+                console.warn("[xfEditor] Footnote processing error:", e);
+            }
+        }
+
+        // 处理上标和下标语法（脚注引用已替换完毕，不冲突）
+        // 上标：^文本^ → <sup>文本</sup>
+        // 下标：^^文本^^ → <sub>文本</sub>
+        try {
+            // 先处理下标（双符号），再处理上标（单符号），避免冲突
+            editormd.regexs.subscript.lastIndex = 0;
+            markdown = markdown.replace(editormd.regexs.subscript, function(match, text) {
+                if (!text || text.length > 100) return match;
+                var safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                return '<sub>' + safeText + '</sub>';
+            });
+
+            editormd.regexs.superscript.lastIndex = 0;
+            markdown = markdown.replace(editormd.regexs.superscript, function(match, text) {
+                if (!text || text.length > 100) return match;
+                var safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                return '<sup>' + safeText + '</sup>';
+            });
+        } catch(e) {
+            if (typeof console !== "undefined" && console.warn) {
+                console.warn("[xfEditor] Superscript/Subscript processing error:", e);
+            }
+        }
+
+        // 处理字体大小语法：!数字 文本! → <span style="font-size:数字px">文本</span>
+        try {
+            markdown = markdown.replace(editormd.regexs.fontSize, function(match, size, text) {
+                // 防止误匹配图片语法 ![alt](url) 中的 !
+                if (typeof match === "string" && /^\[/.test(match)) return match;
+
+                var fontSize = parseInt(size, 10);
+                if (isNaN(fontSize) || fontSize < 8 || fontSize > 200) {
+                    if (typeof console !== "undefined" && console.warn) {
+                        console.warn("[xfEditor] Invalid font size: " + size + ", using default");
+                    }
+                    return match;
+                }
+
+                if (!text || text.length > 1000) return match;
+
+                var safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                return '<span style="font-size:' + fontSize + 'px">' + safeText + '</span>';
+            });
+        } catch(e) {
+            if (typeof console !== "undefined" && console.warn) {
+                console.warn("[xfEditor] Font size processing error:", e);
+            }
+        }
 
         // 恢复转义语法占位符（\[\[ → [[，\]\] → ]]）
         for (var ei = 0; ei < escapePlaceholders.length; ei++) {
@@ -7185,6 +8315,7 @@
             echarts              : false,          // 启用 Apache ECharts 图表
             tabs                 : true,           // 启用标签页 [[tabs]] 语法
             columns              : true,           // 启用多栏布局 [[columns:N]] 语法
+            pageBlock            : true,           // 启用纸张页面 [[page:A4]] / [[page:A5]] 语法
             tooltip              : true,           // 启用悬浮提示 [text](tooltip:content) 语法
             copybook             : true            // 启用字帖语法 [[copybookTian]]、[[copybookMi]]、[[copybookPinyin]]
         };
@@ -7321,17 +8452,13 @@
         
         markedRenderer.link = function (href, title, text) {
 
-            if (this.options.sanitize) {
-                try {
-                    var prot = decodeURIComponent(unescape(href)).replace(/[^\w:]/g,"").toLowerCase();
-                } catch(e) {
-                    return "";
-                }
-
-                if (prot.indexOf("javascript:") === 0) {
-                    return "";
-                }
+            // 安全检查：防止 javascript: 和 data: 等危险协议注入
+            if (href && /^\s*(javascript|data|vbscript):/i.test(href.trim())) {
+                return editormd.escapeHtml(text || href);
             }
+            
+            // 转义 href 用于 HTML 属性
+            var safeHref = editormd.escapeAttr(href || "");
 
             // 悬浮提示链接语法：[文本](tooltip:内容) / [文本](tooltip:image:图片URL) / [文本](tooltip:iframe:页面URL)
             if (settings.tooltip && href.indexOf("tooltip:") === 0) {
@@ -7343,20 +8470,20 @@
                     tooltipType = typeMatch[1];
                     tooltipContent = tooltipBody.substring(typeMatch[0].length);
                 }
-                return '<span class="editormd-tooltip-trigger" data-tooltip="' + tooltipContent + '" data-tooltip-type="' + tooltipType + '" tabindex="0">' + text + '</span>';
+                return '<span class="editormd-tooltip-trigger" data-tooltip="' + editormd.escapeAttr(tooltipContent) + '" data-tooltip-type="' + editormd.escapeAttr(tooltipType) + '" tabindex="0">' + text + '</span>';
             }
 
             var videoExts = /\.(mp4|webm|ogv|mov)(\?.*)?$/i;
             var imageExts = /\.(jpg|jpeg|png|gif|bmp|webp)(\?.*)?$/i;
             
             if (videoExts.test(href)) {
-                var videoOut = '<video src="' + href + '" controls preload="metadata" class="editormd-video-player"';
-                if (title) videoOut += ' title="' + title + '"';
+                var videoOut = '<video src="' + safeHref + '" controls preload="metadata" class="editormd-video-player"';
+                if (title) videoOut += ' title="' + editormd.escapeAttr(title) + '"';
                 videoOut += '>' + text + '</video>';
                 return videoOut;
             }
             
-            var out = "<a href=\"" + href + "\"";
+            var out = "<a href=\"" + safeHref + "\"";
             
             if (!imageExts.test(href)) {
                 out += ' download class="editormd-attachment-link"';
@@ -7373,7 +8500,7 @@
             {
                 if (title)
                 {
-                    out += " title=\"" + title.replace(/@/g, "&#64;");
+                    out += " title=\"" + editormd.escapeAttr(title).replace(/@/g, "&#64;");
                 }
                 
                 return out + "\">" + text.replace(/@/g, "&#64;") + "</a>";
@@ -8398,7 +9525,7 @@
         return div;
     };
     
-    // Editor.md 编辑器主题列表（用于切换工具栏等主题）
+    // xfEditor 编辑器主题列表（用于切换工具栏等主题）
     // 自 v1.5.0 起添加
     editormd.themes        = ["default", "dark"];
     
@@ -8434,7 +9561,7 @@
     };
     
     /**
-     * 动态加载Editor.md插件，但不立即执行
+     * 动态加载xfEditor插件，但不立即执行
      * Load editor.md plugins
      * 
      * @param {String}   fileName              插件文件路径
@@ -8562,7 +9689,7 @@
             }
             editormd.loadFiles.failed.push(fileName);
             if (typeof console !== "undefined" && console.warn) {
-                console.warn("[Editor.md] Failed to load script: " + fileName);
+                console.warn("[xfEditor] Failed to load script: " + fileName);
             }
             // 即使脚本加载失败，也继续执行加载链
             callback();
@@ -8685,11 +9812,14 @@
             '<span style="flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;' +
             'width:22px;height:22px;border-radius:50%;background:' + colors[type] + ';color:#fff;' +
             'font-size:12px;font-weight:bold;line-height:1;">' + icons[type] + '</span>' +
-            '<span style="flex:1;">' + message + '</span>' +
+            '<span style="flex:1;"></span>' +
             '<span class="editormd-notify-close" style="flex-shrink:0;cursor:pointer;font-size:16px;' +
             'opacity:0.5;line-height:1;padding:0 2px;" onclick="$(this).closest(\'.editormd-notify-toast\').remove()">×</span>' +
             '</div>'
         );
+        
+        // 使用 .text() 安全设置消息，防止 XSS
+        $toast.find("span").eq(1).text(message);
 
         $container.append($toast);
 
@@ -8835,7 +9965,7 @@
             zIndex : editormd.dialogZindex,
             border : (editormd.isIE8) ? "1px solid #ddd" : "",
             width  : (typeof options.width  === "number") ? options.width + "px"  : options.width,
-            height : (typeof options.height === "number") ? options.height + "px" : options.height
+            height : (typeof options.height === "string") ? options.height : "auto"
         });
 
         var dialogPosition = function(){
@@ -8847,7 +9977,7 @@
 
         dialogPosition();
 
-        $(window).resize(dialogPosition);
+        $(window).on("resize.editormd-dialog", dialogPosition);
 
         dialog.children("." + classPrefix + "dialog-close").on(mouseOrTouch("click", "touchend"), function(e) {
             e.preventDefault();

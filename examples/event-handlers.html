@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>事件处理器综合演示 — xfEditor v1.10.0</title>
+    <link rel="stylesheet" href="../css/editormd.css" />
+    <link rel="stylesheet" href="../css/editormd.preview.css" />
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+    <script src="../editormd.js"></script>
+    <style>
+        body { background: #f0f2f5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif; margin: 0; padding: 20px; }
+        .demo-header { text-align: center; padding: 30px 20px; background: linear-gradient(135deg, #1a1a2e, #16213e); color: #fff; margin: -20px -20px 20px; }
+        .demo-header h1 { margin: 0 0 8px; font-size: 24px; }
+        .demo-header p { margin: 0; opacity: 0.75; font-size: 14px; }
+        .layout { display: flex; gap: 16px; max-width: 1500px; margin: 0 auto; }
+        .layout > div { flex: 1; min-width: 0; background: #fff; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); overflow: hidden; }
+        .layout h3 { margin: 0; padding: 12px 16px; background: #f8f9fa; border-bottom: 1px solid #e9ecef; font-size: 13px; font-weight: 600; color: #555; }
+        #editor-container { min-height: 500px; }
+        .event-log { width: 300px; min-width: 300px; }
+        .event-log h3 { display: flex; justify-content: space-between; align-items: center; }
+        .event-log-list { height: 500px; overflow-y: auto; padding: 10px 14px; font-size: 12px; font-family: "SF Mono", Monaco, "Cascadia Code", monospace; line-height: 1.6; }
+        .event-log-list .item { padding: 4px 8px; margin: 2px 0; border-radius: 4px; background: #f6f8fa; border-left: 3px solid #0969da; }
+        .event-log-list .item.change { border-left-color: #3fb950; }
+        .event-log-list .item.fullscreen { border-left-color: #8250df; }
+        .event-log-list .item.key { border-left-color: #f778ba; }
+        .event-log-list .item.scroll { border-left-color: #f0883e; }
+        .event-log-list .time { color: #8b949e; margin-right: 6px; }
+        .event-log-list .name { font-weight: 600; color: #0969da; }
+        #clear-log { font-size: 11px; cursor: pointer; color: #666; padding: 2px 8px; border: 1px solid #ddd; border-radius: 4px; background: #fff; }
+        #clear-log:hover { background: #f0f0f0; }
+    </style>
+</head>
+<body>
+<div class="demo-header">
+    <h1>📡 事件处理器综合演示</h1>
+    <p>所有编辑器回调事件实时可视化 · 在编辑器中操作即可观察事件触发</p>
+</div>
+
+<div class="layout">
+    <div>
+        <h3>📝 编辑器（编辑、切换、全屏来触发事件）</h3>
+        <div id="editor-container">
+            <textarea id="editor" style="display:none;">
+# 事件处理器演示
+
+## 试试以下操作观察事件触发：
+
+### ⌨️ 键盘事件
+- 在编辑区输入文字 → `onkeydown` / `onkeyup`
+- 复制粘贴 → `oncopy` / `onpaste`
+
+### 🖱️ 鼠标事件
+- 点击编辑区 → `onfocus` / `onmousedown` / `onmouseup`
+- 点击外部区域 → `onblur`
+
+### 📐 窗口事件
+- 调整浏览器窗口 → `onresize`
+- 按 F11 全屏 → `onfullscreen`
+- 按 ESC 退出 → `onfullscreenExit`
+
+### 👁️ 预览事件
+- 按 F9 切换预览 → `onwatch` / `onunwatch`
+- 滚动编辑/预览区 → `onscroll` / `onpreviewscroll`
+- 预览渲染前后 → `onpreviewing` / `onpreviewed`
+
+### 🔄 内容变化
+- 编辑文字 → `onchange`
+- 移动光标 → `oncursoractivity`
+</textarea>
+        </div>
+    </div>
+    <div class="event-log">
+        <h3>
+            📋 事件日志
+            <button id="clear-log" title="清空日志">清空</button>
+        </h3>
+        <div class="event-log-list" id="event-list">
+            <div class="item"><span class="name">🟢 onload</span> 等待编辑器加载...</div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    $(function() {
+        var $log = $("#event-list");
+        var eventCount = 0;
+        var MAX_LOG = 200;
+
+        function getTime() {
+            var d = new Date();
+            return d.getHours().toString().padStart(2,'0') + ':' +
+                   d.getMinutes().toString().padStart(2,'0') + ':' +
+                   d.getSeconds().toString().padStart(2,'0') + '.' +
+                   d.getMilliseconds().toString().padStart(3,'0');
+        }
+
+        function addLog(name, typeClass, detail) {
+            eventCount++;
+            var time = getTime();
+            var $item = $('<div class="item ' + (typeClass || '') + '">' +
+                '<span class="time">' + time + '</span>' +
+                '<span class="name">#' + eventCount + ' ' + name + '</span>' +
+                (detail ? ' <span style="color:#666;">' + detail + '</span>' : '') +
+            '</div>');
+            $log.prepend($item);
+
+            // 限制日志数量
+            var items = $log.children('.item');
+            if (items.length > MAX_LOG) {
+                items.slice(MAX_LOG).remove();
+            }
+        }
+
+        $("#clear-log").on("click", function() {
+            $log.empty();
+            eventCount = 0;
+            addLog("日志已清空", "", "");
+        });
+
+        var editor = editormd("editor-container", {
+            width: "100%",
+            height: 600,
+            path: "../lib/",
+            markdown: $("#editor").text(),
+            taskList: true,
+            toc: true,
+            htmlDecode: "style,script,iframe|on*",
+            toolbarIcons: function() {
+                return ["undo", "redo", "|", "bold", "del", "italic", "|",
+                        "h1", "h2", "h3", "|", "list-ul", "list-ol", "hr", "|",
+                        "link", "image", "code", "code-block", "table", "|",
+                        "watch", "preview", "fullscreen", "search", "help"];
+            },
+
+            // ======== 生命周期事件 ========
+            onload: function() {
+                addLog("🟢 onload", "", "编辑器加载完成（编辑区已就绪）");
+            },
+            onEditorLoad: function() {
+                addLog("🔵 onEditorLoad", "", "编辑器 DOM 构建完成");
+            },
+            onAllAsyncLoad: function() {
+                addLog("🟣 onAllAsyncLoad", "", "所有异步依赖（KaTeX等）加载完成");
+            },
+
+            // ======== 编辑区事件 ========
+            onchange: function() {
+                addLog("🔄 onchange", "change", "内容发生变化");
+            },
+            oncursoractivity: function() {
+                // 光标活动过于频繁，仅每 500ms 记录一次
+                if (!this._lastCursorLog || Date.now() - this._lastCursorLog > 500) {
+                    this._lastCursorLog = Date.now();
+                    addLog("📍 oncursoractivity", "", "光标位置变化");
+                }
+            },
+
+            // ======== 键盘与输入事件 ========
+            onkeydown: function(cm, e) {
+                var key = e.key || String.fromCharCode(e.keyCode);
+                addLog("⌨️ onkeydown", "key", "键: " + key);
+            },
+            onkeyup: function(cm, e) {
+                var key = e.key || String.fromCharCode(e.keyCode);
+                addLog("⌨️ onkeyup", "key", "键: " + key);
+            },
+            onpaste: function(cm, e) {
+                addLog("📋 onpaste", "key", "粘贴操作触发");
+            },
+            oncopy: function(cm, e) {
+                addLog("📋 oncopy", "key", "复制操作触发");
+            },
+            oncut: function(cm, e) {
+                addLog("✂️ oncut", "key", "剪切操作触发");
+            },
+            ondrop: function(cm, e) {
+                addLog("📥 ondrop", "key", "拖拽放置触发");
+            },
+
+            // ======== 鼠标事件 ========
+            onmousedown: function(cm, e) {
+                addLog("🖱️ onmousedown", "", "鼠标按下");
+            },
+            onmouseup: function(cm, e) {
+                addLog("🖱️ onmouseup", "", "鼠标释放");
+            },
+            onfocus: function(cm) {
+                addLog("🎯 onfocus", "", "编辑器获得焦点");
+            },
+            onblur: function(cm) {
+                addLog("🔲 onblur", "", "编辑器失去焦点");
+            },
+
+            // ======== 全屏事件 ========
+            onfullscreen: function() {
+                addLog("📺 onfullscreen", "fullscreen", "进入全屏模式");
+            },
+            onfullscreenExit: function() {
+                addLog("📺 onfullscreenExit", "fullscreen", "退出全屏模式");
+            },
+
+            // ======== 预览事件 ========
+            onpreviewing: function() {
+                addLog("👁️ onpreviewing", "", "预览渲染开始（数据准备中）");
+            },
+            onpreviewed: function() {
+                addLog("👁️ onpreviewed", "", "预览渲染完成");
+            },
+            onwatch: function() {
+                addLog("👁️ onwatch", "", "开启实时预览");
+            },
+            onunwatch: function() {
+                addLog("👁️ onunwatch", "", "关闭实时预览");
+            },
+
+            // ======== 滚动事件 ========
+            onscroll: function() {
+                if (!this._lastScrollLog || Date.now() - this._lastScrollLog > 300) {
+                    this._lastScrollLog = Date.now();
+                    addLog("📜 onscroll", "scroll", "编辑器滚动");
+                }
+            },
+            onpreviewscroll: function() {
+                if (!this._lastPvScrollLog || Date.now() - this._lastPvScrollLog > 300) {
+                    this._lastPvScrollLog = Date.now();
+                    addLog("📜 onpreviewscroll", "scroll", "预览区滚动");
+                }
+            },
+
+            // ======== 窗口事件 ========
+            onresize: function() {
+                addLog("📐 onresize", "", "窗口尺寸变化");
+            },
+        });
+
+        // 页面级别事件
+        addLog("🟡 onPageLoad", "", "页面 DOM 就绪（jQuery ready）");
+    });
+
+    // 所有资源加载完成
+    $(window).on("load", function() {
+        var $log = $("#event-list");
+        if ($log.length) {
+            var d = new Date();
+            var time = d.getHours().toString().padStart(2,'0') + ':' +
+                       d.getMinutes().toString().padStart(2,'0') + ':' +
+                       d.getSeconds().toString().padStart(2,'0');
+            $log.prepend('<div class="item"><span class="time">' + time + '</span><span class="name">🟤 onPageAllLoad</span> 所有资源（图片/字体等）加载完成</div>');
+        }
+    });
+</script>
+</body>
+</html>

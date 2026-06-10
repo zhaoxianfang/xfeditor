@@ -1,135 +1,176 @@
 <!DOCTYPE html>
-<html lang="zh">
-    <head>
-        <meta charset="utf-8" />
-        <title>@links - Editor.md v1.8.0 examples</title>
-        <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" />
-        <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
-    </head>
-    <body>
-        <div id="layout">
-            <header>
-                <h1>@links</h1>   
-                <p>Github Flavored Markdown extras syntax</p>
-            </header>
-            <div id="test-editormd">                
-                <textarea style="display:none;">### Disable @link & email address auto link
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8" />
+    <title>@链接 和 Email 自动链接 — xfEditor v1.10.0</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="../css/editormd.css" />
+    <link rel="stylesheet" href="../css/editormd.preview.css" />
+    <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
+    <style>
+        #layout { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { text-align: center; padding: 30px 20px; background: linear-gradient(135deg, #0969da, #0550ae); color: #fff; border-radius: 8px; margin-bottom: 20px; }
+        header h1 { margin: 0 0 8px; font-size: 24px; }
+        header p { margin: 0; opacity: 0.85; font-size: 14px; }
+        .info { background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 8px; padding: 20px 24px; margin-bottom: 20px; font-size: 14px; line-height: 1.8; color: #444; }
+        .info h3 { margin-top: 0; color: #0969da; }
+        .info code { background: #e8eaed; padding: 2px 6px; border-radius: 3px; font-size: 13px; color: #cf222e; }
+        .info table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        .info th { background: #e8eaed; padding: 8px 12px; text-align: left; border: 1px solid #d0d7de; font-size: 13px; }
+        .info td { padding: 8px 12px; border: 1px solid #d0d7de; font-size: 13px; }
+        #test-editormd { background: #fff; border-radius: 8px; border: 1px solid #d0d7de; overflow: hidden; }
+    </style>
+</head>
+<body>
+    <div id="layout">
+        <header>
+            <h1>@链接 和 Email 自动链接</h1>
+            <p>Github Flavored Markdown — @提及 与 自动邮箱链接 功能演示与详解</p>
+        </header>
 
-> Editor.md default enable @link & email address auto link; 
-> Unsupported xxxx@xxxxx, xxxx@localhost  ...
+        <div class="info">
+            <h3>📖 功能说明</h3>
+            <p>xfEditor v1.10.0 默认启用了 <strong>@link</strong> 和 <strong>Email 自动链接</strong> 功能：</p>
+            <table>
+                <tr>
+                    <td><strong>@ 用户提及</strong></td>
+                    <td>将形如 <code>@用户名</code> 的文本自动转换为链接，指向 GitHub（或其他自定义平台）的用户主页</td>
+                </tr>
+                <tr>
+                    <td><strong>Email 自动链接</strong></td>
+                    <td>将形如 <code>user@domain.com</code> 的邮箱地址自动转换为 <code>mailto:</code> 链接</td>
+                </tr>
+            </table>
 
-```javascript
-var testEditor;
+            <h3>🔧 配置方式</h3>
+            <p><strong>基础 URL 配置</strong> — 在初始化前修改全局变量：</p>
+            <pre style="background:#f6f8fa; padding:10px; border-radius:4px; overflow-x:auto;"><code>editormd.urls.atLinkBase = "https://github.com/"; // @link 的基础 URL</code></pre>
 
-$(function() {    
-    // You can custom @link base url.
-    editormd.urls.atLinkBase = "https://github.com/";
+            <p><strong>禁用功能</strong> — 在配置中关闭：</p>
+            <pre style="background:#f6f8fa; padding:10px; border-radius:4px; overflow-x:auto;"><code>testEditor = editormd("test-editormd", {
+    atLink    : false,    // 禁用 @link 自动链接
+    emailLink : false,    // 禁用 email 地址自动链接
+    path      : '../lib/'
+});</code></pre>
 
-    testEditor = editormd("test-editormd", {
-        atLink    : false,    // disable @link
-        emailLink : false,    // disable email address auto link
-        path      : '../lib/'
-    });
-});
-```
+            <h3>🎯 语法规则</h3>
+            <table>
+                <tr><th>语法格式</th><th>匹配示例</th><th>渲染结果</th></tr>
+                <tr><td><code>@username</code></td><td><code>@pandao</code></td><td><code>&lt;a href="https://github.com/zhaoxianfang"&gt;@pandao&lt;/a&gt;</code></td></tr>
+                <tr><td><code>@username</code></td><td><code>@tylerlong</code></td><td><code>&lt;a href="https://github.com/tylerlong"&gt;@tylerlong&lt;/a&gt;</code></td></tr>
+                <tr><td>邮箱自动链接</td><td><code>test@gmail.com</code></td><td><code>&lt;a href="mailto:test@gmail.com"&gt;test@gmail.com&lt;/a&gt;</code></td></tr>
+            </table>
 
-### @links
+            <h3>⚠️ 注意事项</h3>
+            <ol>
+                <li>标准 email 地址中的 <code>@</code> 不会被混淆（如 <code>xxx.test@gmail.com</code> 中的 @ 会正确分为邮箱部分和 @link 部分）</li>
+                <li>邮件格式 <code>&lt;xxx.test@gmail.com&gt;</code> 或 <code>&lt;mailto:xxx.test@gmail.com&gt;</code> 也会自动识别</li>
+                <li>Markdown 链接中的 <code>@</code> 不会被额外处理（如 <code>[Gmail](mailto:xxx@gmail.com)</code>）</li>
+                <li>HTML 标签内的 <code>@</code> 不会被处理，避免破坏标签结构</li>
+                <li>通过 <code>atLink: false</code> 可完全禁用此功能</li>
+            </ol>
+        </div>
 
-[TOC]
+        <div id="test-editormd">
+            <textarea style="display:none;">### 演示：@link 和 Email 自动链接
 
-~~@mentions~~, #refs @tylerlong `inline code @tylerlong`, [links](), **formatting**, and <del>tags</del> supported @pandao;
-list syntax required (any unordered or ordered list supported) @pandao;
-this is @pandao a complete item @pandao xxx.test@gmail.com;
+---
 
-link [@pandao](https://github.com/pandao "@pandao") &#64 xxx.test@gmail.com;
-link [&#64;pandao](https://github.com/pandao "&#64;pandao") 
- fsdafds [Gmail](mailto:xxx.test@gmail.com) this is an incomplete item **@pandao**; 
+以下为 @link 和 Email 自动链接在多种上下文中的渲染效果演示：
 
-*@pandao* this is an incomplete item ___@pandao___;
+#### @ 用户提及
 
-<xxx.test@gmail.com>
+在段落中使用 @link 功能：提到 @pandao 和 @tylerlong 会自动转换为 GitHub 链接。
 
-<mailto:xxx.test@gmail.com>
+`行内代码 @tylerlong` — 行内代码中的 @ 不会被处理。
 
-Email test : [email me](mailto:test@test.com)  [Gmail](mailto:xxx.test@gmail.com)  dsfdfsdfsdfsdf  xxx.test@gmail.com fdfsdfsdf 5956565656565@vip.qq.com
- 
-# Github: @pandao
-## Github: @pandao
-### Github: @tylerlong
-#### Github: @tylerlong
-##### Github: @tylerlong
-###### Github: @tylerlong  [Gmail](mailto:xxx.test@gmail.com)
- 
-- dafssdfsdaf@chjj dfsdfsdf  [5956565656565@vip.qq.com](mailto:5956565656565@vip.qq.com)
-- dafssdfsdaf@chjj dfsdfsdf     
-    - dafssdfsdaf@chjj dfsdfsdf
-    - dafss@pandao dfsdaf@chjj dfsdfsdf
-- dafssd:  @pandao fsdaf@chjj dfsdfsdf @codemirror  @pandao
-    + dafssdfsdaf@chjj dfsdfsdf
-    + dafss@pandaodfsdaf@chjj dfsdfsdf
+#### 链接中的 @
 
+链接 [@pandao](https://github.com/zhaoxianfang "@pandao") 中的 @ 不会被额外处理。
 
-1. @chjj 第一行@pandao fsdaf@chjj dfsdfsdf  @pandao
-    - dafssdfsdaf@chjj dfsdfsdf
-    - dafss@pandao dfsdaf@chjj dfsdfsdf
-2. @chjj 第二行@pandao fsdaf@chjj dfsdfsdf @codemirror  @pandao
-3. 第三行@pandao fsdaf@chjj dfsdfsdf  @pandao
+Gmail 链接 [Gmail](mailto:xxx.test@gmail.com) 中的邮箱正常渲染。
 
-&gt; Blockquotes @pandao
+#### 格式化文本中的 @
 
-&gt; dd@pandao引用文本(Blockquotes @pandao)fdasfad @_pandao fdasfad @xxx454xxx fdasfad @xx_x454xxx454
+- *@pandao* 斜体中的 @link
+- **@pandao** 粗体中的 @link
+- ___@pandao___ 粗斜体中的 @link
 
-|@pandao First Header  | Second@pandao Header@pandao |
-| ------------- | ------------- |
-| Content@pandao Cell  | @pandao Content Cell @pandao|
-| Con@pandao tent Cell@pandao  | Content@pan-dao Cell dfsdfsdf @pan_dao |
+#### 标准邮箱格式
 
-dsfdf@pandao fasdfsdfsfddffd@pandao
+| 格式 | 示例 |
+|------|------|
+| 普通邮箱 | xxx.test@gmail.com |
+| 尖括号格式 | ＜xxx.test@gmail.com＞ |
+| mailto 格式 | ＜mailto:xxx.test@gmail.com＞ |
+| Markdown 链接 | [email me](mailto:test@test.com) |
+| QQ 邮箱 | 5956565656565@vip.qq.com |
 
-    dfasfasdfasdf:bangbang:
+#### 标题中的 @link
 
-This is an H1 @pandao
+# 一级标题: @pandao
+## 二级标题: @pandao
+### 三级标题: @tylerlong
+#### 四级标题: @tylerlong
+##### 五级标题: @tylerlong
+###### 六级标题: @tylerlong [Gmail](mailto:xxx.test@gmail.com)
+
+#### 列表中的 @link
+
+- 第一项 @pandao 和邮箱 dafssdfsdaf@chjj
+- 第二项 @codemirror 和 @pandao
+    - 嵌套项 dafssdfsdaf@chjj
+    - 嵌套项 dafss@pandao
+
+1. 有序列表第一项 @chjj 和 @pandao
+    - 嵌套无序项 dafssdfsdaf@chjj
+    - 嵌套无序项 dafss@pandao
+2. 有序列表第二项 @chjj 和 @codemirror
+
+#### 引用中的 @link
+
+> 引用文本中的 @pandao 和 email 地址 test@example.com
+
+#### 表格中的 @link
+
+| @pandao 第一列 | 第二列 @pandao |
+|---------------|----------------|
+| 内容 @pandao | @pandao 内容 |
+| 内容 @pandao | 内容 @pandao |
+
+#### 混合场景
+
+在段落中 @pandao 和 xxx.test@gmail.com 同时出现。这是 @pandao 完整的测试项，邮箱 xxx.test@gmail.com 会自动转换。
+
+===== 分隔线 =====
+
+Setext 风格一级标题 @pandao
 =============
 
-This @pandao an H2 @pandao
+Setext 风格二级标题 @pandao
 -------------
-
-./images/editormd-logo-64x64.png
-
-./images/editormd-logo-64x64.png
-
-./images/editormd-logo-64x64.png
-
-[![./images/editormd-logo-64x64.png](./images/editormd-logo-64x64.png)](./images/editormd-logo-64x64.png)
-
-
-[./images/editormd-logo-64x64.png](./images/editormd-logo-64x64.png)
-[./images/editormd-logo-64x64.png](./images/editormd-logo-64x64.png)
-
-![./images/editormd-logo-64x64.png](./images/editormd-logo-64x64.png)
 </textarea>
-            </div>
-        </div>        
-        <script src="js/jquery.min.js"></script>
-        <script src="../editormd.min.js"></script>
-        <script type="text/javascript">
-            var testEditor;
-            
-            $(function() {    
-                // You can custom @link base url.
-                editormd.urls.atLinkBase = "https://github.com/";
-                
-                testEditor = editormd("test-editormd", {
-                    width     : "90%",
-                    height    : 720,
-                    toc       : true,
-                    //atLink    : false,    // disable @link
-                    //emailLink : false,    // disable email address auto link
-                    todoList  : true,
-                    path      : '../lib/'
-                });
+        </div>
+    </div>
+    <script src="js/jquery.min.js"></script>
+    <script src="../editormd.js"></script>
+    <script type="text/javascript">
+        var testEditor;
+
+        $(function() {
+            // 自定义 @link 基础 URL
+            editormd.urls.atLinkBase = "https://github.com/";
+
+            testEditor = editormd("test-editormd", {
+                width     : "100%",
+                height    : 740,
+                toc       : true,
+                // atLink    : false,    // 如需禁用 @link，取消此行注释
+                // emailLink : false,    // 如需禁用 email 自动链接，取消此行注释
+                todoList  : true,
+                path      : '../lib/'
             });
-        </script>
-    </body>
+        });
+    </script>
+</body>
 </html>

@@ -2,10 +2,10 @@
  * Help dialog plugin for Editor.md
  *
  * @file        help-dialog.js
- * @author      pandao
+ * @author zhaoxianfang
  * @version     1.2.0
  * @updateTime  2015-03-08
- * {@link       https://github.com/pandao/editor.md}
+ * {@link       https://github.com/zhaoxianfang/editor}
  * @license     MIT
  */
 

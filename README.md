@@ -1,8 +1,8 @@
-# Editor.md
+# xfEditor 编辑器
 
-> **本项目是基于 [pandao/editor.md](https://github.com/pandao/editor.md) 的深度改进和功能增强版本。** 在原有基础上进行了系统性优化、Bug 修复和新功能拓展。
+> **本编辑器是基于 [pandao/editor.md](https://github.com/zhaoxianfang/editor) 的深度改进和功能增强版本。** 在原有基础上进行了系统性优化、Bug 修复和新功能拓展。
 
-**Editor.md** 是一款开源可嵌入的 Markdown 在线编辑器组件，基于 CodeMirror、jQuery 和 marked 构建。
+**xfEditor** 是一款开源可嵌入的 Markdown 在线编辑器组件，基于 CodeMirror、jQuery 和 marked 构建。
 
 ---
 
@@ -35,9 +35,26 @@
 - 支持 AMD/CMD 模块加载（Require.js / Sea.js）
 - 兼容 IE8+、iPad、Zepto.js
 
-### v1.8.0 改进
+### v1.10.0 改进
 | 特性 | 说明 |
 |------|------|
+| **工具栏修复** | 修复图片/视频/文件工具栏按钮失效问题（dialog.show() 提前 return bug）；修复 executePlugin 加载失败时未捕获异常导致静默失败|
+| **弹窗全面美化** | 所有编辑模式弹窗现代化重设计：紫色渐变标题栏、圆形关闭按钮、多层柔和阴影、8px 圆角；表单输入 focus 紫色发光环；Primary 渐变提交按钮 + hover 上浮动画 |
+| **XSS 安全加固** | 新增 `editormd.escapeHtml()` / `editormd.escapeAttr()` 工具函数；修复 Tooltip data-tooltip 属性注入、Link renderer href/title 注入、notify() HTML 注入、applyColor() 选区注入、图片/视频/文件块 URL 注入共 6 项安全漏洞 |
+| **Link 安全协议阻断** | 活跃的 `javascript:` / `data:` / `vbscript:` 协议检测与阻断 |
+| **ECharts 内存修复** | resize 事件命名空间改为基于 chart ID，支持统一 `.off("resize.editormd-echarts")` 彻底清理 |
+| **新语法支持** | 上标 `^x^`、下标 `^^x^^`、字体大小 `!32!`、脚注 `[^name]` 四种新语法 |
+| **帮助系统重写** | 帮助对话框内容全面更新为中文版，含完整快捷键表、配置项、API、事件列表 |
+| **关于对话框增强** | 显示 v1.10.0 新特性概览、技术栈组件列表 |
+| **上传功能优化** | 图片/视频/文件上传弹窗增强；图片粘贴上传支持；统一上传接口优化；PHP 上传类全面增强 |
+| **示例页面完善** | 新增文件上传、视频上传、全部事件综合演示 3 个示例；@links 页面中文详解；index.html 导航扩展 |
+| **文档更新** | README、USAGE_GUIDE 全面更新至 v1.10.0 |
+| **构建产物** | 所有 .js/.css 和 .min 版本已重新编译压缩 |
+
+### v1.9.0 改进
+| 特性 | 说明 |
+|------|------|
+| **草稿弹窗美化** | 全新现代化 UI：渐变头部、卡片式列表、悬停动画；智能时间标签（刚刚/N分钟前/N小时前）；平滑入场/退场动画 |
 | **悬浮提示修复** | 修复文本型 Tooltip `pointer-events:none` 导致 popup 无法拦截鼠标事件的问题，popup 与 trigger 之间鼠标平滑过渡 |
 | **任务列表渲染修复** | `dangerousTags` 中移除 `input`，修复 Task List checkbox 被 XSS 过滤误删 |
 | **独立预览 Tooltip** | editormd.preview.css 添加完整 Tooltip 样式（含箭头、图片/iframe 型） |
@@ -69,6 +86,7 @@
 | **Unicode 行内对齐** | `⁑⁑居中⁑⁑` `⁑⁖左对齐⁖⁑` `⁑⠕右对齐⠕⁑` `⁑⁛两端对齐⁛⁑` |
 | **公式插入面板** | 工具栏"∑"按钮，11 分类浏览/搜索过滤/一键插入 $...$ 或 $$...$$ 公式/自动关闭弹窗 |
 | **字帖** | 田字格/米字格/拼音格三种字帖，SVG 辅助线，工具栏一键插入 |
+| **纸张页面** | `[[page:A4 header="标题" footer="第{page}页"]` 标准纸张尺寸预览，页头页脚，超页高自动分页 |
 | **事件系统增强** | 新增 onEditorLoad / onPageLoad / onAllAsyncLoad / onPageAllLoad 四个事件回调 |
 | **其他增强** | 图片粘贴上传、Shift等比缩放、公式双击定位、代码复制按钮、insert下拉工具栏、下拉菜单文字描述、美化代码块 |
 
@@ -77,7 +95,7 @@
 - 增强 XSS 安全防护、完善事件回调系统
 
 ### Markdown 扩展语法
-ToC 目录 `[TOC]` / `[TOCM]`、任务列表 `- [x]`、@链接 `@username`、KaTeX 数学公式 `$$...$$`、flowchart.js 流程图、sequence-diagram.js 时序图、分页符 `[========]`、HTML 标签过滤解析
+ToC 目录 `[TOC]` / `[TOCM]`、任务列表 `- [x]`、@链接 `@username`、KaTeX 数学公式 `$$...$$`、flowchart.js 流程图、sequence-diagram.js 时序图、分页符 `[========]`、HTML 标签过滤解析、Tabs 标签页、多列排版、悬浮提示、字帖、纸张页面 `[[page:A4]]`
 
 ---
 
@@ -88,7 +106,7 @@ ToC 目录 `[TOC]` / `[TOCM]`、任务列表 `- [x]`、@链接 `@username`、KaT
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>Editor.md</title>
+    <title>xfEditor</title>
     <link rel="stylesheet" href="css/editormd.min.css" />
 </head>
 <body>
@@ -427,8 +445,8 @@ editor.off("onchange");
 ### Tabs 标签页 (`tabs: true`)
 ```markdown
 [[tabs]]
-[[tab:产品介绍]] Editor.md 是一款开源 Markdown 编辑器... [[/tab]]
-[[tab:更新日志]] ### v1.7.0 - 新增 ECharts 图表支持 [[/tab]]
+[[tab:产品介绍]] xfEditor 是一款开源 Markdown 编辑器... [[/tab]]
+[[tab:更新日志]] ### v1.10.0 - 工具栏修复、弹窗美化、XSS 安全加固 [[/tab]]
 [[/tabs]]
 ```
 
@@ -437,6 +455,62 @@ editor.off("onchange");
 [[columns:3]]
 ### 第一栏 ... ### 第二栏 ... ### 第三栏 ...
 [[/columns]]
+```
+
+### 纸张页面 (`pageBlock: true`) <sup>NEW</sup>
+以标准纸张尺寸展示内容，超出页高自动分页。适用于打印预览、报告文档等场景。
+
+**支持纸张规格：**
+- A系列：A0 ~ A8
+- AN：等同于 A4
+- LETTER：美国信纸
+- LEGAL：美国法律用纸
+
+**基础语法：**
+```markdown
+[[page:A4]]
+# 我的工作报告
+
+## 项目概述
+本季度完成了以下内容...
+
+## 详细说明
+这是详细的项目说明文本...
+
+[========]  <!-- 手动分页符 -->
+[[/page]]
+```
+
+**带页头页脚：**
+```markdown
+[[page:A4 header="工作报告" footer="第 {page} 页 / 共 {total} 页"]]
+# 我的工作报告
+
+内容会自动分页，每页都会显示页头和带页码的页脚...
+[[/page]]
+```
+
+**支持属性：**
+- `header="标题"` — 设置页头文本
+- `footer="页脚"` — 设置页脚文本，支持占位符：
+  - `{page}` — 当前页码
+  - `{total}` — 总页数
+
+**纸张类型：** `A0` ~ `A8`、`LETTER`、`LEGAL`
+
+内容超出页面高度时自动分割为多页，页间距仅 4px。支持在页面内嵌套 [[tabs]]、[[columns]] 等其他语法。
+
+```markdown
+[[page:A4 header="技术文档" footer="xfEditor"]]
+[[tabs]]
+[[tab:概况]]
+这是 A4 页面中的标签页内容...
+[[/tab]]
+[[tab:详情]]
+包含表格和图片的详细说明...
+[[/tab]]
+[[/tabs]]
+[[/page]]
 ```
 
 ### 悬浮提示 (`tooltip: true`)
@@ -470,6 +544,12 @@ $$
 ⁑⁑居中⁑⁑  ⁑⁖左对齐⁖⁑  ⁑⠕右对齐⠕⁑  ⁑⁛两端对齐⁛⁑
 ```
 
+**键盘快捷键：**
+- `Ctrl+Alt+L` - 左对齐
+- `Ctrl+Alt+C` - 居中对齐
+- `Ctrl+Alt+R` - 右对齐
+- `Ctrl+Alt+J` - 两端对齐
+
 ### 字帖 (`copybook: true`)
 
 田字格、米字格、拼音格字帖，用于展示汉字书写范例。
@@ -497,6 +577,78 @@ $$
 (夜来风雨声|yè lái fēng yǔ shēng)(花落知多少|huā luò zhī duō shǎo)
 [[/copybookPinyin]]
 ```
+
+### 上标与下标
+
+使用 `^` 符号创建上标和下标：
+
+**上标** `^内容^`：
+```markdown
+x^2^ + y^3^ = z^n^
+E = mc^2^
+100m^2^ 建筑面积
+```
+
+**下标** `^^内容^^`：
+```markdown
+H^^2^^O（水分子）
+CO^^2^^（二氧化碳）
+log^^10^^(100) = 2
+```
+
+**组合使用**：
+```markdown
+U^235^^92^^（铀-235）
+C^^6^^H^^12^^O^^6^^ + 6O^^2^^ → 6CO^^2^^ + 6H^^2^^O
+```
+
+> 注意：在处理顺序上，先匹配下标（双 `^^` 符号），再匹配上标（单 `^` 符号），避免冲突。上标/下标内容长度上限为 100 字符，超出部分将保持原始文本。
+
+### 字体大小 (`!字号 文本!`)
+
+使用 `!数字 文本!` 语法指定文字大小，字号范围 **8-200px**：
+
+```markdown
+!12 这是一段12px的小字!
+!16 这是16px的正常文字!
+!24 这是24px的较大文字!
+!32 这是32px的大文字!
+!48 这是48px的标题级文字!
+!10 本协议最终解释权归甲方所有。!
+!20 **重要提示**：请仔细阅读以下内容!!
+!36 限时特惠! !28 全场五折起!
+```
+
+> 注意：字号范围限制为 8-200px，超出范围的值将被忽略。文本内容长度上限为 1000 字符。
+
+### 脚注功能
+
+脚注由两部分组成：**引用** `[^脚注名]` 和 **定义** `[^脚注名]: 内容`。
+
+**基础用法**：
+```markdown
+这里有一个脚注引用[^example]。
+
+[^example]: 这是脚注的内容，会显示在页面底部。
+```
+
+**标题中的脚注**：
+```markdown
+## 关于本编辑器[^about]
+
+[^about]: xfEditor 是一款开源的 Markdown 在线编辑器。
+```
+
+**多个脚注**：
+```markdown
+项目特色[^f1]包括实时预览[^f2]和图表渲染[^f3]。
+
+[^f1]: 所见即所得编辑体验。
+[^f2]: 双向同步滚动。
+[^f3]: 支持多种图表类型。
+```
+
+> 注意：脚注引用 `[^name]` 会渲染为可点击的上标链接，点击后跳转到文档底部的脚注内容。脚注内容处的 `↩` 链接可返回原文引用位置。脚注定义按出现顺序自动编号。
 
 ### 流程图 (`flowChart: true`)
 ````markdown

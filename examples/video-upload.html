@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频上传 - xfEditor v1.10.0</title>
+    <link rel="stylesheet" href="../css/editormd.css" />
+    <link rel="stylesheet" href="../css/editormd.preview.css" />
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+    <script src="../editormd.js"></script>
+    <style>
+        body { background: #f0f2f5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif; margin: 0; padding: 20px; }
+        .demo-header { text-align: center; padding: 30px 20px 20px; background: linear-gradient(135deg, #0f3460 0%, #533483 50%, #e94560 100%); color: #fff; margin: -20px -20px 20px; }
+        .demo-header h1 { margin: 0 0 8px; font-size: 24px; font-weight: 600; }
+        .demo-header p { margin: 0; opacity: 0.8; font-size: 14px; }
+        .layout { display: flex; gap: 16px; max-width: 1500px; margin: 0 auto; }
+        .layout > div { flex: 1; min-width: 0; background: #fff; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); overflow: hidden; }
+        .layout h3 { margin: 0; padding: 12px 16px; background: #f8f9fa; border-bottom: 1px solid #e9ecef; font-size: 13px; font-weight: 600; color: #555; }
+        #editor-container { min-height: 600px; }
+        .note { max-width: 1500px; margin: 20px auto 0; padding: 20px 24px; background: #fff; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); font-size: 13px; color: #555; line-height: 1.8; }
+        .note h4 { margin: 16px 0 8px; color: #1a1a2e; }
+        .note code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-size: 12px; color: #e94560; }
+        .note pre { background: #1e1e2e; color: #cdd6f4; padding: 12px 16px; border-radius: 6px; overflow-x: auto; font-size: 13px; line-height: 1.5; }
+        .note table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+        .note table th { background: #f0f2f5; padding: 8px 12px; text-align: left; border: 1px solid #e0e0e0; }
+        .note table td { padding: 8px 12px; border: 1px solid #e0e0e0; }
+    </style>
+</head>
+<body>
+<div class="demo-header">
+    <h1>🎬 视频上传功能演示</h1>
+    <p>支持多种视频格式上传 · 尺寸控制 · 对齐方式 · HTML5 播放器</p>
+</div>
+
+<div class="layout">
+    <div>
+        <h3>📝 Markdown 源码 / 编辑区</h3>
+        <div id="editor-container">
+            <textarea id="editor" style="display:none;">
+# 🎬 视频上传功能演示
+
+---
+
+## 一、功能概述
+
+xfEditor v1.10.0 支持通过工具栏 **视频** 按钮插入视频。视频对话框支持：
+
+- **URL 直接输入**: 粘贴视频链接地址
+- **本地上传**: 选择本地视频文件上传至服务器
+- **尺寸设置**: 精确控制视频播放器宽高
+- **对齐方式**: 左对齐 / 居中 / 右对齐
+- **替代文本**: 视频无法播放时的提示文字
+
+---
+
+## 二、支持的视频格式
+
+| 格式 | 扩展名 | 说明 |
+|------|--------|------|
+| MP4 | `.mp4` | 最通用的视频格式，推荐使用 |
+| WebM | `.webm` | 开放免版权的视频格式 |
+| MOV | `.mov` | Apple QuickTime 格式 |
+| AVI | `.avi` | 传统 Windows 视频格式 |
+| FLV | `.flv` | Flash 视频格式 |
+| MKV | `.mkv` | Matroska 容器格式 |
+| WMV | `.wmv` | Windows Media 视频 |
+
+---
+
+## 三、使用方式
+
+### 方式一：直接输入链接
+
+```
+![视频标题](https://example.com/uploads/demo.mp4)
+```
+
+### 方式二：本地上传（推荐）
+
+启用 `videoUpload: true` 配置后，对话框将显示文件选择器：
+
+```javascript
+videoUpload     : true,
+videoFormats    : ["mp4", "webm", "ogv", "mov"],
+videoUploadURL  : "php/upload.php",
+```
+
+### 方式三：带尺寸和对齐
+
+通过视频对话框的 **尺寸** 和 **对齐方式** 选项：
+
+- 尺寸输入格式: `640x480`
+- 对齐方式: 左对齐 / 居中（默认） / 右对齐
+
+---
+
+## 四、视频插入语法
+
+### 基础语法
+
+```markdown
+![视频描述](视频URL)＜640,480＞
+```
+
+### HTML5 视频标签（带对齐）
+
+系统会根据对齐设置自动生成包裹的 HTML：
+
+```html
+<div class="editormd-video-wrapper" style="text-align:center;">
+    <video src="视频URL" controls preload="metadata" style="width:640px;height:480px;">
+        视频描述
+    </video>
+</div>
+```
+
+---
+
+## 五、后端接口说明
+
+### 请求方式
+- **方法**: `POST`（multipart/form-data）
+- **文件域名称**: `editormd-video-file`
+- **最大文件大小**: 50MB（默认）
+
+### 响应格式（JSON）
+```json
+{
+    "success": true,
+    "message": "上传成功！",
+    "url": "/examples/uploads/20240610_150000_12345.mp4",
+    "data": {
+        "file_name": "20240610_150000_12345.mp4",
+        "file_size": 15728640,
+        "file_ext": "mp4",
+        "upload_type": "video"
+    }
+}
+```
+
+---
+
+## 六、视频播放器功能
+
+- 🎮 **HTML5 原生控件**: play/pause、进度条、音量、全屏
+- 📦 **预加载策略**: `preload="metadata"` 仅加载元数据，节约带宽
+- 🎯 **精准尺寸**: 支持像素级宽高控制
+- 📱 **响应式适配**: 可配合 CSS 实现移动端自适应
+- 🔒 **安全播放**: 不自动播放，用户主动触发
+
+---
+
+## 七、使用注意事项
+
+1. ⚠️ 视频文件通常较大，建议配置合理的 `max_size` 限制
+2. ⚠️ 生产环境需配置 CDN 加速视频分发
+3. ⚠️ 建议统一使用 MP4（H.264 编码）以获得最佳兼容性
+4. ⚠️ 上传大文件时注意 PHP `upload_max_filesize` 和 `post_max_size` 配置
+5. ⚠️ 视频预览仅在支持 HTML5 `<video>` 标签的浏览器中有效
+
+> 💡 **提示**: 本示例页面需要配置后端上传接口才能使用本地上传功能。直接输入视频链接插入无需后端支持。
+</textarea>
+        </div>
+    </div>
+</div>
+
+<div class="note">
+    <h4>📋 配置参数说明</h4>
+    <table>
+        <tr><th>参数</th><th>类型</th><th>默认值</th><th>说明</th></tr>
+        <tr><td><code>videoUpload</code></td><td>Boolean</td><td><code>false</code></td><td>是否启用视频上传功能</td></tr>
+        <tr><td><code>videoUploadURL</code></td><td>String</td><td><code>""</code></td><td>视频上传的服务器接口 URL</td></tr>
+        <tr><td><code>videoFormats</code></td><td>Array</td><td><code>["mp4","webm","ogv","mov"]</code></td><td>允许上传的视频格式列表</td></tr>
+    </table>
+
+    <h4>🔧 PHP 后端配置参考</h4>
+    <pre>// php/upload.php 关键配置
+$maxSizeMap = [
+    EditorMdUploader::TYPE_VIDEO => 1024 * 50,    // 视频最大 50MB
+];
+
+$allowedFormats = [
+    EditorMdUploader::TYPE_VIDEO => [
+        'mp4', 'avi', 'mov', 'wmv',
+        'flv', 'mkv', 'webm',
+    ],
+];</pre>
+</div>
+
+<script type="text/javascript">
+    $(function() {
+        var editor = editormd("editor-container", {
+            width: "100%",
+            height: 800,
+            path: "../lib/",
+            markdown: $("#editor").text(),
+            videoUpload: true,
+            videoUploadURL: "php/upload.php",
+            videoFormats: ["mp4", "webm", "ogv", "mov"],
+            toolbarIcons: function() {
+                return [
+                    "undo", "redo", "|",
+                    "bold", "del", "italic", "|",
+                    "h1", "h2", "h3", "|",
+                    "list-ul", "list-ol", "hr", "|",
+                    "link", "reference-link", "image", "code", "code-block", "table", "|",
+                    "video", "|",
+                    "watch", "preview", "fullscreen", "search", "help"
+                ];
+            },
+            onload: function() {
+                console.log("xfEditor 视频上传示例已加载");
+            }
+        });
+    });
+</script>
+</body>
+</html>

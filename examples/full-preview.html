@@ -2,7 +2,7 @@
 <html lang="zh">
     <head>
         <meta charset="utf-8" />
-        <title>完整独立预览 - Editor.md v1.8.0</title>
+        <title>完整独立预览 - xfEditor v1.10.0</title>
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="../css/editormd.preview.min.css" />
     <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
@@ -13,7 +13,7 @@
             .editormd-html-preview {
                 width: 90%;
                 margin: 0 auto;
-                padding: 20px 0;
+                padding: 20px;
             }
             header {
                 text-align: center;
@@ -33,13 +33,13 @@
     <body>
         <div id="layout">
             <header>
-                <h1>Editor.md v1.8.0 完整独立预览</h1>
+                <h1>xfEditor v1.10.0 完整独立预览</h1>
                 <p>Full Preview Page — 本页面仅加载预览所需资源，演示所有 Markdown 扩展语法的渲染效果</p>
             </header>
             <div id="full-preview">
                 <textarea style="display:none;">[TOC]
 
-# Editor.md v1.8.0 全部语法预览
+# xfEditor v1.10.0 全部语法预览
 
 ## 一、Markdown 基础语法
 
@@ -56,7 +56,7 @@
 
 **粗体文本**、*斜体文本*、~~删除线文本~~、`行内代码`
 
-> 这是一段引用文本。Editor.md 支持标准 Markdown 和 GFM 语法。
+> 这是一段引用文本。xfEditor 支持标准 Markdown 和 GFM 语法。
 
 ### 1.3 列表
 
@@ -93,9 +93,9 @@
 ```javascript
 // JavaScript 示例
 function helloEditorMD() {
-    console.log("Hello, Editor.md v1.8.0!");
+    console.log("Hello, xfEditor v1.10.0!");
     return {
-        version: "1.8.0",
+        version: "1.10.0",
         features: ["ECharts", "Tabs", "Columns", "Tooltip", "Copybook", "Draft"]
     };
 }
@@ -104,7 +104,7 @@ function helloEditorMD() {
 ```python
 # Python 示例
 def greet(name):
-    return f"Hello, {name}! Welcome to Editor.md."
+    return f"Hello, {name}! Welcome to xfEditor."
 
 print(greet("Developer"))
 ```
@@ -208,7 +208,7 @@ print(greet("Developer"))
 
 [[tabs]]
 [[tab:产品介绍]]
-Editor.md 是一款开源的、可嵌入的 Markdown 在线编辑器，基于 CodeMirror、jQuery 和 Marked 构建。
+xfEditor 是一款开源的、可嵌入的 Markdown 在线编辑器，基于 CodeMirror、jQuery 和 Marked 构建。
 
 - 支持实时预览
 - 支持图片上传
@@ -217,11 +217,19 @@ Editor.md 是一款开源的、可嵌入的 Markdown 在线编辑器，基于 Co
 [[/tab]]
 
 [[tab:更新日志]]
+### v1.10.0
+- 工具栏图片/视频/文件按钮失效修复
+- 编辑模式弹窗全面美化（渐变标题栏、现代按钮）
+- XSS 安全加固（6 项注入漏洞修复）
+- ECharts resize 事件内存泄漏修复
+- 上标 ^^ / 下标 ^^^^ / 字体大小 !32! / 脚注 [^name] 新语法
+
+### v1.9.0
+- 草稿弹窗美化、Tooltip 交互修复、全屏增强
+
 ### v1.8.0
 - 新增字帖功能（田字格/米字格/拼音格）
 - 全屏编辑器增强（窗口自适应 + ESC 退出修复）
-- JetBrains 风格代码块标题栏 + 复制按钮优化
-- 修复任务列表渲染、代码块复制按钮定位等问题
 
 ### v1.7.0
 - 新增 Apache ECharts 图表支持
@@ -291,7 +299,7 @@ function inTab() {
 
 ### 7.2 图片悬浮提示
 
-![示例图片](../images/logos/editormd-logo-180x180.png "tooltip:Editor.md 的 Logo 图标，代表着开源、简洁与强大的 Markdown 编辑体验。")
+![示例图片](../images/logos/editormd-logo-180x180.png "tooltip:xfEditor 的 Logo 图标，代表着开源、简洁与强大的 Markdown 编辑体验。")
 
 ### 7.3 图片型悬浮提示
 
@@ -307,13 +315,13 @@ function inTab() {
 
 工具栏对齐按钮默认插入 Unicode 行内对齐标记，无需换行，可直接在标题、段落、列表项中使用：
 
-⁑⁑欢迎使用 Editor.md — 开源在线 Markdown 编辑器⁑⁑
+⁑⁑欢迎使用 xfEditor — 开源在线 Markdown 编辑器⁑⁑
 
 ⁑⁖开源、简洁、强大，支持实时预览与扩展语法⁖⁑
 
-⁑⠕版本号：v1.7.0 | 许可证：MIT⠕⁑
+⁑⠕版本号：v1.10.0 | 许可证：MIT⠕⁑
 
-⁑⁛Editor.md 致力于为开发者和内容创作者提供最优秀的 Markdown 编辑体验，支持实时预览、图片上传、图表渲染等丰富功能。⁛⁑
+⁑⁛xfEditor 致力于为开发者和内容创作者提供最优秀的 Markdown 编辑体验，支持实时预览、图片上传、图表渲染等丰富功能。⁛⁑
 
 ### 标题中的对齐
 
@@ -334,7 +342,7 @@ function inTab() {
 
 ## 九、拼音标注
 
-{Editor.md | biān jí qì} 是一款非常优秀的 {Markdown | mā kè dáo nà} 编辑器。
+{xfEditor | biān jí qì} 是一款非常优秀的 {Markdown | mā kè dáo nà} 编辑器。
 
 
 {床前明月光 | chuáng qián míng yuè guāng}，
@@ -428,11 +436,11 @@ report.xlsx | 数据报表
 
 ### 15.1 固定尺寸图片
 
-![Editor.md Logo](../images/logos/editormd-logo-180x180.png)<200,200>
+![xfEditor Logo](../images/logos/editormd-logo-180x180.png)<200,200>
 
 ### 15.2 默认尺寸图片
 
-![Editor.md Logo](../images/logos/editormd-logo-64x64.png)
+![xfEditor Logo](../images/logos/editormd-logo-64x64.png)
 
 ---
 
@@ -465,7 +473,7 @@ report.xlsx | 数据报表
 
 <div style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;">
     <strong>自定义 HTML 区块</strong><br/>
-    Editor.md 支持识别和解析 HTML 标签，具有可靠的安全性和几乎无限的扩展性。
+    xfEditor 支持识别和解析 HTML 标签，具有可靠的安全性和几乎无限的扩展性。
 </div>
 
 ---
@@ -480,9 +488,55 @@ report.xlsx | 数据报表
 
 ---
 
-## 二十、结语
+## 二十、上标与下标
 
-Editor.md 持续迭代，致力于为开发者和内容创作者提供最优秀的 Markdown 编辑体验。欢迎通过 GitHub 提交 Issue 和 PR 参与共建！
+### 20.1 上标 ^语法^
+
+使用 `^内容^` 语法创建上标：
+
+- 数学公式：x^2^ + y^3^ = z^n^
+- 平方米：100m^2^ 建筑面积
+- 指数运算：2^10^ = 1024
+
+### 20.2 下标 ^^语法^^
+
+使用 `^^内容^^` 语法创建下标：
+
+- 化学式：H^^2^^O（水分子）、CO^^2^^（二氧化碳）
+- 对数：log^^10^^(100) = 2
+
+### 20.3 组合使用
+
+- 同位素：U^235^^92^^（铀-235）
+
+---
+
+## 二十一、字体大小
+
+使用 `!字号 文本!` 语法（范围 8-200px）：
+
+- !12 12px小字!
+- !16 16px正常!
+- !24 24px大号!
+- !32 32px标题!
+
+---
+
+## 二十二、脚注功能
+
+这里有一个脚注引用[^fn1]，点一下查看。
+
+[^fn1]: 这是第一个脚注的内容 — 支持 **粗体**、*斜体* 等内联格式。
+
+xfEditor[^fn2] 是一款强大的开源编辑器。
+
+[^fn2]: xfEditor 基于 **CodeMirror**、**Marked**、**KaTeX**、**ECharts** 等构建，采用 `MIT` 许可证。
+
+---
+
+## 二十三、结语
+
+xfEditor 持续迭代，致力于为开发者和内容创作者提供最优秀的 Markdown 编辑体验。欢迎通过 GitHub 提交 Issue 和 PR 参与共建！
 
 **Open source online markdown editor.**</textarea>
             </div>

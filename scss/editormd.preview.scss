@@ -454,6 +454,147 @@ hr.editormd-page-break {
     height: 2px;
 }
 
+/* ========================================
+   Page Block Styles — [[page:A4]] / [[page:A5]]
+   Paper-style page containers with pagination
+   ======================================== */
+
+#{$prefix}page-block {
+    background: #fff;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
+    margin: 16px auto;
+    padding: 48px 60px;
+    position: relative;
+    overflow: hidden;
+    @include box-sizing(border-box);
+    @include border-radius(2px);
+    @include transition(box-shadow 200ms ease);
+
+    &:hover {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+}
+
+#{$prefix}page-content {
+    font-size: 14px;
+    line-height: 1.8;
+    color: #333;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+
+    // Ensure all content fits within the paper width
+    img, video, table, pre, iframe, svg {
+        max-width: 100%;
+        height: auto;
+        @include box-sizing(border-box);
+    }
+
+    table {
+        display: table;
+        width: 100%;
+    }
+
+    pre {
+        white-space: pre-wrap;
+        word-break: break-all;
+    }
+}
+
+#{$prefix}page-watermark {
+    position: absolute;
+    bottom: 16px;
+    right: 20px;
+    font-size: 11px;
+    color: #ccc;
+    font-weight: 300;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    pointer-events: none;
+    user-select: none;
+}
+
+// Page header styles
+#{$prefix}page-header {
+    position: absolute;
+    top: 12px;
+    left: 60px;
+    right: 60px;
+    font-size: 12px;
+    color: #666;
+    font-weight: 500;
+    text-align: center;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+    letter-spacing: 0.5px;
+}
+
+// Page footer styles
+#{$prefix}page-footer {
+    position: absolute;
+    bottom: 12px;
+    left: 60px;
+    right: 60px;
+    font-size: 11px;
+    color: #888;
+    font-weight: 400;
+    text-align: center;
+    padding-top: 8px;
+    border-top: 1px solid #eee;
+    letter-spacing: 0.3px;
+}
+
+// Adjust page content when header/footer present
+#{$prefix}page-block {
+    &:has(#{$prefix}page-header) #{$prefix}page-content {
+        padding-top: 24px;
+    }
+    &:has(#{$prefix}page-footer) #{$prefix}page-content {
+        padding-bottom: 24px;
+    }
+}
+
+// Split page variant (after JS pagination)
+#{$prefix}page-split {
+    page-break-after: always;
+}
+
+// Page counter overlay (shown on split pages)
+#{$prefix}page-split::before {
+    content: attr(data-page);
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    font-size: 10px;
+    color: #bbb;
+    font-weight: 400;
+}
+
+// Print styles for page blocks
+@media print {
+    #{$prefix}page-block {
+        box-shadow: none;
+        border: none;
+        margin: 0;
+        page-break-after: always;
+    }
+
+    #{$prefix}page-split {
+        margin-bottom: 0;
+    }
+}
+
+// Responsive: scale down on small screens
+@media screen and (max-width: 860px) {
+    #{$prefix}page-block {
+        width: auto !important;
+        max-width: 100%;
+        margin: 8px 0;
+        padding: 24px 20px;
+        min-height: auto !important;
+    }
+}
+
 /* Tooltip / Popover */
 #{$prefix}tooltip-trigger {
     border-bottom: 1px dashed #2C7EEA;
@@ -588,18 +729,16 @@ hr.editormd-page-break {
 #{$prefix}preview-close-btn {
     color: #fff;
     padding: 4px 6px;
-    font-size: 18px;
-    @include border-radius(500px);
+    font-size: 24px;
     display: none;
-    background-color: #ccc;
     position: absolute;
     top: 25px;
     right: 35px;
     z-index: 19;
-    @include transition(background-color 300ms ease-out);
+    @include transition(color 300ms ease-out);
 
     &:hover {
-        background-color: #999;
+        color: #ccc;
     }
 }
 
@@ -748,4 +887,286 @@ hr.editormd-page-break {
     .editormd-copybook-pinyin-top {
         height: 24px;
     }
+}
+
+/* ========== 表格编辑按钮 (Table Editing in Preview) ========== */
+#{$prefix}table-wrapper {
+    position: relative;
+    display: inline-block;
+    margin: 5px 0;
+}
+
+#{$prefix}table-editable {
+    position: relative;
+}
+
+#{$prefix}table-col-controls,
+#{$prefix}table-row-controls {
+    display: none;
+    position: absolute;
+    z-index: 50;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+#{$prefix}table-col-controls {
+    height: 28px;
+    padding: 2px 4px;
+    justify-content: space-between;
+    align-items: center;
+    white-space: nowrap;
+}
+
+#{$prefix}table-row-controls {
+    width: 28px;
+    padding: 4px 2px;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 60px;
+}
+
+#{$prefix}table-btn {
+    display: inline-flex;
+    width: 22px;
+    height: 22px;
+    line-height: 22px;
+    text-align: center;
+    color: #666;
+    cursor: pointer;
+    border-radius: 3px;
+    font-size: 14px;
+    font-weight: bold;
+    justify-content: center;
+    align-items: center;
+    user-select: none;
+    -webkit-user-select: none;
+    text-decoration: none;
+
+    &:hover {
+        background: #2C7EEA;
+        color: #fff;
+    }
+}
+
+#{$prefix}table-editable th,
+#{$prefix}table-editable td {
+    cursor: pointer;
+    transition: background-color 200ms ease;
+}
+
+#{$prefix}table-editable th:hover,
+#{$prefix}table-editable td:hover {
+    background-color: rgba(44, 126, 234, 0.12);
+    box-shadow: inset 0 0 0 1px rgba(44, 126, 234, 0.3);
+}
+
+
+/* ===========================================
+ * 脚注样式 (Footnote Styles)
+ * =========================================== */
+#{$prefix}footnotes-section {
+    margin-top: 24px;
+    padding-top: 12px;
+    border-top: 1px solid #d1d5db;
+    
+    #{$prefix}footnote-sep {
+        display: none;
+    }
+    
+    #{$prefix}footnote-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #1f2937;
+        margin: 0 0 8px;
+        padding-bottom: 4px;
+        border-bottom: 1px solid #e5e7eb;
+        
+        strong {
+            font-weight: 700;
+        }
+    }
+    
+    #{$prefix}footnote-list {
+        padding: 0;
+        margin: 0;
+        list-style: none;
+        counter-reset: editormd-fn-counter;
+        
+        #{$prefix}footnote-item {
+            position: relative;
+            margin-bottom: 6px;
+            padding: 8px 10px 8px 32px;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #4b5563;
+            background: #f9fafb;
+            border-radius: 4px;
+            border: 1px solid #e5e7eb;
+            transition: background-color 0.25s ease, border-color 0.25s ease;
+            
+            &::before {
+                counter-increment: editormd-fn-counter;
+                content: counter(editormd-fn-counter);
+                position: absolute;
+                left: 10px;
+                top: 12px;
+                width: 20px;
+                height: 20px;
+                font-size: 11px;
+                font-weight: 600;
+                line-height: 20px;
+                text-align: center;
+                color: #0366d6;
+                background: #dbeafe;
+                border-radius: 50%;
+            }
+            
+            &:target {
+                background: #fffbeb;
+                border-color: #f59e0b;
+                box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+                animation: editormd-fn-flash 2s ease-out;
+            }
+            
+            #{$prefix}footnote-content {
+                display: block;
+                
+                // 脚注内容支持各种语法
+                p {
+                    margin: 0 0 6px;
+                    &:last-child { margin-bottom: 0; }
+                }
+                
+                // 支持表格
+                table {
+                    margin: 8px 0;
+                    border-collapse: collapse;
+                    width: 100%;
+                    th, td {
+                        border: 1px solid #d1d5db;
+                        padding: 6px 10px;
+                        font-size: 13px;
+                    }
+                    th {
+                        background: #f3f4f6;
+                        font-weight: 600;
+                    }
+                }
+                
+                // 支持代码块
+                pre {
+                    margin: 8px 0;
+                    padding: 10px;
+                    background: #f6f8fa;
+                    border-radius: 4px;
+                    overflow-x: auto;
+                    code {
+                        background: none;
+                        padding: 0;
+                        font-size: 12px;
+                    }
+                }
+                
+                // 支持引用
+                blockquote {
+                    margin: 8px 0;
+                    padding: 8px 12px;
+                    border-left: 3px solid #d1d5db;
+                    background: #f9fafb;
+                    color: #4b5563;
+                }
+                
+                // 支持 tabs
+                .editormd-tabs-container {
+                    margin: 8px 0;
+                }
+                
+                // 支持多栏
+                .editormd-columns-wrapper {
+                    margin: 8px 0;
+                }
+                
+                strong { font-weight: 600; color: #1f2937; }
+                em { font-style: italic; color: #6b7280; }
+                code {
+                    display: inline;
+                    background: #f1f5f9;
+                    padding: 2px 6px;
+                    border-radius: 3px;
+                    font-family: "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+                    font-size: 12.6px;
+                    color: #c7254e;
+                    white-space: nowrap;
+                }
+                // 删除 br 换行显示
+                br {
+                    display: none;
+                }
+            }
+            
+            // 删除返回链接显示
+            #{$prefix}footnote-backref {
+                display: none;
+            }
+        }
+    }
+}
+
+@keyframes editormd-fn-flash {
+    0%   { background: #fef3c7; border-color: #f59e0b; }
+    50%  { background: #fffbeb; border-color: #fcd34d; }
+    100% { background: #f9fafb; border-color: #e5e7eb; }
+}
+
+#{$prefix}footnote-ref-wrapper {
+    display: inline;
+    margin: 0 1px;
+    font-size: 75%;
+    line-height: 0;
+    position: relative;
+    vertical-align: baseline;
+    top: -0.5em;
+    
+    a {
+        display: inline-block;
+        color: #0366d6;
+        text-decoration: none;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 1px 5px;
+        border-radius: 10px;
+        background: transparent;
+        transition: all 0.15s ease;
+        white-space: nowrap;
+        border: none;
+        outline: none;
+        
+        &:hover {
+            color: #fff;
+            background: #0366d6;
+            text-decoration: none;
+            border: none;
+        }
+        
+        &:visited {
+            color: #6f42c1;
+            &:hover {
+                background: #6f42c1;
+                color: #fff;
+            }
+        }
+    }
+}
+
+// 删除悬浮虚线效果 - 确保所有伪元素都不显示
+#{$prefix}footnote-ref-wrapper a::before,
+#{$prefix}footnote-ref-wrapper a::after,
+.editormd-preview-container .footnote-ref a::before,
+.editormd-preview-container .footnote-ref a::after {
+    display: none !important;
+    content: none !important;
+    border: none !important;
 }

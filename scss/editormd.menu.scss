@@ -71,12 +71,16 @@
     border: 1px solid $borderColor;
     min-width: 148px;
     width: auto;
+    max-width: 280px;
     list-style: none;
     position: absolute;
     top: 33px;
     left: 0;
-    z-index: 100;
+    z-index: 10000;
+    overflow-y: auto;
+    overflow-x: hidden;
     @include box-shadow(1px 2px 6px rgba(0, 0, 0, 0.15));
+    @include border-radius(4px);
 
     &:before, &:after {
         width: 0;
@@ -123,6 +127,40 @@
 
     > li + li {
         border-top: 1px solid $borderColor;
+    }
+}
+
+// 右对齐下拉菜单 — 当靠近右边缘时自动应用
+#{$prefix}dropdown-menu-right {
+    left: auto;
+    right: 0;
+
+    &:before, &:after {
+        left: auto;
+        right: 8px;
+    }
+}
+
+// 上弹下拉菜单 — 当靠近底部边缘时自动向上展开
+#{$prefix}dropdown-menu-up {
+    top: auto;
+    bottom: 33px;
+
+    &:before, &:after {
+        top: auto;
+        bottom: -11px;
+        border: 5px solid transparent;
+    }
+
+    &:before { 
+        border-top-color: #ccc;
+        border-bottom-color: transparent;
+    }
+
+    &:after { 
+        border-top-color: #ffffff;
+        border-bottom-color: transparent;
+        bottom: -10px;
     }
 }
 

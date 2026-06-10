@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh">
+    <head>
+        <meta charset="utf-8" />
+        <title>脚注功能 - xfEditor v1.10.0</title>
+        <link rel="stylesheet" href="css/style.css" />
+        <link rel="stylesheet" href="../css/editormd.min.css" />
+        <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
+        <style>
+            .intro { width: 90%; margin: 15px auto; padding: 15px 20px; background: #f5f7fa; border-left: 4px solid #2196F3; border-radius: 4px; font-size: 14px; line-height: 1.8; color: #555; }
+            .intro h2 { margin: 0 0 8px; font-size: 16px; color: #333; }
+            .intro code { background: #e8e8e8; padding: 2px 6px; border-radius: 3px; font-family: Consolas, Monaco, monospace; font-size: 12px; color: #c7254e; }
+        </style>
+    </head>
+    <body>
+        <div id="layout">
+            <header>
+                <h1>脚注功能 示例</h1>
+                <p>使用 <code>[^脚注名]</code> 引用 + <code>[^脚注名]: 内容</code> 定义，实现文档脚注</p>
+            </header>
+
+            <div class="intro">
+                <h2>使用说明</h2>
+                <p><strong>脚注引用：</strong>在正文中任何位置使用 <code>[^脚注名]</code>，会渲染为可点击的上标链接。</p>
+                <p><strong>脚注定义：</strong>使用 <code>[^脚注名]: 脚注内容</code> 在文档任意位置定义，最终统一显示在文末。</p>
+                <p>点击脚注编号可跳转到定义，点击 <code>↩</code> 可返回引用位置。</p>
+            </div>
+
+            <div id="test-editormd">
+                <textarea style="display:none;"># 脚注功能示例
+
+## 一、基础脚注
+
+脚注由两部分组成：**引用** `[^脚注名]` 和 **定义** `[^脚注名]: 内容`。
+
+这里有一个脚注引用[^example-basic]，点击数字可以跳转到脚注内容。这里还有另一个脚注[^example-second]。
+
+[^example-basic]: 这是第一个脚注的内容——脚注定义可以写在文档的任何位置，最终都会统一显示在文档末尾。点击左边的 "↩" 可以跳回引用位置。
+
+[^example-second]: 这是第二个脚注的内容。脚注编号按定义在文档中出现的顺序自动递增。
+
+---
+
+## 二、脚注内容支持内联格式
+
+脚注定义中可以使用 **粗体**、*斜体*、`代码` 等简单的内联格式：
+
+xfEditor[^editor-intro] 是一款强大的开源 Markdown 在线编辑器，本项目基于 pandao 的原版进行了深度改进和功能增强[^fork-info]。
+
+[^editor-intro]: xfEditor 的核心依赖包括 **CodeMirror**（编辑器核心）、**Marked**（Markdown 解析器）、**KaTeX**（数学公式渲染）、**ECharts**（交互式图表）和 **FlowChart.js**（流程图）。项目采用 `MIT` 许可证。
+
+[^fork-info]: 本分支在 v1.10.0 中新增了上标/下标 `^text^` / `^^text^^`、字体大小 `!32 文字!`、脚注系统 `[^name]`，并进行了大量的 Bug 修复和性能优化。
+
+---
+
+## 三、标题中使用脚注
+
+### 关于本编辑器[^about-title]
+
+[^about-title]: 本文档演示了 xfEditor v1.10.0 的脚注功能，包括引用语法、跳转交互和内容自动汇总。脚注系统极大地方便了学术写作和技术文档的引用需求。
+
+### 版本历史[^version-history]
+
+[^version-history]: v1.10.0 — 上标/下标、字体大小、脚注系统；v1.9.0 — 草稿弹窗美化、Tooltip 修复；v1.8.0 — 字帖、全屏修复；v1.7.0 — ECharts、Tabs、Columns、Tooltip。
+
+---
+
+## 四、多个脚注同时使用
+
+xfEditor[^fn-project] 支持多种 Markdown 扩展语法，包括：
+
+- ECharts 图表渲染[^fn-echarts]
+- Tabs 标签页组件[^fn-tabs]
+- 多列排版 Columns[^fn-columns]
+- 悬浮提示 Tooltip[^fn-tooltip]
+- KaTeX 数学公式[^fn-katex]
+- 脚注功能[^fn-footnote]
+
+[^fn-project]: 项目地址：https://github.com/zhaoxianfang/editor。采用 MIT 许可证，欢迎 Star 和贡献代码。
+
+[^fn-echarts]: 支持柱状图、折线图、饼图、雷达图、漏斗图五种图表类型。使用 ` ```echarts ` 代码块语法。
+
+[^fn-tabs]: 使用 `[[tabs]]...[[/tabs]]` 语法，标签内部可以嵌套代码块、表格、图表等任意 Markdown 内容。
+
+[^fn-columns]: 使用 `[[columns:N]]...[[/columns]]` 语法实现报纸式多栏排版。N 为栏数（2/3/4 等）。
+
+[^fn-tooltip]: 支持文本型、图片型和 iframe 型三种悬浮提示，使用 `[文本](tooltip:内容)` 语法。
+
+[^fn-katex]: 使用 `$...$` 行内公式或 `$$...$$` 块级公式。支持 LaTeX 常用语法，双击公式可定位到源码。
+
+[^fn-footnote]: 即本文档示意的脚注系统。使用 `[^name]` 引用 + `[^name]: 内容` 定义，自动编号和汇总。
+
+---
+
+## 五、脚注与列表嵌套
+
+以下列表项包含脚注引用：
+
+1. 第一项：支持实时预览[^fn-preview] 和同步滚动[^fn-sync]
+2. 第二项：支持图片上传[^fn-upload] 和草稿暂存[^fn-draft]
+3. 第三项：支持代码高亮[^fn-highlight] 和主题切换[^fn-theme]
+
+[^fn-preview]: 编辑器左侧编辑区与右侧预览区实时同步渲染，所见即所得。
+
+[^fn-sync]: 编辑区和预览区双向同步滚动，点击任意一侧可精确定位。
+
+[^fn-upload]: 支持本地文件拖拽上传和远程 URL 加载，支持跨域上传。
+
+[^fn-draft]: 浏览器端自动保存草稿（localStorage），防止意外关闭导致内容丢失。
+
+[^fn-highlight]: 支持 30+ 编程语言的语法高亮，使用 CodeMirror 和 prettify.js。
+
+[^fn-theme]: 编辑区和预览区各自独立支持多种主题，可自由搭配切换。
+</textarea>
+            </div>
+        </div>
+
+        <script src="js/jquery.min.js"></script>
+        <script src="../editormd.min.js"></script>
+        <script type="text/javascript">
+            $(function() {
+                editormd("test-editormd", {
+                    width: "90%",
+                    height: 640,
+                    path: "../lib/",
+                    theme: "default",
+                    previewTheme: "default",
+                    editorTheme: "default",
+                    codeFold: true,
+                    saveHTMLToTextarea: true,
+                    searchReplace: true,
+                    watch: true,
+                    htmlDecode: "style,script,iframe|on*",
+                    taskList: true,
+                    tex: true,
+                    flowChart: true,
+                    sequenceDiagram: true,
+                    tooltip: true,
+                    onload: function() {
+                        console.log("脚注示例已加载完成");
+                    }
+                });
+            });
+        </script>
+    </body>
+</html>

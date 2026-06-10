@@ -1,68 +1,234 @@
 <!DOCTYPE html>
-<html lang="zh">
-    <head>
-        <meta charset="utf-8" />
-        <title>图片上传示例 - Editor.md examples</title>
-        <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" />
-        <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
-    </head>
-    <body>
-        <div id="layout" style="height: 2000px;background: #f6f6f6;">
-            <header>
-                <h1>图片上传示例</h1>
-                <p>Image upload example</p>
-            </header>
-            <div id="test-editormd">
-                <textarea style="display:none;">#### Settings
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片上传 — xfEditor v1.10.0</title>
+    <link rel="stylesheet" href="../css/editormd.css" />
+    <link rel="stylesheet" href="../css/editormd.preview.css" />
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+    <script src="../editormd.js"></script>
+    <style>
+        body { background: #f0f2f5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif; margin: 0; padding: 20px; }
+        .demo-header { text-align: center; padding: 30px 20px 20px; background: linear-gradient(135deg, #0969da, #0550ae); color: #fff; margin: -20px -20px 20px; }
+        .demo-header h1 { margin: 0 0 8px; font-size: 24px; font-weight: 600; }
+        .demo-header p { margin: 0; opacity: 0.8; font-size: 14px; }
+        .layout { display: flex; gap: 16px; max-width: 1500px; margin: 0 auto; }
+        .layout > div { flex: 1; min-width: 0; background: #fff; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); overflow: hidden; }
+        .layout h3 { margin: 0; padding: 12px 16px; background: #f8f9fa; border-bottom: 1px solid #e9ecef; font-size: 13px; font-weight: 600; color: #555; }
+        #editor-container { min-height: 600px; }
+        .note { max-width: 1500px; margin: 20px auto 0; padding: 20px 24px; background: #fff; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); font-size: 13px; color: #555; line-height: 1.8; }
+        .note h4 { margin: 16px 0 8px; color: #1a1a2e; }
+        .note code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-size: 12px; color: #e94560; }
+        .note pre { background: #1e1e2e; color: #cdd6f4; padding: 12px 16px; border-radius: 6px; overflow-x: auto; font-size: 13px; line-height: 1.5; }
+        .note table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+        .note table th { background: #f0f2f5; padding: 8px 12px; text-align: left; border: 1px solid #e0e0e0; font-size: 13px; }
+        .note table td { padding: 8px 12px; border: 1px solid #e0e0e0; font-size: 13px; }
+    </style>
+</head>
+<body>
+<div class="demo-header">
+    <h1>🖼️ 图片上传功能演示</h1>
+    <p>支持本地上传 · 粘贴上传 · 远程 URL · 尺寸编辑 · 跨域上传</p>
+</div>
+
+<div class="layout">
+    <div>
+        <h3>📝 编辑区（可直接粘贴图片试试！）</h3>
+        <div id="editor-container">
+            <textarea id="editor" style="display:none;">
+# 🖼️ 图片上传功能演示
+
+---
+
+## 一、功能概述
+
+xfEditor v1.10.0 提供了完善的图片插入与上传功能：
+
+| 功能 | 说明 |
+|------|------|
+| 📁 **本地上传** | 选择本地图片文件上传至服务器 |
+| 📋 **粘贴上传** | 在对话框中直接 Ctrl+V 粘贴截图 |
+| 🔗 **远程 URL** | 直接输入网络图片地址 |
+| ✏️ **尺寸编辑** | 精确控制图片宽高 |
+| 🌐 **跨域上传** | 通过 iframe + 回调实现跨域图片上传 |
+
+---
+
+## 二、支持的图片格式
+
+| 格式 | 扩展名 | 说明 |
+|------|--------|------|
+| JPEG | `.jpg .jpeg` | 最通用的图片格式，适合照片 |
+| PNG | `.png` | 支持透明背景，适合图标和截图 |
+| GIF | `.gif` | 支持动图 |
+| BMP | `.bmp` | Windows 位图格式 |
+| WebP | `.webp` | Google 现代图片格式，更高压缩率 |
+| SVG | `.svg` | 矢量图格式 |
+
+---
+
+## 三、使用方式
+
+### 方式一：工具栏按钮
+
+点击工具栏 **🖼️ 图片** 按钮，弹出图片对话框：
+
+```markdown
+![替代文本](图片URL)
+![替代文本](图片URL "图片标题")
+```
+
+### 方式二：快捷键
+
+`Ctrl+Shift+I` (Windows/Linux) 或 `Cmd+Shift+I` (Mac)
+
+### 方式三：Markdown 语法直接输入
+
+```markdown
+![示例图片](https://example.com/image.jpg)
+```
+
+---
+
+## 四、图片尺寸控制
+
+### 语法格式
+
+```markdown
+![替代文本](图片URL)＜300,200＞
+```
+
+- `＜300,200＞` — 宽度 300px，高度 200px
+- `＜800,＞` — 宽度 800px，高度自动
+- `＜,400＞` — 高度 400px，宽度自动
+
+### 带尺寸的图片示例
+
+![xfEditor Logo](../images/logos/editormd-logo-64x64.png)
+
+![xfEditor Logo (放大)](../images/logos/editormd-logo-32x32.png)＜128,128＞
+
+---
+
+## 五、粘贴上传功能
+
+在图片对话框中，你可以直接 **Ctrl+V** 粘贴剪贴板中的图片：
+
+1. 截取屏幕截图（或复制图片）
+2. 打开图片对话框
+3. **Ctrl+V** 粘贴
+4. 系统自动上传
+
+---
+
+## 六、配置方式
+
+### 启用本地上传
 
 ```javascript
+editormd("editor-container", {
+    path          : "../lib/",
+    imageUpload   : true,                                    // 启用图片上传
+    imageUploadURL: "php/upload.php",                        // 上传接口 URL
+    imageFormats  : ["jpg", "jpeg", "gif", "png", "bmp", "webp"], // 允许的格式
+    toolbarIcons  : function() {
+        return ["image", /* ... */];  // 确保工具栏包含图片按钮
+    }
+});
+```
+
+### 启用跨域上传
+
+```javascript
+crossDomainUpload    : true,                                 // 启用跨域上传
+uploadCallbackURL    : "php/upload_callback.html",           // 跨域回调页面
+```
+
+---
+
+## 七、后端接口说明
+
+| 项目 | 说明 |
+|------|------|
+| 请求方式 | `POST`（multipart/form-data） |
+| 文件域名称 | `editormd-image-file` |
+| 最大文件大小 | 5MB（默认，可配置 `max_size`） |
+| 响应格式 | JSON |
+
+### 成功响应
+```json
 {
-    imageUpload    : false,
-    imageFormats   : ["jpg", "jpeg", "gif", "png", "bmp", "webp"],
-    imageUploadURL : "./php/upload.php",
+    "success": 1,
+    "message": "上传成功！",
+    "url": "/examples/uploads/20240610_143025_12345.jpg",
+    "data": {
+        "file_name": "20240610_143025_12345.jpg",
+        "file_size": 204800,
+        "file_ext": "jpg"
+    }
 }
 ```
 
-#### JSON data
+---
 
-```json
-{
-    success : 0 | 1,           // 0 表示上传失败，1 表示上传成功
-    message : "提示的信息，上传成功或上传失败及错误信息等。",
-    url     : "图片地址"        // 上传成功时才返回
-}
-```</textarea>
+## 八、图片上传安全建议
+
+1. ✅ **扩展名白名单** — 仅允许指定格式
+2. ✅ **MIME 类型校验** — 防止扩展名伪造
+3. ✅ **图片有效性验证** — 通过 getimagesize() 确认是真实图片
+4. ✅ **文件大小限制** — 防止上传超大文件
+5. ✅ **路径穿越防护** — 自动过滤文件名中的路径
+6. ✅ **随机文件名** — 防止文件名冲突和目录遍历
+
+> 💡 提示：本示例需要配置后端 `php/upload.php` 才能使用本地上传功能。
+</textarea>
         </div>
-        </div>        
-        <script src="js/jquery.min.js"></script>
-        <script src="../editormd.min.js"></script>
-        <script type="text/javascript">
-            $(function() {                
-                var testEditor = editormd("test-editormd", {
-                    width: "90%",
-                    height: 640,
-                    markdown : "",
-                    path : '../lib/',
-                    //dialogLockScreen : false,   // 设置弹出层对话框不锁屏，全局通用，默认为 true
-                    //dialogShowMask : false,     // 设置弹出层对话框显示透明遮罩层，全局通用，默认为 true
-                    //dialogDraggable : false,    // 设置弹出层对话框不可拖动，全局通用，默认为 true
-                    //dialogMaskOpacity : 0.4,    // 设置透明遮罩层的透明度，全局通用，默认值为 0.1
-                    //dialogMaskBgColor : "#000", // 设置透明遮罩层的背景颜色，全局通用，默认为 #fff
-                    imageUpload : true,
-                    imageFormats : ["jpg", "jpeg", "gif", "png", "bmp", "webp"],
-                    imageUploadURL : "./php/upload.php?test=dfdf",
-                    
-                    /*
-                     上传的后台只需要返回一个 JSON 数据，结构如下：
-                     {
-                        success : 0 | 1,           // 0 表示上传失败，1 表示上传成功
-                        message : "提示的信息，上传成功或上传失败及错误信息等。",
-                        url     : "图片地址"        // 上传成功时才返回
-                     }
-                     */
-                });
-            });
-        </script>
-    </body>
+    </div>
+</div>
+
+<div class="note">
+    <h4>📋 配置参数一览</h4>
+    <table>
+        <tr><th>参数</th><th>类型</th><th>默认值</th><th>说明</th></tr>
+        <tr><td><code>imageUpload</code></td><td>Boolean</td><td><code>false</code></td><td>启用图片上传功能</td></tr>
+        <tr><td><code>imageUploadURL</code></td><td>String</td><td><code>""</code></td><td>图片上传接口 URL</td></tr>
+        <tr><td><code>imageFormats</code></td><td>Array</td><td><code>["jpg","jpeg","gif","png","bmp","webp"]</code></td><td>允许的图片格式</td></tr>
+        <tr><td><code>crossDomainUpload</code></td><td>Boolean</td><td><code>false</code></td><td>启用跨域上传</td></tr>
+        <tr><td><code>uploadCallbackURL</code></td><td>String</td><td><code>""</code></td><td>跨域上传的回调页面 URL</td></tr>
+    </table>
+</div>
+
+<script type="text/javascript">
+    $(function() {
+        var editor = editormd("editor-container", {
+            width: "100%",
+            height: 800,
+            path: "../lib/",
+            markdown: $("#editor").text(),
+            imageUpload: true,
+            imageUploadURL: "php/upload.php",
+            imageFormats: ["jpg", "jpeg", "gif", "png", "bmp", "webp"],
+            crossDomainUpload: false,
+            uploadCallbackURL: "php/upload_callback.html",
+            taskList: true,
+            toc: true,
+            htmlDecode: "style,script,iframe|on*",
+            toolbarIcons: function() {
+                return [
+                    "undo", "redo", "|",
+                    "bold", "del", "italic", "|",
+                    "h1", "h2", "h3", "|",
+                    "list-ul", "list-ol", "hr", "|",
+                    "link", "reference-link", "image", "code", "code-block", "table", "|",
+                    "watch", "preview", "fullscreen", "search", "help"
+                ];
+            },
+            onload: function() {
+                console.log("xfEditor 图片上传示例已加载");
+            }
+        });
+    });
+</script>
+</body>
 </html>

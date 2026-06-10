@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
     <meta charset="utf-8" />
-    <title>Editor.md v1.8.0 — Examples</title>
+    <title>xfEditor v1.10.0 — Examples</title>
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="../css/editormd.min.css" />
     <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
@@ -179,14 +179,14 @@
         <!-- ═══════════════ HEADER ═══════════════ -->
         <div id="header">
             <h1><i class="editormd-logo editormd-logo-3x"></i></h1>
-            <h1>Editor.md Examples</h1>
+            <h1>xfEditor Examples</h1>
             <p class="subtitle">开源在线 Markdown 编辑器 · 功能示例大全</p>
-            <p class="version">v1.8.0 — 50+ 示例 · 所有功能开箱即用</p>
+            <p class="version">v1.10.0 — 50+ 示例 · 所有功能开箱即用</p>
             <div class="menu">
                 <a href="#start">快速上手</a>
                 <a href="#all-features">全部功能</a>
-                <a href="#v170">v1.8.0 新特性</a>
-                <a href="#v160">v1.6.0 增强</a>
+                <a href="#v110">v1.10.0 新特性</a>
+                <a href="#v170">v1.7.0 增强</a>
                 <a href="#markdown">Markdown 语法</a>
                 <a href="#customs">自定义扩展</a>
                 <a href="#upload">文件上传</a>
@@ -202,7 +202,7 @@
             <li><a href="./use-requirejs.html">Require.js 加载 <span>Using Require.js (AMD)</span></a></li>
             <li><a href="./use-seajs.html">Sea.js 加载 <span>Using Sea.js (CMD)</span></a></li>
             <li><a href="./use-zepto.html">Zepto.js 替代 jQuery <span>Using Zepto.js</span></a></li>
-            <li><a href="./dynamic-create-editormd.html">动态创建编辑器 <span>Dynamic create Editor.md</span></a></li>
+            <li><a href="./dynamic-create-editormd.html">动态创建编辑器 <span>Dynamic create xfEditor</span></a></li>
             <li><a href="./manually-load-modules.html">手动加载依赖模块 <span>Manually loading dependent modules</span></a></li>
             <li><a href="./form-get-value.html">表单取值与提交 <span>Get/Send Markdown via form POST</span></a></li>
         </ul>
@@ -219,31 +219,37 @@
             <li><a href="./toolbar-reference.html">工具栏功能参考 <span>Toolbar icons, features & usage reference</span></a></li>
         </ul>
 
-        <!-- ═══════════════ v1.8.0 新特性 ═══════════════ -->
+        <!-- ═══════════════ v1.10.0 新特性 ═══════════════ -->
         <h1 class="category">
-            <span><span class="cat-icon">&#10024;</span><a name="v170"></a>v1.8.0 新特性 <span class="badge badge-new">NEW</span></span>
+            <span><span class="cat-icon">&#10024;</span><a name="v110"></a>v1.10.0 新特性 <span class="badge badge-new">NEW</span></span>
             <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
         </h1>
         <ul>
-            <li class="featured"><a href="./copybook.html"><strong>📝 字帖 Copybook</strong> <span>田字格/米字格/拼音格 — 三种汉字书写字帖模板，SVG辅助线</span></a></li>
-            <li><a href="./echarts.html">Apache ECharts 交互式图表 <span>柱状图/折线图/饼图/雷达图/漏斗图 五种图表</span></a></li>
-            <li><a href="./tabs.html">Tabs 标签页组件 <span>[[tabs]]...[[/tabs]] 支持嵌套代码块/表格/图表</span></a></li>
-            <li><a href="./columns.html">多列排版 Columns <span>[[columns:N]]...[[/columns]] 报纸式多栏布局</span></a></li>
-            <li><a href="./tooltip.html">悬浮提示 Tooltip <span>文本/图片/iframe 三种悬浮提示类型</span></a></li>
-            <li><a href="./formula.html">公式插入面板 <span>11 分类、100+公式、搜索过滤、一键插入</span></a></li>
-            <li><a href="./video.html">视频插入 <span>[[video]] 标签和 HTML5 video 两种方式</span></a></li>
+            <li class="featured"><a href="./all-features.html"><strong>🌟 全部功能完整演示</strong> <span>综合性全功能演示 — 所有语法一站式体验</span></a></li>
+            <li class="featured"><a href="./copybook.html"><strong>📝 字帖 Copybook</strong> <span>田字格/米字格/拼音格 — 三种汉字书写字帖</span></a></li>
+            <li class="featured"><a href="./formula.html">📐 公式插入面板 <span>11 分类、100+LaTeX公式、Tab切换、一键插入</span></a></li>
+            <li class="featured"><a href="./superscript-subscript.html">⬆️ 上标与下标 <span>^上标^ / ^^下标^^ 语法，数学化学专用</span></a></li>
+            <li class="featured"><a href="./font-size.html">🔤 字体大小 <span>!32 文字! 语法，8-200px 灵活排版</span></a></li>
+            <li class="featured"><a href="./footnote.html">📌 脚注功能 <span>[^name] 引用+定义，文末自动汇总</span></a></li>
+            <li><a href="./echarts.html">Apache ECharts 交互式图表 <span>柱状图/折线图/饼图/雷达图/漏斗图</span></a></li>
+            <li><a href="./tabs.html">Tabs 标签页组件 <span>支持嵌套代码块/表格/图表</span></a></li>
+            <li><a href="./columns.html">多列排版 Columns <span>报纸式多栏布局</span></a></li>
+            <li><a href="./tooltip.html">悬浮提示 Tooltip <span>文本/图片/iframe 三种类型</span></a></li>
+            <li><a href="./video.html">视频插入 <span>video 标签和 HTML5 video</span></a></li>
+            <li><a href="./page-syntax.html">📄 纸张页面 <span>[[page:A4]] 尺寸展示，页头页脚</span></a></li>
         </ul>
 
-        <!-- ═══════════════ v1.6.0 增强功能 ═══════════════ -->
+        <!-- ═══════════════ v1.7.0 增强功能 ═══════════════ -->
         <h1 class="category">
-            <span><span class="cat-icon">&#128736;</span><a name="v160"></a>v1.6.0 增强功能</span>
+            <span><span class="cat-icon">&#128736;</span><a name="v170"></a>v1.7.0 增强功能</span>
             <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
         </h1>
         <ul>
-            <li><a href="./pinyin.html">拼音标注语法 <span>{汉字 | hàn zì} 注音标记</span></a></li>
+            <li><a href="./pinyin.html">拼音标注语法 <span>{汉字 | pīn yīn} 注音标记</span></a></li>
             <li><a href="./text-align.html">文本对齐语法 <span>Unicode 行内对齐: 居中/左/右/两端</span></a></li>
             <li><a href="./table-edit.html">表格行列编辑 <span>Table row/col insert and delete</span></a></li>
             <li><a href="./image-resize.html">图片尺寸编辑 <span>拖拽调整 + 精确尺寸输入</span></a></li>
+            <li><a href="./pinyin-reference.html">📖 拼音参照表 <span>声母/韵母/声调完整列表</span></a></li>
         </ul>
 
         <!-- ═══════════════ Markdown 扩展语法 ═══════════════ -->
@@ -277,7 +283,7 @@
             <li><a href="./auto-height.html">自动高度 <span>Auto height adjust</span></a></li>
             <li><a href="./change-mode.html">变身为代码编辑器 <span>Change to code editor mode</span></a></li>
             <li><a href="./readonly.html">只读模式 <span>Read only mode</span></a></li>
-            <li><a href="./multi-editormd.html">多个编辑器并存 <span>Multi Editor.md instances</span></a></li>
+            <li><a href="./multi-editormd.html">多个编辑器并存 <span>Multi xfEditor instances</span></a></li>
             <li><a href="./sync-scrolling.html">同步滚动 <span>双向/单向/禁用同步滚动</span></a></li>
             <li><a href="./delay-renderer-preview.html">延迟渲染 <span>Delay renderer and preview</span></a></li>
             <li><a href="./external-use.html">外部使用工具栏 <span>External use of toolbar handlers</span></a></li>
@@ -295,8 +301,10 @@
             <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
         </h1>
         <ul>
-            <li><a href="./image-upload.html">图片上传 <span>Image upload — 本地/远程图片插入</span></a></li>
-            <li><a href="./image-cross-domain-upload.html">图片跨域上传 <span>Cross-domain image upload</span></a></li>
+            <li class="featured"><a href="./image-upload.html">🖼️ 图片上传 <span>Image upload — 本地/远程图片插入、粘贴上传、尺寸编辑</span></a></li>
+            <li><a href="./image-cross-domain-upload.html">图片跨域上传 <span>Cross-domain image upload with callback</span></a></li>
+            <li class="featured"><a href="./file-upload.html">📎 文件上传 <span>File upload — 附件上传、格式白名单、文件名自动识别</span></a></li>
+            <li class="featured"><a href="./video-upload.html">🎬 视频上传 <span>Video upload — 视频上传、尺寸控制、对齐方式</span></a></li>
         </ul>
 
         <!-- ═══════════════ 事件处理 ═══════════════ -->
@@ -305,6 +313,7 @@
             <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
         </h1>
         <ul>
+            <li class="featured"><a href="./event-handlers.html">📡 全部事件综合演示 <span>28 个事件回调实时可视化 · 日志观察器</span></a></li>
             <li><a href="./on-off.html">事件注册与解绑 <span>On / Off (bind/unbind)</span></a></li>
             <li><a href="./onload.html">onload 加载完成 <span>Onload event handle</span></a></li>
             <li><a href="./onchange.html">onchange 变化监听 <span>Onchange event handle</span></a></li>
@@ -323,9 +332,9 @@
             <p>
                 <a href="./"><img src="../images/logos/editormd-logo-64x64.png"/></a>
             </p>
-            <p>Copyright &copy; 2015-2026 <a href="./">Editor.md</a></p>
-            <p>Open source online markdown editor. <a href="https://github.com/pandao/editor.md" class="fa fa-github fa-lg" target="_blank"></a></p>
-            <p>The <a href="https://github.com/pandao/editor.md/blob/master/LICENSE" target="_blank">MIT</a> license</p>
+            <p>Copyright &copy; 2015-2026 <a href="./">xfEditor</a></p>
+            <p>Open source online markdown editor. <a href="https://github.com/zhaoxianfang/editor" class="fa fa-github fa-lg" target="_blank"></a></p>
+            <p>The <a href="https://github.com/zhaoxianfang/editor/blob/master/LICENSE" target="_blank">MIT</a> license</p>
         </div>
     </div>
 

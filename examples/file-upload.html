@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件上传 - xfEditor v1.10.0</title>
+    <link rel="stylesheet" href="../css/editormd.css" />
+    <link rel="stylesheet" href="../css/editormd.preview.css" />
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+    <script src="../editormd.js"></script>
+    <style>
+        body { background: #f0f2f5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif; margin: 0; padding: 20px; }
+        .demo-header { text-align: center; padding: 30px 20px 20px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: #fff; margin: -20px -20px 20px; }
+        .demo-header h1 { margin: 0 0 8px; font-size: 24px; font-weight: 600; }
+        .demo-header p { margin: 0; opacity: 0.8; font-size: 14px; }
+        .layout { display: flex; gap: 16px; max-width: 1500px; margin: 0 auto; }
+        .layout > div { flex: 1; min-width: 0; background: #fff; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); overflow: hidden; }
+        .layout h3 { margin: 0; padding: 12px 16px; background: #f8f9fa; border-bottom: 1px solid #e9ecef; font-size: 13px; font-weight: 600; color: #555; }
+        #editor-container { min-height: 600px; }
+        .note { max-width: 1500px; margin: 20px auto 0; padding: 20px 24px; background: #fff; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); font-size: 13px; color: #555; line-height: 1.8; }
+        .note h4 { margin: 16px 0 8px; color: #1a1a2e; }
+        .note code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-size: 12px; color: #e94560; }
+        .note pre { background: #1e1e2e; color: #cdd6f4; padding: 12px 16px; border-radius: 6px; overflow-x: auto; font-size: 13px; line-height: 1.5; }
+        .note table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+        .note table th { background: #f0f2f5; padding: 8px 12px; text-align: left; border: 1px solid #e0e0e0; }
+        .note table td { padding: 8px 12px; border: 1px solid #e0e0e0; }
+    </style>
+</head>
+<body>
+<div class="demo-header">
+    <h1>📎 文件上传功能演示</h1>
+    <p>支持多种格式附件上传 · 拖拽插入链接 · 文件格式校验</p>
+</div>
+
+<div class="layout">
+    <div>
+        <h3>📝 Markdown 源码 / 编辑区</h3>
+        <div id="editor-container">
+            <textarea id="editor" style="display:none;">
+# 📎 文件上传功能演示
+
+---
+
+## 一、功能概述
+
+xfEditor v1.10.0 支持通过工具栏 **上传文件** 按钮，在编辑器中插入文件下载链接。
+
+### 支持的附件格式
+
+| 分类 | 扩展名 | 说明 |
+|------|--------|------|
+| 压缩包 | `.zip .rar .7z .tar .gz` | 各种压缩归档格式 |
+| Office 文档 | `.doc .docx .xls .xlsx .ppt .pptx` | Word/Excel/PowerPoint |
+| 文本文档 | `.pdf .txt .md .csv` | 便携文档和纯文本 |
+| 音频文件 | `.mp3 .wav .ogg` | 音频播放格式 |
+
+---
+
+## 二、使用方式
+
+### 方式一：直接输入链接
+
+点击工具栏 📎 **上传文件** 按钮，在弹出的对话框中直接输入文件 URL：
+
+```
+[项目文档.pdf](https://example.com/uploads/project.pdf)
+```
+
+### 方式二：本地上传
+
+启用 `fileUpload: true` 配置后，对话框将显示文件选择器，可直接上传本地文件到服务器。
+
+```javascript
+fileUpload     : true,
+fileFormats    : ["doc", "docx", "pdf", "txt", "zip", "rar"],
+fileUploadURL  : "php/upload.php",
+```
+
+---
+
+## 三、示例链接
+
+### 各类文件链接示例
+
+- 📄 [项目需求文档.docx](#) — Word 文档
+- 📊 [季度报表.xlsx](#) — Excel 表格
+- 📈 [产品演示.pptx](#) — PowerPoint 演示
+- 📕 [技术手册.pdf](#) — PDF 文档
+- 📦 [项目源码.zip](#) — 压缩包
+- 🎵 [背景音乐.mp3](#) — 音频文件
+
+---
+
+## 四、文件名自动识别
+
+当通过本地上传时，**文件名将自动填充为链接文字**，省去手动输入的麻烦。
+
+### 上传流程
+
+1. 点击工具栏 **📎 上传文件** 按钮
+2. 在弹出的对话框中点击 **选择文件** 按钮
+3. 选择本地文件后，**系统自动提交上传**
+4. 上传成功后，**文件 URL 自动填入** 输入框
+5. 点击 **确定插入** 即可将文件链接插入编辑器
+
+---
+
+## 五、后端接口说明
+
+### 上传接口路径
+```javascript
+fileUploadURL: "php/upload.php"
+```
+
+### 请求方式
+- **方法**: `POST`（multipart/form-data）
+- **文件域名称**: `editormd-file-file`
+
+### 响应格式（JSON）
+```json
+{
+    "success": true,
+    "message": "上传成功！",
+    "url": "/examples/uploads/20240610_143025_67890.zip",
+    "data": {
+        "file_name": "20240610_143025_67890.zip",
+        "file_size": 2048000,
+        "file_ext": "zip",
+        "upload_type": "file"
+    }
+}
+```
+
+---
+
+## 六、安全配置建议
+
+1. **文件大小限制**: `max_size` POST 参数可自定义，默认 20MB
+2. **格式白名单**: 仅允许 `fileFormats` 列表中的扩展名
+3. **MIME 类型校验**: 后端会检测文件真实类型，防止扩展名伪造
+4. **路径穿越防护**: 自动去除文件名中的路径部分
+5. **覆盖策略**: 可配置 `cover: false` 禁止同名覆盖
+
+> 💡 **提示**: 本示例页面需要配置后端上传接口才能使用本地上传功能。直接输入链接插入无需后端支持。
+</textarea>
+        </div>
+    </div>
+</div>
+
+<div class="note">
+    <h4>📋 配置参数说明</h4>
+    <table>
+        <tr><th>参数</th><th>类型</th><th>默认值</th><th>说明</th></tr>
+        <tr><td><code>fileUpload</code></td><td>Boolean</td><td><code>false</code></td><td>是否启用文件上传功能</td></tr>
+        <tr><td><code>fileUploadURL</code></td><td>String</td><td><code>""</code></td><td>文件上传的服务器接口 URL</td></tr>
+        <tr><td><code>fileFormats</code></td><td>Array</td><td><code>["doc","docx","pdf","txt","zip","rar","xls","xlsx","ppt","pptx","mp4","mp3"]</code></td><td>允许上传的文件格式列表</td></tr>
+    </table>
+
+    <h4>🔧 PHP 后端配置参考</h4>
+    <pre>// php/upload.php 关键配置
+$maxSizeMap = [
+    EditorMdUploader::TYPE_FILE => 1024 * 20,    // 附件最大 20MB
+];
+
+$allowedFormats = [
+    EditorMdUploader::TYPE_FILE => [
+        'zip', 'rar', '7z', 'tar', 'gz',
+        'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+        'pdf', 'txt', 'md', 'csv',
+        'mp3', 'wav', 'ogg',
+    ],
+];</pre>
+</div>
+
+<script type="text/javascript">
+    $(function() {
+        var editor = editormd("editor-container", {
+            width: "100%",
+            height: 800,
+            path: "../lib/",
+            markdown: $("#editor").text(),
+            fileUpload: true,
+            fileUploadURL: "php/upload.php",
+            fileFormats: ["doc", "docx", "pdf", "txt", "zip", "rar", "xls", "xlsx", "ppt", "pptx", "mp4", "mp3"],
+            toolbarIcons: function() {
+                return [
+                    "undo", "redo", "|",
+                    "bold", "del", "italic", "|",
+                    "h1", "h2", "h3", "|",
+                    "list-ul", "list-ol", "hr", "|",
+                    "link", "reference-link", "image", "code", "code-block", "table", "|",
+                    "file", "|",
+                    "watch", "preview", "fullscreen", "search", "help"
+                ];
+            },
+            onload: function() {
+                console.log("xfEditor 文件上传示例已加载");
+            }
+        });
+    });
+</script>
+</body>
+</html>

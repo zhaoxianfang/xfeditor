@@ -1,5 +1,5 @@
 @charset "UTF-8";
-/*! prefixes.scss v0.1.0 | Author: Pandao | https://github.com/pandao/prefixes.scss | MIT license | Copyright (c) 2015 */
+/*! prefixes.scss v0.1.0 | Author: zhaoxianfang | https://github.com/zhaoxianfang/prefixes.scss | MIT license | Copyright (c) 2015 */
 /*!
  *  Font Awesome 4.3.0 by @davegandy - http://fontawesome.io - @fontawesome
  *  License - http://fontawesome.io/license (Font: SIL OFL 1.1, CSS: MIT License)
@@ -2349,7 +2349,7 @@
   content: "\f23a";
 }
 
-/*! prefixes.scss v0.1.0 | Author: Pandao | https://github.com/pandao/prefixes.scss | MIT license | Copyright (c) 2015 */
+/*! prefixes.scss v0.1.0 | Author: zhaoxianfang | https://github.com/zhaoxianfang/prefixes.scss | MIT license | Copyright (c) 2015 */
 @font-face {
   font-family: "editormd-logo";
   src: url("../fonts/editormd-logo.eot?-5y8q6h");
@@ -3599,6 +3599,139 @@ hr.editormd-page-break {
   height: 2px;
 }
 
+/* ========================================
+   Page Block Styles — [[page:A4]] / [[page:A5]]
+   Paper-style page containers with pagination
+   ======================================== */
+.editormd-page-block {
+  background: #fff;
+  border: 1px solid #ddd;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.06);
+  margin: 16px auto;
+  padding: 48px 60px;
+  position: relative;
+  overflow: hidden;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  -webkit-border-radius: 2px;
+  -moz-border-radius: 2px;
+  -ms-border-radius: 2px;
+  -o-border-radius: 2px;
+  border-radius: 2px;
+  -webkit-transition: box-shadow 200ms ease; /* Safari, Chrome */
+  -moz-transition: box-shadow 200ms ease; /* Firefox 4.0~16.0 */
+  transition: box-shadow 200ms ease; /* IE >9, FF >15, Opera >12.0 */
+}
+.editormd-page-block:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.editormd-page-content {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #333;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+.editormd-page-content img, .editormd-page-content video, .editormd-page-content table, .editormd-page-content pre, .editormd-page-content iframe, .editormd-page-content svg {
+  max-width: 100%;
+  height: auto;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+.editormd-page-content table {
+  display: table;
+  width: 100%;
+}
+.editormd-page-content pre {
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.editormd-page-watermark {
+  position: absolute;
+  bottom: 16px;
+  right: 20px;
+  font-size: 11px;
+  color: #ccc;
+  font-weight: 300;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  pointer-events: none;
+  user-select: none;
+}
+
+.editormd-page-header {
+  position: absolute;
+  top: 12px;
+  left: 60px;
+  right: 60px;
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+  text-align: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eee;
+  letter-spacing: 0.5px;
+}
+
+.editormd-page-footer {
+  position: absolute;
+  bottom: 12px;
+  left: 60px;
+  right: 60px;
+  font-size: 11px;
+  color: #888;
+  font-weight: 400;
+  text-align: center;
+  padding-top: 8px;
+  border-top: 1px solid #eee;
+  letter-spacing: 0.3px;
+}
+
+.editormd-page-block:has(.editormd-page-header) .editormd-page-content {
+  padding-top: 24px;
+}
+.editormd-page-block:has(.editormd-page-footer) .editormd-page-content {
+  padding-bottom: 24px;
+}
+
+.editormd-page-split {
+  page-break-after: always;
+}
+
+.editormd-page-split::before {
+  content: attr(data-page);
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-size: 10px;
+  color: #bbb;
+  font-weight: 400;
+}
+
+@media print {
+  .editormd-page-block {
+    box-shadow: none;
+    border: none;
+    margin: 0;
+    page-break-after: always;
+  }
+  .editormd-page-split {
+    margin-bottom: 0;
+  }
+}
+@media screen and (max-width: 860px) {
+  .editormd-page-block {
+    width: auto !important;
+    max-width: 100%;
+    margin: 8px 0;
+    padding: 24px 20px;
+    min-height: auto !important;
+  }
+}
 /* Tooltip / Popover */
 .editormd-tooltip-trigger {
   border-bottom: 1px dashed #2C7EEA;
@@ -3716,24 +3849,18 @@ hr.editormd-page-break {
 .editormd-preview-close-btn {
   color: #fff;
   padding: 4px 6px;
-  font-size: 18px;
-  -webkit-border-radius: 500px;
-  -moz-border-radius: 500px;
-  -ms-border-radius: 500px;
-  -o-border-radius: 500px;
-  border-radius: 500px;
+  font-size: 24px;
   display: none;
-  background-color: #ccc;
   position: absolute;
   top: 25px;
   right: 35px;
   z-index: 19;
-  -webkit-transition: background-color 300ms ease-out; /* Safari, Chrome */
-  -moz-transition: background-color 300ms ease-out; /* Firefox 4.0~16.0 */
-  transition: background-color 300ms ease-out; /* IE >9, FF >15, Opera >12.0 */
+  -webkit-transition: color 300ms ease-out; /* Safari, Chrome */
+  -moz-transition: color 300ms ease-out; /* Firefox 4.0~16.0 */
+  transition: color 300ms ease-out; /* IE >9, FF >15, Opera >12.0 */
 }
 .editormd-preview-close-btn:hover {
-  background-color: #999;
+  color: #ccc;
 }
 
 .editormd-preview-active {
@@ -3900,3 +4027,272 @@ hr.editormd-page-break {
     height: 24px;
   }
 }
+/* ========== 表格编辑按钮 (Table Editing in Preview) ========== */
+.editormd-table-wrapper {
+  position: relative;
+  display: inline-block;
+  margin: 5px 0;
+}
+
+.editormd-table-editable {
+  position: relative;
+}
+
+.editormd-table-col-controls,
+.editormd-table-row-controls {
+  display: none;
+  position: absolute;
+  z-index: 50;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.editormd-table-col-controls {
+  height: 28px;
+  padding: 2px 4px;
+  justify-content: space-between;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.editormd-table-row-controls {
+  width: 28px;
+  padding: 4px 2px;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 60px;
+}
+
+.editormd-table-btn {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  line-height: 22px;
+  text-align: center;
+  color: #666;
+  cursor: pointer;
+  border-radius: 3px;
+  font-size: 14px;
+  font-weight: bold;
+  justify-content: center;
+  align-items: center;
+  user-select: none;
+  -webkit-user-select: none;
+  text-decoration: none;
+}
+.editormd-table-btn:hover {
+  background: #2C7EEA;
+  color: #fff;
+}
+
+.editormd-table-editable th,
+.editormd-table-editable td {
+  cursor: pointer;
+  transition: background-color 200ms ease;
+}
+
+.editormd-table-editable th:hover,
+.editormd-table-editable td:hover {
+  background-color: rgba(44, 126, 234, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(44, 126, 234, 0.3);
+}
+
+/* ===========================================
+ * 脚注样式 (Footnote Styles)
+ * =========================================== */
+.editormd-footnotes-section {
+  margin-top: 24px;
+  padding-top: 12px;
+  border-top: 1px solid #d1d5db;
+}
+.editormd-footnotes-section .editormd-footnote-sep {
+  display: none;
+}
+.editormd-footnotes-section .editormd-footnote-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.editormd-footnotes-section .editormd-footnote-title strong {
+  font-weight: 700;
+}
+.editormd-footnotes-section .editormd-footnote-list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  counter-reset: editormd-fn-counter;
+}
+.editormd-footnotes-section .editormd-footnote-list .editormd-footnote-item {
+  position: relative;
+  margin-bottom: 6px;
+  padding: 8px 10px 8px 32px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #4b5563;
+  background: #f9fafb;
+  border-radius: 4px;
+  border: 1px solid #e5e7eb;
+  transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+.editormd-footnotes-section .editormd-footnote-list .editormd-footnote-item::before {
+  counter-increment: editormd-fn-counter;
+  content: counter(editormd-fn-counter);
+  position: absolute;
+  left: 10px;
+  top: 12px;
+  width: 20px;
+  height: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 20px;
+  text-align: center;
+  color: #0366d6;
+  background: #dbeafe;
+  border-radius: 50%;
+}
+.editormd-footnotes-section .editormd-footnote-list .editormd-footnote-item:target {
+  background: #fffbeb;
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+  animation: editormd-fn-flash 2s ease-out;
+}
+.editormd-footnotes-section .editormd-footnote-list .editormd-footnote-item .editormd-footnote-content {
+  display: block;
+}
+.editormd-footnotes-section .editormd-footnote-list .editormd-footnote-item .editormd-footnote-content p {
+  margin: 0 0 6px;
+}
+.editormd-footnotes-section .editormd-footnote-list .editormd-footnote-item .editormd-footnote-content p:last-child {
+  margin-bottom: 0;
+}
+.editormd-footnotes-section .editormd-footnote-list .editormd-footnote-item .editormd-footnote-content table {
+  margin: 8px 0;
+  border-collapse: collapse;
+  width: 100%;
+}
+.editormd-footnotes-section .editormd-footnote-list .editormd-footnote-item .editormd-footnote-content table th, .editormd-footnotes-section .editormd-footnote-list .editormd-footnote-item .editormd-footnote-content table td {
+  border: 1px solid #d1d5db;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+.editormd-footnotes-section .editormd-footnote-list .editormd-footnote-item .editormd-footnote-content table th {
+  background: #f3f4f6;
+  font-weight: 600;
+}
+.editormd-footnotes-section .editormd-footnote-list .editormd-footnote-item .editormd-footnote-content pre {
+  margin: 8px 0;
+  padding: 10px;
+  background: #f6f8fa;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+.editormd-footnotes-section .editormd-footnote-list .editormd-footnote-item .editormd-footnote-content pre code {
+  background: none;
+  padding: 0;
+  font-size: 12px;
+}
+.editormd-footnotes-section .editormd-footnote-list .editormd-footnote-item .editormd-footnote-content blockquote {
+  margin: 8px 0;
+  padding: 8px 12px;
+  border-left: 3px solid #d1d5db;
+  background: #f9fafb;
+  color: #4b5563;
+}
+.editormd-footnotes-section .editormd-footnote-list .editormd-footnote-item .editormd-footnote-content .editormd-tabs-container {
+  margin: 8px 0;
+}
+.editormd-footnotes-section .editormd-footnote-list .editormd-footnote-item .editormd-footnote-content .editormd-columns-wrapper {
+  margin: 8px 0;
+}
+.editormd-footnotes-section .editormd-footnote-list .editormd-footnote-item .editormd-footnote-content strong {
+  font-weight: 600;
+  color: #1f2937;
+}
+.editormd-footnotes-section .editormd-footnote-list .editormd-footnote-item .editormd-footnote-content em {
+  font-style: italic;
+  color: #6b7280;
+}
+.editormd-footnotes-section .editormd-footnote-list .editormd-footnote-item .editormd-footnote-content code {
+  display: inline;
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 12.6px;
+  color: #c7254e;
+  white-space: nowrap;
+}
+.editormd-footnotes-section .editormd-footnote-list .editormd-footnote-item .editormd-footnote-content br {
+  display: none;
+}
+.editormd-footnotes-section .editormd-footnote-list .editormd-footnote-item .editormd-footnote-backref {
+  display: none;
+}
+
+@keyframes editormd-fn-flash {
+  0% {
+    background: #fef3c7;
+    border-color: #f59e0b;
+  }
+  50% {
+    background: #fffbeb;
+    border-color: #fcd34d;
+  }
+  100% {
+    background: #f9fafb;
+    border-color: #e5e7eb;
+  }
+}
+.editormd-footnote-ref-wrapper {
+  display: inline;
+  margin: 0 1px;
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+  top: -0.5em;
+}
+.editormd-footnote-ref-wrapper a {
+  display: inline-block;
+  color: #0366d6;
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 10px;
+  background: transparent;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  border: none;
+  outline: none;
+}
+.editormd-footnote-ref-wrapper a:hover {
+  color: #fff;
+  background: #0366d6;
+  text-decoration: none;
+  border: none;
+}
+.editormd-footnote-ref-wrapper a:visited {
+  color: #6f42c1;
+}
+.editormd-footnote-ref-wrapper a:visited:hover {
+  background: #6f42c1;
+  color: #fff;
+}
+
+.editormd-footnote-ref-wrapper a::before,
+.editormd-footnote-ref-wrapper a::after,
+.editormd-preview-container .footnote-ref a::before,
+.editormd-preview-container .footnote-ref a::after {
+  display: none !important;
+  content: none !important;
+  border: none !important;
+}
+
+/*# sourceMappingURL=editormd.preview.css.map */

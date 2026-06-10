@@ -2,26 +2,53 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>上传回调 - Editor.md</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上传回调 — xfEditor</title>
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
             display: flex;
             align-items: center;
             justify-content: center;
             height: 100vh;
             margin: 0;
-            background: #f8f9fa;
+            background: #f0f2f5;
         }
         .status {
             text-align: center;
-            padding: 30px;
+            padding: 40px 48px;
             background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            max-width: 420px;
+        }
+        .status .icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        .status .title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .status .message {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.6;
         }
         .success { color: #16a34a; }
         .error   { color: #dc2626; }
+        .url-box {
+            background: #f6f8fa;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            padding: 10px;
+            margin-top: 12px;
+            font-size: 12px;
+            word-break: break-all;
+            color: #0969da;
+        }
     </style>
 </head>
 <body>
@@ -31,7 +58,9 @@
         上传成功后，将返回的文件 URL 填入父窗口的图片对话框中。
     -->
     <div class="status" id="status">
-        <p id="status-text">处理中…</p>
+        <div class="icon" id="status-icon">⏳</div>
+        <div class="title" id="status-title">处理中…</div>
+        <div class="message" id="status-message"></div>
     </div>
 
     <script>
@@ -44,7 +73,8 @@
                 for (var i = 0; i < pairs.length; i++) {
                     var eq = pairs[i].indexOf('=');
                     if (eq > 0) {
-                        params[pairs[i].substring(0, eq)] = decodeURIComponent(pairs[i].substring(eq + 1));
+                        var key = pairs[i].substring(0, eq);
+                        params[key] = decodeURIComponent(pairs[i].substring(eq + 1));
                     }
                 }
             }
@@ -53,33 +83,58 @@
             var success  = parseInt(params['success'], 10);
             var message  = params['message'] || '';
             var url      = params['url'] || '';
+            var name     = params['name'] || '';
+
+            var statusIcon    = document.getElementById('status-icon');
+            var statusTitle   = document.getElementById('status-title');
+            var statusMessage = document.getElementById('status-message');
 
             try {
                 if (success === 1) {
-                    // 上传成功：回填 URL 到父窗口的图片对话框
+                    // 上传成功：回填 URL 到父窗口的图片/文件/视频对话框
                     if (dialogId && window.parent) {
-                        var dialog = window.parent.document.getElementById(dialogId);
-                        if (dialog) {
-                            var urlInput = dialog.querySelector('[data-url]');
-                            if (urlInput) {
-                                urlInput.value = url;
+                        try {
+                            var dialog = window.parent.document.getElementById(dialogId);
+                            if (dialog) {
+                                // 查找 URL 输入框（data-url 属性）
+                                var urlInput = dialog.querySelector('[data-url]');
+                                if (urlInput) {
+                                    urlInput.value = url;
+                                }
+                                // 查找替代文本输入框（data-alt 属性）
+                                var altInput = dialog.querySelector('[data-alt]');
+                                if (altInput && name) {
+                                    altInput.value = name;
+                                }
                             }
+                        } catch (e) {
+                            // 跨域情况下无法访问 parent DOM
+                            console.warn('[upload_callback] Cannot access parent DOM:', e.message);
                         }
                     }
-                    document.getElementById('status-text').innerHTML =
-                        '<span class="success">上传成功！</span><br>' + message;
+
+                    statusIcon.innerHTML = '✅';
+                    statusTitle.innerHTML = '<span class="success">上传成功！</span>';
+                    statusMessage.innerHTML = '<div style="margin-top:8px;">' +
+                        (message ? '<p>' + message + '</p>' : '') +
+                        (url ? '<div class="url-box">' + url + '</div>' : '') +
+                        '</div>';
                 } else {
-                    // 上传失败：提示错误信息
-                    document.getElementById('status-text').innerHTML =
-                        '<span class="error">上传失败</span><br>' + message;
+                    // 上传失败
+                    statusIcon.innerHTML = '❌';
+                    statusTitle.innerHTML = '<span class="error">上传失败</span>';
+                    statusMessage.innerHTML = '<p>' + (message || '未知错误，请重试。') + '</p>';
                 }
             } catch (e) {
-                document.getElementById('status-text').innerHTML =
-                    '<span class="error">处理出错</span><br>' + e.message;
+                statusIcon.innerHTML = '⚠️';
+                statusTitle.innerHTML = '<span class="error">处理出错</span>';
+                statusMessage.innerHTML = '<p>' + (e.message || '未知错误') + '</p>';
             }
 
-            // 重定向到空白页，避免浏览器历史记录残留
-            location.href = 'about:blank';
+            // 延迟重定向到空白页，给用户短暂的反馈时间
+            setTimeout(function() {
+                location.href = 'about:blank';
+            }, 1500);
         })();
     </script>
 </body>

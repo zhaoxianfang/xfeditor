@@ -17,7 +17,7 @@ var pkg          = require("./package.json");
 var dateFormat   = require("dateformatter").format;
 var replace      = require("gulp-replace");
 
-pkg.name         = "Editor.md";
+pkg.name         = "xfEditor";
 pkg.today        = dateFormat;
 
 var headerComment = ["/*", 

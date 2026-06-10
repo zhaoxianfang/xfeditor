@@ -5,7 +5,7 @@
  * @author      Editor.md
  * @version     1.7.0
  * @updateTime  2026-06-03
- * {@link       https://github.com/pandao/editor.md}
+ * {@link       https://github.com/zhaoxianfang/editor}
  * @license     MIT
  */
 
@@ -130,61 +130,60 @@
 
                 dialog.attr("id", classPrefix + "video-dialog-" + guid);
 
-                if (!settings.videoUpload) {
-                    return ;
-                }
+                // 上传功能仅在启用时设置，对话框始终显示
+                if (settings.videoUpload) {
+                    var fileInput  = dialog.find("[name=\"" + classPrefix + "video-file\"]");
 
-                var fileInput  = dialog.find("[name=\"" + classPrefix + "video-file\"]");
+                    fileInput.on("change", function() {
+                        var fileName  = fileInput.val();
+                        var isVideo   = new RegExp("(\\.(" + settings.videoFormats.join("|") + "))$", "i");
 
-                fileInput.on("change", function() {
-                    var fileName  = fileInput.val();
-                    var isVideo   = new RegExp("(\\.(" + settings.videoFormats.join("|") + "))$", "i");
-
-                    if (fileName === "")
-                    {
-                        editormd.notify(videoLang.uploadFileEmpty, "warning");
-                        return false;
-                    }
-
-                    if (!isVideo.test(fileName))
-                    {
-                        editormd.notify(videoLang.formatNotAllowed + settings.videoFormats.join(", "), "warning");
-                        return false;
-                    }
-
-                    loading(true);
-
-                    var submitHandler = function() {
-                        var uploadIframe = document.getElementById(iframeName);
-
-                        uploadIframe.onload = function() {
-                            loading(false);
-
-                            var body = (uploadIframe.contentWindow ? uploadIframe.contentWindow : uploadIframe.contentDocument).document.body;
-                            var json = (body.innerText) ? body.innerText : ( (body.textContent) ? body.textContent : null);
-
-                            try {
-                                json = (typeof JSON.parse !== "undefined") ? JSON.parse(json) : eval("(" + json + ")");
-                            } catch(err) {
-                                editormd.notify(videoLang.uploadError + " " + (json || ""), "error", 5000);
-                                return false;
-                            }
-
-                            if (json.success === 1)
-                            {
-                                dialog.find("[data-url]").val(json.url);
-                            }
-                            else
-                            {
-                                editormd.notify(json.message || videoLang.uploadError, "error", 5000);
-                            }
-
+                        if (fileName === "")
+                        {
+                            editormd.notify(videoLang.uploadFileEmpty, "warning");
                             return false;
-                        };
-                    };
+                        }
 
-                    dialog.find("[type=\"submit\"]").on("click", submitHandler).trigger("click");
-                });
+                        if (!isVideo.test(fileName))
+                        {
+                            editormd.notify(videoLang.formatNotAllowed + settings.videoFormats.join(", "), "warning");
+                            return false;
+                        }
+
+                        loading(true);
+
+                        var submitHandler = function() {
+                            var uploadIframe = document.getElementById(iframeName);
+
+                            uploadIframe.onload = function() {
+                                loading(false);
+
+                                var body = (uploadIframe.contentWindow ? uploadIframe.contentWindow : uploadIframe.contentDocument).document.body;
+                                var json = (body.innerText) ? body.innerText : ( (body.textContent) ? body.textContent : null);
+
+                                try {
+                                    json = (typeof JSON.parse !== "undefined") ? JSON.parse(json) : eval("(" + json + ")");
+                                } catch(err) {
+                                    editormd.notify(videoLang.uploadError + " " + (json || ""), "error", 5000);
+                                    return false;
+                                }
+
+                                if (json.success === 1)
+                                {
+                                    dialog.find("[data-url]").val(json.url);
+                                }
+                                else
+                                {
+                                    editormd.notify(json.message || videoLang.uploadError, "error", 5000);
+                                }
+
+                                return false;
+                            };
+                        };
+
+                        dialog.find("[type=\"submit\"]").on("click", submitHandler).trigger("click");
+                    });
+                }
             }
 
             dialog = editor.find("." + dialogName);

@@ -5,7 +5,7 @@
  * @author      Editor.md
  * @version     1.7.0
  * @updateTime  2026-06-03
- * {@link       https://github.com/pandao/editor.md}
+ * {@link       https://github.com/zhaoxianfang/editor}
  * @license     MIT
  */
 
@@ -99,62 +99,61 @@
 
                 dialog.attr("id", classPrefix + "file-dialog-" + guid);
 
-                if (!settings.fileUpload) {
-                    return ;
-                }
+                // 上传功能仅在启用时设置，对话框始终显示
+                if (settings.fileUpload) {
+                    var fileInput  = dialog.find("[name=\"" + classPrefix + "file-file\"]");
 
-                var fileInput  = dialog.find("[name=\"" + classPrefix + "file-file\"]");
+                    fileInput.on("change", function() {
+                        var fileName  = fileInput.val();
+                        var isAllowed = new RegExp("(\\.(" + settings.fileFormats.join("|") + "))$", "i");
 
-                fileInput.on("change", function() {
-                    var fileName  = fileInput.val();
-                    var isAllowed = new RegExp("(\\.(" + settings.fileFormats.join("|") + "))$", "i");
-
-                    if (fileName === "")
-                    {
-                        editormd.notify(fileLang.uploadFileEmpty, "warning");
-                        return false;
-                    }
-
-                    if (!isAllowed.test(fileName))
-                    {
-                        editormd.notify(fileLang.formatNotAllowed + settings.fileFormats.join(", "), "warning");
-                        return false;
-                    }
-
-                    loading(true);
-
-                    var submitHandler = function() {
-                        var uploadIframe = document.getElementById(iframeName);
-
-                        uploadIframe.onload = function() {
-                            loading(false);
-
-                            var body = (uploadIframe.contentWindow ? uploadIframe.contentWindow : uploadIframe.contentDocument).document.body;
-                            var json = (body.innerText) ? body.innerText : ( (body.textContent) ? body.textContent : null);
-
-                            try {
-                                json = (typeof JSON.parse !== "undefined") ? JSON.parse(json) : eval("(" + json + ")");
-                            } catch (err) {
-                                editormd.notify(fileLang.uploadError + " " + (json || ""), "error", 5000);
-                                return false;
-                            }
-
-                            if (json.success === 1)
-                            {
-                                dialog.find("[data-url]").val(json.url);
-                                dialog.find("[data-alt]").val(json.name || "");
-                            }
-                            else
-                            {
-                                editormd.notify(json.message || fileLang.uploadError, "error", 5000);
-                            }
-
+                        if (fileName === "")
+                        {
+                            editormd.notify(fileLang.uploadFileEmpty, "warning");
                             return false;
-                        };
-                    };
+                        }
 
-                    dialog.find("[type=\"submit\"]").on("click", submitHandler).trigger("click");
-                });
+                        if (!isAllowed.test(fileName))
+                        {
+                            editormd.notify(fileLang.formatNotAllowed + settings.fileFormats.join(", "), "warning");
+                            return false;
+                        }
+
+                        loading(true);
+
+                        var submitHandler = function() {
+                            var uploadIframe = document.getElementById(iframeName);
+
+                            uploadIframe.onload = function() {
+                                loading(false);
+
+                                var body = (uploadIframe.contentWindow ? uploadIframe.contentWindow : uploadIframe.contentDocument).document.body;
+                                var json = (body.innerText) ? body.innerText : ( (body.textContent) ? body.textContent : null);
+
+                                try {
+                                    json = (typeof JSON.parse !== "undefined") ? JSON.parse(json) : eval("(" + json + ")");
+                                } catch (err) {
+                                    editormd.notify(fileLang.uploadError + " " + (json || ""), "error", 5000);
+                                    return false;
+                                }
+
+                                if (json.success === 1)
+                                {
+                                    dialog.find("[data-url]").val(json.url);
+                                    dialog.find("[data-alt]").val(json.name || "");
+                                }
+                                else
+                                {
+                                    editormd.notify(json.message || fileLang.uploadError, "error", 5000);
+                                }
+
+                                return false;
+                            };
+                        };
+
+                        dialog.find("[type=\"submit\"]").on("click", submitHandler).trigger("click");
+                    });
+                }
             }
 
             dialog = editor.find("." + dialogName);

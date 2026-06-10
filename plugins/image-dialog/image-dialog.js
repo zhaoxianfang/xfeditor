@@ -2,10 +2,10 @@
  * Image (upload) dialog plugin for Editor.md
  *
  * @file        image-dialog.js
- * @author      pandao
+ * @author zhaoxianfang
  * @version     1.3.4
  * @updateTime  2015-06-09
- * {@link       https://github.com/pandao/editor.md}
+ * {@link       https://github.com/zhaoxianfang/editor}
  * @license     MIT
  */
 
@@ -136,87 +136,86 @@
 
                 dialog.attr("id", classPrefix + "image-dialog-" + guid);
 
-				if (!settings.imageUpload) {
-                    return ;
-                }
+                // 上传功能仅在启用时设置，对话框始终显示
+                if (settings.imageUpload) {
+                    var fileInput  = dialog.find("[name=\"" + classPrefix + "image-file\"]");
 
-                var fileInput  = dialog.find("[name=\"" + classPrefix + "image-file\"]");
+                    // Paste upload support
+                    dialog.on("paste", function(e) {
+                        var items = (e.clipboardData || e.originalEvent.clipboardData).items;
+                        if (!items || items.length === 0) return;
 
-                // Paste upload support
-                dialog.on("paste", function(e) {
-                    var items = (e.clipboardData || e.originalEvent.clipboardData).items;
-                    if (!items || items.length === 0) return;
-
-                    for (var i = 0; i < items.length; i++) {
-                        if (items[i].type.indexOf("image") !== -1) {
-                            var blob = items[i].getAsFile();
-                            var fileObj = new File([blob], "pasted-image-" + Date.now() + ".png", { type: "image/png" });
-                            var dataTransfer = new DataTransfer();
-                            dataTransfer.items.add(fileObj);
-                            fileInput[0].files = dataTransfer.files;
-                            fileInput.trigger("change");
-                            e.preventDefault();
-                            return;
+                        for (var i = 0; i < items.length; i++) {
+                            if (items[i].type.indexOf("image") !== -1) {
+                                var blob = items[i].getAsFile();
+                                var fileObj = new File([blob], "pasted-image-" + Date.now() + ".png", { type: "image/png" });
+                                var dataTransfer = new DataTransfer();
+                                dataTransfer.items.add(fileObj);
+                                fileInput[0].files = dataTransfer.files;
+                                fileInput.trigger("change");
+                                e.preventDefault();
+                                return;
+                            }
                         }
-                    }
-                });
+                    });
 
-				fileInput.on("change", function() {
-					var fileName  = fileInput.val();
-					var isImage   = new RegExp("(\\.(" + settings.imageFormats.join("|") + "))$", "i"); // /(\.(webp|jpg|jpeg|gif|bmp|png))$/
+                    fileInput.on("change", function() {
+                        var fileName  = fileInput.val();
+                        var isImage   = new RegExp("(\\.(" + settings.imageFormats.join("|") + "))$", "i"); // /(\.(webp|jpg|jpeg|gif|bmp|png))$/
 
-					if (fileName === "")
-					{
-						editormd.notify(imageLang.uploadFileEmpty, "warning");
-
-                        return false;
-					}
-
-                    if (!isImage.test(fileName))
-					{
-						editormd.notify(imageLang.formatNotAllowed + settings.imageFormats.join(", "), "warning");
-
-                        return false;
-					}
-
-                    loading(true);
-
-                    var submitHandler = function() {
-
-                        var uploadIframe = document.getElementById(iframeName);
-
-                        uploadIframe.onload = function() {
-
-                            loading(false);
-
-                            var body = (uploadIframe.contentWindow ? uploadIframe.contentWindow : uploadIframe.contentDocument).document.body;
-                            var json = (body.innerText) ? body.innerText : ( (body.textContent) ? body.textContent : null);
-
-                            try {
-                                json = (typeof JSON.parse !== "undefined") ? JSON.parse(json) : eval("(" + json + ")");
-                            } catch(err) {
-                                editormd.notify("上传响应解析失败，请检查服务器返回格式。", "error", 5000);
-                                return false;
-                            }
-
-                            if(!settings.crossDomainUpload)
-                            {
-                              if (json.success === 1)
-                              {
-                                  dialog.find("[data-url]").val(json.url);
-                              }
-                              else
-                              {
-                                  editormd.notify(json.message || "上传失败，未知错误。", "error", 5000);
-                              }
-                            }
+                        if (fileName === "")
+                        {
+                            editormd.notify(imageLang.uploadFileEmpty, "warning");
 
                             return false;
-                        };
-                    };
+                        }
 
-                    dialog.find("[type=\"submit\"]").on("click", submitHandler).trigger("click");
-				});
+                        if (!isImage.test(fileName))
+                        {
+                            editormd.notify(imageLang.formatNotAllowed + settings.imageFormats.join(", "), "warning");
+
+                            return false;
+                        }
+
+                        loading(true);
+
+                        var submitHandler = function() {
+
+                            var uploadIframe = document.getElementById(iframeName);
+
+                            uploadIframe.onload = function() {
+
+                                loading(false);
+
+                                var body = (uploadIframe.contentWindow ? uploadIframe.contentWindow : uploadIframe.contentDocument).document.body;
+                                var json = (body.innerText) ? body.innerText : ( (body.textContent) ? body.textContent : null);
+
+                                try {
+                                    json = (typeof JSON.parse !== "undefined") ? JSON.parse(json) : eval("(" + json + ")");
+                                } catch(err) {
+                                    editormd.notify("上传响应解析失败，请检查服务器返回格式。", "error", 5000);
+                                    return false;
+                                }
+
+                                if(!settings.crossDomainUpload)
+                                {
+                                  if (json.success === 1)
+                                  {
+                                      dialog.find("[data-url]").val(json.url);
+                                  }
+                                  else
+                                  {
+                                      editormd.notify(json.message || "上传失败，未知错误。", "error", 5000);
+                                  }
+                                }
+
+                                return false;
+                            };
+                        };
+
+                        dialog.find("[type=\"submit\"]").on("click", submitHandler).trigger("click");
+                    });
+                }
             }
 
 			dialog = editor.find("." + dialogName);

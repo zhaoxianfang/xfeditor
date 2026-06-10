@@ -33,7 +33,7 @@
  * ### 成功响应：
  * ```json
  * {
- *   "success": true,
+ *   "success": 1,
  *   "message": "上传成功！",
  *   "url": "/examples/uploads/20240604120000_12345.jpg",
  *   "data": {
@@ -48,7 +48,7 @@
  * ### 失败响应：
  * ```json
  * {
- *   "success": false,
+ *   "success": 0,
  *   "message": "上传文件不能为空",
  *   "data": {
  *     "error_code": 4,
@@ -69,7 +69,7 @@ require_once __DIR__ . '/EditorMdUploader.php';
 
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
 
 // 处理 OPTIONS 预检请求
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -80,9 +80,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // 仅允许 POST 请求
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
+    header('Content-Type: application/json; charset=utf-8');
     echo json_encode([
-        'success' => false,
-        'message' => '仅支持 POST 请求方式',
+        'success' => 0,
+        'message' => '仅支持 POST 请求方式，当前为 ' . $_SERVER['REQUEST_METHOD'],
         'data'    => ['allowed_method' => 'POST'],
     ], JSON_UNESCAPED_UNICODE);
     exit;
@@ -91,7 +92,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // ==================== 配置 ====================
 
 // 项目根目录下的 uploads 文件夹
-$savePath = realpath(__DIR__ . '/../uploads/') . DIRECTORY_SEPARATOR;
+$uploadsDir = __DIR__ . '/../uploads/';
+if (!is_dir($uploadsDir)) {
+    @mkdir($uploadsDir, 0755, true);
+}
+$savePath = realpath($uploadsDir) . DIRECTORY_SEPARATOR;
 // 相对于站点根目录的 URL 路径
 $url      = rtrim(dirname($_SERVER['PHP_SELF']), '/') . '/';
 $saveURL  = $url . '../uploads/';
@@ -134,17 +139,17 @@ $uploadType = isset($_POST['upload_type'])
 // 如果未指定 upload_type，根据上传的文件域自动识别
 if ($uploadType === null || $uploadType === '') {
     foreach ($typeMap as $fieldName => $type) {
-        if (isset($_FILES[$fieldName]) && !empty($_FILES[$fieldName]['name'])) {
+        if (isset($_FILES[$fieldName]) && !empty($_FILES[$fieldName]['tmp_name'])) {
             $uploadType = $type;
             break;
         }
     }
 }
 
-// 如果仍然无法识别，尝试遍历所有上传文件
+// 如果仍然无法识别，遍历所有上传文件
 if ($uploadType === null) {
     foreach ($_FILES as $fieldName => $fileInfo) {
-        if (!empty($fileInfo['name'])) {
+        if (!empty($fileInfo['tmp_name'])) {
             // 根据字段名猜测类型
             if (str_contains($fieldName, 'image')) {
                 $uploadType = EditorMdUploader::TYPE_IMAGE;
@@ -153,7 +158,15 @@ if ($uploadType === null) {
             } elseif (str_contains($fieldName, 'file')) {
                 $uploadType = EditorMdUploader::TYPE_FILE;
             } else {
-                $uploadType = EditorMdUploader::TYPE_FILE;
+                // 根据扩展名猜测
+                $ext = strtolower(pathinfo((string)$fileInfo['name'], PATHINFO_EXTENSION));
+                if (in_array($ext, $allowedFormats[EditorMdUploader::TYPE_IMAGE], true)) {
+                    $uploadType = EditorMdUploader::TYPE_IMAGE;
+                } elseif (in_array($ext, $allowedFormats[EditorMdUploader::TYPE_VIDEO], true)) {
+                    $uploadType = EditorMdUploader::TYPE_VIDEO;
+                } else {
+                    $uploadType = EditorMdUploader::TYPE_FILE;
+                }
             }
             break;
         }
@@ -168,8 +181,9 @@ if ($uploadType === null) {
 // 验证上传类型是否合法
 if (!in_array($uploadType, [EditorMdUploader::TYPE_IMAGE, EditorMdUploader::TYPE_FILE, EditorMdUploader::TYPE_VIDEO], true)) {
     http_response_code(400);
+    header('Content-Type: application/json; charset=utf-8');
     echo json_encode([
-        'success' => false,
+        'success' => 0,
         'message' => '不支持的上传类型: ' . $uploadType,
         'data'    => ['allowed_types' => ['image', 'file', 'video']],
     ], JSON_UNESCAPED_UNICODE);
@@ -186,6 +200,34 @@ $formats       = $allowedFormats[$uploadType] ?? $allowedFormats[EditorMdUploade
 $customMaxSize = isset($_POST['max_size']) ? (int)$_POST['max_size'] : null;
 $maxSize       = $customMaxSize ?? $maxSizeMap[$uploadType] ?? 1024;
 
+// 检查是否启用了上传（文件域名称对应的文件必须有内容）
+$hasFile = isset($_FILES[$fileInputName]) && !empty($_FILES[$fileInputName]['tmp_name']);
+
+if (!$hasFile && $uploadType === EditorMdUploader::TYPE_IMAGE) {
+    // 对于图片上传，也尝试检查是否有其他文件域
+    foreach ($_FILES as $fName => $fInfo) {
+        if (!empty($fInfo['tmp_name'])) {
+            $fileInputName = $fName;
+            $hasFile = true;
+            break;
+        }
+    }
+}
+
+if (!$hasFile) {
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode([
+        'success' => 0,
+        'message' => '上传文件不能为空',
+        'data'    => [
+            'error_code' => UPLOAD_ERR_NO_FILE,
+            'upload_type' => $uploadType,
+            'expected_input_name' => $fileInputName,
+        ],
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 // ==================== 创建上传器并执行上传 ====================
 
 $uploader = new EditorMdUploader(
@@ -198,5 +240,5 @@ $uploader = new EditorMdUploader(
     maxSize: $maxSize,
 );
 
-// 执行上传 — 消息已在 upload() 内部通过 message() 输出
+// 执行上传
 $uploader->upload($fileInputName);

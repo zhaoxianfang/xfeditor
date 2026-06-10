@@ -2,10 +2,10 @@
  * Preformatted text dialog plugin for Editor.md
  *
  * @file        preformatted-text-dialog.js
- * @author      pandao
+ * @author zhaoxianfang
  * @version     1.2.0
  * @updateTime  2015-03-07
- * {@link       https://github.com/pandao/editor.md}
+ * {@link       https://github.com/zhaoxianfang/editor}
  * @license     MIT
  */
 

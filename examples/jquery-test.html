@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="utf-8" />
-    <title>jQuery 3.7 兼容性测试 | Editor.md</title>
+    <title>jQuery 3.7 兼容性测试 | xfEditor</title>
     <link rel="stylesheet" href="../css/editormd.min.css" />
     <style>
         body { padding: 20px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
@@ -69,7 +69,7 @@
     </div>
 
     <div class="test-section">
-        <div class="test-title">测试 5: Editor.md 初始化</div>
+        <div class="test-title">测试 5: xfEditor 初始化</div>
         <div class="editor-container">
             <div id="test-editor"></div>
         </div>
@@ -133,23 +133,23 @@
                 $('#unbind-test').html('<div class="test-result info">✅ 事件已解绑</div>');
             });
             
-            // 测试 5: Editor.md 初始化
+            // 测试 5: xfEditor 初始化
             try {
                 var editor = editormd("test-editor", {
                     width: "100%",
                     height: 300,
                     path: "../lib/",
-                    markdown: "# jQuery 3.7 兼容性测试\n\n这个编辑器使用 jQuery 3.7.1，所有功能正常工作！\n\n## 测试内容\n\n- ✅ 选择器语法\n- ✅ .on() 方法\n- ✅ .off() 方法\n- ✅ Editor.md 初始化\n\n## 代码示例\n\n```javascript\n$('a[href*='#']').on('click', handler);\n```",
+                    markdown: "# jQuery 3.7 兼容性测试\n\n这个编辑器使用 jQuery 3.7.1，所有功能正常工作！\n\n## 测试内容\n\n- ✅ 选择器语法\n- ✅ .on() 方法\n- ✅ .off() 方法\n- ✅ xfEditor 初始化\n\n## 代码示例\n\n```javascript\n$('a[href*='#']').on('click', handler);\n```",
                     onload: function() {
-                        console.log("Editor.md loaded successfully with jQuery 3.7.1");
+                        console.log("xfEditor loaded successfully with jQuery 3.7.1");
                     }
                 });
                 
                 if (editor) {
-                    $('.editor-container').prepend('<div class="test-result success">✅ Editor.md 初始化成功</div>');
+                    $('.editor-container').prepend('<div class="test-result success">✅ xfEditor 初始化成功</div>');
                 }
             } catch(e) {
-                $('.editor-container').prepend('<div class="test-result error">❌ Editor.md 初始化错误: ' + e.message + '</div>');
+                $('.editor-container').prepend('<div class="test-result error">❌ xfEditor 初始化错误: ' + e.message + '</div>');
             }
         });
     </script>

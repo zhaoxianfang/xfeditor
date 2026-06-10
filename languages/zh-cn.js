@@ -1,5 +1,5 @@
 /**
- * Editor.md 简体中文语言包
+ * xfEditor 简体中文语言包
  * 
  * @file        zh-cn.js
  * @description 简体中文 (Simplified Chinese) 语言包
@@ -78,9 +78,9 @@
                 draft            : "草稿",
                 restoreDraft     : "恢复草稿",
                 clearDraft       : "清除所有草稿",
-                draftRestoreTip  : "检测到以下自动保存的草稿，点击可恢复到编辑器：",
-                draftClearBtn    : "清除所有草稿",
-                draftCancelBtn   : "取消"
+                draftRestoreTip  : "检测到以下自动保存的草稿，点击任意草稿可恢复到编辑器：",
+                draftClearBtn    : "清除所有",
+                draftCancelBtn   : "暂不恢复"
             },
 
             buttons : {
