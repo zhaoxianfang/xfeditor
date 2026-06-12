@@ -1,6 +1,6 @@
 # xfEditor 使用指南
 
-> xfEditor v1.10.0 完整使用手册
+> xfEditor v1.12.0 完整使用手册
 
 ---
 
@@ -82,7 +82,7 @@ editormd.markdownToHTML("preview-container", {
 |------|--------|------|
 | `watch` | `true` | 实时预览 |
 | `delay` | `300` | 解析延迟 (ms) |
-| `syncScrolling` | `true` | 同步滚动 |
+| `syncScrolling` | `true` | 同步滚动 ⭐v1.12加强：自适应锁定时长、惯性检测与平滑缓动、元素类型感知留白 |
 | `previewCodeHighlight` | `true` | 预览区代码高亮 |
 
 ### 扩展语法
@@ -231,6 +231,28 @@ xfEditor 是一款开源 Markdown 编辑器...
 ![图片](url){"tooltip": "图片说明"}
 ```
 
+**图片型悬浮提示**（鼠标悬停时显示图片）：
+```markdown
+[查看 Logo](tooltip:image:../images/logo.png)
+```
+
+**iframe 型悬浮提示**（嵌入外部页面）：
+```markdown
+[查看页面](tooltip:iframe:./demo.html)
+```
+
+**复杂 HTML 悬浮提示** ⭐v1.12 新增：
+```markdown
+[查看产品卡片](tooltip:html:%3Cdiv%20style...)
+```
+
+使用 `tooltip:html:` 前缀 + URL 编码的 HTML 内容，可实现任意样式的悬浮卡片（渐变背景、按钮、列表、表格等）。HTML 内容需先通过 `encodeURIComponent()` 编码：
+```javascript
+var html = '<div class="card"><h3>标题</h3><p>内容</p></div>';
+var encoded = encodeURIComponent(html);
+var markdown = '[链接](tooltip:html:' + encoded + ')';
+```
+
 ### 8. 字帖 (`copybook: true`)
 
 **田字格**：
@@ -270,13 +292,21 @@ CO^^2^^（二氧化碳）
 log^^10^^(100) = 2
 ```
 
-**组合使用**：
+**组合上下标** `<<下标>^<上标>>`（同时显示下标和上标）⭐v1.11 新增：
 ```markdown
-U^235^^92^^（铀-235，同位素表示）
+X<<2>^<3>>（X₂³）
+U<<92>^<235>>（铀-235，92 是下标，235 是上标）
+A<<i>^<j>>（矩阵元素 Aᵢʲ）
+S<<k=1>^<n>>（求和：下标 k=1，上标 n）
+```
+
+**分别组合使用**（传统方式）：
+```markdown
+U^235^^92^^（铀-235，使用独立上下标组合）
 C^^6^^H^^12^^O^^6^^ + 6O^^2^^ → 6CO^^2^^ + 6H^^2^^O
 ```
 
-> 处理顺序：先匹配下标（双 `^^`），再匹配上标（单 `^`），避免冲突。文本长度限制 100 字符。
+> 处理顺序：先匹配组合上下标（`<<>>`），再匹配下标（双 `^^`），最后匹配上标（单 `^`），避免冲突。文本长度限制各 100 字符。
 
 ### 10. 字体大小 (`!字号 文本!`)
 
@@ -329,6 +359,7 @@ C^^6^^H^^12^^O^^6^^ + 6O^^2^^ → 6CO^^2^^ + 6H^^2^^O
 - 拖拽图片边角调整尺寸
 - 自动同步 Markdown 源码
 - 支持 Shift 等比缩放
+- ⭐v1.12 修复：精准追踪图片出现次数，拖拽第 N 个实例不会错误修改第一个
 
 ### 13. 视频和文件列表
 
@@ -407,7 +438,7 @@ https://example.com/file2.docx | 文件名2
 editor.getMarkdown();          // 获取 Markdown
 editor.setMarkdown(md);        // 设置 Markdown
 editor.getHTML();              // 获取 HTML
-editor.getPreviewHTML();       // 获取预览区 HTML
+editor.getPreviewedHTML();     // 获取预览区 HTML
 editor.getTextareaSavedHTML(); // 获取保存的 HTML
 ```
 
@@ -601,7 +632,7 @@ editor.addKeyMap({
 
 ```javascript
 // 方法1：实时获取
-var html = editor.getPreviewHTML();
+var html = editor.getPreviewedHTML();
 
 // 方法2：保存到 textarea
 editormd("editor", {
@@ -677,4 +708,4 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 ---
 
 **最后更新**: 2026-06-10
-**版本**: v1.10.0
+**版本**: v1.12.0

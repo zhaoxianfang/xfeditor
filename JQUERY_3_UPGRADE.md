@@ -67,9 +67,9 @@ $("a[href*='#']").on(clickOrTouch(), function() { ... });
 - ✅ `plugins/video-dialog/video-dialog.js`
 - ✅ `plugins/html-entities-dialog/html-entities-dialog.js`
 
-#### 示例文件 (63 个 HTML 文件)
+#### 示例文件 (71 个 HTML 文件)
 - ✅ `examples/index.html` - 主示例页面
-- ✅ `examples/full.html` - 完整功能示例
+- ✅ `examples/all-features.html` - 完整功能示例
 - ✅ `examples/simple.html` - 简单示例
 - ✅ `examples/all-features.html` - 全功能演示
 - ✅ 以及其他 59 个示例文件...

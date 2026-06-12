@@ -2,7 +2,7 @@
 <html lang="zh">
     <head>
         <meta charset="utf-8" />
-        <title>Simple example - xfEditor examples</title>
+        <title>xfEditor v1.12.0 — Simple example</title>
         <link rel="stylesheet" href="css/style.css" />
         <link rel="stylesheet" href="../css/editormd.min.css" />
         <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
@@ -10,42 +10,42 @@
     <body>
         <div id="layout">
             <header>
-                <h1>Simple example</h1>
+                <h1>Simple example — xfEditor v1.12.0</h1>
             </header>
+            <form  method="post" id="formTest">
+
+            
             <div id="test-editormd">
-                <textarea style="display:none;">[TOC]
+                <textarea style="display:none;"># xfEditor v1.12.0
 
-#### Disabled options
+## 快速入门
 
-- TeX (Based on KaTeX);
-- Task lists;
-- HTML tags decode;
-- Flowchart and Sequence Diagram;
+xfEditor 是一款功能强大的开源 Markdown 在线编辑器，支持：
 
-#### xfEditor directory
+- **实时预览** — 编辑与预览同步滚动
+- **扩展语法** — KaTeX 公式、ECharts 图表、Tabs 标签页、多列排版
+- **表格编辑** — 预览区点击表格单元格即可插入/删除行列
+- **图片缩放** — 拖拽预览区图片边角调整尺寸
+- **TOC 目录** — 自动生成文章目录导航
+- **安全防护** — XSS 过滤、HTML 标签解析控制
 
-    editor.md/
-            lib/
-            css/
-            scss/
-            tests/
-            fonts/
-            images/
-            plugins/
-            examples/
-            languages/     
-            editormd.js
-            ...
+## 代码示例
 
-```html
-&lt;!-- English --&gt;
-&lt;script src="../dist/js/languages/en.js"&gt;&lt;/script&gt;
-
-&lt;!-- 繁體中文 --&gt;
-&lt;script src="../dist/js/languages/zh-tw.js"&gt;&lt;/script&gt;
+```javascript
+// 斐波那契数列生成器
+function* fibonacci(n) {
+    let [a, b] = [0, 1];
+    for (let i = 0; i < n; i++) {
+        yield a;
+        [a, b] = [b, a + b];
+    }
+}
 ```
+
+> 提示：这是一个最简配置示例，仅启用了基础功能。要使用扩展功能（公式、图表、标签页等），请在初始化配置中添加对应选项。
 </textarea>
             </div>
+            </form>
         </div>
         <script src="js/jquery.min.js"></script>
         <script src="../editormd.min.js"></script>
@@ -71,5 +71,24 @@
                 */
             });
         </script>
+
+        <script>
+            const form = document.getElementById('formTest');
+
+            // 监听表单提交事件
+            form.addEventListener('submit', function(e) {
+                // 阻止表单默认页面跳转提交
+                e.preventDefault();
+
+                console.log('表单触发提交了');
+
+                // 快速获取表单所有数据
+                const formData = new FormData(form);
+                const data = Object.fromEntries(formData);
+                console.log('表单数据：', data);
+
+                // 在这里写ajax请求、校验逻辑等
+            });
+    </script>
     </body>
 </html>

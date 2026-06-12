@@ -662,6 +662,38 @@ hr.editormd-page-break {
         }
     }
 
+    // ★ HTML 类型 tooltip：支持复杂 HTML 内容，不限制文本颜色
+    &#{$prefix}tooltip-html {
+        max-width: 420px;
+        max-height: 360px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        background: #333;
+        color: #fff;
+        padding: 12px 14px;
+        pointer-events: auto;
+
+        #{$prefix}tooltip-html-content {
+            overflow-wrap: break-word;
+            // 允许内部元素自由样式
+            img { max-width: 100%; height: auto; }
+            table { font-size: 12px; border-collapse: collapse; width: 100%; }
+            table th, table td { border: 1px solid rgba(255,255,255,0.25); padding: 4px 8px; }
+            table th { background: rgba(255,255,255,0.1); }
+            a { color: #6db3f2; }
+            code { background: rgba(255,255,255,0.15); padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+            pre { background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px; overflow-x: auto; font-size: 12px; }
+            ul, ol { padding-left: 20px; }
+            hr { border-color: rgba(255,255,255,0.2); }
+            blockquote {
+                border-left: 3px solid rgba(255,255,255,0.3);
+                padding-left: 10px;
+                margin: 4px 0;
+                color: rgba(255,255,255,0.8);
+            }
+        }
+    }
+
     // Loading state
     #{$prefix}tooltip-loading {
         display: flex;
@@ -704,6 +736,31 @@ hr.editormd-page-break {
 #{$prefix}tooltip-arrow-bottom#{$prefix}tooltip-image #{$prefix}tooltip-arrow,
 #{$prefix}tooltip-arrow-bottom#{$prefix}tooltip-iframe #{$prefix}tooltip-arrow {
     border-top-color: #ddd;
+}
+
+// ★ 组合上下标容器：<<下标>^<上标>> → 上下标垂直堆叠、同级并列
+// sup 在上、sub 在下，均依附于左边基准字符，字号约为基准字符的 50%
+#{$prefix}supsub {
+    display: inline-block;
+    vertical-align: text-bottom;
+    font-size: 50%;
+    line-height: 1.05;
+    text-align: left;
+
+    sup, sub {
+        display: block;
+        position: relative;
+        line-height: 1.05;
+        font-size: 1em;
+    }
+
+    sup {
+        bottom: 0.1em;
+    }
+
+    sub {
+        top: 0.12em;
+    }
 }
 
 @media only print {

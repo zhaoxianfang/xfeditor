@@ -35,6 +35,30 @@
 - 支持 AMD/CMD 模块加载（Require.js / Sea.js）
 - 兼容 IE8+、iPad、Zepto.js
 
+### v1.12.0 改进
+| 特性 | 说明 |
+|------|------|
+| **同步滚动全面加强** | 自适应锁定时长（120-400ms 动态调整）；5 样本滑动窗口惯性检测；惯性阶段平滑缓动（0.4 系数）；元素类型感知留白（标题/代码块/水平线分别计算）；BLOCK_SEL 扩展至 figure/html-block 等元素 |
+| **同步滚动彻底加固** | 新增 `_lockSyncScroll()`/`_unlockSyncScroll()` 取消排队 rAF + 延迟释放锁机制；`PROGRAM_SCROLL_DEBOUNCE` 提高至 200ms；表格/图片编辑后编辑区滚动位置不跳转 |
+| **图片缩放出现次数追踪** | 修复拖拽第 N 次出现的图片时回写修改第一次出现位置的 Bug；新增 `data-image-occurrence` 属性精准定位 |
+| **复杂 HTML 悬浮提示** | 新增 `tooltip:html:<Base64URL>` 语法，支持任意复杂 HTML（渐变卡片、按钮、列表等）作为悬浮内容 |
+| **TOC 目录点击导航** | `bindScrollEvent()` 新增 TOC 链接点击事件委托，支持 ID 匹配 + 文本回退匹配，精确跳转到目标标题 |
+| **公式弹窗自动加载** | `formula()` 自动检测 KaTeX 加载状态，未加载时先 `loadKaTeX()` 再打开面板，无需手动配置 `tex: true` |
+| **组合上下标优化** | 缩小 `.editormd-supsub` 字号至 50%、调整 line-height 为 1.05、优化上标位置(bottom:0.1em)，视觉更紧凑协调 |
+| **独立 HTML 输出增强** | `getHTML()` 和 `getPreviewedHTML()` 现可生成完全自包含的 HTML（内联所有 CSS：组合上下标、脚注、字帖、KaTeX 等），无需依赖外部 CSS/JS 文件 |
+| **渲染管线优化** | `getPreviewedHTML()` 在需要内联样式/脚本时自动从 Markdown 完整重渲染，确保输出干净独立；`_getCoreStyles()` 补充脚注、字帖网格等缺失样式 |
+| **滚动位置修复** | `modifyTableInMarkdown()` 和 `modifyImageSizeInMarkdown()` 修复 `cm.setValue()` 后定时器冲突导致滚动位置二次丢失的 Bug |
+| **构建产物** | 所有 .js/.css 和 .min 版本已重新编译压缩 |
+| **示例与文档** | 全部示例文件更新至 v1.12.0；新增复杂 HTML 提示演示；代码块语法修复；缺失依赖库补全；文档全面更新 |
+
+### v1.11.0 改进
+| 特性 | 说明 |
+|------|------|
+| **组合上下标语法** | 新增 `X<<下标>^<上标>>` 语法，同时显示下标和上标（如 X₂³），比分别使用 `^^` 和 `^` 更精确简洁 |
+| **渲染管线一致性** | 修复 `getPreviewedHTML()` 缺失 `fixSmartypantsHTML`/`postProcessTaskLists`/`filterHTMLTags` 三个后处理步骤；修复 `editormd.markdownToHTML()` 缺失 `protectTeXSyntax`/`restoreTeXSyntax` TeX 保护步骤 |
+| **代码审计** | 全面审计所有正则、嵌套语法、事件绑定，确认无新增风险点 |
+| **构建产物** | 所有 .js/.css 和 .min 版本已重新编译压缩 |
+
 ### v1.10.0 改进
 | 特性 | 说明 |
 |------|------|
@@ -124,7 +148,8 @@ $(function(){
         width: "100%", height: "600px",
         path: "lib/",
         tex: true, taskList: true,
-        echarts: true, tabs: true, columns: true, tooltip: true, copybook: true
+        echarts: true, tabs: true, columns: true, tooltip: true, copybook: true,
+        pageBlock: true, superscript: true, subscript: true, fontSize: true, footnote: true
     });
 });
 </script>
@@ -161,6 +186,7 @@ var editor = editormd("editor", {
     path   : "lib/",          // 依赖库自动加载路径
     watch  : true,            // 实时预览
     tex    : true,            // 数学公式
+    pageBlock: true,          // 纸张页面
     echarts: true,            // ECharts 图表
     tabs   : true,            // Tabs 标签页
     columns: true,            // 多列排版
@@ -297,6 +323,12 @@ editor.exportFile("文档", "markdown"); // 导出文件
 | `columns` | `true` | 多列排版 |
 | `tooltip` | `true` | 悬浮提示 |
 | `copybook` | `true` | 字帖（田字格、米字格、拼音格） |
+| `pageBlock` | `true` | 纸张页面（A4/Letter等） |
+| `superscript` | `true` | 上标 ^内容^ |
+| `subscript` | `true` | 下标 ^^内容^^ |
+| `fontSize` | `true` | 字体大小 !字号 文字! |
+| `footnote` | `true` | 脚注 [^name] |
+| `previewOnly` | `false` | 纯预览模式（禁用编辑功能） |
 
 ### 草稿
 | 选项 | 默认值 | 说明 |
@@ -446,7 +478,7 @@ editor.off("onchange");
 ```markdown
 [[tabs]]
 [[tab:产品介绍]] xfEditor 是一款开源 Markdown 编辑器... [[/tab]]
-[[tab:更新日志]] ### v1.10.0 - 工具栏修复、弹窗美化、XSS 安全加固 [[/tab]]
+[[tab:更新日志]] ### v1.11.0 - 组合上下标语法、渲染管线一致性修复 ### v1.10.0 - 工具栏修复、弹窗美化、XSS 安全加固 [[/tab]]
 [[/tabs]]
 ```
 

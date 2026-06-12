@@ -1,6 +1,6 @@
 ## xfEditor 使用帮助
 
-开源在线 Markdown 编辑器，基于 [Editor.md](https://github.com/zhaoxianfang/editor) 改编而来，支持标准 Markdown 及丰富的扩展语法。
+开源在线 Markdown 编辑器 v1.12.0，基于 [Editor.md](https://github.com/zhaoxianfang/editor) 深度改进，支持标准 Markdown 及丰富的扩展语法。
 
 ---
 
@@ -49,7 +49,7 @@
 
 ---
 
-### v1.10.0 新增扩展语法
+### v1.12.0 新增扩展语法
 
 #### ⬆️ 上标与下标
 
@@ -57,6 +57,7 @@
 |------|------|------|
 | `x^2^` | x² | 上标，数学公式常用 |
 | `H^^2^^O` | H₂O | 下标，化学式专用 |
+| `X<<2>^<3>>` | X₂³ | 组合上下标，同时显示下标和上标 ⭐v1.11 |
 | `^14^^6C` | ¹⁴₆C | 同位素：上标+下标组合 |
 
 #### 🔤 字体大小
@@ -150,6 +151,31 @@
 - `[[mi]]汉字[[/mi]]` — 米字格
 - `[[pinyin]]nǐ hǎo[[/pinyin]]` — 拼音格
 
+#### 💬 悬浮提示 Tooltip
+
+| 语法 | 说明 |
+|------|------|
+| `[文本](tooltip:提示内容)` | 鼠标悬停显示文本提示 |
+| `![图片](url "tooltip:图片说明")` | 图片的悬浮说明 |
+| `[链接](tooltip:image:图片url)` | 悬停显示图片 |
+| `[链接](tooltip:iframe:页面url)` | 悬停显示嵌入式页面 |
+| `[链接](tooltip:html:Base64编码HTML)` | ⭐v1.12 新增：悬停显示自定义 HTML 卡片 |
+
+#### 🖼️ 图片尺寸编辑
+
+- `![alt](url)<宽度,高度>` — 指定图片尺寸
+- 预览区拖拽图片边角即时调整大小
+- Shift 键等比缩放
+- ⭐v1.12 修复：精准追踪图片出现次数，拖拽第 N 个实例准确定位
+
+#### 📜 同步滚动 ⭐v1.12 加强
+
+- 编辑区与预览区双向同步滚动
+- 自适应锁定时长（根据滚动速度动态调整 120-400ms）
+- 惯性检测与平滑缓动过渡
+- 元素类型感知留白（标题/代码块/水平线分别计算偏移）
+- 配置项：`syncScrolling: true`（双向）/ `"single"`（单向）/ `false`（关闭）
+
 ---
 
 ### 完整键盘快捷键
@@ -230,6 +256,10 @@
 | `superscript` | Boolean | `true` | 上标 |
 | `subscript` | Boolean | `true` | 下标 |
 | `fontSize` | Boolean | `true` | 字体大小 |
+| `imageResize` | Boolean | `true` | 图片尺寸编辑 |
+| `syncScrolling` | String | `true` | 同步滚动 (true/single/false) |
+| `watch` | Boolean | `true` | 实时预览 |
+| `htmlDecode` | Boolean/String | `false` | HTML标签解析 |
 
 ---
 

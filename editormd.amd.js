@@ -13,7 +13,9 @@
             _testPolyfill.run        = function() {};
             _testPolyfill.destroy    = function() {};
             window.test = _testPolyfill;
-        } catch(e) {}
+        } catch(e) {
+            // 静默失败：test polyfill 非关键功能
+        }
     }
     
 	// CommonJS / Node.js 模块加载
@@ -159,6 +161,30 @@
                   .replace(/"/g, "&quot;")
                   .replace(/</g, "&lt;")
                   .replace(/>/g, "&gt;");
+    };
+    
+    /**
+     * Base64 编码（UTF-8 安全），用于在 HTML 属性中存储含特殊字符的内容
+     */
+    editormd.base64Encode = function(str) {
+        if (str == null) return "";
+        try {
+            return btoa(unescape(encodeURIComponent(str)));
+        } catch(e) {
+            return "";
+        }
+    };
+
+    /**
+     * Base64 解码（UTF-8 安全）
+     */
+    editormd.base64Decode = function(b64) {
+        if (!b64) return "";
+        try {
+            return decodeURIComponent(escape(atob(b64)));
+        } catch(e) {
+            return "";
+        }
     };
     
     editormd.toolbarModes = {
@@ -1094,6 +1120,7 @@
             var editor   = this.editor;
             var count    = cm.lineCount();
             var preview  = this.preview;
+            var previewContainer = this.previewContainer;
             
             if (typeof line === "string")
             {
@@ -1136,10 +1163,13 @@
                 var cmScroll  = this.codeMirror.find(".CodeMirror-scroll")[0];
                 var height    = $(cmScroll).height(); 
                 var scrollTop = cmScroll.scrollTop;
-                var totalLines = cm.lineCount();
                 var topLine   = cm.lineAtHeight(scrollTop, "local");
-                var linePercent = totalLines > 1 ? (topLine / (totalLines - 1)) : 0;
 
+                // ★ 用 programScroll 标记，防止预览区 scroll 事件误判为用户手势
+                if (this._programScroll) {
+                    this._programScroll.preview = Date.now();
+                }
+                
                 if (scrollTop === 0)
                 {
                     preview.scrollTop(0);
@@ -1150,7 +1180,24 @@
                 } 
                 else
                 {                    
-                    preview.scrollTop(preview[0].scrollHeight * linePercent);
+                    // ★ 使用 data-source-line 映射进行精确定位
+                    var previewH = preview.height();
+                    var targetPreviewTop = null;
+                    previewContainer.find('[data-source-line]').each(function() {
+                        var sl = parseInt($(this).attr('data-source-line'), 10);
+                        if (!isNaN(sl) && sl <= topLine) {
+                            var elTop = $(this).offset().top - preview.offset().top + preview.scrollTop();
+                            targetPreviewTop = elTop;
+                        }
+                    });
+                    if (targetPreviewTop !== null) {
+                        preview.scrollTop(Math.max(0, targetPreviewTop - previewH / 3));
+                    } else {
+                        // fallback: 百分比滚动
+                        var totalLines = cm.lineCount();
+                        var linePercent = totalLines > 1 ? (topLine / (totalLines - 1)) : 0;
+                        preview.scrollTop(preview[0].scrollHeight * linePercent);
+                    }
                 }
             }
 
@@ -2014,86 +2061,243 @@
         },
         
         /**
-         * 解析TeX(KaTeX)科学公式
-         * TeX(KaTeX) Renderer
-         * 
-         * @returns {editormd}             返回editormd的实例对象
-         */
-        
-        /**
          * 构建源行号映射，为预览元素添加 data-source-line 属性
          * Build source line map for sync scrolling
+         * 
+         * @returns {editormd}
          */
         _buildSourceLineMap : function() {
             var cm = this.cm;
             var previewContainer = this.previewContainer;
             var markdown = cm.getValue();
             var lines = markdown.split('\n');
-            
-            // 为标题添加行号
-            previewContainer.find('h1, h2, h3, h4, h5, h6').each(function() {
-                var $heading = $(this);
-                var headingText = $heading.text().replace(/^#+\s*/, '').trim();
-                
-                // 在源码中查找对应的标题行
-                for (var i = 0; i < lines.length; i++) {
-                    var line = lines[i].trim();
-                    var headingMatch = line.match(/^#{1,6}\s+(.+)$/);
-                    if (headingMatch && headingMatch[1].trim() === headingText) {
-                        $heading.attr('data-source-line', i);
-                        break;
+            var i;
+
+            // ★ 辅助：去除 HTML 标签（用于匹配含内联 HTML 的源码行）
+            function _stripHtml(str) {
+                return str.replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<')
+                          .replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+            }
+
+            // ★ 辅助：规范化文本用于比较
+            function _normalize(str) {
+                return $.trim(str).replace(/\s+/g, ' ');
+            }
+
+            // ★ 自定义块级语法标记（不产生标准 HTML 块元素，跳过）
+            var CUSTOM_SYNTAX_RE = /^\[TOC\]$|^\[========\]$|^\[\[tabs\]\]$|^\[\[\/tabs\]\]$|^\[\[tab:.*\]\]$|^\[\[tab :.*\]\]$|^\[\[\/tab\]\]$|^\[\[columns:\d+\]\]$|^\[\[\/columns\]\]$|^\[\[video\]\]$|^\[\[\/video\]\]$|^\[\[file\]\]$|^\[\[\/file\]\]$|^\[\[copybook(Tian|Mi|Pinyin)\]\]$|^\[\[\/copybook(Tian|Mi|Pinyin)\]\]$/;
+
+            // ★ 预扫描：构建块起始行数组（修复：合并连续列表项为单个条目）
+            var blockStartLines = [];
+            i = 0;
+            while (i < lines.length) {
+                var line = lines[i];
+                var trimmed = $.trim(line);
+
+                // 跳过空行
+                if (trimmed === '') { i++; continue; }
+
+                // ★ 跳过自定义块级语法标记
+                if (CUSTOM_SYNTAX_RE.test(trimmed)) { i++; continue; }
+
+                // 标题（ATX 风格）
+                if (trimmed.match(/^#{1,6}\s/)) {
+                    blockStartLines.push(i);
+                    i++; continue;
+                }
+
+                // 标题（Setext 风格）
+                if (i + 1 < lines.length) {
+                    var nextTrimmed = $.trim(lines[i + 1]);
+                    if (nextTrimmed.match(/^(=+|-+)$/)) {
+                        blockStartLines.push(i);
+                        i += 2; continue;
                     }
-                    // 也匹配下划线风格的标题
-                    if (i < lines.length - 1) {
-                        var nextLine = lines[i + 1].trim();
-                        if ((nextLine.match(/^(=+)$/) && $heading.is('h1')) ||
-                            (nextLine.match(/^-+$/) && $heading.is('h2'))) {
-                            if (line === headingText) {
-                                $heading.attr('data-source-line', i);
-                                break;
-                            }
+                }
+
+                // 围栏代码块（```）
+                if (trimmed.match(/^```/)) {
+                    blockStartLines.push(i);
+                    i++;
+                    while (i < lines.length && !$.trim(lines[i]).match(/^```/)) i++;
+                    i++; // 跳过结束 ```
+                    continue;
+                }
+
+                // 表格行（以 | 开头）
+                if (trimmed.match(/^\|/)) {
+                    blockStartLines.push(i);
+                    i++;
+                    while (i < lines.length && ($.trim(lines[i]).match(/^\|/) || $.trim(lines[i]) === '')) i++;
+                    continue;
+                }
+
+                // 引用块（>）
+                if (trimmed.match(/^>/)) {
+                    blockStartLines.push(i);
+                    i++;
+                    while (i < lines.length && $.trim(lines[i]).match(/^>/)) i++;
+                    continue;
+                }
+
+                // ★ 无序列表（- * +）— 合并连续列表项为一个条目
+                if (trimmed.match(/^[-*+]\s/)) {
+                    blockStartLines.push(i);
+                    i++;
+                    // 消费整个列表组（连续列表项）
+                    while (i < lines.length) {
+                        var lt = $.trim(lines[i]);
+                        if (lt === '') break; // 空行结束当前列表组
+                        if (lt.match(/^[-*+]\s/) || lt.match(/^\d+\.\s/)) {
+                            i++; continue;   // 下一个列表项
+                        }
+                        if (lt.match(/^(---|\*\*\*|___)\s*$/) || lt.match(/^#{1,6}\s/) ||
+                            lt.match(/^```/) || lt.match(/^\|/) || lt.match(/^>/)) break;
+                        i++; // 列表项续行
+                    }
+                    continue;
+                }
+
+                // ★ 有序列表（1. 2.）— 合并连续列表项为一个条目
+                if (trimmed.match(/^\d+\.\s/)) {
+                    blockStartLines.push(i);
+                    i++;
+                    while (i < lines.length) {
+                        var lt2 = $.trim(lines[i]);
+                        if (lt2 === '') break;
+                        if (lt2.match(/^[-*+]\s/) || lt2.match(/^\d+\.\s/)) {
+                            i++; continue;
+                        }
+                        if (lt2.match(/^(---|\*\*\*|___)\s*$/) || lt2.match(/^#{1,6}\s/) ||
+                            lt2.match(/^```/) || lt2.match(/^\|/) || lt2.match(/^>/)) break;
+                        i++;
+                    }
+                    continue;
+                }
+
+                // 水平分割线（--- *** ___），但不要误匹配 Setext 下划线
+                if (trimmed.match(/^(---|\*\*\*|___)\s*$/)) {
+                    // 确保不是 Setext 风格的 === 或 ---（前一行是非标题文本）
+                    blockStartLines.push(i);
+                    i++; continue;
+                }
+
+                // ★ 段落（默认 fallback）— 跳过自定义语法标记
+                if (CUSTOM_SYNTAX_RE.test(trimmed)) { i++; continue; }
+                blockStartLines.push(i);
+                i++;
+                while (i < lines.length) {
+                    var nt2 = $.trim(lines[i]);
+                    if (nt2 === '' || nt2.match(/^#{1,6}\s/) || nt2.match(/^```/) ||
+                        nt2.match(/^\|/) || nt2.match(/^>/) ||
+                        nt2.match(/^[-*+]\s/) || nt2.match(/^\d+\.\s/) ||
+                        nt2.match(/^(---|\*\*\*|___)\s*$/) || CUSTOM_SYNTAX_RE.test(nt2)) break;
+                    i++;
+                }
+            }
+
+            // ★ 清除所有旧属性
+            previewContainer.find('[data-source-line]').removeAttr('data-source-line');
+
+            // ★ 辅助：在源码中查找标题行（修复：去除内联 HTML 标签后匹配）
+            function _findHeadingInSource(headingText, tagName) {
+                var level = parseInt(tagName.charAt(1), 10);
+                var normalizedText = _normalize(headingText);
+                if (!normalizedText) return -1;
+
+                // 精确匹配 ATX 风格
+                for (var hi = 0; hi < lines.length; hi++) {
+                    var hLine = $.trim(lines[hi]);
+                    var hMatch = hLine.match(/^#{1,6}\s+(.+)$/);
+                    if (hMatch) {
+                        var srcText = _normalize(_stripHtml(hMatch[1]));
+                        if (srcText === normalizedText) return hi;
+                    }
+                }
+                // 精确匹配 Setext 风格
+                for (var si = 0; si < lines.length - 1; si++) {
+                    var sLine = $.trim(lines[si]);
+                    var sNext = $.trim(lines[si + 1]);
+                    if ((level === 1 && sNext.match(/^=+$/)) || (level === 2 && sNext.match(/^-+$/))) {
+                        if (_normalize(_stripHtml(sLine)) === normalizedText) return si;
+                    }
+                }
+                // 模糊匹配（含内联 HTML 或脚注的标题）
+                for (var fi = 0; fi < lines.length; fi++) {
+                    var fLine = $.trim(lines[fi]);
+                    var fMatch = fLine.match(/^#{1,6}\s+(.+)$/);
+                    if (fMatch) {
+                        var srcText = _normalize(_stripHtml(fMatch[1]));
+                        if (srcText.indexOf(normalizedText) >= 0 || normalizedText.indexOf(srcText) >= 0) {
+                            return fi;
                         }
                     }
                 }
-            });
-            
-            // 为代码块添加行号
-            var codeBlockStart = -1;
-            for (var i = 0; i < lines.length; i++) {
-                if (lines[i].match(/^```/)) {
-                    if (codeBlockStart === -1) {
-                        codeBlockStart = i;
-                    } else {
-                        codeBlockStart = -1;
-                    }
-                }
+                return -1;
             }
-            
-            previewContainer.find('pre').each(function(idx) {
-                $(this).attr('data-source-line', idx * 5); // 近似行号
-            });
-            
-            // 为段落添加行号（近似）
-            previewContainer.find('p').each(function(idx) {
-                $(this).attr('data-source-line', idx * 2); // 近似行号
-            });
-            
-            // 为表格添加行号
-            previewContainer.find('table').each(function(idx) {
-                $(this).attr('data-source-line', idx * 5);
-            });
-            
-            // 为引用块添加行号
-            previewContainer.find('blockquote').each(function(idx) {
-                $(this).attr('data-source-line', idx * 3);
-            });
-            
-            // 为列表添加行号
-            previewContainer.find('ul, ol').each(function(idx) {
-                $(this).attr('data-source-line', idx * 2);
-            });
-        },
 
+            // ★ 标题使用文本匹配（修复支持内联 HTML 标签）
+            previewContainer.find('h1,h2,h3,h4,h5,h6').each(function() {
+                var $heading = $(this);
+                var headingText = $.trim($heading.text().replace(/^#+\s*/, ''));
+                if (!headingText) return;
+                var srcLine = _findHeadingInSource(headingText, $heading[0].tagName.toLowerCase());
+                if (srcLine >= 0) {
+                    $heading.attr('data-source-line', srcLine);
+                }
+            });
+
+            // ★ 标记已分配的标题行号
+            var headingLines = {};
+            previewContainer.find('h1,h2,h3,h4,h5,h6').each(function() {
+                var lineAttr = $(this).attr('data-source-line');
+                if (typeof lineAttr !== 'undefined' && lineAttr !== '') {
+                    headingLines[lineAttr] = true;
+                }
+            });
+
+            // ★ 仅匹配最外层块元素
+            var BLOCK_SELECTOR = 'p,pre,blockquote,ul,ol,table,hr';
+            var allBlockEls = previewContainer.find(BLOCK_SELECTOR);
+            var outerBlockEls = allBlockEls.filter(function() {
+                var $parent = $(this).parent();
+                while ($parent.length && $parent[0] !== previewContainer[0]) {
+                    if ($parent.is(BLOCK_SELECTOR)) return false;
+                    $parent = $parent.parent();
+                }
+                return true;
+            });
+
+            // ★ 为其余元素按顺序分配行号
+            var blockIdx = 0;
+            outerBlockEls.each(function() {
+                var $el = $(this);
+                if (typeof $el.attr('data-source-line') !== 'undefined' && $el.attr('data-source-line') !== '') return;
+
+                while (blockIdx < blockStartLines.length) {
+                    var srcLine = blockStartLines[blockIdx];
+                    blockIdx++;
+                    if (headingLines['' + srcLine]) continue;
+                    var srcLineTrimmed = lines[srcLine] ? $.trim(lines[srcLine]) : '';
+                    if (srcLineTrimmed.match(/^#{1,6}\s/)) continue;
+                    if (srcLine + 1 < lines.length && $.trim(lines[srcLine + 1]).match(/^(=+|-+)$/)) continue;
+                    $el.attr('data-source-line', srcLine);
+                    break;
+                }
+            });
+
+            // ★ 标记映射需要更新
+            this._mapNeedsUpdate = true;
+            return this;
+        },
+        
+        /**
+         * 解析TeX(KaTeX)科学公式
+         * TeX(KaTeX) Renderer
+         * 
+         * @returns {editormd}             返回editormd的实例对象
+         */
+        
         katexRender : function() {
             
             // 仅在编辑器实例尚未初始化完成且非异步回调时跳过
@@ -2167,33 +2371,64 @@
                 }
             }
                     
+            // ★ 流程图/时序图渲染后预览区内容高度可能变化，重新定位预览区滚动
+            // 使用行映射进行精确定位，而非简单百分比
             var preview    = $this.preview;
             var codeMirror = $this.codeMirror;
             var codeView   = codeMirror.find(".CodeMirror-scroll");
+            var cm         = $this.cm;
+            var previewContainer = $this.previewContainer;
 
             var height    = codeView.height();
-            var scrollTop = codeView.scrollTop();                    
-            var percent   = (scrollTop / codeView[0].scrollHeight);
-            var tocHeight = 0;
+            var scrollTop = codeView.scrollTop();
+            var scrollHeight = codeView[0].scrollHeight;
 
-            preview.find(".markdown-toc-list").each(function(){
-                tocHeight += $(this).height();
-            });
-
-            var tocMenuHeight = preview.find(".editormd-toc-menu").height(); 
-            tocMenuHeight = (!tocMenuHeight) ? 0 : tocMenuHeight;
+            // 标记为程序设置滚动，防止触发同步滚动事件造成振荡
+            if ($this._programScroll) {
+                $this._programScroll.preview = Date.now();
+            }
+            // 标记映射需要更新
+            $this._mapNeedsUpdate = true;
 
             if (scrollTop === 0) 
             {
                 preview.scrollTop(0);
             } 
-            else if (scrollTop + height >= codeView[0].scrollHeight - 16)
+            else if (scrollTop + height >= scrollHeight - 16)
             { 
                 preview.scrollTop(preview[0].scrollHeight);                        
             } 
             else
             {                  
-                preview.scrollTop((preview[0].scrollHeight + tocHeight + tocMenuHeight) * percent);
+                // 使用行映射精确定位
+                var maxScroll = Math.max(1, scrollHeight - height);
+                var cursorLine = cm.lineAtHeight ? cm.lineAtHeight(scrollTop, "local") : 0;
+                cursorLine = Math.max(0, Math.min(cm.lineCount() - 1, cursorLine));
+                var previewH = preview.height();
+
+                // 在预览中查找与光标行最匹配的元素
+                var $bestEl = null;
+                previewContainer.find('[data-source-line]').each(function() {
+                    var sl = parseInt($(this).attr('data-source-line'), 10);
+                    if (!isNaN(sl) && sl <= cursorLine) {
+                        $bestEl = $(this);
+                    }
+                });
+
+                if ($bestEl && $bestEl.length) {
+                    var targetTop = $bestEl.offset().top - preview.offset().top + preview.scrollTop();
+                    preview.scrollTop(Math.max(0, targetTop - previewH / 3));
+                } else {
+                    // fallback: 基于可用高度计算
+                    var tocHeight = 0;
+                    preview.find(".markdown-toc-list").each(function(){
+                        tocHeight += $(this).height();
+                    });
+                    var tocMenuHeight = preview.find(".editormd-toc-menu").height();
+                    tocMenuHeight = (!tocMenuHeight) ? 0 : tocMenuHeight;
+                    var scrollPct = Math.max(0, Math.min(1, scrollTop / Math.max(1, scrollHeight - height)));
+                    preview.scrollTop(Math.max(0, (preview[0].scrollHeight + tocHeight + tocMenuHeight) * scrollPct));
+                }
             }
 
             return this;
@@ -2301,181 +2536,635 @@
             if (!settings.syncScrolling || !cm) {
                 return this;
             }
-                
-            var _isSyncing = false; // 互斥锁，防止编辑区和预览区滚动事件循环触发
-            var _cachedLineMap = null; // 缓存行映射，避免每次滚动都重建
-            var _previewHash = ''; // 预览区内容哈希，用于判断是否需要重建缓存
             
-            // 构建行号到预览元素的映射（带缓存）
+            // ★ 初始化同步状态（防止重复初始化）
+            if (typeof this._tocNavBound === 'undefined') {
+                this._tocNavBound = false;
+            }
+            if (typeof this._mapNeedsUpdate === 'undefined') {
+                this._mapNeedsUpdate = false;
+            }
+            if (typeof this._programScroll === 'undefined') {
+                this._programScroll = {
+                    editor: 0,
+                    preview: 0
+                };
+            }
+            if (typeof this._rafPending === 'undefined') {
+                this._rafPending = {
+                    editor: false,
+                    preview: false
+                };
+            }
+            if (typeof this._rafIds === 'undefined') {
+                this._rafIds = { editor: null, preview: null };
+            }
+            // ★ 方向追踪 & 同步锁——解决反方向滚动和振荡问题
+            if (typeof this._syncLockedUntil === 'undefined') {
+                this._syncLockedUntil = { editor: 0, preview: 0 };
+            }
+            if (typeof this._lastScrollTop === 'undefined') {
+                this._lastScrollTop = { editor: -1, preview: -1 };
+            }
+            // ★ 独立追踪用户手动滚动位置（不被程序滚动污染）
+            if (typeof this._userScrollTop === 'undefined') {
+                this._userScrollTop = { editor: -1, preview: -1 };
+            }
+            // ★ 同步防抖：同方向连续同步的最小间隔（防止快速连续触发）
+            if (typeof this._syncDebounceUntil === 'undefined') {
+                this._syncDebounceUntil = { editor: 0, preview: 0 };
+            }
+            
+            var _programScroll    = this._programScroll;
+            var _rafPending        = this._rafPending;
+            var _rafIds            = this._rafIds;
+            var _syncLockedUntil   = this._syncLockedUntil;
+            var _lastScrollTop     = this._lastScrollTop;
+            var _userScrollTop     = this._userScrollTop;
+            var _syncDebounceUntil = this._syncDebounceUntil;
+            
+            var _cachedLineMap = null;
+            var _previewHash   = '';
+            var LOCK_DURATION  = 300;   // 同步锁基础持续时间(ms)，防止快速连续触发导致的振荡
+            var DEAD_ZONE      = 25;    // 死区基础值(px)：目标与当前差距小于此值不同步，避免微小抖动
+            var MIN_SYNC_INTERVAL = 100; // 同方向连续同步最小间隔(ms)，防止快速滚动时过度触发
+            var MAX_TOP_GAP    = 180;   // 上方留白最大值(px)，防止大视口时留白过多导致内容偏移
+            // ★ 滚动速度追踪（滑动窗口 5 样本），用于更平滑的动量死区计算 + 惯性检测
+            var _scrollVelocities = { editor: [], preview: [] };
+            var VELOCITY_WINDOW = 5;
+            var _lineMapBuilding = false; // lineMap 构建中标志，防止重入
+            var _scrollDirection = { editor: 0, preview: 0 }; // 1=向下, -1=向上, 0=静止
+            // ★ 惯性检测：追踪速度变化趋势，连续减速进入惯性阶段
+            var _inertiaCount = { editor: 0, preview: 0 };
+            
+            // ★★ 同步锁 + 防抖 + 死区检查 — 综合防止乒乓振荡
+            var lockSync = function(direction) {
+                var now = Date.now();
+                _syncLockedUntil[direction] = now + LOCK_DURATION;
+                _programScroll[direction] = now;
+            };
+            
+            // 锁定对方方向 + 同时对自己的方向做防抖（自适应锁定时长）
+            var lockBoth = function(sourceDirection) {
+                var targetDir = (sourceDirection === 'editor') ? 'preview' : 'editor';
+                var now = Date.now();
+                // ★ 自适应锁定时长：根据当前滚动速度调整
+                var velArr = _scrollVelocities[sourceDirection];
+                var avgSpeed = velArr.length > 0
+                    ? velArr.reduce(function(a, b) { return a + b; }, 0) / velArr.length
+                    : 0;
+                var adaptiveLock;
+                if (avgSpeed > 200) adaptiveLock = 400;         // 快速滚动：长锁防止振荡
+                else if (_inertiaCount[sourceDirection] >= 3) adaptiveLock = 120; // 惯性减速阶段：短锁允许交叉同步
+                else if (avgSpeed < 30) adaptiveLock = 180;     // 慢速滚动：中等锁
+                else adaptiveLock = LOCK_DURATION;               // 正常速度：标准锁
+                
+                _syncLockedUntil[targetDir] = now + adaptiveLock;
+                _programScroll[targetDir] = now;
+                _syncDebounceUntil[sourceDirection] = now + MIN_SYNC_INTERVAL;
+            };
+            
+            // 检查是否被对方锁定（对方最近触发过同步）
+            var isLocked = function(direction) {
+                return Date.now() < _syncLockedUntil[direction];
+            };
+            
+            // 检查自己是否在防抖期内（避免过于频繁地对同一方向发起同步）
+            var isDebounced = function(direction) {
+                return Date.now() < _syncDebounceUntil[direction];
+            };
+            
+            // 死区检查：目标与当前位置差距很小，不需要同步
+            var inDeadZone = function(currentPos, targetPos) {
+                return Math.abs(currentPos - targetPos) < DEAD_ZONE;
+            };
+            
+            // ★ 锁定/解锁同步滚动 — 供表格编辑、图片缩放等程序操作使用
+            this._lockSyncScroll = function() {
+                if (_rafIds.editor) { cancelAnimationFrame(_rafIds.editor); _rafIds.editor = null; }
+                if (_rafIds.preview) { cancelAnimationFrame(_rafIds.preview); _rafIds.preview = null; }
+                _rafPending.editor = true;
+                _rafPending.preview = true;
+                lockSync('editor');
+                lockSync('preview');
+            };
+            
+            this._unlockSyncScroll = function(delayMs) {
+                delayMs = delayMs || LOCK_DURATION;
+                lockSync('editor');
+                lockSync('preview');
+                setTimeout(function() {
+                    _rafPending.editor = false;
+                    _rafPending.preview = false;
+                }, delayMs);
+            };
+            
+            // ★ 构建行号到预览元素的映射（带稳定缓存 + 单调性保证 + 方向感知）
+            // ★ 扩展选择器：覆盖更多渲染后的块级容器（div/p 包装的图片、KaTeX、流程图等）
+            var BLOCK_SEL = 'h1,h2,h3,h4,h5,h6,p,pre,blockquote,ul,ol,table,hr,figure,.editormd-html-block,div.editormd-image-container,div[data-source-line]';
             var buildLineMap = function() {
-                // 快速检查预览区内容是否变化（通过高度和元素数量判断）
-                var currentHash = preview[0].scrollHeight + '|' + preview.find('h1,h2,h3,h4,h5,h6,p,pre,blockquote,ul,ol,table,hr,div[class*="editormd-"]').length;
+                // ★ 防止重入：如果正在构建，返回缓存（避免异步渲染触发重复构建）
+                if (_lineMapBuilding) {
+                    return _cachedLineMap || [];
+                }
+                _lineMapBuilding = true;
+                
+                var previewScrollHeight = preview[0].scrollHeight;
+                
+                // ★ 仅匹配最外层块元素，跳过嵌套子元素（如 blockquote 内的 p）
+                var allEls = preview.find(BLOCK_SEL);
+                var contentEls = allEls.filter(function() {
+                    var $parent = $(this).parent();
+                    while ($parent.length && $parent[0] !== preview[0]) {
+                        if ($parent.is(BLOCK_SEL)) { return false; }
+                        $parent = $parent.parent();
+                    }
+                    return true;
+                });
+                // ★ 改进缓存哈希：使用首尾内容摘要 + 行数 + 高度，更精确检测内容变化
+                var contentText = contentEls.text() || '';
+                var headDigest = contentText.substring(0, 120).replace(/\s+/g, ' ');
+                var tailDigest = contentText.substring(Math.max(0, contentText.length - 120)).replace(/\s+/g, ' ');
+                var currentHash = contentEls.length + '|' + headDigest.length + '|' + tailDigest.length + '|' + previewScrollHeight + '|' + _this._mapNeedsUpdate;
                 
                 if (_cachedLineMap && _previewHash === currentHash) {
-                    // 只需要更新 top 定位（滚动偏移可能变了）
+                    // 缓存有效，仅更新 top 定位
+                    var previewOffsetTop = preview.offset().top;
+                    var pScrollTop = preview.scrollTop();
+                    var needsRebuild = false;
                     for (var k = 0; k < _cachedLineMap.length; k++) {
-                        _cachedLineMap[k].top = _cachedLineMap[k]._el.offset().top - preview.offset().top + preview.scrollTop();
+                        var cached = _cachedLineMap[k];
+                        if (cached._el && cached._el.length) {
+                            cached.top = cached._el.offset().top - previewOffsetTop + pScrollTop;
+                            var newH = cached._el.outerHeight(true);
+                            // ★ 检测异步渲染（KaTeX/流程图）导致的高度变化 > 50%，强制重建
+                            if (cached.height > 0 && (newH > cached.height * 1.5 || newH < cached.height * 0.5)) {
+                                needsRebuild = true;
+                            }
+                            cached.height = newH;
+                        }
                     }
-                    return _cachedLineMap;
+                    // ★ 更新幽灵结束元素的 top（可能在 KaTeX/流程图渲染后变化）
+                    var lastIdx = _cachedLineMap.length - 1;
+                    if (lastIdx >= 0 && !_cachedLineMap[lastIdx]._el) {
+                        _cachedLineMap[lastIdx].top = previewScrollHeight;
+                    }
+                    // 检测到异步渲染导致的高度剧变，跳过缓存，执行完整重建
+                    if (needsRebuild) {
+                        _cachedLineMap = null;
+                    } else {
+                        _lineMapBuilding = false; // 缓存命中，清除构建标志
+                        return _cachedLineMap;
+                    }
                 }
+                
+                _this._mapNeedsUpdate = false;
                 _previewHash = currentHash;
                 
                 var lineMap = [];
+                var previewOffsetTop = preview.offset().top;
+                var pScrollTop = preview.scrollTop();
                 
-                // 遍历预览区的块级元素，找到对应的源行号
-                preview.find('h1, h2, h3, h4, h5, h6, p, pre, blockquote, ul, ol, table, hr, div[class*="editormd-"]').each(function() {
+                contentEls.each(function() {
                     var $el = $(this);
-                    var dataLine = $el.attr('data-source-line') || $el.data('sourceLine');
+                    var dataLine = $el.attr('data-source-line');
                     if (dataLine !== undefined) {
                         lineMap.push({
                             line: parseInt(dataLine, 10),
-                            top: $el.offset().top - preview.offset().top + preview.scrollTop(),
+                            top: $el.offset().top - previewOffsetTop + pScrollTop,
                             height: $el.outerHeight(true),
-                            _el: $el // 缓存 DOM 引用用于更新位置
+                            _el: $el
                         });
                     }
                 });
                 
                 // 按行号排序
                 lineMap.sort(function(a, b) { return a.line - b.line; });
+                
+                // ★ 保证 top 值单调递增（防止因 DOM 顺序与源码行号不一致导致的跳跃）
+                for (var mi = 1; mi < lineMap.length; mi++) {
+                    if (lineMap[mi].top < lineMap[mi - 1].top) {
+                        lineMap[mi].top = lineMap[mi - 1].top + 1;
+                    }
+                }
+                
+                // ★ 添加起始和结束伪元素（用 _isGhost 标记区分真实元素，line 设为 -1/超大值避免碰撞）
+                if (lineMap.length > 0) {
+                    lineMap.unshift({
+                        line: -1,                  // ★ -1 不与任何真实行号冲突
+                        top: 0,
+                        height: 0,
+                        _el: null,
+                        _isGhost: true
+                    });
+                    lineMap.push({
+                        line: 99999999,            // ★ 超大值不与真实行号冲突
+                        top: previewScrollHeight,
+                        height: 0,
+                        _el: null,
+                        _isGhost: true
+                    });
+                }
+                
                 _cachedLineMap = lineMap;
+                _lineMapBuilding = false;
                 return lineMap;
             };
             
-            var cmBindScroll = function() {    
-                codeMirror.find(".CodeMirror-scroll").on(mouseOrTouch("scroll", "touchmove"), function(event) {
-                    if (_isSyncing) return;
-                    _isSyncing = true;
+            // ★★ 编辑器滚动 → 预览区同步（rAF + 同步锁 + 防抖 + 方向保护 + 死区）
+            var editorScrollElement = codeMirror.find(".CodeMirror-scroll");
+            editorScrollElement.on(mouseOrTouch("scroll", "touchmove") + ".editormd-sync", function(event) {
+                // ★ 记录用户手动滚动位置（事件触发时立即记录，不受后续程序滚动污染）
+                _userScrollTop.editor = editorScrollElement.scrollTop();
+                
+                // ★ 被预览→编辑器同步锁锁定，跳过（防振荡）
+                if (isLocked('editor')) return;
+                // ★ 自己发起过同步且在防抖期内，跳过（避免过于频繁）
+                if (isDebounced('editor')) return;
+                if (_rafPending.editor) return;
+                if (settings.syncScrolling === "single") return;
+                
+                // ★★★ 关键：在事件处理时立即锁定对方方向，消除 rAF 调度到执行之间的时间窗口
+                lockBoth('editor');
+                
+                _rafPending.editor = true;
+                _rafIds.editor = requestAnimationFrame(function() {
+                    _rafIds.editor = null;
+                    _rafPending.editor = false;
                     
-                    var $this = $(this);
-                    var scrollTop = $this.scrollTop();
-                    var height = $this.height();
-                    var scrollHeight = $this[0].scrollHeight;
+                    var $el = editorScrollElement;
+                    var scrollTop = $el.scrollTop();
+                    var height = $el.height();
+                    var scrollHeight = $el[0].scrollHeight;
                     
-                    // 获取当前可见的中间行号
-                    var lineHeight = cm.defaultTextHeight ? cm.defaultTextHeight() : 20;
-                    var visibleTopLine = Math.floor(scrollTop / lineHeight);
-                    var visibleBottomLine = Math.ceil((scrollTop + height) / lineHeight);
-                    var centerLine = Math.floor((visibleTopLine + visibleBottomLine) / 2);
+                    // ★ 使用独立追踪的用户滚动位置做方向检测
+                    var prevUserEditorTop = _userScrollTop.editor;
+                    var scrollingDown = (prevUserEditorTop >= 0 && scrollTop > prevUserEditorTop + 0.5);
+                    var scrollingUp   = (prevUserEditorTop >= 0 && scrollTop < prevUserEditorTop - 0.5);
                     
-                    // 使用百分比作为基础，但根据行号进行微调
+                    // ★ 惯性检测：连续减速 2+ 帧认为是惯性阶段
+                    var edDelta = Math.abs(scrollTop - _lastScrollTop.editor);
+                    var prevVel = _scrollVelocities.editor.length > 0 ? _scrollVelocities.editor[_scrollVelocities.editor.length - 1] : 0;
+                    _scrollVelocities.editor.push(edDelta);
+                    if (_scrollVelocities.editor.length > VELOCITY_WINDOW) _scrollVelocities.editor.shift();
+                    if (prevVel > 1 && edDelta < prevVel * 0.85) {
+                        _inertiaCount.editor++;
+                    } else if (edDelta > prevVel * 1.05 || edDelta < 0.5) {
+                        _inertiaCount.editor = 0;
+                    }
+                    _lastScrollTop.editor = scrollTop;
+                    _scrollDirection.editor = scrollingDown ? 1 : (scrollingUp ? -1 : 0);
+                    
+                    // 计算滚动百分比（稳定基线）
                     var maxScroll = Math.max(1, scrollHeight - height);
                     var scrollPercent = Math.min(1, Math.max(0, scrollTop / maxScroll));
                     
-                    // 计算预览区目标位置
                     var previewScrollHeight = preview[0].scrollHeight;
                     var previewH = preview.height();
                     var previewMaxScroll = Math.max(1, previewScrollHeight - previewH);
                     var baseTargetScroll = scrollPercent * previewMaxScroll;
                     
-                    // 尝试找到对应的预览元素
+                    var currentPreviewTop = preview.scrollTop();
+                    
+                    // ★★ 边界短路径：顶部/底部 3% 直接使用百分比基线（避免幽灵元素/空映射干扰）
+                    if (scrollPercent < 0.03 || scrollPercent > 0.97) {
+                        if (!inDeadZone(currentPreviewTop, baseTargetScroll)) {
+                            preview.scrollTop(scrollPercent < 0.03 ? 0 : previewMaxScroll);
+                        }
+                        return;
+                    }
+                    
+                    // ★ 动量感知死区：基于滑动窗口平均速度 + 惯性阶段缩小死区
+                    var avgEdVel = _scrollVelocities.editor.reduce(function(a, b) { return a + b; }, 0) / (_scrollVelocities.editor.length || 1);
+                    var deadZoneMultiplier = _inertiaCount.editor >= 3 ? 0.15 : 0.3; // 惯性阶段缩小死区
+                    var adaptiveDeadZone = DEAD_ZONE + Math.min(avgEdVel * deadZoneMultiplier, 60);
+                    var _inAdaptiveDeadZone = function(cp, tp) { return Math.abs(cp - tp) < adaptiveDeadZone; };
+                    
+                    // 通过行映射找到对应的预览元素进行精确对齐
                     var lineMap = buildLineMap();
                     var targetScroll = baseTargetScroll;
                     
-                    // 找到最接近当前行号的预览元素
-                    for (var i = 0; i < lineMap.length; i++) {
-                        if (lineMap[i].line <= centerLine && (i === lineMap.length - 1 || lineMap[i + 1].line > centerLine)) {
-                            var elTop = lineMap[i].top;
-                            var elHeight = lineMap[i].height;
-                            // 将元素滚动到预览区中间
-                            targetScroll = Math.max(0, elTop - previewH / 3);
-                            break;
+                    if (lineMap.length > 0) {
+                        // ★ 使用 CodeMirror 的 lineAtHeight 精确获取可视区顶部对应的行号
+                        var cursorLine = cm.lineAtHeight ? cm.lineAtHeight(scrollTop, "local") : Math.round(scrollPercent * (cm.lineCount() - 1));
+                        cursorLine = Math.max(0, Math.min(cm.lineCount() - 1, cursorLine));
+                        
+                        // 二分查找最合适的元素（最后一个 line <= cursorLine）
+                        var lo = 0, hi = lineMap.length - 1;
+                        while (lo < hi) {
+                            var mid = Math.floor((lo + hi + 1) / 2);
+                            if (lineMap[mid].line <= cursorLine) {
+                                lo = mid;
+                            } else {
+                                hi = mid - 1;
+                            }
                         }
+                        
+                        // ★ 如果找到的 lo 是幽灵元素，跳过
+                        var elA = lineMap[lo];
+                        if (elA._isGhost && lo > 0) { elA = lineMap[lo - 1]; lo = lo - 1; }
+                        
+                        // 插值调整
+                        var elB = (lo + 1 < lineMap.length) ? lineMap[lo + 1] : null;
+                        if (elB && elB._isGhost) { elB = null; }  // 排除幽灵元素
+                        
+                        if (elB && elB.line > elA.line && elB.top > elA.top) {
+                            var lineFraction = (cursorLine - elA.line) / (elB.line - elA.line);
+                            targetScroll = elA.top + (elB.top - elA.top) * lineFraction;
+                        } else {
+                            targetScroll = elA.top;
+                        }
+                        // ★ 智能留白：根据元素类型计算不同留白量
+                        var topGap;
+                        if (elA._el && elA._el.length) {
+                            var tagName = (elA._el[0].tagName || '').toLowerCase();
+                            if (/^h[1-6]$/.test(tagName)) {
+                                topGap = Math.min(previewH * 0.12, 80);   // 标题：较小留白，避免割裂上下文
+                            } else if (tagName === 'pre') {
+                                topGap = Math.min(previewH * 0.18, 120);  // 代码块：中等留白
+                            } else if (tagName === 'hr') {
+                                topGap = Math.min(previewH * 0.1, 60);    // 分割线：小留白
+                            } else {
+                                topGap = Math.min(previewH * 0.25, MAX_TOP_GAP); // 段落等：标准留白
+                            }
+                        } else {
+                            topGap = Math.min(previewH * 0.25, MAX_TOP_GAP);
+                        }
+                        targetScroll = Math.max(0, targetScroll - topGap);
                     }
                     
-                    if (scrollTop <= 0) {
+                    // ★★★ 合理性校验：若 lineMap 目标与百分比基线偏离超过 60%，使用百分比基线（防止映射错误）
+                    var maxDeviation = Math.max(baseTargetScroll * 0.6, previewH);
+                    if (Math.abs(targetScroll - baseTargetScroll) > maxDeviation && baseTargetScroll > previewH * 0.1) {
+                        targetScroll = baseTargetScroll;
+                    }
+                    
+                    // ★ 对称方向保护
+                    if (scrollingDown && targetScroll < currentPreviewTop * 0.8) {
+                        // 向下滚动时不回退超过 20%
+                        targetScroll = Math.max(targetScroll, currentPreviewTop * 0.8);
+                    }
+                    if (scrollingUp && targetScroll > currentPreviewTop * 1.25) {
+                        // 向上滚动时不超前超过 25%
+                        targetScroll = Math.min(targetScroll, currentPreviewTop * 1.25);
+                    }
+                    
+                    // ★ 动量感知死区检查：目标与当前位置差距很小时跳过同步
+                    if (_inAdaptiveDeadZone(currentPreviewTop, targetScroll)) {
+                        return;
+                    }
+                    
+                    // ★ 惯性阶段使用缓动平滑过渡（避免突兀跳动），非惯性直接跳转
+                    if (_inertiaCount.editor >= 2 && Math.abs(targetScroll - currentPreviewTop) < previewH * 0.5) {
+                        var easedScroll = currentPreviewTop + (targetScroll - currentPreviewTop) * 0.4;
+                        preview.scrollTop(Math.max(0, Math.min(easedScroll, previewMaxScroll)));
+                    } else if (scrollTop <= 0) {
                         preview.scrollTop(0);
-                    } else if (scrollTop + height >= scrollHeight - 16) {
+                    } else if (scrollTop + height >= scrollHeight - 10) {
                         preview.scrollTop(previewScrollHeight);
                     } else {
-                        preview.scrollTop(targetScroll);
+                        preview.scrollTop(Math.min(targetScroll, previewMaxScroll));
                     }
                     
                     settings.onscroll.call(_this, event);
-                    
-                    setTimeout(function() { _isSyncing = false; }, 50);
                 });
-            };
+            });
 
-            var cmUnbindScroll = function() {
-                codeMirror.find(".CodeMirror-scroll").off(mouseOrTouch("scroll", "touchmove"));
-            };
-
-            var previewBindScroll = function() {
+            // ★★ 预览区滚动 → 编辑器同步（rAF + 同步锁 + 防抖 + 方向保护 + 死区）
+            preview.on(mouseOrTouch("scroll", "touchmove") + ".editormd-sync", function(event) {
+                // ★ 记录用户手动滚动位置（事件触发时立即记录）
+                _userScrollTop.preview = preview.scrollTop();
                 
-                preview.on(mouseOrTouch("scroll", "touchmove"), function(event) {
-                    if (_isSyncing) return;
-                    _isSyncing = true;
+                // ★ 被编辑器→预览同步锁锁定，跳过（防振荡）
+                if (isLocked('preview')) return;
+                // ★ 自己发起过同步且在防抖期内，跳过
+                if (isDebounced('preview')) return;
+                if (_rafPending.preview) return;
+                
+                // ★★★ 在事件处理时立即锁定对方方向
+                lockBoth('preview');
+                
+                _rafPending.preview = true;
+                _rafIds.preview = requestAnimationFrame(function() {
+                    _rafIds.preview = null;
+                    _rafPending.preview = false;
                     
-                    var $this = $(this);
+                    var $this = preview;
                     var scrollTop = $this.scrollTop();
                     var height = $this.height();
                     var previewScrollHeight = $this[0].scrollHeight;
                     var codeView = codeMirror.find(".CodeMirror-scroll");
                     
-                    // 计算预览区滚动百分比
+                    // ★ 使用独立追踪的用户滚动位置做方向检测 + 惯性检测
+                    var prevUserPreviewTop = _userScrollTop.preview;
+                    var scrollingDown = (prevUserPreviewTop >= 0 && scrollTop > prevUserPreviewTop + 0.5);
+                    var scrollingUp   = (prevUserPreviewTop >= 0 && scrollTop < prevUserPreviewTop - 0.5);
+                    
+                    var prDelta = Math.abs(scrollTop - _lastScrollTop.preview);
+                    var prevVel = _scrollVelocities.preview.length > 0 ? _scrollVelocities.preview[_scrollVelocities.preview.length - 1] : 0;
+                    _scrollVelocities.preview.push(prDelta);
+                    if (_scrollVelocities.preview.length > VELOCITY_WINDOW) _scrollVelocities.preview.shift();
+                    if (prevVel > 1 && prDelta < prevVel * 0.85) {
+                        _inertiaCount.preview++;
+                    } else if (prDelta > prevVel * 1.05 || prDelta < 0.5) {
+                        _inertiaCount.preview = 0;
+                    }
+                    _lastScrollTop.preview = scrollTop;
+                    _scrollDirection.preview = scrollingDown ? 1 : (scrollingUp ? -1 : 0);
+                    
+                    // 计算预览区滚动百分比（稳定基线）
                     var maxPreviewScroll = Math.max(1, previewScrollHeight - height);
                     var scrollPercent = Math.min(1, Math.max(0, scrollTop / maxPreviewScroll));
                     
-                    // 映射到编辑器
                     var codeScrollHeight = codeView[0].scrollHeight;
                     var codeViewHeight = codeView.height();
                     var maxCodeScroll = Math.max(1, codeScrollHeight - codeViewHeight);
-                    var targetScrollTop = scrollPercent * maxCodeScroll;
+                    var baseTargetScroll = scrollPercent * maxCodeScroll;
+                    var targetScrollTop = baseTargetScroll;
                     
-                    // 尝试根据可见的预览元素找到对应的编辑器行
+                    var currentEditorTop = codeView.scrollTop();
+                    
+                    // ★★ 边界短路径：顶部/底部 3% 直接使用百分比基线（避免幽灵元素/空映射干扰）
+                    if (scrollPercent < 0.03 || scrollPercent > 0.97) {
+                        if (!inDeadZone(currentEditorTop, baseTargetScroll)) {
+                            codeView.scrollTop(scrollPercent < 0.03 ? 0 : maxCodeScroll);
+                        }
+                        return;
+                    }
+                    
+                    // ★ 动量感知死区：基于已追踪的滑动窗口速度 + 惯性阶段缩小死区
+                    var avgPrVel = _scrollVelocities.preview.reduce(function(a, b) { return a + b; }, 0) / (_scrollVelocities.preview.length || 1);
+                    var deadZoneMultiplier2 = _inertiaCount.preview >= 3 ? 0.15 : 0.3;
+                    var adaptiveDeadZone2 = DEAD_ZONE + Math.min(avgPrVel * deadZoneMultiplier2, 60);
+                    var _inAdaptiveDeadZone2 = function(cp, tp) { return Math.abs(cp - tp) < adaptiveDeadZone2; };
+                    
+                    // ★ 通过 lineMap 找到离视口中心最近的元素，精确定位编辑器行
                     var lineMap = buildLineMap();
-                    var previewOffset = preview.offset().top;
                     
-                    // 找到当前在预览区中间可见的元素
-                    var viewportCenter = scrollTop + height / 2;
-                    for (var i = 0; i < lineMap.length; i++) {
-                        var elCenter = lineMap[i].top + lineMap[i].height / 2;
-                        if (elCenter >= viewportCenter - 50 && elCenter <= viewportCenter + 50) {
-                            // 找到对应的编辑器行
-                            var targetLine = lineMap[i].line;
-                            var lineTop = cm.heightAtLine ? cm.heightAtLine(targetLine, 'local') : targetLine * (cm.defaultTextHeight ? cm.defaultTextHeight() : 20);
-                            targetScrollTop = Math.max(0, lineTop - codeViewHeight / 3);
-                            break;
+                    if (lineMap.length > 0) {
+                        var viewportCenter = scrollTop + height / 2;
+                        
+                        // 二分查找定位到 viewportCenter 附近的索引（第一个 top >= viewportCenter）
+                        var lo = 0, hi = lineMap.length - 1;
+                        while (lo < hi) {
+                            var mid = Math.floor((lo + hi) / 2);
+                            if (lineMap[mid].top < viewportCenter) {
+                                lo = mid + 1;
+                            } else {
+                                hi = mid;
+                            }
+                        }
+                        
+                        // 取 lo-1, lo, lo+1 中距离 viewportCenter 最近的（排除幽灵元素）
+                        var bestIdx = lo;
+                        var bestDist = Infinity;
+                        for (var di = -1; di <= 1; di++) {
+                            var idx = lo + di;
+                            if (idx >= 0 && idx < lineMap.length && lineMap[idx]._el && !lineMap[idx]._isGhost) {
+                                var elCenter = lineMap[idx].top + lineMap[idx].height / 2;
+                                var dist = Math.abs(elCenter - viewportCenter);
+                                if (dist < bestDist) {
+                                    bestDist = dist;
+                                    bestIdx = idx;
+                                }
+                            }
+                        }
+                        // 如果没找到真实元素，回退到 lo（确保不是幽灵元素）
+                        if (bestDist === Infinity) {
+                            bestIdx = lo;
+                            // 跳过幽灵元素
+                            if (lineMap[bestIdx]._isGhost) {
+                                bestIdx = Math.min(lineMap.length - 2, Math.max(1, lo));
+                            }
+                        }
+                        
+                        // 插值：在 bestIdx 和 bestIdx+1 之间按 top 比例计算行号
+                        var elA = lineMap[bestIdx];
+                        var elB = (bestIdx + 1 < lineMap.length) ? lineMap[bestIdx + 1] : null;
+                        if (elB && elB._isGhost) { elB = null; }
+                        
+                        if (elB && elB.top > elA.top && elB.line > elA.line) {
+                            var topFraction = (viewportCenter - elA.top) / (elB.top - elA.top);
+                            var interpolatedLine = elA.line + (elB.line - elA.line) * topFraction;
+                            interpolatedLine = Math.max(0, Math.min(cm.lineCount() - 1, Math.round(interpolatedLine)));
+                            
+                            var lineTop = cm.heightAtLine 
+                                ? cm.heightAtLine(interpolatedLine, 'local') 
+                                : interpolatedLine * (cm.defaultTextHeight ? cm.defaultTextHeight() : 20);
+                            // ★ 智能编辑器留白：基于对应预览元素类型
+                            var editorGap2;
+                            if (elA._el && elA._el.length) {
+                                var tag = (elA._el[0].tagName || '').toLowerCase();
+                                if (/^h[1-6]$/.test(tag)) editorGap2 = Math.min(codeViewHeight * 0.12, 80);
+                                else if (tag === 'pre') editorGap2 = Math.min(codeViewHeight * 0.18, 120);
+                                else editorGap2 = Math.min(codeViewHeight * 0.25, MAX_TOP_GAP);
+                            } else {
+                                editorGap2 = Math.min(codeViewHeight * 0.25, MAX_TOP_GAP);
+                            }
+                            targetScrollTop = Math.max(0, lineTop - editorGap2);
+                        } else {
+                            var lineTop2 = cm.heightAtLine 
+                                ? cm.heightAtLine(elA.line, 'local') 
+                                : elA.line * (cm.defaultTextHeight ? cm.defaultTextHeight() : 20);
+                            var editorGap3;
+                            if (elA._el && elA._el.length) {
+                                var tag2 = (elA._el[0].tagName || '').toLowerCase();
+                                if (/^h[1-6]$/.test(tag2)) editorGap3 = Math.min(codeViewHeight * 0.12, 80);
+                                else if (tag2 === 'pre') editorGap3 = Math.min(codeViewHeight * 0.18, 120);
+                                else editorGap3 = Math.min(codeViewHeight * 0.25, MAX_TOP_GAP);
+                            } else {
+                                editorGap3 = Math.min(codeViewHeight * 0.25, MAX_TOP_GAP);
+                            }
+                            targetScrollTop = Math.max(0, lineTop2 - editorGap3);
                         }
                     }
                     
-                    if (scrollTop <= 0) {
+                    // ★★★ 合理性校验：lineMap 目标与百分比基线偏离超过 60% 时使用百分比基线
+                    if (Math.abs(targetScrollTop - baseTargetScroll) > Math.max(codeViewHeight, baseTargetScroll * 0.6) && baseTargetScroll > codeViewHeight * 0.1) {
+                        targetScrollTop = baseTargetScroll;
+                    }
+                    
+                    // ★ 对称方向保护
+                    if (scrollingDown && targetScrollTop < currentEditorTop * 0.8) {
+                        targetScrollTop = Math.max(targetScrollTop, currentEditorTop * 0.8);
+                    }
+                    if (scrollingUp && targetScrollTop > currentEditorTop * 1.25) {
+                        targetScrollTop = Math.min(targetScrollTop, currentEditorTop * 1.25);
+                    }
+                    
+                    // ★ 动量感知死区检查
+                    if (_inAdaptiveDeadZone2(currentEditorTop, targetScrollTop)) {
+                        return;
+                    }
+                    
+                    // ★ 惯性阶段使用缓动平滑过渡（避免突兀跳动），非惯性直接跳转
+                    if (_inertiaCount.preview >= 2 && Math.abs(targetScrollTop - currentEditorTop) < codeViewHeight * 0.5) {
+                        var easedScroll2 = currentEditorTop + (targetScrollTop - currentEditorTop) * 0.4;
+                        codeView.scrollTop(Math.max(0, Math.min(easedScroll2, maxCodeScroll)));
+                    } else if (scrollTop <= 0) {
                         codeView.scrollTop(0);
-                    } else if (scrollTop + height >= previewScrollHeight - 16) {
+                    } else if (scrollTop + height >= previewScrollHeight - 10) {
                         codeView.scrollTop(codeScrollHeight);
                     } else {
-                        codeView.scrollTop(targetScrollTop);
+                        codeView.scrollTop(Math.min(targetScrollTop, maxCodeScroll));
                     }
                     
                     settings.onpreviewscroll.call(_this, event);
-                    
-                    setTimeout(function() { _isSyncing = false; }, 50);
                 });
+            });
 
-            };
-
-            var previewUnbindScroll = function() {
-                preview.off(mouseOrTouch("scroll", "touchmove"));
-            }; 
-
-			codeMirror.on({
-				mouseover  : cmBindScroll,
-				mouseout   : cmUnbindScroll,
-				touchstart : cmBindScroll,
-				touchend   : cmUnbindScroll
-			});
-            
-            if (settings.syncScrolling === "single") {
-                return this;
+            // ★ TOC 目录点击跳转——使用事件委托绑定在 preview 容器上
+            if (settings.toc && !_this._tocNavBound) {
+                _this._tocNavBound = true;
+                preview.on("click.toc-nav", ".markdown-toc-list a", function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var href = $(this).attr("href");
+                    if (!href || href.charAt(0) !== '#') return;
+                    
+                    // 查找目标标题元素
+                    var targetId = href.substring(1);
+                    var escapedId = targetId.replace(/[!"#$%&'()*+,./:;<=>?@[\\\]^`{|}~]/g, '\\$&');
+                    var targetEl = preview.find('#' + escapedId);
+                    
+                    // 如果按 ID 找不到，尝试按链接文本匹配
+                    if (!targetEl.length) {
+                        var linkText = $.trim($(this).text());
+                        preview.find('h1,h2,h3,h4,h5,h6').each(function() {
+                            if ($.trim($(this).text()) === linkText) {
+                                targetEl = $(this);
+                                return false;
+                            }
+                        });
+                    }
+                    
+                    if (targetEl.length) {
+                        var targetTop = targetEl.offset().top - preview.offset().top + preview.scrollTop();
+                        _programScroll.preview = Date.now();
+                        preview.scrollTop(Math.max(0, targetTop - 20));
+                        // ★ 同步更新编辑器位置：根据 data-source-line 滚动到对应源码行
+                        if (cm && settings.syncScrolling) {
+                            var srcLine = targetEl.attr('data-source-line');
+                            if (srcLine !== undefined && srcLine !== null) {
+                                srcLine = parseInt(srcLine, 10);
+                                if (!isNaN(srcLine) && srcLine >= 0 && srcLine < cm.lineCount()) {
+                                    _programScroll.editor = Date.now();
+                                    cm.scrollIntoView({line: srcLine, ch: 0}, 100);
+                                    try {
+                                        var lineTop = cm.heightAtLine ? cm.heightAtLine(srcLine, 'local') : srcLine * 20;
+                                        var cv = codeMirror.find('.CodeMirror-scroll');
+                                        if (cv.length) {
+                                            var cvH = cv.height();
+                                            _programScroll.editor = Date.now();
+                                            cv.scrollTop(Math.max(0, lineTop - cvH / 3));
+                                        }
+                                    } catch(ex) {}
+                                }
+                            }
+                        }
+                    }
+                });
             }
-            
-			preview.on({
-				mouseover  : previewBindScroll,
-				mouseout   : previewUnbindScroll,
-				touchstart : previewBindScroll,
-				touchend   : previewUnbindScroll
-			});
 
             return this;
         },
@@ -2497,6 +3186,9 @@
                 {
                     _this.previewContainer.css("padding", settings.autoHeight ? "20px 20px 50px 40px" : "20px");
                 }
+                
+                // ★ 标记行映射需要重建（内容已变更）
+                _this._mapNeedsUpdate = true;
                 
                 _this.timer = setTimeout(function() {
                     clearTimeout(_this.timer);
@@ -2854,13 +3546,13 @@
             if(settings.watch || (!settings.watch && state.preview))
             {
                 previewContainer.html(newMarkdownDoc);
+
+                this.previewCodeHighlight();
                 
-                // 为预览元素添加源行号映射，用于同步滚动
+                // ★ 为预览元素添加源行号映射，用于同步滚动精确定位
                 if (settings.syncScrolling) {
                     this._buildSourceLineMap();
                 }
-
-                this.previewCodeHighlight();
                 
                 if (settings.toc) 
                 {
@@ -3298,15 +3990,27 @@
                 $wrapper.data("table-end", tableStart + tableLines.length - 1);
             }
             
+            // ★ 先清除旧的防抖定时器，防止 cm.setValue() 触发的 change 事件在 delay 后再次 save() 导致滚动位置二次丢失
+            if (this.timer && this.timer !== 0) { clearTimeout(this.timer); this.timer = null; }
+            
             var cursor = cm.getCursor();
             var editorScroll = cm.getScrollInfo();
             var previewScroll = this.preview.scrollTop();
+            
             cm.setValue(lines.join("\n"));
+            
+            // ★ setValue() 会同步触发 change 事件→change handler 会设置新的 timer，立即再次清除
+            if (this.timer && this.timer !== 0) { clearTimeout(this.timer); this.timer = null; }
+            
             cm.setCursor(Math.min(cursor.line, lines.length - 1), cursor.ch);
+            
             cm.scrollTo(editorScroll.left, editorScroll.top);
             this.timer = 0;
+            
             this.save();
+            
             this.preview.scrollTop(previewScroll);
+            this.timer = null; // ★ 恢复正常状态，下个用户输入可以正常触发防抖
             
             this.settings.ontablechange.call(this, action, rowIndex, colIndex);
         },
@@ -3319,6 +4023,9 @@
             var previewContainer = this.previewContainer;
             var cm = this.cm;
             
+            // ★ 建立 src 出现次数计数，用于区分同名图片的多次出现
+            var srcOccurrenceCounter = {};
+            
             previewContainer.find("img").each(function() {
                 var $img = $(this);
                 if ($img.hasClass("editormd-img-resizable")) {
@@ -3326,9 +4033,19 @@
                 }
                 $img.addClass("editormd-img-resizable");
                 
+                // ★ 计算该 src 的第几次出现（1-based），用于精准定位 Markdown 源中对应的图片语法
+                var imgSrc = $img.attr("src") || "";
+                var cleanSrc = imgSrc.replace(/\s*=\s*\d+x\d+/, "").trim();
+                var srcKey = cleanSrc;
+                srcOccurrenceCounter[srcKey] = (srcOccurrenceCounter[srcKey] || 0) + 1;
+                var occurrence = srcOccurrenceCounter[srcKey];
+                
                 var $wrapper = $('<div class="editormd-img-wrapper" style="display:inline-block;position:relative;"></div>');
                 $img.wrap($wrapper);
                 $wrapper = $img.parent();
+                // ★ 在 wrapper 上记录出现序号，供事件回调精确使用
+                $wrapper.attr("data-image-occurrence", occurrence);
+                $wrapper.attr("data-image-src", srcKey);
                 
                 // 添加缩放拖拽手柄
                 var handle = $('<div class="editormd-img-resize-handle" title="拖拽调整尺寸"></div>');
@@ -3369,7 +4086,9 @@
                     var finalWidth = Math.round($img.width());
                     var finalHeight = Math.round($img.height());
                     
-                    _this.modifyImageSizeInMarkdown($img.attr("src"), $img.attr("alt"), finalWidth, finalHeight);
+                    // ★ 从 wrapper 上读取出现序号和 srcKey，精准定位
+                    var occIdx = parseInt($wrapper.attr("data-image-occurrence"), 10) || 1;
+                    _this.modifyImageSizeInMarkdown(imgSrc, $img.attr("alt"), finalWidth, finalHeight, occIdx);
                 });
                 
                 // 双击图片可编辑尺寸
@@ -3380,7 +4099,8 @@
                     var newWidth = prompt("输入宽度 (px):", currentWidth);
                     var newHeight = prompt("输入高度 (px):", currentHeight);
                     if (newWidth !== null && newHeight !== null) {
-                        _this.modifyImageSizeInMarkdown($img.attr("src"), $img.attr("alt"), parseInt(newWidth) || currentWidth, parseInt(newHeight) || currentHeight);
+                        var occIdx2 = parseInt($wrapper.attr("data-image-occurrence"), 10) || 1;
+                        _this.modifyImageSizeInMarkdown(imgSrc, $img.attr("alt"), parseInt(newWidth) || currentWidth, parseInt(newHeight) || currentHeight, occIdx2);
                     }
                 });
             });
@@ -3388,30 +4108,83 @@
         
         /**
          * Modify image size in markdown source
+         * @param {string} src        - 图片 URL
+         * @param {string} alt        - 图片 alt 文本
+         * @param {number} width      - 目标宽度 (px)
+         * @param {number} height     - 目标高度 (px)
+         * @param {number} occurrence - 该 src 的第几次出现（1-based），用于精确匹配同名多图
          */
-        modifyImageSizeInMarkdown : function(src, alt, width, height) {
+        modifyImageSizeInMarkdown : function(src, alt, width, height, occurrence) {
+            // ★ 标记 lineMap 需要重建（内容即将变更）
+            this._mapNeedsUpdate = true;
+            
             var cm = this.cm;
             var markdown = cm.getValue();
             var sizeStr = "<" + width + "," + height + ">";
+            occurrence = occurrence || 1;  // 默认第一次出现，向后兼容
 
-            // 查找并替换图片 Markdown，更新为新的 <宽,高> 语法
-            var imgRegex = /!\[([^\]]*)\]\(([^)]+)\)(?:<(\d+),\s*(\d+)>)?/g;
-            var newMarkdown = markdown.replace(imgRegex, function(match, mAlt, mSrc, mW, mH) {
-                var mUrl = mSrc.replace(/\s*=\s*\d+x\d+/, "").trim();
-                if (mUrl === src || mUrl === src.replace(/\s*=\s*\d+x\d+/, "").trim()) {
-                    return "![" + (alt || mAlt) + "](" + mUrl + ")" + sizeStr;
+            // ★ 使用 matchCount 追踪当前匹配到第几次，仅替换第 occurrence 次
+            // 正则说明：匹配 ![alt](url "title")<W,H> 或 ![alt](url)<W,H> 或 ![alt](url)
+            // - [^\]]* 匹配 alt 文本
+            // - ([^)\s]+) 匹配 URL（不含空格和右括号）
+            // - (?:\s+"[^"]*")? 可选匹配标题部分
+            // - (?:<(\d+),\s*(\d+)>)? 可选匹配尺寸后缀
+            
+            // ★ URL 匹配辅助函数：处理相对路径、绝对路径、浏览器解析后的 URL
+            var urlMatches = function(mUrl, srcUrl) {
+                // 去除尺寸后缀和查询参数
+                var clean1 = mUrl.replace(/\s*=\s*\d+x\d+/, "").replace(/\?.*$/, "").trim();
+                var clean2 = srcUrl.replace(/\s*=\s*\d+x\d+/, "").replace(/\?.*$/, "").trim();
+                
+                // 1. 完全匹配
+                if (clean1 === clean2) return true;
+                
+                // 2. 路径后缀匹配（处理 ../ 相对路径）
+                if (clean1.endsWith(clean2) || clean2.endsWith(clean1)) return true;
+                
+                // 3. 文件名匹配（最后手段，可能有误匹配风险）
+                var file1 = clean1.split('/').pop();
+                var file2 = clean2.split('/').pop();
+                if (file1 && file2 && file1 === file2) return true;
+                
+                return false;
+            };
+            
+            var matchCount = 0;
+            var newMarkdown = markdown.replace(
+                /!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)(?:<(\d+),\s*(\d+)>)?/g,
+                function(match, mAlt, mUrl, mW, mH) {
+                    // ★ 使用 URL 匹配函数
+                    if (urlMatches(mUrl, src)) {
+                        matchCount++;
+                        if (matchCount === occurrence) {
+                            return "![" + (alt || mAlt) + "](" + mUrl + ")" + sizeStr;
+                        }
+                    }
+                    return match;
                 }
-                return match;
-            });
+            );
 
             if (newMarkdown !== markdown) {
+                // ★ 先清除旧的防抖定时器，防止 cm.setValue() 触发的 change 事件在 delay 后再次 save() 导致滚动位置二次丢失
+                if (this.timer && this.timer !== 0) { clearTimeout(this.timer); this.timer = null; }
+                
                 var editorScroll = cm.getScrollInfo();
                 var previewScroll = this.preview.scrollTop();
+                
                 cm.setValue(newMarkdown);
+                
+                // ★ setValue() 会同步触发 change 事件→change handler 会设置新的 timer，立即再次清除
+                if (this.timer && this.timer !== 0) { clearTimeout(this.timer); this.timer = null; }
+                
                 cm.scrollTo(editorScroll.left, editorScroll.top);
                 this.timer = 0;
+                
                 this.save();
+                
                 this.preview.scrollTop(previewScroll);
+                this.timer = null; // ★ 恢复正常状态，下个用户输入可以正常触发防抖
+                
                 this.settings.onimagechange.call(this, src, width, height);
             }
         },
@@ -4198,7 +4971,10 @@
             try {
                 var stored = localStorage.getItem(draftKey);
                 if (stored) drafts = JSON.parse(stored);
-            } catch(e) {}
+            } catch(e) {
+                console.warn("xfEditor: 草稿数据解析失败，已重置", e);
+                drafts = [];
+            }
 
             var now = new Date().getTime();
             var maxDays = this.settings.draftMaxDays || 30;
@@ -4237,7 +5013,9 @@
 
             try {
                 localStorage.setItem(draftKey, JSON.stringify(drafts));
-            } catch(e) {}
+            } catch(e) {
+                console.warn("xfEditor: 草稿保存失败，可能已超出 localStorage 配额", e);
+            }
 
             return this;
         },
@@ -4253,7 +5031,9 @@
             var draftKey = "editormd-draft-" + (this.id || "default");
             try {
                 localStorage.removeItem(draftKey);
-            } catch(e) {}
+            } catch(e) {
+                console.warn("xfEditor: 草稿清除失败", e);
+            }
             return this;
         },
 
@@ -4272,7 +5052,10 @@
             try {
                 var stored = localStorage.getItem(draftKey);
                 if (stored) drafts = JSON.parse(stored);
-            } catch(e) {}
+            } catch(e) {
+                console.warn("xfEditor: 草稿数据解析失败", e);
+                drafts = [];
+            }
 
             var now = new Date().getTime();
             var maxDays = this.settings.draftMaxDays || 30;
@@ -4284,7 +5067,9 @@
             if (drafts.length !== originalLength) {
                 try {
                     localStorage.setItem(draftKey, JSON.stringify(drafts));
-                } catch(e) {}
+                } catch(e) {
+                    console.warn("xfEditor: 草稿更新失败", e);
+                }
             }
 
             if (!drafts || drafts.length === 0) return this;
@@ -4518,7 +5303,7 @@
             var _this    = this;
             var settings = this.settings;
             
-            // 获取预览 HTML 内容（通过 getPreviewedHTML 复用渲染逻辑）
+            // ★ 获取预览 HTML 内容，始终从 markdown 重渲染保证干净独立
             var previewOptions = $.extend({}, options, {
                 includeStyles : false,
                 includeScripts: false
@@ -4541,6 +5326,9 @@
                     var previewHTML = editormd.$marked(mdPreprocess.markdown, markedOptions);
                     previewHTML = editormd.restorePlaceholders(previewHTML, mdPreprocess.placeholders);
                     previewHTML = editormd.restoreTeXSyntax(previewHTML);
+                    previewHTML = editormd.fixSmartypantsHTML(previewHTML);
+                    if (settings.taskList) previewHTML = editormd.postProcessTaskLists(previewHTML);
+                    previewHTML = editormd.filterHTMLTags(previewHTML, settings.htmlDecode);
                     contentHTML = '<div class="markdown-body editormd-html-preview">\n  ' + previewHTML + '\n</div>';
                 }
             }
@@ -4555,12 +5343,13 @@
                 inlineScripts = this._getInitScripts();
             }
             
-            // 生成完整的独立 HTML 文档
+            // ★ 生成完整的独立 HTML 文档，包含完整样式和交互脚本
             var html = '<!DOCTYPE html>\n';
             html += '<html lang="zh-CN">\n';
             html += '<head>\n';
             html += '  <meta charset="UTF-8">\n';
             html += '  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n';
+            html += '  <meta name="generator" content="xfEditor v1.12.0">\n';
             html += '  <title>' + opts.title + '</title>\n';
             if (opts.includeStyles && inlineStyles) {
                 html += '  <style>\n' + inlineStyles + '\n  </style>\n';
@@ -4605,7 +5394,9 @@
                 columns            : settings.columns,
                 pageBlock          : settings.pageBlock,
                 tooltip            : settings.tooltip,
-                copybook           : settings.copybook
+                copybook           : settings.copybook,
+                video              : settings.video,
+                fileList           : settings.fileList
             }, overrides || {});
         },
 
@@ -4616,6 +5407,12 @@
          */
         _getCoreStyles : function() {
             var css = [];
+            
+            // ──── 组合上下标：<<下标>^<上标>> 垂直堆叠 ────
+            css.push('.editormd-supsub{display:inline-block;vertical-align:text-bottom;font-size:50%;line-height:1.05;text-align:left;}');
+            css.push('.editormd-supsub sup,.editormd-supsub sub{display:block;position:relative;line-height:1.05;font-size:1em;}');
+            css.push('.editormd-supsub sup{bottom:0.1em;}');
+            css.push('.editormd-supsub sub{top:0.12em;}');
             
             // Pinyin ruby annotation
             css.push('.editormd-pinyin{display:ruby;ruby-align:center;line-height:2.2;}');
@@ -4873,6 +5670,36 @@
             css.push('.editormd-toc-menu .markdown-toc-list a.toc-level-1{font-weight:600;}');
             css.push('.editormd-toc-menu .markdown-toc-list a.toc-level-2{padding-left:24px;font-weight:500;}');
             css.push('.editormd-toc-menu .markdown-toc-list a.toc-level-3{padding-left:32px;font-size:12.5px;}');
+            
+            // ──── 脚注样式 ────
+            css.push('.editormd-footnotes-section{margin-top:24px;padding-top:12px;border-top:1px solid #d1d5db;}');
+            css.push('.editormd-footnote-sep{display:none;}');
+            css.push('.editormd-footnote-title{font-size:14px;font-weight:700;color:#1f2937;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid #e5e7eb;}');
+            css.push('.editormd-footnote-list{padding:0;margin:0;list-style:none;counter-reset:editormd-fn-counter;}');
+            css.push('.editormd-footnote-item{position:relative;margin-bottom:6px;padding:8px 10px 8px 32px;font-size:13px;line-height:1.5;color:#4b5563;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;transition:all 0.25s ease;}');
+            css.push('.editormd-footnote-item::before{counter-increment:editormd-fn-counter;content:counter(editormd-fn-counter);position:absolute;left:8px;top:8px;font-size:11px;font-weight:700;color:#6b7280;min-width:18px;text-align:center;}');
+            css.push('.editormd-footnote-content{display:block;}');
+            css.push('.editormd-footnote-content p{margin:0 0 6px;}');
+            css.push('.editormd-footnote-backref{display:none;}');
+            css.push('.editormd-footnote-ref-wrapper{display:inline;margin:0 1px;font-size:75%;line-height:0;position:relative;bottom:0.5em;}');
+            css.push('.editormd-footnote-ref-wrapper a{text-decoration:none;color:#2563eb;font-weight:600;}');
+            css.push('.editormd-footnote-ref-wrapper a:hover{color:#1d4ed8;text-decoration:underline;}');
+            
+            // ──── 字帖样式（Copybook Grid）────────────────
+            css.push('.editormd-copybook{display:block;margin:1em 0;padding:12px 8px;background:#fef7e9;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.06);overflow-x:auto;}');
+            css.push('.editormd-copybook-row{display:flex;justify-content:center;gap:4px;margin-bottom:6px;}');
+            css.push('.editormd-copybook-row:last-child{margin-bottom:0;}');
+            css.push('.editormd-copybook-cell{position:relative;flex-shrink:0;}');
+            css.push('.editormd-copybook-grid-cell{width:52px;height:52px;background:#fff;border:1px solid #d4c296;box-shadow:0 1px 2px rgba(0,0,0,0.02);}');
+            css.push('.editormd-copybook-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;}');
+            css.push('.editormd-copybook-hanzi-text{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-family:"KaiTi","楷体","华文楷书",serif;color:#3e2a1a;line-height:1;z-index:3;}');
+            css.push('.editormd-copybook-pinyin-cell{display:flex;flex-direction:column;align-items:center;width:52px;}');
+            css.push('.editormd-copybook-pinyin-top{position:relative;width:100%;height:28px;background:#fffef8;border:none;}');
+            css.push('.editormd-copybook-pinyin-top .editormd-copybook-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;}');
+            css.push('.editormd-copybook-pinyin-text{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:0.75rem;color:#3a7d44;font-family:"KaiTi","楷体",serif;z-index:3;}');
+            css.push('.editormd-copybook-pinyin-bottom{position:relative;width:100%;height:52px;background:#fff;border:1px solid #d4c296;border-top:none;margin-top:2px;}');
+            css.push('.editormd-copybook-pinyin-bottom .editormd-copybook-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;}');
+            css.push('.editormd-copybook-pinyin-bottom .editormd-copybook-hanzi-text{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-family:"KaiTi","楷体",serif;color:#3e2a1a;line-height:1;z-index:3;}');
             
             return css.join('\n');
         },
@@ -5149,29 +5976,34 @@
             }
 
             var rawHTML = "";
-            if (this.previewContainer) {
+            var markdownText = this.getMarkdown();
+            var settings = this.settings;
+            
+            // ★ 策略：当需要内联样式/脚本时，始终从 Markdown 完整重渲染，
+            // 确保输出是干净的、不依赖外部 CSS/JS 的独立 HTML。
+            // 纯内容片段（不含样式脚本）则使用预览区缓存以提升性能。
+            var forceRender = opts.includeStyles || opts.includeScripts || opts.fullPage;
+            
+            if (this.previewContainer && !forceRender) {
+                // 快速路径：直接从预览区取内容（不含样式/脚本的模式）
                 rawHTML = this.previewContainer.html();
-            } else if (!this.settings.watch) {
-                // 未开启预览，尝试重新渲染
-                var markdownText = this.getMarkdown();
-                if (markdownText) {
-                    var settings = this.settings;
-                    var rendererOptions = this._buildRendererOptions(settings, {toc: false, tocm: false});
-                    var markedOptions = {
-                        renderer: editormd.markedRenderer([], rendererOptions),
-                        gfm: settings.gfm, tables: true, breaks: true,
-                        pedantic: false, sanitize: false,
-                        smartLists: true, smartypants: true
-                    };
-                    var markdownProtected3 = editormd.protectTeXSyntax(markdownText);
-                    var mdPreprocess = editormd.preprocessMarkdownBlocks(markdownProtected3, rendererOptions);
-                    rawHTML = editormd.$marked(mdPreprocess.markdown, markedOptions);
-                    rawHTML = editormd.restorePlaceholders(rawHTML, mdPreprocess.placeholders);
-                    rawHTML = editormd.restoreTeXSyntax(rawHTML);
-                    rawHTML = editormd.fixSmartypantsHTML(rawHTML);
-                    if (settings.taskList) rawHTML = editormd.postProcessTaskLists(rawHTML);
-                    rawHTML = editormd.filterHTMLTags(rawHTML, settings.htmlDecode);
-                }
+            } else if (markdownText) {
+                // 完整渲染管线：从 Markdown 出发经过全部处理步骤
+                var rendererOptions = this._buildRendererOptions(settings, {toc: false, tocm: false});
+                var markedOptions = {
+                    renderer: editormd.markedRenderer([], rendererOptions),
+                    gfm: settings.gfm, tables: true, breaks: true,
+                    pedantic: false, sanitize: false,
+                    smartLists: true, smartypants: true
+                };
+                var markdownProtected3 = editormd.protectTeXSyntax(markdownText);
+                var mdPreprocess = editormd.preprocessMarkdownBlocks(markdownProtected3, rendererOptions);
+                rawHTML = editormd.$marked(mdPreprocess.markdown, markedOptions);
+                rawHTML = editormd.restorePlaceholders(rawHTML, mdPreprocess.placeholders);
+                rawHTML = editormd.restoreTeXSyntax(rawHTML);
+                rawHTML = editormd.fixSmartypantsHTML(rawHTML);
+                if (settings.taskList) rawHTML = editormd.postProcessTaskLists(rawHTML);
+                rawHTML = editormd.filterHTMLTags(rawHTML, settings.htmlDecode);
             }
 
             // 构建内联样式和脚本
@@ -5881,7 +6713,33 @@
             // 解绑未命名空间的全局文档事件
             $(document).off("click.editormd-dropdown");
             $(document).off("click.tooltip keydown.tooltip");
-
+            
+            // 解绑同步滚动事件（始终绑定的 scroll 事件）
+            if (this.codeMirror) {
+                this.codeMirror.find(".CodeMirror-scroll").off(".editormd-sync");
+            }
+            if (this.preview) {
+                this.preview.off(".editormd-sync");
+            }
+            
+            // ★ 清理同步滚动相关实例属性和待执行的回调
+            if (this._rafIds) {
+                if (this._rafIds.editor) { cancelAnimationFrame(this._rafIds.editor); }
+                if (this._rafIds.preview) { cancelAnimationFrame(this._rafIds.preview); }
+            }
+            delete this._programScroll;
+            delete this._rafPending;
+            delete this._rafIds;
+            delete this._mapNeedsUpdate;
+            delete this._tocNavBound;
+            delete this._cachedLineMap;
+            delete this._lockSyncScroll;
+            delete this._unlockSyncScroll;
+            delete this._syncLockedUntil;
+            delete this._lastScrollTop;
+            delete this._userScrollTop;
+            delete this._syncDebounceUntil;
+            
             // 4. 如果处于全屏状态则退出全屏
             if (this.state.fullscreen) {
                 this.fullscreenExit();
@@ -6544,6 +7402,21 @@
             var lang        = settings.lang;
             var cursor      = cm.getCursor();
             var classPrefix = this.classPrefix;
+
+            // ★ 如果 KaTeX 未加载，先自动加载再打开弹窗
+            if (!editormd.kaTeXLoaded) {
+                if (settings.autoLoadModules) {
+                    editormd.loadKaTeX(settings.path, function() {
+                        if (typeof katex !== "undefined") {
+                            editormd.$katex = katex;
+                            editormd.kaTeXLoaded = true;
+                        }
+                        // 递归调用自己，此时 KaTeX 已就绪
+                        editormd.toolbarHandlers.formula.call(_this);
+                    });
+                }
+                return;
+            }
 
             // 公式分类和示例（涵盖各种复杂场景）
             var katexAvail = (typeof editormd.$katex !== "undefined" && editormd.$katex !== null);
@@ -7243,6 +8116,10 @@
         // 限制不跨行（[^^\n]）防止贪婪匹配跨越整个文档
         superscript   : /\^([^^\n]+)\^/g,
         subscript     : /\^\^([^^\n]+)\^\^/g,
+
+        // 组合上下标语法：<<下标>^<上标>> 同时显示上标和下标
+        // 例如 X<<2>^<3>> 表示 X 的右下角下标 2，右上角上标 3
+        supsub        : /<<([^>\n]+)>\^<([^>\n]+)>>/g,
         
         // 字体大小语法：!数字 文本! 表示指定字号，例如 !32 特大号!
         fontSize      : /!(\d+)\s+([^!\n]+)!/g,
@@ -8219,8 +9096,20 @@
         // 处理上标和下标语法（脚注引用已替换完毕，不冲突）
         // 上标：^文本^ → <sup>文本</sup>
         // 下标：^^文本^^ → <sub>文本</sub>
+        // 组合上下标：<<下标>^<上标>> → 垂直堆叠容器（sup 在上、sub 在下，同级并列）
         try {
-            // 先处理下标（双符号），再处理上标（单符号），避免冲突
+            // ★ 先处理组合上下标（<<X>^<Y>>），再处理下标（^^），最后处理上标（^），避免冲突
+            editormd.regexs.supsub.lastIndex = 0;
+            markdown = markdown.replace(editormd.regexs.supsub, function(match, subText, supText) {
+                if (!subText || subText.length > 100 || !supText || supText.length > 100) return match;
+                // 保护产生的 HTML 不被后续 ^ / ^^ 处理误匹配
+                var safeSub = subText.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\^/g, "&#94;");
+                var safeSup = supText.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\^/g, "&#94;");
+                // ★ 使用 inline-block 包装容器，sup/sub 同级并列垂直堆叠，均依附于基准字符
+                return '<span class="editormd-supsub"><sup>' + safeSup + '</sup><sub>' + safeSub + '</sub></span>';
+            });
+
+            // 再处理下标（双符号），避免冲突
             editormd.regexs.subscript.lastIndex = 0;
             markdown = markdown.replace(editormd.regexs.subscript, function(match, text) {
                 if (!text || text.length > 100) return match;
@@ -8460,15 +9349,20 @@
             // 转义 href 用于 HTML 属性
             var safeHref = editormd.escapeAttr(href || "");
 
-            // 悬浮提示链接语法：[文本](tooltip:内容) / [文本](tooltip:image:图片URL) / [文本](tooltip:iframe:页面URL)
+            // 悬浮提示链接语法：[文本](tooltip:内容) / [文本](tooltip:image:图片URL) / [文本](tooltip:iframe:页面URL) / [文本](tooltip:html:HTML代码)
             if (settings.tooltip && href.indexOf("tooltip:") === 0) {
                 var tooltipBody = href.substring(8);
                 var tooltipType = "text";
                 var tooltipContent = tooltipBody;
-                var typeMatch = tooltipBody.match(/^(image|iframe):/);
+                var typeMatch = tooltipBody.match(/^(image|iframe|html):/);
                 if (typeMatch) {
                     tooltipType = typeMatch[1];
                     tooltipContent = tooltipBody.substring(typeMatch[0].length);
+                }
+                // ★ HTML 类型：Base64 编码存储，防止属性转义导致内容损坏
+                if (tooltipType === "html") {
+                    var b64Content = editormd.base64Encode(tooltipContent);
+                    return '<span class="editormd-tooltip-trigger" data-tooltip="" data-tooltip-html="' + b64Content + '" data-tooltip-type="html" tabindex="0">' + text + '</span>';
                 }
                 return '<span class="editormd-tooltip-trigger" data-tooltip="' + editormd.escapeAttr(tooltipContent) + '" data-tooltip-type="' + editormd.escapeAttr(tooltipType) + '" tabindex="0">' + text + '</span>';
             }
@@ -9097,9 +9991,16 @@
                 return;
             }
             
-            var tooltipContent = $trigger.attr("data-tooltip");
             var tooltipType    = $trigger.attr("data-tooltip-type") || "text";
-            if (!tooltipContent) return;
+            var tooltipContent = $trigger.attr("data-tooltip");
+            
+            // ★ HTML 类型：从 data-tooltip-html 读取 Base64 编码的原始 HTML 内容并解码
+            if (tooltipType === "html") {
+                tooltipContent = editormd.base64Decode($trigger.attr("data-tooltip-html") || "");
+                if (!tooltipContent) return;
+            } else if (!tooltipContent) {
+                return;
+            }
             
             // 构造 tooltip 内容 HTML
             var tooltipHtml = '';
@@ -9107,6 +10008,9 @@
                 tooltipHtml = '<img src="' + tooltipContent + '" alt="" />';
             } else if (tooltipType === "iframe") {
                 tooltipHtml = '<iframe src="' + tooltipContent + '" frameborder="0"></iframe>';
+            } else if (tooltipType === "html") {
+                // ★ 复杂 HTML 内容：设置最大宽高防止溢出，允许内部样式
+                tooltipHtml = '<div class="editormd-tooltip-html-content">' + tooltipContent + '</div>';
             } else {
                 tooltipHtml = tooltipContent;
             }
@@ -9292,10 +10196,13 @@
         
 		markdownDoc = new String(markdownDoc);
 
+        // 在 marked 解析之前保护 LaTeX 语法中的反斜杠
+        var mdProtected = editormd.protectTeXSyntax(markdownDoc);
         // 在 marked 解析之前预处理自定义块级语法
-        var mdPreprocess = editormd.preprocessMarkdownBlocks(markdownDoc, rendererOptions);
+        var mdPreprocess = editormd.preprocessMarkdownBlocks(mdProtected, rendererOptions);
         var markdownParsed = marked(mdPreprocess.markdown, markedOptions);
         markdownParsed = editormd.restorePlaceholders(markdownParsed, mdPreprocess.placeholders);
+        markdownParsed = editormd.restoreTeXSyntax(markdownParsed);
         markdownParsed = editormd.fixSmartypantsHTML(markdownParsed);
         if (settings.taskList) markdownParsed = editormd.postProcessTaskLists(markdownParsed);
 
@@ -10128,7 +11035,9 @@
         try {
             document.createEvent("TouchEvent");
             eventType = touchEventType;
-        } catch(e) {}
+        } catch(e) {
+            // 不支持 TouchEvent，继续使用鼠标事件
+        }
 
         return eventType;
     };

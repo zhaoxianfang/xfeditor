@@ -1,7 +1,7 @@
 # xfEditor 修复与优化总结
 
-**当前版本**: v1.10.0  
-**修复日期**: 2026-06-10  
+**当前版本**: v1.12.0  
+**修复日期**: 2026-06-11  
 **jQuery 版本**: 3.7.1  
 **KaTeX 版本**: v0.16.9（已从旧版本升级）
 
@@ -9,85 +9,160 @@
 
 ## 📊 修复统计
 
+### 第三十三轮修复（组合上下标优化 + 独立 HTML 输出增强 + 同步滚动加固 + 滚动位置修复 + 文档全更新）
+
+**修复日期**: 2026-06-11
+
+#### 1. 🎨 组合上下标样式优化
+
+- **文件**: `scss/editormd.preview.scss`
+- **变更**:
+  - `font-size: 70%` → `50%`（字号缩小，视觉效果更紧凑）
+  - `line-height: 1.15` → `1.05`（行高缩小，减少元素高度）
+  - `sup bottom: 0.05em` → `0.1em`（上标下调至合适位置）
+  - `sub top: 0.2em` → `0.12em`（下标微调，保持视觉平衡）
+  - 内部 `sup, sub` 的 `line-height: 1.1` → `1.05`（同步缩小）
+
+#### 2. 🚀 `getHTML()` / `getPreviewedHTML()` 独立输出增强
+
+- **问题**: 生成的 HTML 缺少组合上下标、脚注、字帖等样式，依赖外部 CSS 文件
+- **文件**: `src/editormd.js`
+- **修复**:
+  - `_getCoreStyles()` 新增 30+ 条 CSS 规则：组合上下标、脚注全部件（section/title/list/item/content/backref/ref-wrapper）、字帖网格（copybook/row/cell/svg/hanzi/pinyin 系列）
+  - `getPreviewedHTML()` 新增 `forceRender` 策略：当需要内联样式/脚本时，始终从 Markdown 完整重渲染，而非使用预览区缓存（避免编辑器特定属性污染输出）
+  - `getHTML()` 添加 `<meta name="generator">` 标签，标识版本信息
+  - `_buildRendererOptions()` 补充 `video`、`fileList` 配置项
+
+#### 3. 🔧 同步滚动加固
+
+- **文件**: `src/editormd.js` (`bindScrollEvent` 函数)
+- **问题**: 原实现使用 `mouseover/mouseout` 动态绑定/解绑，鼠标一离开编辑区即停止同步
+- **修复**:
+  - scroll 事件改为**始终绑定**（命名空间 `.editormd-sync`），双向同步持续有效
+  - 加入 **`requestAnimationFrame` 节流**（`_rafPending` 标志），每帧最多一次同步
+  - 互斥锁超时从 50ms → 80ms，更稳定
+  - `destroy` 方法新增 `.editormd-sync` 命名空间事件解绑
+
+#### 4. 🐛 图片缩放/表格编辑滚动位置丢失修复
+
+- **文件**: `src/editormd.js` (`modifyTableInMarkdown` / `modifyImageSizeInMarkdown`)
+- **根因**: `cm.setValue()` 同步触发 change 事件→设置 debounce timer→`this.timer = 0` 覆盖 timer ID→旧 timer 在 delay 后再次 `save()`→二次渲染无滚动恢复→页面跳回顶部
+- **修复**: 在 `cm.setValue()` 前后各清除一次定时器，手动 `save()` + `scrollTop()` 恢复位置后设置 `timer = null`
+
+#### 5. 📝 文档与示例更新
+
+- `README.md`: 新增 v1.12.0 改进表
+- `USAGE_GUIDE.md`: 版本号更新至 v1.12.0
+- `FIX_SUMMARY.md`: 新增第三十三轮修复记录
+- `examples/all-features.html`: 版本号更新至 v1.12.0
+- `plugins/help-dialog/help.md`: 版本号更新
+
+#### 6. 📦 构建产物
+
+- 所有 `.js` / `.css` 和 `.min.js` / `.min.css` 已重新编译压缩
+- JS: `editormd.js`(467K) / `.min.js`(181K) / `.amd.js`(470K) / `.amd.min.js`(182K)
+- CSS: `editormd.css`(131K) / `.min.css`(105K) / `.preview.css`(75K) / `.preview.min.css`(61K)
+
+---
+
+### 第三十二轮修复（组合上下标语法 + 渲染管线一致性修复 + 构建产物重建）
+
+**修复日期**: 2026-06-11
+
+#### 1. ✨ 新增组合上下标语法 `<>>`
+
+- **文件**: `src/editormd.js` (regexs 定义 + 渲染管线)
+- **语法**: `X<<下标>^<上标>>` — 在 X 的右下角显示下标，右上角显示上标
+  - 例如 `X<<2>^<3>>` 渲染为 X<sub>2</sub><sup>3</sup>（X₂³）
+- **正则**: `/<([^>\n]+)>^<([^>\n]+)>>/g`
+  - 两个捕获组：组 1 = 下标文本，组 2 = 上标文本
+  - 限制不跨行，不包含 `>` 字符
+- **处理**: 生成 `<sub>下标</sub><sup>上标</sup>` HTML
+- **顺序**: 在所有上下标处理中**最先执行**（先于 `^^` 下标、`^` 上标），避免冲突
+- **安全**: XSS 防护（`<`/`>` 转义）、长度限制各 100 字符、try/catch 包裹
+
+#### 2. 🐛 `getPreviewedHTML()` 渲染管线不一致修复（关键修复）
+
+- **问题**: 第 4473 行后的 `getPreviewedHTML()` 缺少三个关键后处理步骤：
+  - ❌ 缺少 `fixSmartypantsHTML` — 弯引号不会被修正为 ASCII 引号
+  - ❌ 缺少 `postProcessTaskLists` — 任务列表 `[ ]`/`[x]` 不会被渲染为 checkbox
+  - ❌ 缺少 `filterHTMLTags` — XSS 过滤缺失，危险标签和协议未被清理
+- **修复**: 在 `restoreTeXSyntax` 后追加三个步骤（与主预览管线一致）
+- **影响范围**: `getPreviewedHTML()` 用于 HTML 导出、自定义 ToC 容器预览等场景
+
+#### 3. 🐛 `editormd.markdownToHTML()` 渲染管线不一致修复
+
+- **问题**: 独立 API `editormd.markdownToHTML()` 在第 9225 行缺少两个关键步骤：
+  - ❌ 缺少 `protectTeXSyntax` — LaTeX 公式中的反斜杠会被 marked.js 当作转义符吃掉
+  - ❌ 缺少 `restoreTeXSyntax` — 反斜杠占位符不会被还原
+- **修复**: 在所有步骤之前添加 `protectTeXSyntax`，在 `restorePlaceholders` 之后添加 `restoreTeXSyntax`
+- **影响范围**: 所有调用 `editormd.markdownToHTML()` 的外部 API 场景
+
+#### 4. 📋 四条渲染管线一致性全面验证
+
+| 管线 | protectTeX | preprocess | marked | restorePlaceholders | restoreTeX | fixSmartypants | taskList | filterHTML |
+|------|:----------:|:----------:|:------:|:-------------------:|:----------:|:--------------:|:--------:|:----------:|
+| `watch()` (主线) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `getRawHTML()` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `getPreviewedHTML()` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ (FIXED) | ✅ (FIXED) | ✅ (FIXED) |
+| `markdownToHTML()` | ✅ (FIXED) | ✅ | ✅ | ✅ | ✅ (FIXED) | ✅ | ✅ | ✅ |
+
+#### 5. 📦 构建产物全部重建
+
+- JS 源码重建：`editormd.js` (460K), `editormd.amd.js` (463K)
+- 全部压缩：`editormd.min.js` (177K), `editormd.amd.min.js` (178K)
+- CSS 编译/压缩：`css/editormd.css/.min.css`, `css/editormd.preview.css/.min.css`, `css/editormd.logo.css/.min.css`
+- 示例更新：`examples/all-features.html` 新增组合上下标示例 + v1.11.0 更新日志
+
+#### 涉及修改文件
+- `src/editormd.js` — regexs 定义（新增 `supsub`）、渲染管线（新增组合上下标处理、修复两条管线）
+- `examples/all-features.html` — 新增组合上下标示例、更新日志
+- `FIX_SUMMARY.md` — 本文档
+- 10 个构建产物文件
+
+---
+
 ### 第三十一轮修复（全面代码审计 + 正则优化 + 事件泄漏修复 + 构建产物重建）
 
 **修复日期**: 2026-06-10
 
 #### 1. 🐛 Email 正则全面改进（兼容性修复）
-- **文件**: `src/editormd.js` (regexs 定义)
-- **问题**: 原 email 正则 `/(\w+)@(\w+)\.(\w+)\.?(\w+)?/g` 过于严格
-  - 域名部分不允许连字符 `-`（如 `user@my-domain.com` 无法匹配）
-  - 本地部分不支持 `.` 和 `+`（如 `user.name@domain.com`、`user+tag@domain.com` 无法匹配）
-  - 不支持多级 TLD（如 `.co.uk` 只匹配到 `.co`）
-- **修复**: 更新为 `/([\w\.\+\-]+)@([\w\-]+)\.([\w\-]{2,})\.?(\w+)?/g`
-  - 本地部分支持 `+`、`-`、`.` 字符
-  - 域名/TLD 支持连字符
-  - 保持捕获组结构兼容回调函数
+- **问题**: 原 email 正则过于严格，不支持连字符域名、dots/plus 本地部分、多级 TLD
+- **修复**: 扩展为 `/([\w\.\+\-]+)@([\w\-]+)\.([\w\-]{2,})\.?(\w+)?/g`
 
 #### 2. 🔤 tooltipLink/tooltipImg 大小写修复
 - **修复**: 添加 `i` 大小写不敏感标志
-  - `tooltipLink`: `/\[([^\]]+)\]\(tooltip:([^)]+)\)/g` → `/gi`
-  - `tooltipImg`: `/\{tooltip:([^}]+)\}/g` → `/gi`
-  - 现在 `TOOLTIP:`、`Tooltip:` 等变体均能正确匹配
 
 #### 3. 🔤 `atLink` 正则增强
-- **修复**: `@(\w+)` → `@([\w\-]+)`，支持含连字符的用户名（如 `@user-name`）
+- **修复**: `@(\w+)` → `@([\w\-]+)`，支持含连字符的用户名
 
 #### 4. 🐛 `fontSize` 与图片语法冲突修复
-- **问题**: `!32 text!` 语法可能误匹配图片语法 `![alt](url)` 中的 `!`
-- **修复**: 在 fontSize 替换回调中添加前置检查 `if (typeof match === "string" && /^\[/.test(match)) return match;`，当匹配以 `[` 开头（即属于图片语法）时跳过
-- **额外改进**: 正则增加 `\n` 排除，防止跨行匹配
+- **问题**: `!32 text!` 可能误匹配 `![alt](url)` 中的 `!`
+- **修复**: 添加回调 guard：`/^\[/.test(match)` 时跳过
 
 #### 5. 🐛 `initColumns` 重复变量声明 Bug 修复（关键修复）
-- **问题**: 第 3615 行存在重复的 `var count = parseInt(...)` 声明，**覆盖**了第 3607-3612 行的范围验证修正值
-  - 如果列数超出 1-12 范围被修正为 2，第 3615 行又读回原始错误值
-- **修复**: 删除第 3615 行的重复声明，保留已验证后的正确值
+- **问题**: 重复声明覆盖了列数范围修正值
+- **修复**: 删除重复的 `var count` 声明
 
-#### 6. 🧹 事件内存泄漏全面修复（6 个泄漏点全部修复）
-
-| 泄漏点 | 原代码 | 修复后 | 清理位置 |
-|--------|--------|--------|----------|
-| 工具栏滚动跟随 | `$(window).on("scroll", ...)` | `$(window).on("scroll.editormd-autofixed", ...)` | destroy |
-| F9/F10/F11 快捷键 | `$(window).keydown(...)` | `$(window).on("keydown.editormd-fkeys", ...)` | destroy |
-| 草稿对话框 resize | `$(window).on("resize.editormdDraft", ...)` | ✅ 已有命名空间，**补充** closeDialog 中的 `$(window).off(...)` | closeDialog |
-| 通用对话框 resize | `$(window).resize(dialogPosition)` | `$(window).on("resize.editormd-dialog", dialogPosition)` | destroy |
-| 下拉菜单关闭 | `$(document).on("click", closeDropdown)` | `$(document).on("click.editormd-dropdown", closeDropdown)` | destroy |
-| Tooltip 事件 | `$(document).on("click.tooltip", ...)` | ✅ 已有命名空间，补充 destroy 清理 | destroy |
-
-**destroy 方法新增清理**:
-```javascript
-$(window).off("resize.editormdDraft");
-$(window).off("scroll.editormd-autofixed");
-$(window).off("keydown.editormd-fkeys");
-$(window).off("resize.editormd-dialog");
-$(document).off("click.editormd-dropdown");
-$(document).off("click.tooltip keydown.tooltip");
-```
+#### 6. 🧹 事件内存泄漏全面修复（6 个泄漏点）
+| 泄漏点 | 修复方式 |
+|--------|----------|
+| 工具栏滚动固定 | 命名空间 `scroll.editormd-autofixed` + destroy 清理 |
+| F9/F10/F11 快捷键 | 命名空间 `keydown.editormd-fkeys` + destroy 清理 |
+| 草稿对话框 resize | closeDialog 新增 `off("resize.editormdDraft")` |
+| 通用对话框 resize | `.resize()` → `.on("resize.editormd-dialog")` |
+| 下拉菜单关闭 | 命名空间 `click.editormd-dropdown` |
+| Tooltip 事件 | destroy 新增 tooltip 事件清理 |
 
 #### 7. 📦 构建产物全部重建
-- JS 源码重建：`editormd.js` (458K), `editormd.amd.js` (461K)
-- 全部压缩：`editormd.min.js` (176K), `editormd.amd.min.js` (177K)
-- CSS 编译/压缩：`css/editormd.css/.min.css`, `css/editormd.preview.css/.min.css`, `css/editormd.logo.css/.min.css`
-
-#### 8. 📋 完整代码审计发现
-
-**已确认安全的机制**:
-- ✅ `protectCodeBlocks()` 正确保护三种代码块：围栏(``` )、多反引号(``)、单反引号(`)
-- ✅ 所有代码块在语法解析前被替换为占位符，解析后恢复
-- ✅ `superscript`/`subscript` 已正确处理执行顺序（下标优先）
-- ✅ `findBalancedBlocks` 支持 20 层递归深度嵌套
-- ✅ 多种块语法（tabs/columns/page/copybook）都使用 `findBalancedBlocks` 正确处理嵌套
-- ✅ Tab 数量限制 50、列数限制 1-12、文本长度限制 1M 字符
-- ✅ 所有块处理逻辑均有 try/catch 包裹
-
-**已知限制（设计如此）**:
-- ⚠️ 跨类型交错嵌套未检测（如 `[[tabs]]...[[columns]]...[[/tabs]]...[[/columns]]`）
-- ⚠️ `videoBlock`/`fileBlock` 不支持嵌套（用途不需要）
-- ⚠️ FlowChart/Sequence/KaTeX/ECharts 通过 marked fenced code 处理（不经过 `findBalancedBlocks`）
-- ⚠️ 无手风琴/折叠面板/Emoji 语法（未实现功能）
+#### 8. 📋 完整代码审计确认
+- ✅ `protectCodeBlocks()` 正确保护三种代码格式
+- ✅ `superscript`/`subscript` 处理顺序正确
+- ✅ `findBalancedBlocks` 支持 20 层递归嵌套
+- ✅ 所有块处理有 try/catch 包裹
 
 #### 涉及修改文件
-- `src/editormd.js` — regexs 定义、fontSize 回调、initColumns、所有事件绑定和 destroy
+- `src/editormd.js` — regexs、fontSize 回调、initColumns、事件、destroy
 - 10 个构建产物文件
 
 ---
@@ -678,7 +753,7 @@ $(document).off("click.tooltip keydown.tooltip");
 ### 示例文件完善
 - ✅ `examples/formula.html` - 公式插入示例（重写，更全面）
 - ✅ `examples/index.html` - 首页（更新公式功能描述）
-- ✅ `examples/full-features-demo.html` - 完善所有示例（13个）
+- ✅ `examples/all-features.html` - 完善所有示例（13个）
 - ✅ `examples/full-preview.html` - 完善预览页面
 - ✅ `examples/tabs.html` - Tabs 标签页示例
 - ✅ `examples/columns.html` - 多栏布局示例
@@ -1123,7 +1198,7 @@ editormd("editor", {
 ---
 
 ### 手动测试清单
-- [ ] 打开 `examples/full-features-demo.html`，验证示例 11（tabs）和示例 12（columns）渲染正常
+- [ ] 打开 `examples/all-features.html`，验证示例 11（tabs）和示例 12（columns）渲染正常
 - [ ] 验证行内代码 `` `[columns:2]` `` 和 `` `[[tabs]]` `` 被渲染为 `<code>` 标签
 - [ ] 验证中文标题的 TOC slug 生成（如 "第一章 Introduction" → "di-yi-zhang-introduction"）
 - [ ] 验证 video 标签的 `title` 属性正常显示
@@ -1383,6 +1458,88 @@ git push origin master
 - ✅ `css/editormd.min.css` - 已重新编译
 - ✅ `css/editormd.preview.min.css` - 已重新编译
 - ✅ `css/editormd.logo.min.css` - 已重新编译
+
+---
+
+## 第三十四轮修复：同步滚动全面加强、图片缩放修复、复杂HTML提示、构建产物重建
+
+**修复日期**：2026-06-12
+
+### 1. 同步滚动全面加强
+
+**问题回顾**：
+- 编辑器与预览区双向滚动同步精度不足，长文档中偏差明显
+- 锁定持续时间固定，无法适应不同滚动速度
+- 缺少惯性阶段处理，滚动停止后位置跳跃
+- 所有块元素使用统一留白，不同类型元素可视需求不同
+
+**修复方案**：
+
+| 改进项 | 说明 |
+|--------|------|
+| **自适应锁定时长** | 根据滚动速度动态调整锁定时间：快速 >200px → 400ms / 正常 30-200px → 300ms / 慢速 <30px → 180ms / 惯性阶段 → 120ms |
+| **惯性检测** | 5 样本滑动窗口速度追踪，检测递减趋势判定是否进入惯性减速阶段 |
+| **平滑缓动** | 惯性阶段使用 `current + (target - current) × 0.4` 缓动系数平滑过渡，避免跳跃 |
+| **元素类型感知留白** | 标题 → 12% 视口(上限80px) / 代码块 → 18%(上限120px) / 水平线 → 10%(上限60px) / 标准 → 25%(上限MAX_TOP_GAP) |
+| **滑动窗口扩展** | VELOCITY_WINDOW 从 3 扩展至 5，速度追踪更平滑 |
+| **BLOCK_SEL 扩展** | 新增 `figure, .editormd-html-block, div.editormd-image-container, div[data-source-line]` 元素选择 |
+
+**代码位置**：
+- 自适应锁定：`lockBoth()` 函数
+- 惯性检测：编辑器/预览区 scroll 事件处理中的 velocity 追踪逻辑
+- 元素感知留白：`editormd.scrollToPreview()` 和 `editormd.scrollToEditor()` 中的 topGap 计算
+- 新增变量：`_scrollDirection`, `_inertiaCount`, `_lineMapBuilding`
+
+### 2. 图片缩放出现次数追踪修复
+
+**问题**：拖拽调整第 N 次出现的图片时，Markdown 回写总是修改第一次出现的位置。
+
+**修复方案**：
+- 预览区渲染时为每个图片实例添加 `data-image-occurrence` 属性，标记在文档中的出现次序
+- `modifyImageSizeInMarkdown()` 函数使用计数器匹配方式，精准定位到指定出现次数的图片
+- 支持 `![alt](url)<W,H>` 和 `<img src="url" width="W" height="H">` 两种语法格式的精准替换
+
+### 3. 复杂 HTML 悬浮提示支持
+
+**新增语法**：`[链接文本](tooltip:html:<Base64URL编码的HTML>)`
+
+**特性**：
+- 支持任意复杂 HTML 内容的悬浮提示（渐变背景、按钮、列表、表格等）
+- 使用 `encodeURIComponent`/`decodeURIComponent` 进行内容编码，安全存入 data 属性
+- 自动适应内容宽度，支持 `min-width` 设置
+- 与文本/图片/iframe 三种现有类型兼容共存
+
+**样式**：新增 `.editormd-tooltip-html` 样式类，支持内容自适应和滚动
+
+### 4. 构建产物全面重建
+
+| 产物 | 状态 |
+|------|------|
+| `editormd.js` | ✅ 从 `src/editormd.js` 重新构建 |
+| `editormd.amd.js` | ✅ 从 `src/editormd.js` 重新构建（含 AMD 替换）|
+| `editormd.min.js` | ✅ UglifyJS 压缩构建 |
+| `editormd.amd.min.js` | ✅ UglifyJS 压缩构建 |
+| `css/editormd.min.css` | ✅ CleanCSS 压缩构建 |
+| `css/editormd.preview.min.css` | ✅ CleanCSS 压缩构建 |
+| `css/editormd.logo.min.css` | ✅ CleanCSS 压缩构建 |
+
+### 5. 示例文件全面更新
+
+| 文件 | 更新内容 |
+|------|----------|
+| `all-features.html` | 版本号统一至 v1.12.0；新增复杂 HTML 悬浮提示演示；修复"结语"章节位置；更新同步滚动/图片缩放功能描述；重编号 20-24 章 |
+| `simple.html` | 修复代码块反引号被空格分隔的问题 |
+| `full-preview.html` | 版本号更新至 v1.12.0；修复重复章节编号 13.1→13.2 |
+| `html-preview-markdown-to-html.html` | 补全缺失的 `katex.min.css`、`katex.min.js`、`echarts.min.js` 依赖引入 |
+
+### 6. 文档全面更新
+
+| 文件 | 更新内容 |
+|------|----------|
+| `FIX_SUMMARY.md` | 新增第三十四轮修复完整记录 |
+| `USAGE_GUIDE.md` | 新增复杂 HTML 悬浮提示语法、同步滚动增强、图片缩放追踪说明 |
+| `README.md` | v1.12.0 改进条目更新：同步滚动加固、图片缩放追踪、HTML 提示、自适应锁定、元素感知留白 |
+| `help.md` | 新增图片缩放功能、复杂 HTML 悬浮提示语法、同步滚动说明 |
 
 ---
 

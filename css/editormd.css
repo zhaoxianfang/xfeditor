@@ -5571,6 +5571,65 @@ hr.editormd-page-break {
   height: 210px;
   border-radius: 3px;
 }
+.editormd-tooltip-popup.editormd-tooltip-html {
+  max-width: 420px;
+  max-height: 360px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: #333;
+  color: #fff;
+  padding: 12px 14px;
+  pointer-events: auto;
+}
+.editormd-tooltip-popup.editormd-tooltip-html .editormd-tooltip-html-content {
+  overflow-wrap: break-word;
+}
+.editormd-tooltip-popup.editormd-tooltip-html .editormd-tooltip-html-content img {
+  max-width: 100%;
+  height: auto;
+}
+.editormd-tooltip-popup.editormd-tooltip-html .editormd-tooltip-html-content table {
+  font-size: 12px;
+  border-collapse: collapse;
+  width: 100%;
+}
+.editormd-tooltip-popup.editormd-tooltip-html .editormd-tooltip-html-content table th,
+.editormd-tooltip-popup.editormd-tooltip-html .editormd-tooltip-html-content table td {
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: 4px 8px;
+}
+.editormd-tooltip-popup.editormd-tooltip-html .editormd-tooltip-html-content table th {
+  background: rgba(255, 255, 255, 0.1);
+}
+.editormd-tooltip-popup.editormd-tooltip-html .editormd-tooltip-html-content a {
+  color: #6db3f2;
+}
+.editormd-tooltip-popup.editormd-tooltip-html .editormd-tooltip-html-content code {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+.editormd-tooltip-popup.editormd-tooltip-html .editormd-tooltip-html-content pre {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 8px;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-size: 12px;
+}
+.editormd-tooltip-popup.editormd-tooltip-html .editormd-tooltip-html-content ul,
+.editormd-tooltip-popup.editormd-tooltip-html .editormd-tooltip-html-content ol {
+  padding-left: 20px;
+}
+.editormd-tooltip-popup.editormd-tooltip-html .editormd-tooltip-html-content hr {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.editormd-tooltip-popup.editormd-tooltip-html .editormd-tooltip-html-content blockquote {
+  border-left: 3px solid rgba(255, 255, 255, 0.3);
+  padding-left: 10px;
+  margin: 4px 0;
+  color: rgba(255, 255, 255, 0.8);
+}
 .editormd-tooltip-popup .editormd-tooltip-loading {
   display: flex;
   align-items: center;
@@ -5609,6 +5668,26 @@ hr.editormd-page-break {
 .editormd-tooltip-arrow-bottom.editormd-tooltip-image .editormd-tooltip-arrow,
 .editormd-tooltip-arrow-bottom.editormd-tooltip-iframe .editormd-tooltip-arrow {
   border-top-color: #ddd;
+}
+
+.editormd-supsub {
+  display: inline-block;
+  vertical-align: text-bottom;
+  font-size: 50%;
+  line-height: 1.05;
+  text-align: left;
+}
+.editormd-supsub sup, .editormd-supsub sub {
+  display: block;
+  position: relative;
+  line-height: 1.05;
+  font-size: 1em;
+}
+.editormd-supsub sup {
+  bottom: 0.1em;
+}
+.editormd-supsub sub {
+  top: 0.12em;
 }
 
 @media only print {
