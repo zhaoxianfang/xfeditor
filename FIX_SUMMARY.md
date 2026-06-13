@@ -1559,6 +1559,108 @@ git push origin master
 
 ---
 
+## 第三十五轮修复：HTML工具提示选择器支持 + 同步滚动防循环机制 + 文档全面更新
+
+**修复日期**：2026-06-13
+
+### 1. HTML工具提示选择器语法扩展
+
+**新增功能**：支持通过CSS选择器引用页面中的DOM元素作为悬浮提示内容
+
+**语法格式**：
+- `[查看HTML](tooltip:html:.test_dom)` - 使用class选择器
+- `[查看HTML](tooltip:html:"#test_dom")` - 使用ID选择器
+- `[查看HTML](tooltip:html:"[data-target]")` - 使用属性选择器
+
+**特性**：
+- **自动隐藏属性移除**：当通过CSS选择器引用DOM元素时，自动移除元素的隐藏属性（`display: none`、`visibility: hidden`、`opacity: 0`），确保元素在悬浮框中正常显示
+- **双重格式支持**：保持向后兼容原有的Base64编码格式 `tooltip:html:<Base64URL>`
+- **智能检测**：正则表达式检测选择器格式（以引号开头或包含CSS选择器字符）
+
+**实现逻辑**：
+1. 解析阶段：扩展 `tooltipLink` 正则表达式以支持选择器格式
+2. 渲染阶段：为选择器类型生成特殊标记 `<span data-tooltip-type="html-selector">`
+3. 初始化阶段：通过 `initTooltips` 函数查找并处理选择器类型
+4. 显示阶段：`showTooltip` 函数动态克隆DOM元素并移除隐藏属性
+
+**代码位置**：
+- 行 9281-9325：HTML工具提示语法扩展支持CSS选择器
+- 行 9938-9964：工具提示初始化逻辑处理 `html-selector` 类型
+- 行 9972-10058：动态加载DOM元素并移除隐藏属性
+
+### 2. 同步滚动防循环机制增强
+
+**问题**：编辑区和预览区双向滚动时可能出现循环触发问题
+
+**解决方案**：
+- **时间戳锁定**：使用 `_syncLockedUntil` 变量记录每个方向的锁定截止时间
+- **单向触发**：左侧编辑区触发右侧滚动时锁定左侧，右侧预览区触发左侧滚动时锁定右侧
+- **智能锁定**：根据滚动速度动态调整锁定时长，快速滚动时延长锁定时间
+- **事件节流**：使用 `requestAnimationFrame` 进行节流处理，避免过度触发
+
+**关键代码**：
+```javascript
+// 防循环滚动机制
+var _syncLockedUntil = { left: 0, right: 0 };
+
+// 检查是否应该同步滚动
+var shouldSync = function(direction, scrollTop, speed) {
+    var now = Date.now();
+    // 如果当前方向被锁定，跳过
+    if (now < _syncLockedUntil[direction]) {
+        return false;
+    }
+    // 锁定相反方向一段时间
+    var opposite = direction === 'left' ? 'right' : 'left';
+    var lockDuration = speed > 200 ? 400 : (speed > 30 ? 300 : 180);
+    _syncLockedUntil[opposite] = now + lockDuration;
+    return true;
+};
+```
+
+### 3. 示例文件更新
+
+**`examples/tooltip.html`**：
+- 新增CSS选择器语法演示
+- 添加隐藏的DOM元素示例：`#hidden-content` 和 `.test_dom`
+- 更新使用说明以演示新的HTML选择器语法
+
+**`examples/all-features.html`**：
+- 更新HTML工具提示部分，添加选择器语法说明
+- 保持原有的Base64编码格式示例
+
+**`examples/full-preview.html`**：
+- 更新版本号至v1.12.0
+- 确保工具提示功能已启用
+
+### 4. 文档全面更新
+
+**`README.md`**：
+- 更新悬浮提示语法部分，添加HTML选择器语法的详细说明
+- 添加v1.12.0版本的新特性说明
+
+**`USAGE_GUIDE.md`**：
+- 更新复杂HTML悬浮提示部分，详细说明了传统Base64编码和新CSS选择器两种方式
+
+**新增 `HTML_TOOLTIP_NEW_FEATURE.md`**：
+- 创建新的详细说明文档，专门介绍HTML工具提示新语法
+- 包含使用示例、最佳实践、故障排除等内容
+
+### 5. 构建产物重建
+
+**文件构建**：
+- `editormd.js` (538,000字节) - 包含所有新功能
+- `editormd.min.js` (199,148字节) - 压缩版
+- `editormd.amd.min.js` (192,760字节) - AMD压缩版
+- `css/editormd.min.css` (109,186字节) - 样式压缩版
+
+**验证**：
+- 所有.min文件已通过构建脚本重新生成
+- 所有新功能已正确包含在压缩文件中
+- 文件修改时间戳验证构建顺序正确
+
+---
+
 ## 📄 许可证
 
 本修复工作遵循 MIT 许可证，与 Editor.md 项目保持一致。

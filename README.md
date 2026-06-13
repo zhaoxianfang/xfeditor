@@ -41,7 +41,7 @@
 | **同步滚动全面加强** | 自适应锁定时长（120-400ms 动态调整）；5 样本滑动窗口惯性检测；惯性阶段平滑缓动（0.4 系数）；元素类型感知留白（标题/代码块/水平线分别计算）；BLOCK_SEL 扩展至 figure/html-block 等元素 |
 | **同步滚动彻底加固** | 新增 `_lockSyncScroll()`/`_unlockSyncScroll()` 取消排队 rAF + 延迟释放锁机制；`PROGRAM_SCROLL_DEBOUNCE` 提高至 200ms；表格/图片编辑后编辑区滚动位置不跳转 |
 | **图片缩放出现次数追踪** | 修复拖拽第 N 次出现的图片时回写修改第一次出现位置的 Bug；新增 `data-image-occurrence` 属性精准定位 |
-| **复杂 HTML 悬浮提示** | 新增 `tooltip:html:<Base64URL>` 语法，支持任意复杂 HTML（渐变卡片、按钮、列表等）作为悬浮内容 |
+| **复杂 HTML 悬浮提示** | 新增 `tooltip:html:"元素选择器"` 语法，支持通过CSS选择器引用页面中的DOM元素作为悬浮内容 |
 | **TOC 目录点击导航** | `bindScrollEvent()` 新增 TOC 链接点击事件委托，支持 ID 匹配 + 文本回退匹配，精确跳转到目标标题 |
 | **公式弹窗自动加载** | `formula()` 自动检测 KaTeX 加载状态，未加载时先 `loadKaTeX()` 再打开面板，无需手动配置 `tex: true` |
 | **组合上下标优化** | 缩小 `.editormd-supsub` 字号至 50%、调整 line-height 为 1.05、优化上标位置(bottom:0.1em)，视觉更紧凑协调 |
@@ -549,7 +549,24 @@ editor.off("onchange");
 ```markdown
 [百度](tooltip:百度是全球最大的中文搜索引擎)
 ![Logo](image.png "tooltip:这是 Logo 的说明")
+[查看隐藏内容](tooltip:html:"#hidden-content")    # 通过ID选择器引用元素
+[查看样式卡片](tooltip:html:".tooltip-card")      # 通过类选择器引用元素
+[查看属性元素](tooltip:html:"[data-tooltip-content]") # 通过属性选择器引用元素
+[查看无引号选择器](tooltip:html:.test-class)     # 无引号的CSS选择器格式
 ```
+
+**HTML选择器语法** ⭐v1.12 增强：
+- `tooltip:html:"#element-id"` - 通过ID选择器引用页面元素
+- `tooltip:html:".class-name"` - 通过类选择器引用元素
+- `tooltip:html:"[attribute]"` - 通过属性选择器引用元素
+- `tooltip:html:.class-name` - 无引号的类选择器格式（简洁写法）
+
+**特性**：
+1. **自动移除隐藏属性**：自动移除目标元素的display:none、visibility:hidden、opacity:0等隐藏属性
+2. **动态加载DOM**：实时查找页面中的DOM元素并克隆到悬浮框中
+3. **支持复杂HTML**：可引用包含复杂HTML结构的页面元素
+4. **错误处理**：未找到元素时显示友好的错误提示信息
+4. 隐藏的DOM元素可以正常显示在悬浮框中
 
 ### 数学公式 (`tex: true`)
 ```markdown

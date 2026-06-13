@@ -11,7 +11,18 @@
         <div id="layout">
             <header>
                 <h1>Sync scrolling</h1>
+                <p>增强版同步滚动 - 支持智能防循环触发机制</p>
             </header>
+            <div class="intro" style="width: 90%; margin: 15px auto; padding: 15px 20px; background: #f5f7fa; border-left: 4px solid #2196F3; border-radius: 4px; font-size: 14px; line-height: 1.8; color: #555;">
+                <h2>新特性说明</h2>
+                <p><strong>智能防循环机制：</strong>修复了双向循环触发问题，确保编辑区和预览区不会相互无限触发滚动。</p>
+                <p><strong>改进的交互行为：</strong></p>
+                <ul>
+                    <li><strong>编辑区操作：</strong>滚动或修改编辑区内容时，<strong>编辑区不会滚动</strong>，预览区会定位到对应的预览内容</li>
+                    <li><strong>预览区操作：</strong>滚动、拖拽图片调整尺寸或点击表格单元格时，<strong>预览区不会滚动</strong>，编辑区会定位到对应的Markdown源码</li>
+                </ul>
+                <p><strong>优化的同步逻辑：</strong>包括图片拖拽、表格编辑等操作都能正确触发同步定位。</p>
+            </div>
             <div class="btns">
                 <button class="bisync-btn">Bisynchronous (Default)</button>
                 <button class="single-btn">Single</button>

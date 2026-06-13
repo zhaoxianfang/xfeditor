@@ -22,8 +22,29 @@
             <div class="intro">
                 <h2>使用说明</h2>
                 <p><strong>文本提示：</strong>使用 <code>[文本](tooltip:提示内容)</code> 语法。</p>
+                <p><strong>HTML元素提示：</strong>使用 <code>[文本](tooltip:html:"元素选择器")</code> 语法。示例：<code>[查看HTML](tooltip:html:".test_dom")</code> 或 <code>[查看HTML](tooltip:html:"#hidden-content")</code></p>
                 <p><strong>图片提示：</strong>使用 <code>![alt](url "tooltip:提示内容")</code> 语法。</p>
                 <p>也可通过工具栏 <i class="fa fa-comment"></i> Tooltip 按钮快速插入。</p>
+            </div>
+
+            <!-- 隐藏的DOM元素，用于HTML工具提示演示 -->
+            <div id="hidden-content" style="display: none;">
+                <h3>隐藏的HTML内容</h3>
+                <p>这个元素被设置为 <code>display: none;</code>，但可以通过HTML工具提示语法显示在悬浮框中。</p>
+                <ul>
+                    <li>这是一个列表项</li>
+                    <li>另一个列表项</li>
+                    <li>第三个列表项</li>
+                </ul>
+                <p>所有隐藏属性（如display、visibility等）会在悬浮显示时自动移除。</p>
+            </div>
+            
+            <div class="test_dom" style="visibility: hidden; position: absolute; top: -9999px;">
+                <div style="background: #f0f8ff; padding: 15px; border-radius: 8px; border-left: 4px solid #2196F3;">
+                    <h4>通过CSS选择器引用的HTML内容</h4>
+                    <p>这个元素被设置为 <code>visibility: hidden;</code>，但可以通过 <code>.test_dom</code> 选择器在悬浮框中显示。</p>
+                    <p>使用新的HTML工具提示语法：<code>[查看HTML](tooltip:html:".test_dom")</code></p>
+                </div>
             </div>
 
             <div id="test-editormd">
@@ -39,6 +60,19 @@
 - [Markdown](tooltip:Markdown 是一种轻量级标记语言，由约翰·格鲁伯于 2004 年创建。)
 - [xfEditor](tooltip:xfEditor 是一款开源的在线 Markdown 编辑器，基于 CodeMirror 构建。)
 
+## HTML元素悬浮提示
+
+现在支持通过CSS选择器引用页面中的DOM元素作为悬浮内容，隐藏的DOM元素会自动显示在悬浮框中：
+
+- [查看隐藏的HTML内容](tooltip:html:"#hidden-content") - 通过ID选择器引用隐藏元素
+- [查看隐藏的HTML内容](tooltip:html:".test_dom") - 通过类选择器引用隐藏元素
+
+**特性：**
+1. 支持CSS选择器（ID、类、标签等）
+2. 自动移除目标元素的隐藏属性（display:none, visibility:hidden等）
+3. 元素只在悬浮框中显示，不直接显示在网页中
+4. 支持复杂的HTML结构作为悬浮内容
+
 ## 图片悬浮提示
 
 ![xfEditor Logo](../images/logos/editormd-logo-180x180.png "tooltip:xfEditor 的 Logo 图标，代表着开源、简洁与强大的 Markdown 编辑体验。")
@@ -48,6 +82,13 @@
 ## 混合使用
 
 在正文中混合使用 Tooltip，可以大大提升阅读体验，例如介绍 [技术术语](tooltip:技术术语是指在特定领域中使用的专业词汇。) 时提供即时解释，或展示 [产品名称](tooltip:产品名称是品牌识别的重要组成部分。) 时补充说明。
+
+## 注意事项
+
+- HTML工具提示语法：`[文本](tooltip:html:"元素选择器")`
+- 选择器可以是任何有效的CSS选择器
+- 目标元素可以设置为隐藏（display:none, visibility:hidden等）
+- 悬浮显示时会自动移除隐藏属性，确保内容正常显示
 </textarea>
             </div>
         </div>

@@ -241,16 +241,42 @@ xfEditor 是一款开源 Markdown 编辑器...
 [查看页面](tooltip:iframe:./demo.html)
 ```
 
-**复杂 HTML 悬浮提示** ⭐v1.12 新增：
+**复杂 HTML 悬浮提示** ⭐v1.12 增强：
+
+**HTML 选择器语法** ⭐v1.12 新增（仅支持CSS选择器格式）：
 ```markdown
-[查看产品卡片](tooltip:html:%3Cdiv%20style...)
+[查看隐藏内容](tooltip:html:"#hidden-content")        # 通过ID选择器引用页面元素
+[查看样式卡片](tooltip:html:".tooltip-card")          # 通过类选择器引用元素
+[查看属性元素](tooltip:html:"[data-tooltip-content]") # 通过属性选择器引用元素
+[查看无引号选择器](tooltip:html:.test-class)         # 无引号的类选择器格式
 ```
 
-使用 `tooltip:html:` 前缀 + URL 编码的 HTML 内容，可实现任意样式的悬浮卡片（渐变背景、按钮、列表、表格等）。HTML 内容需先通过 `encodeURIComponent()` 编码：
-```javascript
-var html = '<div class="card"><h3>标题</h3><p>内容</p></div>';
-var encoded = encodeURIComponent(html);
-var markdown = '[链接](tooltip:html:' + encoded + ')';
+**语法规则**：
+1. **带引号格式**：`tooltip:html:"选择器"` - 选择器用双引号包裹
+2. **无引号格式**：`tooltip:html:.class-name` - 仅适用于简单的类选择器
+3. **支持的选择器类型**：
+   - ID选择器：`#element-id`
+   - 类选择器：`.class-name`
+   - 属性选择器：`[attribute]`、`[attribute=value]`
+   - 组合选择器：`.class1.class2`、`#id .class`
+
+**特性**：
+1. **自动移除隐藏属性**：自动移除目标元素的display:none、visibility:hidden、opacity:0等隐藏属性
+2. **动态DOM加载**：实时查找页面中的DOM元素并克隆到悬浮框中
+3. **错误处理**：未找到元素时显示友好的错误提示信息
+4. **样式保留**：保留原始元素的HTML结构和内联样式
+5. **安全隔离**：元素只在悬浮框中显示，不直接显示在网页中
+
+**使用示例**：
+```html
+<!-- 在页面任意位置定义隐藏元素 -->
+<div id="hidden-content" style="display:none;">
+  <h3>隐藏的HTML内容</h3>
+  <p>这个元素被隐藏，但可以通过HTML工具提示显示。</p>
+</div>
+
+<!-- 在Markdown中引用 -->
+[查看隐藏内容](tooltip:html:"#hidden-content")
 ```
 
 ### 8. 字帖 (`copybook: true`)

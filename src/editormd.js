@@ -2704,7 +2704,8 @@
             var editorScrollElement = codeMirror.find(".CodeMirror-scroll");
             editorScrollElement.on(mouseOrTouch("scroll", "touchmove") + ".editormd-sync", function(event) {
                 // ★ 记录用户手动滚动位置（事件触发时立即记录，不受后续程序滚动污染）
-                _userScrollTop.editor = editorScrollElement.scrollTop();
+                var currentScrollTop = editorScrollElement.scrollTop();
+                _userScrollTop.editor = currentScrollTop;
                 
                 // ★ 被预览→编辑器同步锁锁定，跳过（防振荡）
                 if (isLocked('editor')) return;
@@ -2715,6 +2716,9 @@
                 
                 // ★★★ 关键：在事件处理时立即锁定对方方向，消除 rAF 调度到执行之间的时间窗口
                 lockBoth('editor');
+                
+                // ★★★ 防止编辑器自身滚动：保存当前位置，在同步后恢复
+                var originalScrollTop = currentScrollTop;
                 
                 _rafPending.editor = true;
                 _rafIds.editor = requestAnimationFrame(function() {
@@ -2855,6 +2859,11 @@
                         preview.scrollTop(Math.min(targetScroll, previewMaxScroll));
                     }
                     
+                    // ★★★ 恢复编辑器原始滚动位置（防止编辑器自身滚动）
+                    if (originalScrollTop !== undefined && Math.abs(editorScrollElement.scrollTop() - originalScrollTop) > 1) {
+                        editorScrollElement.scrollTop(originalScrollTop);
+                    }
+                    
                     settings.onscroll.call(_this, event);
                 });
             });
@@ -2862,7 +2871,8 @@
             // ★★ 预览区滚动 → 编辑器同步（rAF + 同步锁 + 防抖 + 方向保护 + 死区）
             preview.on(mouseOrTouch("scroll", "touchmove") + ".editormd-sync", function(event) {
                 // ★ 记录用户手动滚动位置（事件触发时立即记录）
-                _userScrollTop.preview = preview.scrollTop();
+                var currentPreviewScrollTop = preview.scrollTop();
+                _userScrollTop.preview = currentPreviewScrollTop;
                 
                 // ★ 被编辑器→预览同步锁锁定，跳过（防振荡）
                 if (isLocked('preview')) return;
@@ -2872,6 +2882,9 @@
                 
                 // ★★★ 在事件处理时立即锁定对方方向
                 lockBoth('preview');
+                
+                // ★★★ 防止预览区自身滚动：保存当前位置，在同步后恢复
+                var originalPreviewScrollTop = currentPreviewScrollTop;
                 
                 _rafPending.preview = true;
                 _rafIds.preview = requestAnimationFrame(function() {
@@ -3038,6 +3051,11 @@
                         codeView.scrollTop(Math.min(targetScrollTop, maxCodeScroll));
                     }
                     
+                    // ★★★ 恢复预览区原始滚动位置（防止预览区自身滚动）
+                    if (originalPreviewScrollTop !== undefined && Math.abs(preview.scrollTop() - originalPreviewScrollTop) > 1) {
+                        preview.scrollTop(originalPreviewScrollTop);
+                    }
+                    
                     settings.onpreviewscroll.call(_this, event);
                 });
             });
@@ -3118,6 +3136,42 @@
                 
                 // ★ 标记行映射需要重建（内容已变更）
                 _this._mapNeedsUpdate = true;
+                
+                // ★ 在内容修改时触发预览区同步滚动到当前编辑位置
+                if (settings.syncScrolling && settings.syncScrolling !== "single") {
+                    // 获取当前光标位置
+                    var cursor = _cm.getCursor();
+                    var scrollInfo = _cm.getScrollInfo();
+                    var lineHeight = _cm.defaultTextHeight ? _cm.defaultTextHeight() : 20;
+                    var cursorTop = cursor.line * lineHeight;
+                    
+                    // 计算当前光标在编辑器中的位置百分比
+                    var editorHeight = _cm.getScrollInfo().clientHeight;
+                    var editorScrollHeight = _cm.getScrollInfo().height;
+                    var cursorPercent = cursorTop / Math.max(1, editorScrollHeight - editorHeight);
+                    
+                    // 计算预览区对应的滚动位置
+                    var preview = _this.preview;
+                    var previewScrollHeight = preview[0].scrollHeight;
+                    var previewHeight = preview.height();
+                    var previewMaxScroll = Math.max(1, previewScrollHeight - previewHeight);
+                    var targetPreviewScroll = cursorPercent * previewMaxScroll;
+                    
+                    // 锁定编辑器方向，防止循环触发
+                    if (typeof _this._lockSyncScroll === 'function') {
+                        _this._lockSyncScroll();
+                    }
+                    
+                    // 滚动预览区到对应位置
+                    preview.scrollTop(targetPreviewScroll);
+                    
+                    // 解锁同步滚动（延迟解锁，防止立即触发反向同步）
+                    if (typeof _this._unlockSyncScroll === 'function') {
+                        setTimeout(function() {
+                            _this._unlockSyncScroll(100);
+                        }, 100);
+                    }
+                }
                 
                 _this.timer = setTimeout(function() {
                     clearTimeout(_this.timer);
@@ -3778,7 +3832,45 @@
                     
                     if (typeof tableStart === "undefined" || tableStart < 0) return;
                     
+                    // ★★★ 表格编辑操作前，记录当前预览区位置，用于后续同步滚动
+                    var previewScrollTopBefore = _this.preview.scrollTop();
+                    
                     _this.modifyTableInMarkdown(action, rowIndex, colIndex, isThead, tableStart, $wrapper);
+                    
+                    // ★★★ 表格编辑操作后，触发编辑器滚动到对应的markdown位置
+                    if (_this.settings.syncScrolling && _this.settings.syncScrolling !== "single") {
+                        // 获取表格在预览区的位置
+                        var tableOffset = $wrapper.offset();
+                        var previewOffset = _this.preview.offset();
+                        var tableTopInPreview = tableOffset.top - previewOffset.top + previewScrollTopBefore;
+                        
+                        // 获取预览区中心位置
+                        var previewHeight = _this.preview.height();
+                        var previewScrollHeight = _this.preview[0].scrollHeight;
+                        var previewCenter = tableTopInPreview + ($wrapper.height() / 2);
+                        var previewPercent = previewCenter / Math.max(1, previewScrollHeight);
+                        
+                        // 计算编辑器对应的滚动位置
+                        var codeView = _this.codeMirror.find(".CodeMirror-scroll");
+                        var codeScrollHeight = codeView[0].scrollHeight;
+                        var codeViewHeight = codeView.height();
+                        var targetEditorScroll = previewPercent * Math.max(1, codeScrollHeight - codeViewHeight);
+                        
+                        // 锁定预览区方向，防止循环触发
+                        if (typeof _this._lockSyncScroll === 'function') {
+                            _this._lockSyncScroll();
+                        }
+                        
+                        // 滚动编辑器到对应位置
+                        codeView.scrollTop(targetEditorScroll);
+                        
+                        // 解锁同步滚动（延迟解锁，防止立即触发反向同步）
+                        if (typeof _this._unlockSyncScroll === 'function') {
+                            setTimeout(function() {
+                                _this._unlockSyncScroll(100);
+                            }, 100);
+                        }
+                    }
                 });
             });
             
@@ -4018,6 +4110,41 @@
                     // ★ 从 wrapper 上读取出现序号和 srcKey，精准定位
                     var occIdx = parseInt($wrapper.attr("data-image-occurrence"), 10) || 1;
                     _this.modifyImageSizeInMarkdown(imgSrc, $img.attr("alt"), finalWidth, finalHeight, occIdx);
+                    
+                    // ★★★ 图片尺寸调整后，触发编辑器滚动到对应的markdown位置
+                    if (_this.settings.syncScrolling && _this.settings.syncScrolling !== "single") {
+                        // 获取图片在预览区的位置
+                        var imgOffset = $wrapper.offset();
+                        var previewOffset = _this.preview.offset();
+                        var imgTopInPreview = imgOffset.top - previewOffset.top + _this.preview.scrollTop();
+                        
+                        // 获取预览区中心位置
+                        var previewHeight = _this.preview.height();
+                        var previewScrollHeight = _this.preview[0].scrollHeight;
+                        var previewCenter = imgTopInPreview + ($wrapper.height() / 2);
+                        var previewPercent = previewCenter / Math.max(1, previewScrollHeight);
+                        
+                        // 计算编辑器对应的滚动位置
+                        var codeView = _this.codeMirror.find(".CodeMirror-scroll");
+                        var codeScrollHeight = codeView[0].scrollHeight;
+                        var codeViewHeight = codeView.height();
+                        var targetEditorScroll = previewPercent * Math.max(1, codeScrollHeight - codeViewHeight);
+                        
+                        // 锁定预览区方向，防止循环触发
+                        if (typeof _this._lockSyncScroll === 'function') {
+                            _this._lockSyncScroll();
+                        }
+                        
+                        // 滚动编辑器到对应位置
+                        codeView.scrollTop(targetEditorScroll);
+                        
+                        // 解锁同步滚动（延迟解锁，防止立即触发反向同步）
+                        if (typeof _this._unlockSyncScroll === 'function') {
+                            setTimeout(function() {
+                                _this._unlockSyncScroll(100);
+                            }, 100);
+                        }
+                    }
                 });
                 
                 // 双击图片可编辑尺寸
@@ -9278,7 +9405,7 @@
             // 转义 href 用于 HTML 属性
             var safeHref = editormd.escapeAttr(href || "");
 
-            // 悬浮提示链接语法：[文本](tooltip:内容) / [文本](tooltip:image:图片URL) / [文本](tooltip:iframe:页面URL) / [文本](tooltip:html:HTML代码)
+            // 悬浮提示链接语法：[文本](tooltip:内容) / [文本](tooltip:image:图片URL) / [文本](tooltip:iframe:页面URL) / [文本](tooltip:html:"元素选择器") / [文本](tooltip:html:HTML代码)
             if (settings.tooltip && href.indexOf("tooltip:") === 0) {
                 var tooltipBody = href.substring(8);
                 var tooltipType = "text";
@@ -9287,11 +9414,27 @@
                 if (typeMatch) {
                     tooltipType = typeMatch[1];
                     tooltipContent = tooltipBody.substring(typeMatch[0].length);
-                }
-                // ★ HTML 类型：Base64 编码存储，防止属性转义导致内容损坏
-                if (tooltipType === "html") {
-                    var b64Content = editormd.base64Encode(tooltipContent);
-                    return '<span class="editormd-tooltip-trigger" data-tooltip="" data-tooltip-html="' + b64Content + '" data-tooltip-type="html" tabindex="0">' + text + '</span>';
+                    
+                    // ★ HTML 类型：仅支持CSS选择器格式
+                    // 新格式: tooltip:html:"元素选择器" 或 tooltip:html:.test_dom 或 tooltip:html:[data-tooltip-content]
+                    if (tooltipType === "html") {
+                        var selector = tooltipContent;
+                        
+                        // 如果以引号开头和结尾，移除引号
+                        if (selector.match(/^["']/) && selector.match(/["']$/)) {
+                            selector = selector.replace(/^["']|["']$/g, '');
+                        }
+                        
+                        // 验证选择器格式（必须是以#、.、[开头的有效CSS选择器）
+                        if (selector.match(/^[.#\[][a-zA-Z0-9\-_\[\]="'#\.:\s]*$/)) {
+                            // 存储为特殊格式，以便在initTooltips中识别
+                            return '<span class="editormd-tooltip-trigger" data-tooltip="' + editormd.escapeAttr(selector) + '" data-tooltip-type="html-selector" data-tooltip-html="" tabindex="0">' + text + '</span>';
+                        } else {
+                            // 如果不是有效的CSS选择器，返回错误提示
+                            console.warn('无效的HTML工具提示选择器:', tooltipContent, '，仅支持CSS选择器格式如 #id, .class, [attribute]');
+                            return '<span class="editormd-tooltip-trigger" data-tooltip="无效选择器:' + editormd.escapeAttr(tooltipContent) + '" data-tooltip-type="html-selector" data-tooltip-html="" tabindex="0">' + text + '</span>';
+                        }
+                    }
                 }
                 return '<span class="editormd-tooltip-trigger" data-tooltip="' + editormd.escapeAttr(tooltipContent) + '" data-tooltip-type="' + editormd.escapeAttr(tooltipType) + '" tabindex="0">' + text + '</span>';
             }
@@ -9940,6 +10083,10 @@
             } else if (tooltipType === "html") {
                 // ★ 复杂 HTML 内容：设置最大宽高防止溢出，允许内部样式
                 tooltipHtml = '<div class="editormd-tooltip-html-content">' + tooltipContent + '</div>';
+            } else if (tooltipType === "html-selector") {
+                // ★ HTML 选择器类型：查找页面中的DOM元素
+                // 注意：这里只是创建占位符，实际内容在showTooltip函数中动态加载
+                tooltipHtml = '<div class="editormd-tooltip-html-content editormd-tooltip-selector-loading">正在加载HTML内容...</div>';
             } else {
                 tooltipHtml = tooltipContent;
             }
@@ -9952,6 +10099,90 @@
              */
             var showTooltip = function(e) {
                 clearTimeout($trigger.data("tooltip-timer"));
+                
+                // 如果是 html-selector 类型，需要动态加载DOM元素内容
+                if (tooltipType === "html-selector") {
+                    // 查找页面中的DOM元素
+                    var selector = tooltipContent;
+                    console.log('HTML选择器工具提示 - 查找元素:', selector, '类型:', tooltipType);
+                    
+                    var $target = $(selector);
+                    console.log('HTML选择器工具提示 - 找到元素数量:', $target.length);
+                    
+                    if ($target.length > 0) {
+                        // 克隆目标元素，移除隐藏属性（如display:none, visibility:hidden, opacity:0等）
+                        var $clone = $target.clone();
+                        
+                        // 记录原始样式用于调试
+                        console.log('HTML选择器工具提示 - 原始元素样式:', {
+                            display: $target.css('display'),
+                            visibility: $target.css('visibility'),
+                            opacity: $target.css('opacity'),
+                            position: $target.css('position')
+                        });
+                        
+                        // 移除常见隐藏属性
+                        $clone.css({
+                            display: '',
+                            visibility: '',
+                            opacity: '',
+                            position: '',
+                            left: '',
+                            top: '',
+                            width: '',
+                            height: '',
+                            margin: '',
+                            padding: '',
+                            border: '',
+                            background: '',
+                            color: ''
+                        });
+                        
+                        // 移除可能影响显示的类名
+                        $clone.removeClass(function(index, className) {
+                            // 移除包含"hide", "hidden", "invisible"等隐藏相关的类
+                            var classes = className.split(/\s+/);
+                            var toRemove = [];
+                            for (var i = 0; i < classes.length; i++) {
+                                var cls = classes[i].toLowerCase();
+                                if (cls.indexOf('hide') === 0 || 
+                                    cls.indexOf('hidden') >= 0 || 
+                                    cls.indexOf('invisible') >= 0 ||
+                                    cls.indexOf('collapse') >= 0 ||
+                                    cls.indexOf('transparent') >= 0) {
+                                    toRemove.push(classes[i]);
+                                }
+                            }
+                            return toRemove.join(' ');
+                        });
+                        
+                        // 移除隐藏属性
+                        $clone.removeAttr('hidden');
+                        $clone.removeAttr('aria-hidden');
+                        
+                        // 设置克隆元素的样式，确保在tooltip中正常显示
+                        $clone.css({
+                            display: 'block',
+                            visibility: 'visible',
+                            opacity: '1',
+                            position: 'relative',
+                            maxWidth: '100%',
+                            maxHeight: '300px',
+                            overflow: 'auto'
+                        });
+                        
+                        // 更新tooltip内容
+                        $tooltip.html('<div class="editormd-tooltip-html-content">' + $clone[0].outerHTML + '</div>');
+                        $tooltip.removeClass('editormd-tooltip-text editormd-tooltip-image editormd-tooltip-iframe editormd-tooltip-html');
+                        $tooltip.addClass('editormd-tooltip-html');
+                        
+                        console.log('HTML选择器工具提示 - 成功加载元素到tooltip');
+                    } else {
+                        // 未找到元素，显示错误信息
+                        console.error('HTML选择器工具提示 - 未找到元素:', selector);
+                        $tooltip.html('<div class="editormd-tooltip-html-content" style="color: #ff6b6b; padding: 10px; font-size: 12px;">未找到元素: <code>' + editormd.escapeHTML(selector) + '</code><br>请检查CSS选择器是否正确，元素是否存在于页面中。</div>');
+                    }
+                }
                 
                 // 先临时显示以获取真实尺寸
                 $tooltip.css({ display: "block", visibility: "hidden" });
