@@ -613,10 +613,11 @@ hr.editormd-page-break {
 #{$prefix}tooltip-popup {
     position: fixed;
     z-index: 99999;
-    background: #333;
-    color: #fff;
-    padding: 8px 12px;
-    border-radius: 6px;
+    background: #000;         // ★ 黑色背景
+    color: #fff;              // ★ 白色文字
+    padding: 0;               // ★ padding 为 0
+    margin: 0;                // ★ margin 为 0
+    border-radius: 8px;
     font-size: 13px;
     line-height: 1.5;
     max-width: 320px;
@@ -625,7 +626,7 @@ hr.editormd-page-break {
     opacity: 0;
     transition: opacity 0.2s;
     pointer-events: auto;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.35);
 
     &.show {
         opacity: 1;
@@ -634,15 +635,21 @@ hr.editormd-page-break {
     // Text content
     #{$prefix}tooltip-text-content {
         white-space: pre-wrap;
+        background: #000;
+        color: #fff;
+        padding: 10px 16px;
+        border-radius: 8px;
+        display: inline-block;
     }
 
-    // Image/iframe tooltip
+    // Image/iframe tooltip — 使用制定尺寸精确限制
     &#{$prefix}tooltip-image,
     &#{$prefix}tooltip-iframe {
-        padding: 4px;
-        max-width: 360px;
-        background: #fff;
-        border: 1px solid #ddd;
+        padding: 0;
+        margin: 0;
+        max-width: 90vw;
+        background: #000;
+        border: none;
         pointer-events: auto;
         min-width: 100px;
         min-height: 60px;
@@ -651,45 +658,53 @@ hr.editormd-page-break {
             display: block;
             max-width: 340px;
             max-height: 220px;
-            border-radius: 3px;
+            width: auto;
+            height: auto;
+            border-radius: 4px;
+            object-fit: contain;
         }
 
         iframe {
             display: block;
             width: 340px;
             height: 210px;
-            border-radius: 3px;
+            border-radius: 4px;
         }
     }
 
-    // ★ HTML 类型 tooltip：支持复杂 HTML 内容，不限制文本颜色
-    &#{$prefix}tooltip-html {
+    // HTML content tooltip
+    &#{$prefix}tooltip-html,
+    &#{$prefix}tooltip-html-selector {
         max-width: 420px;
         max-height: 360px;
         overflow-y: auto;
         overflow-x: hidden;
-        background: #333;
+        background: #000;
         color: #fff;
-        padding: 12px 14px;
+        padding: 0;
+        margin: 0;
         pointer-events: auto;
 
         #{$prefix}tooltip-html-content {
             overflow-wrap: break-word;
-            // 允许内部元素自由样式
+            background: #000;
+            color: #fff;
+            padding: 0;
+            margin: 0;
             img { max-width: 100%; height: auto; }
             table { font-size: 12px; border-collapse: collapse; width: 100%; }
             table th, table td { border: 1px solid rgba(255,255,255,0.25); padding: 4px 8px; }
-            table th { background: rgba(255,255,255,0.1); }
-            a { color: #6db3f2; }
-            code { background: rgba(255,255,255,0.15); padding: 1px 5px; border-radius: 3px; font-size: 12px; }
-            pre { background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px; overflow-x: auto; font-size: 12px; }
+            table th { background: rgba(255,255,255,0.08); }
+            a { color: #58a6ff; }
+            code { background: rgba(255,255,255,0.12); padding: 1px 5px; border-radius: 3px; font-size: 12px; color: #ffa657; }
+            pre { background: rgba(255,255,255,0.08); padding: 8px; border-radius: 4px; overflow-x: auto; font-size: 12px; }
             ul, ol { padding-left: 20px; }
             hr { border-color: rgba(255,255,255,0.2); }
             blockquote {
                 border-left: 3px solid rgba(255,255,255,0.3);
                 padding-left: 10px;
                 margin: 4px 0;
-                color: rgba(255,255,255,0.8);
+                color: rgba(255,255,255,0.75);
             }
         }
     }
@@ -719,23 +734,23 @@ hr.editormd-page-break {
 
 #{$prefix}tooltip-arrow-bottom #{$prefix}tooltip-arrow {
     top: 100%;
-    border-top: 7px solid #333;
+    border-top: 7px solid #000;
 }
 
 #{$prefix}tooltip-arrow-top #{$prefix}tooltip-arrow {
     bottom: 100%;
-    border-bottom: 7px solid #333;
+    border-bottom: 7px solid #000;
 }
 
-// Image/iframe arrow colors
+// Image/iframe arrow colors (same as base — black background)
 #{$prefix}tooltip-arrow-top#{$prefix}tooltip-image #{$prefix}tooltip-arrow,
 #{$prefix}tooltip-arrow-top#{$prefix}tooltip-iframe #{$prefix}tooltip-arrow {
-    border-bottom-color: #ddd;
+    border-bottom-color: #000;
 }
 
 #{$prefix}tooltip-arrow-bottom#{$prefix}tooltip-image #{$prefix}tooltip-arrow,
 #{$prefix}tooltip-arrow-bottom#{$prefix}tooltip-iframe #{$prefix}tooltip-arrow {
-    border-top-color: #ddd;
+    border-top-color: #000;
 }
 
 // ★ 组合上下标容器：<<下标>^<上标>> → 上下标垂直堆叠、同级并列

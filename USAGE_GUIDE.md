@@ -82,8 +82,29 @@ editormd.markdownToHTML("preview-container", {
 |------|--------|------|
 | `watch` | `true` | 实时预览 |
 | `delay` | `300` | 解析延迟 (ms) |
-| `syncScrolling` | `true` | 同步滚动 ⭐v1.12加强：自适应锁定时长、惯性检测与平滑缓动、元素类型感知留白 |
+| `syncScrolling` | `true` | 同步滚动 ⭐v1.12加强：自适应锁定时长、惯性检测与平滑缓动、元素类型感知留白、**操作区域锁定机制** |
 | `previewCodeHighlight` | `true` | 预览区代码高亮 |
+
+#### ⭐v1.12.0 操作区域锁定机制
+
+**核心原理**：智能识别用户当前操作的区域，防止反向同步干扰。
+
+- **编辑区锁定**：用户在编辑区操作（滚动、输入、键盘、鼠标等）时，预览区更新不会反向影响编辑区滚动位置
+- **预览区锁定**：用户在预览区操作（滚动、点击、鼠标等）时，编辑区更新不会反向影响预览区滚动位置
+- **自动释放**：800ms 无操作后自动释放锁定，支持智能切换
+- **事件覆盖**：覆盖所有用户交互事件（scroll、keydown、keyup、mousedown、mouseup、paste、drop、cut、focus、mouseenter 等）
+
+**v1.12.0 增强功能**：
+- **延长锁定**：`extendActiveZoneLock(ms)` 方法，用于长时间操作（如 save()）时延长锁定时间
+- **强制释放**：`releaseActiveZone()` 方法，用于操作完成后强制释放锁定
+- **多重保护**：change 事件、save() 开始、save() 结束三重滚动位置检查
+- **智能时机**：锁定时间延长至 3000ms，确保 save() 完成后才释放
+
+**解决的问题**：
+- ✅ 编辑区输入内容、回车换行时滚动位置不再被意外改变
+- ✅ 预览区滚动时编辑区滚动位置保持稳定
+- ✅ 表格编辑、图片缩放后滚动位置不跳转
+- ✅ 完全消除双向同步振荡
 
 ### 扩展语法
 
@@ -221,62 +242,166 @@ xfEditor 是一款开源 Markdown 编辑器...
 
 ### 7. 悬浮提示 (`tooltip: true`)
 
-**文本提示**：
+**新版统一语法**（v1.12.0）：
+
 ```markdown
-[悬停查看](tooltip:这是提示内容)
+[触发文本](tooltip:类型:内容)<宽度,高度>
 ```
 
-**图片提示**：
+**支持的类型**：
+- `text` - 文本内容
+- `image` - 图片URL
+- `iframe` - 页面URL
+- `html` - CSS选择器（引用页面DOM元素）
+
+---
+
+#### 7.1 文本类型
+
+**基础用法**：
 ```markdown
-![图片](url){"tooltip": "图片说明"}
+[悬停查看](tooltip:text:这是提示内容)
 ```
 
-**图片型悬浮提示**（鼠标悬停时显示图片）：
+**设置固定宽高**（超出自动滚动）：
 ```markdown
-[查看 Logo](tooltip:image:../images/logo.png)
+[百度简介](tooltip:text:百度（NASDAQ: BIDU）是全球最大的中文搜索引擎，创立于2000年1月1日，总部位于中国北京。)<50,20>
 ```
 
-**iframe 型悬浮提示**（嵌入外部页面）：
+**图片作为触发对象**：
 ```markdown
-[查看页面](tooltip:iframe:./demo.html)
+[../images/logo.png](tooltip:text:这是通过图片路径触发的文本悬浮提示。)
 ```
 
-**复杂 HTML 悬浮提示** ⭐v1.12 增强：
+---
 
-**HTML 选择器语法** ⭐v1.12 新增（仅支持CSS选择器格式）：
+#### 7.2 图片类型
+
+**基础用法**（自动宽高）：
 ```markdown
-[查看隐藏内容](tooltip:html:"#hidden-content")        # 通过ID选择器引用页面元素
-[查看样式卡片](tooltip:html:".tooltip-card")          # 通过类选择器引用元素
-[查看属性元素](tooltip:html:"[data-tooltip-content]") # 通过属性选择器引用元素
-[查看无引号选择器](tooltip:html:.test-class)         # 无引号的类选择器格式
+[查看Logo](tooltip:image:../images/logos/editormd-logo-180x180.png)
 ```
 
-**语法规则**：
-1. **带引号格式**：`tooltip:html:"选择器"` - 选择器用双引号包裹
-2. **无引号格式**：`tooltip:html:.class-name` - 仅适用于简单的类选择器
-3. **支持的选择器类型**：
-   - ID选择器：`#element-id`
-   - 类选择器：`.class-name`
-   - 属性选择器：`[attribute]`、`[attribute=value]`
-   - 组合选择器：`.class1.class2`、`#id .class`
+**设置固定宽高**（图片拉伸/缩放）：
+```markdown
+[Logo 50x40](tooltip:image:../images/logos/editormd-logo-180x180.png)<50,40>
+[Logo 100x80](tooltip:image:../images/logos/editormd-logo-180x180.png)<100,80>
+```
 
-**特性**：
-1. **自动移除隐藏属性**：自动移除目标元素的display:none、visibility:hidden、opacity:0等隐藏属性
-2. **动态DOM加载**：实时查找页面中的DOM元素并克隆到悬浮框中
-3. **错误处理**：未找到元素时显示友好的错误提示信息
-4. **样式保留**：保留原始元素的HTML结构和内联样式
-5. **安全隔离**：元素只在悬浮框中显示，不直接显示在网页中
+**使用引号包围URL**（推荐）：
+```markdown
+[外部图片](tooltip:image:"https://picsum.photos/300/200?random=1")<120,80>
+[随机图片](tooltip:image:'https://picsum.photos/200/150?random=2')<100,75>
+```
 
-**使用示例**：
+---
+
+#### 7.3 iframe 类型
+
+**基础用法**：
+```markdown
+[查看示例页面](tooltip:iframe:./simple.html)
+```
+
+**设置固定宽高**（超出自动滚动）：
+```markdown
+[小窗口](tooltip:iframe:./simple.html)<100,60>
+[中窗口](tooltip:iframe:./simple.html)<200,120>
+[大窗口](tooltip:iframe:./simple.html)<300,180>
+```
+
+**使用引号包围URL**：
+```markdown
+[外部页面](tooltip:iframe:"https://example.com")<200,150>
+```
+
+---
+
+#### 7.4 HTML 类型（CSS选择器）
+
+**Class选择器**：
+```markdown
+[查看产品卡片](tooltip:html:.test_tooltip1)<150,100>
+```
+
+**ID选择器**：
+```markdown
+[查看ID元素](tooltip:html:#test_tooltip_id)<160,80>
+```
+
+**使用引号包围选择器**：
+```markdown
+[带引号的class](tooltip:html:".test_tooltip1")<140,90>
+[带引号的ID](tooltip:html:"#test_tooltip_id")<150,85>
+```
+
+**HTML元素定义**：
 ```html
-<!-- 在页面任意位置定义隐藏元素 -->
-<div id="hidden-content" style="display:none;">
-  <h3>隐藏的HTML内容</h3>
-  <p>这个元素被隐藏，但可以通过HTML工具提示显示。</p>
+<!-- 在页面中定义隐藏元素 -->
+<div class="test_tooltip1" style="display:none;">
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                padding: 15px; border-radius: 8px; color: #fff;">
+        <h4>🎯 产品特性</h4>
+        <p>这是通过CSS选择器引用的HTML内容</p>
+        <ul>
+            <li>实时预览与同步滚动</li>
+            <li>30+ 语言代码高亮</li>
+            <li>ECharts 图表嵌入</li>
+        </ul>
+    </div>
 </div>
 
-<!-- 在Markdown中引用 -->
-[查看隐藏内容](tooltip:html:"#hidden-content")
+<div id="test_tooltip_id" style="display:none;">
+    <div style="background: #f0f8ff; padding: 15px; border-radius: 8px;">
+        <h4 style="color: #1976D2;">📚 ID选择器示例</h4>
+        <p>这是通过ID选择器引用的内容。</p>
+    </div>
+</div>
+```
+
+---
+
+#### 7.5 宽度和高度参数
+
+**参数格式**：`<宽度,高度>`
+
+**规则说明**：
+1. 单位固定为像素（px），不需要写单位
+2. 参数可选，不写时自动适应内容大小
+3. 必须同时写宽度和高度
+
+**v1.12.1 尺寸限制优化**：
+- **图片类型**：设置宽高后，图片使用显式 `width`/`height` + `object-fit:contain` 精确限制尺寸，popup 容器同时设置 `max-width`/`max-height` 防止溢出
+- **iframe 类型**：popup 容器根据指定尺寸设置显式宽高和最大宽高限制
+- **CSS 约束解除**：Tooltip popup 的 `max-width` 已从 `360px` 放宽至 `90vw`，不再强制限制悬浮框最大宽度
+
+**不同类型的行为**：
+- **text**：超出高度时垂直滚动
+- **image**：图片使用 `object-fit:contain` 按比例缩放填充区域，不会拉伸变形
+- **iframe**：水平或垂直方向都会根据需要滚动
+- **html**：超出高度时垂直滚动
+
+---
+
+#### 7.6 完整示例
+
+```markdown
+## 文本类型
+[百度](tooltip:text:百度是全球最大的中文搜索引擎。)
+[固定大小](tooltip:text:这段文本固定宽度50px高度20px。)<50,20>
+
+## 图片类型
+[查看Logo](tooltip:image:../images/logo.png)
+[Logo 100x80](tooltip:image:../images/logo.png)<100,80>
+[外部图片](tooltip:image:"https://picsum.photos/300/200")<120,80>
+
+## iframe类型
+[查看页面](tooltip:iframe:./demo.html)
+[小窗口](tooltip:iframe:./demo.html)<150,100>
+
+## HTML类型
+[查看产品卡片](tooltip:html:.product-card)<150,100>
+[查看详情](tooltip:html:"#detail-content")<160,80>
 ```
 
 ### 8. 字帖 (`copybook: true`)
@@ -463,10 +588,53 @@ https://example.com/file2.docx | 文件名2
 ```javascript
 editor.getMarkdown();          // 获取 Markdown
 editor.setMarkdown(md);        // 设置 Markdown
-editor.getHTML();              // 获取 HTML
-editor.getPreviewedHTML();     // 获取预览区 HTML
-editor.getTextareaSavedHTML(); // 获取保存的 HTML
+editor.getHTML();              // 获取完整独立 HTML 文档（含 DOCTYPE、内联 CSS/JS）
+editor.getPreviewedHTML();     // 获取预览区 HTML（支持全页、片段、压缩模式）
+editor.getTextareaSavedHTML(); // 获取保存的 HTML（getHTML 的别名）
 ```
+
+**获取独立 HTML**：`getHTML(options)` — ⭐v1.12.1加强，生成完全不依赖外部文件的完整 HTML 文档：
+```javascript
+var html = editor.getHTML({
+    title: "我的文章",               // 页面标题
+    description: "文章简介",          // meta description
+    author: "作者名",                // meta author
+    keywords: "关键词, 标签",        // meta keywords
+    includeStyles: true,             // 内联所有 CSS 样式
+    includeScripts: true,            // 内联交互脚本（Tooltip/Tabs/Columns/ECharts等）
+    externalStyles: ["https://cdn.example.com/theme.css"],  // 外部样式表
+    externalScripts: ["https://cdn.example.com/app.js"],   // 外部脚本
+    customMeta: {"viewport": "width=device-width"},  // 自定义 meta 标签
+    lang: "zh-CN",                   // HTML lang 属性
+    charset: "UTF-8",                // 字符编码
+    minify: false                    // 是否压缩输出
+});
+```
+
+**获取预览区 HTML**：`getPreviewedHTML(options)` — ⭐v1.12.1加强：
+```javascript
+var html = editor.getPreviewedHTML({
+    includeStyles: true,      // 内联核心 CSS
+    includeScripts: true,     // 内联交互脚本
+    fullPage: false,          // 是否包裹为完整 HTML 页面
+    rawMarkdown: false,       // 是否返回原始 Markdown
+    title: "Preview",         // 页面标题（fullPage 模式）
+    includeTOC: false,        // 是否包含目录
+    includeLineNumbers: false,// 是否包含行号标记
+    minify: false             // 是否压缩输出
+});
+```
+
+**操作区域锁定**：⭐v1.12.1增强
+```javascript
+editor.setActiveZone('editor');      // 标记编辑区为活跃区域
+editor.setActiveZone('preview');     // 标记预览区为活跃区域
+editor.extendActiveZoneLock(5000);   // 延长锁定（用于长时间渲染，v1.12.1 默认5秒）
+editor.releaseActiveZone();          // 强制释放锁定
+editor.shouldSkipReverseSync(target);// 检查是否应跳过反向同步
+```
+> **v1.12.1 增强**：`_isRendering` 渲染标志在渲染期间完全阻断双向同步；3次 rAF + setTimeout 多重保护滚动位置；异步模块加载完成后自动验证。
+
 
 **编辑器操作**：
 ```javascript

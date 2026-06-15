@@ -2,7 +2,7 @@
 <html lang="zh">
     <head>
         <meta charset="utf-8" />
-        <title>Sync scrolling - xfEditor examples</title>
+        <title>同步滚动与操作区域锁定 - xfEditor v1.12.0</title>
         <link rel="stylesheet" href="css/style.css" />
         <link rel="stylesheet" href="../css/editormd.min.css" />
         <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
@@ -10,18 +10,28 @@
     <body>
         <div id="layout">
             <header>
-                <h1>Sync scrolling</h1>
-                <p>增强版同步滚动 - 支持智能防循环触发机制</p>
+                <h1>同步滚动与操作区域锁定</h1>
+                <p>v1.12.1 增强版同步滚动 - 智能操作区域锁定 + 渲染安全保护</p>
             </header>
             <div class="intro" style="width: 90%; margin: 15px auto; padding: 15px 20px; background: #f5f7fa; border-left: 4px solid #2196F3; border-radius: 4px; font-size: 14px; line-height: 1.8; color: #555;">
-                <h2>新特性说明</h2>
-                <p><strong>智能防循环机制：</strong>修复了双向循环触发问题，确保编辑区和预览区不会相互无限触发滚动。</p>
-                <p><strong>改进的交互行为：</strong></p>
+                <h2>⭐ v1.12.1 操作区域锁定机制（增强版）</h2>
+                <p><strong>核心原理：</strong>智能识别用户当前操作的区域，防止反向同步干扰。</p>
+                <p><strong>工作原理：</strong></p>
                 <ul>
-                    <li><strong>编辑区操作：</strong>滚动或修改编辑区内容时，<strong>编辑区不会滚动</strong>，预览区会定位到对应的预览内容</li>
-                    <li><strong>预览区操作：</strong>滚动、拖拽图片调整尺寸或点击表格单元格时，<strong>预览区不会滚动</strong>，编辑区会定位到对应的Markdown源码</li>
+                    <li><strong>编辑区锁定：</strong>当用户在编辑区操作时（滚动、输入、回车、粘贴等），系统标记编辑区为活跃区域，预览区更新不会反向影响编辑区滚动位置</li>
+                    <li><strong>预览区锁定：</strong>当用户在预览区操作时（滚动、拖拽图片、点击表格等），系统标记预览区为活跃区域，编辑区更新不会反向影响预览区滚动位置</li>
+                    <li><strong>自动释放：</strong>2000ms 无操作后自动释放锁定，恢复正常双向同步（v1.12.1 从 800ms 延长至 2000ms）</li>
+                    <li><strong>渲染保护：</strong>（v1.12.1 新增）save() 渲染期间使用 <code>_isRendering</code> 标志完全阻断双向滚动同步，配合多重 rAF 在渲染完成后恢复编辑区滚动位置</li>
                 </ul>
-                <p><strong>优化的同步逻辑：</strong>包括图片拖拽、表格编辑等操作都能正确触发同步定位。</p>
+                <p><strong>覆盖事件：</strong>鼠标滚动、键盘输入、回车换行、粘贴内容、图片拖拽、表格编辑等所有用户交互事件。</p>
+                <hr style="margin: 15px 0; border: none; border-top: 1px dashed #ccc;">
+                <h2>同步滚动模式</h2>
+                <p><strong>三种模式：</strong></p>
+                <ul>
+                    <li><strong>Bisynchronous（默认）：</strong>编辑区和预览区双向同步滚动，配合操作区域锁定机制</li>
+                    <li><strong>Single：</strong>仅编辑区滚动时同步预览区，预览区滚动不影响编辑区</li>
+                    <li><strong>Disabled：</strong>完全禁用同步滚动</li>
+                </ul>
             </div>
             <div class="btns">
                 <button class="bisync-btn">Bisynchronous (Default)</button>

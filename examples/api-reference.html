@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
     <meta charset="utf-8" />
-    <title>API 接口文档 - xfEditor v1.10.0</title>
+    <title>API 接口文档 - xfEditor v1.12.1</title>
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="../css/editormd.min.css" />
     <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
@@ -31,7 +31,7 @@
 <body>
     <div id="layout">
         <header>
-            <h1>xfEditor v1.10.0 API 接口文档</h1>
+            <h1>xfEditor v1.12.1 API 接口文档</h1>
             <p>完整配置项、实例方法、事件回调与上传接口说明</p>
         </header>
 
@@ -263,8 +263,10 @@
                     <tr><td>⁑⠕内容⠕⁑</td><td>行内右对齐（Unicode）</td></tr>
                     <tr><td>⁑⁛内容⁛⁑</td><td>行内两端对齐（Unicode）</td></tr>
                     <tr><td>![alt](url)&lt;W,H&gt;</td><td>自定义图片尺寸</td></tr>
-                    <tr><td>[文本](tooltip:内容)</td><td>文本悬浮提示</td></tr>
-                    <tr><td>![alt](url "tooltip:内容")</td><td>图片悬浮提示</td></tr>
+                    <tr><td>[文本](tooltip:text:内容)</td><td>文本悬浮提示</td></tr>
+                    <tr><td>[文本](tooltip:image:URL)</td><td>图片悬浮提示</td></tr>
+                    <tr><td>[文本](tooltip:iframe:URL)</td><td>iframe 悬浮提示</td></tr>
+                    <tr><td>[文本](tooltip:html:选择器)</td><td>HTML 元素悬浮提示</td></tr>
                     <tr><td>```echarts ... ```</td><td>ECharts 图表</td></tr>
                 </table>
             </div>

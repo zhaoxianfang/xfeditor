@@ -1,13 +1,81 @@
 # xfEditor 修复与优化总结
 
-**当前版本**: v1.12.0  
-**修复日期**: 2026-06-11  
+**当前版本**: v1.12.1  
+**修复日期**: 2026-06-15  
 **jQuery 版本**: 3.7.1  
 **KaTeX 版本**: v0.16.9（已从旧版本升级）
 
 ---
 
 ## 📊 修复统计
+
+### 第三十六轮修复（Tooltip 尺寸修复 + 编辑区滚动保护 + 同步优化 + getHTML 增强 + 文档全面更新）
+
+**修复日期**: 2026-06-15
+
+#### 1. 🖼️ Tooltip 悬浮提示尺寸限制修复
+
+- **文件**: `src/editormd.js`（第6107-6135行）、`scss/editormd.preview.scss`（第651行）
+- **问题**: 用户设置的 `<宽度,高度>` 参数对图片和 iframe 悬浮内容无效，图片/iframe 未按指定尺寸显示
+- **修复**:
+  - 图片类型：设置宽高时使用显式 `width`/`height` + `object-fit:contain` 替代仅 `max-*`，精确控制图片尺寸，保持比例不拉伸
+  - iframe 类型：popup 容器同时设置显式宽高和 `max-width`/`max-height`，覆盖 CSS 默认限制
+  - CSS 约束解除：Tooltip popup 的 `max-width` 从 `360px` 放宽至 `90vw`（SCSS 源文件同步修改）
+  - `_getCoreStyles` 内联 CSS 同步更新
+
+#### 2. 🛡️ 编辑区回车滚动异常修复
+
+- **文件**: `src/editormd.js`
+- **问题**: 用户在编辑区操作（回车、输入等）时编辑区发生异常滚动
+- **根因**: save() 渲染期间双向滚动同步未被阻断，渲染完成后滚动位置被覆盖
+- **修复**:
+  - 新增 `_isRendering` 渲染标志，save() 期间置 `true`，完全阻断双向滚动同步
+  - 操作区域锁定时长从 800ms 延长至 2000ms（`_zoneLockDuration`）
+  - save() 期间 `extendActiveZoneLock(5000)` 延长锁至 5 秒
+  - 采用多重 rAF 保护：3 次 `requestAnimationFrame` + 1 次 `setTimeout(500ms)` 在异步渲染（KaTeX/流程图/ECharts）完成后多次恢复编辑区滚动位置
+  - `_checkAllAsyncLoaded` 中异步加载完成后验证并恢复滚动位置
+
+#### 3. 🔄 同步机制全面优化
+
+- **文件**: `src/editormd.js`
+- **修复**:
+  - 编辑器→预览区滚动处理函数开头添加 `if (_this._isRendering) return;`
+  - 预览区→编辑器滚动处理函数开头添加 `if (_this._isRendering) return;`
+  - change 事件不再提前调用 `releaseActiveZone()`，由 save() 中的 rAF 控制释放时序
+
+#### 4. 📄 getHTML() / getPreviewedHTML() 增强
+
+- **文件**: `src/editormd.js`
+- **修复**:
+  - `_getCoreStyles()` 新增 Tooltip 完整样式（trigger/popup/arrow/image/iframe/html），确保导出 HTML 中悬浮提示正常显示
+  - `getHTML()` 输出完整自包含 HTML 文档，不依赖外部 CSS/JS 即可独立使用
+  - `getPreviewedHTML()` 含完整内联样式
+
+#### 5. 📦 构建产物全部重建
+
+- 所有 `.js` / `.css` 和 `.min.js` / `.min.css` 已重新编译压缩
+
+#### 6. 📝 文档与示例全面更新
+
+- `README.md`: 新增 v1.12.1 改进章节
+- `USAGE_GUIDE.md`: Tooltip 尺寸限制说明更新；API 方法文档增强
+- `FIX_SUMMARY.md`: 新增第三十六轮修复记录
+- `HTML_TOOLTIP_NEW_FEATURE.md`: 版本号 + v1.12.1 更新日志
+- `examples/tooltip.html`: 版本号 + 尺寸限制说明更新
+- `examples/sync-scrolling.html`: 版本号 + 锁定机制说明更新（含渲染保护）
+- `examples/api-reference.html`: 版本号 + getHTML/getPreviewedHTML 描述增强
+- `examples/all-features.html`: 版本号全面更新 + v1.12.1 更新日志
+
+#### 涉及修改文件
+
+- `src/editormd.js` — _isRendering 标志、多重 rAF 保护、Tooltip 尺寸修复、_getCoreStyles 更新
+- `scss/editormd.preview.scss` — max-width: 90vw
+- `css/editormd.css/.min.css/.preview.css/.preview.min.css` — SCSS 重新编译
+- `editormd.js/.min.js/.amd.js/.amd.min.js` — 重新构建压缩
+- `README.md` / `USAGE_GUIDE.md` / `FIX_SUMMARY.md` / `HTML_TOOLTIP_NEW_FEATURE.md`
+- `examples/tooltip.html` / `sync-scrolling.html` / `api-reference.html` / `all-features.html`
+
+---
 
 ### 第三十三轮修复（组合上下标优化 + 独立 HTML 输出增强 + 同步滚动加固 + 滚动位置修复 + 文档全更新）
 

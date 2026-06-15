@@ -2,7 +2,7 @@
 <html lang="zh">
     <head>
         <meta charset="utf-8" />
-        <title>完整独立预览 - xfEditor v1.12.0</title>
+        <title>完整独立预览 - xfEditor v1.12.1</title>
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="../css/editormd.preview.min.css" />
     <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
@@ -33,13 +33,13 @@
     <body>
         <div id="layout">
             <header>
-                <h1>xfEditor v1.12.0 完整独立预览</h1>
+                <h1>xfEditor v1.12.1 完整独立预览</h1>
                 <p>Full Preview Page — 本页面仅加载预览所需资源，演示所有 Markdown 扩展语法的渲染效果</p>
             </header>
             <div id="full-preview">
                 <textarea style="display:none;">[TOC]
 
-# xfEditor v1.12.0 全部语法预览
+# xfEditor v1.12.1 全部语法预览
 
 ## 一、Markdown 基础语法
 
@@ -93,7 +93,7 @@
 ```javascript
 // JavaScript 示例
 function helloEditorMD() {
-    console.log("Hello, xfEditor v1.12.0!");
+    console.log("Hello, xfEditor v1.12.1!");
     return {
         version: "1.10.0",
         features: ["ECharts", "Tabs", "Columns", "Tooltip", "Copybook", "Draft"]
@@ -217,7 +217,13 @@ xfEditor 是一款开源的、可嵌入的 Markdown 在线编辑器，基于 Cod
 [[/tab]]
 
 [[tab:更新日志]]
-### v1.10.0
+### v1.12.1（最新）
+- 🔧 Tooltip 尺寸修复：图片/iframe 显式宽高精确限制 + object-fit:contain
+- 🛡️ 编辑区滚动保护：渲染期间阻断同步，多重 rAF 恢复滚动位置
+- 🔄 同步优化：双向均检查渲染状态，锁定时长延长至 2000ms
+- 📄 getHTML/getPreviewedHTML 增强：完整内联样式，自包含输出
+
+### v1.12.0
 - 工具栏图片/视频/文件按钮失效修复
 - 编辑模式弹窗全面美化（渐变标题栏、现代按钮）
 - XSS 安全加固（6 项注入漏洞修复）
@@ -295,11 +301,11 @@ function inTab() {
 
 ### 7.1 文本悬浮提示
 
-请将鼠标悬停在此链接上查看效果：[百度](tooltip:百度是全球最大的中文搜索引擎，创立于2000年，总部位于北京。)
+请将鼠标悬停在此链接上查看效果：[百度](tooltip:text:百度是全球最大的中文搜索引擎，创立于2000年，总部位于北京。)
 
 ### 7.2 图片悬浮提示
 
-![示例图片](../images/logos/editormd-logo-180x180.png "tooltip:xfEditor 的 Logo 图标，代表着开源、简洁与强大的 Markdown 编辑体验。")
+![示例图片](../images/logos/editormd-logo-180x180.png "tooltip:text:xfEditor 的 Logo 图标，代表着开源、简洁与强大的 Markdown 编辑体验。")
 
 ### 7.3 图片型悬浮提示
 
@@ -319,7 +325,7 @@ function inTab() {
 
 ⁑⁖开源、简洁、强大，支持实时预览与扩展语法⁖⁑
 
-⁑⠕版本号：v1.12.0 | 许可证：MIT⠕⁑
+⁑⠕版本号：v1.12.1 | 许可证：MIT⠕⁑
 
 ⁑⁛xfEditor 致力于为开发者和内容创作者提供最优秀的 Markdown 编辑体验，支持实时预览、图片上传、图表渲染等丰富功能。⁛⁑
 

@@ -35,11 +35,24 @@
 - 支持 AMD/CMD 模块加载（Require.js / Sea.js）
 - 兼容 IE8+、iPad、Zepto.js
 
+### v1.12.1 改进
+| 特性 | 说明 |
+|------|------|
+| **编辑区滚动彻底保护** | 新增 `_isRendering` 渲染标志，渲染期间阻止所有滚动同步；锁定时间从 800ms 延长至 2000ms；`save()` 后通过 3 次 rAF + setTimeout 多重恢复滚动位置；异步渲染（KaTeX/流程图/ECharts）完成后 `_checkAllAsyncLoaded()` 再次验证滚动；不提前释放锁定，由渲染完成后的 rAF 控制释放时机 |
+| **Tooltip 尺寸限制修复** | 修复悬浮图片/iframe 的宽度高度限制：用户指定 `<宽度,高度>` 时，直接设置图片的 `width`/`height` 属性并配合 `object-fit:contain` 保持比例；同时设置 popup 容器的 `max-width`/`max-height` 覆盖 CSS 限制；CSS 默认 `max-width` 从 360px 调整至 90vw |
+| **同步滚动全面优化** | 双向滚动同步新增 `_isRendering` 检查，确保编辑区渲染时双向同步都被阻断；优化同步锁机制的自适应时长 |
+| **getHTML/getPreviewedHTML 加强** | `_getCoreStyles()` 内联 Tooltip CSS 同步更新（90vw max-width）；HTML 输出内联所有样式确保完全不依赖外部 CSS/JS |
+| **接口完善** | 完善所有核心接口的事件处理逻辑；API 文档和类型提示更新 |
+
 ### v1.12.0 改进
 | 特性 | 说明 |
 |------|------|
+| **操作区域锁定机制** | 新增智能操作区域锁定，用户在编辑区操作时，预览区更新不会反向影响编辑区滚动；用户在预览区操作时，编辑区更新不会反向影响预览区滚动。彻底解决编辑区滚动位置被意外改变的问题。**v1.12.0 增强**：新增 `extendActiveZoneLock()` 延长锁定方法（用于长时间操作如 save()）；新增 `releaseActiveZone()` 强制释放锁定方法；锁定时间延长至 3000ms 确保 save() 完成后才释放；滚动位置多重保护（change 事件、save() 开始、save() 结束三重检查） |
 | **同步滚动全面加强** | 自适应锁定时长（120-400ms 动态调整）；5 样本滑动窗口惯性检测；惯性阶段平滑缓动（0.4 系数）；元素类型感知留白（标题/代码块/水平线分别计算）；BLOCK_SEL 扩展至 figure/html-block 等元素 |
 | **同步滚动彻底加固** | 新增 `_lockSyncScroll()`/`_unlockSyncScroll()` 取消排队 rAF + 延迟释放锁机制；`PROGRAM_SCROLL_DEBOUNCE` 提高至 200ms；表格/图片编辑后编辑区滚动位置不跳转 |
+| **Tooltip 样式优化** | 所有悬浮提示框背景改为透明，padding 和 margin 设为 0，提供更大的自定义空间 |
+| **getHTML() 接口增强** | 新增 SEO meta 标签（description/author/keywords）、外部样式表/脚本链接、自定义 meta 标签、语言设置、字符编码、压缩输出等选项 |
+| **getPreviewedHTML() 接口增强** | 新增目录生成、行号标记、外部样式表/脚本链接、压缩输出等选项；支持更灵活的输出控制 |
 | **图片缩放出现次数追踪** | 修复拖拽第 N 次出现的图片时回写修改第一次出现位置的 Bug；新增 `data-image-occurrence` 属性精准定位 |
 | **复杂 HTML 悬浮提示** | 新增 `tooltip:html:"元素选择器"` 语法，支持通过CSS选择器引用页面中的DOM元素作为悬浮内容 |
 | **TOC 目录点击导航** | `bindScrollEvent()` 新增 TOC 链接点击事件委托，支持 ID 匹配 + 文本回退匹配，精确跳转到目标标题 |
@@ -546,27 +559,49 @@ editor.off("onchange");
 ```
 
 ### 悬浮提示 (`tooltip: true`)
+
+支持四种类型的悬浮提示：文本、图片、嵌入页面和 HTML 元素。
+
+**统一语法格式**：`[触发文本](tooltip:类型:内容)<宽度,高度>`
+
+#### 文本类型
 ```markdown
-[百度](tooltip:百度是全球最大的中文搜索引擎)
-![Logo](image.png "tooltip:这是 Logo 的说明")
-[查看隐藏内容](tooltip:html:"#hidden-content")    # 通过ID选择器引用元素
-[查看样式卡片](tooltip:html:".tooltip-card")      # 通过类选择器引用元素
-[查看属性元素](tooltip:html:"[data-tooltip-content]") # 通过属性选择器引用元素
-[查看无引号选择器](tooltip:html:.test-class)     # 无引号的CSS选择器格式
+[百度](tooltip:text:百度是全球最大的中文搜索引擎)
+[提示文本](tooltip:text:这是详细的提示内容)<300,200>
 ```
 
-**HTML选择器语法** ⭐v1.12 增强：
-- `tooltip:html:"#element-id"` - 通过ID选择器引用页面元素
-- `tooltip:html:".class-name"` - 通过类选择器引用元素
-- `tooltip:html:"[attribute]"` - 通过属性选择器引用元素
-- `tooltip:html:.class-name` - 无引号的类选择器格式（简洁写法）
+#### 图片类型
+```markdown
+![Logo](tooltip:image:https://example.com/logo.png)
+![预览图](tooltip:image:https://example.com/preview.jpg)<400,300>
+```
+
+#### 嵌入页面类型
+```markdown
+[查看文档](tooltip:iframe:https://example.com/doc)
+[嵌入页面](tooltip:iframe:https://example.com/page)<500,400>
+```
+
+#### HTML 元素类型 ⭐v1.12 增强
+```markdown
+[查看隐藏内容](tooltip:html:#hidden-content)
+[查看样式卡片](tooltip:html:.tooltip-card)
+[查看属性元素](tooltip:html:[data-tooltip-content])
+[自定义尺寸](tooltip:html:#my-element)<400,300>
+```
+
+**HTML 选择器支持**：
+- `#element-id` - ID 选择器
+- `.class-name` - 类选择器
+- `[attribute]` - 属性选择器
+- `[attribute=value]` - 属性值选择器
 
 **特性**：
-1. **自动移除隐藏属性**：自动移除目标元素的display:none、visibility:hidden、opacity:0等隐藏属性
-2. **动态加载DOM**：实时查找页面中的DOM元素并克隆到悬浮框中
-3. **支持复杂HTML**：可引用包含复杂HTML结构的页面元素
-4. **错误处理**：未找到元素时显示友好的错误提示信息
-4. 隐藏的DOM元素可以正常显示在悬浮框中
+1. **可选宽高参数**：`<宽度,高度>` 格式，单位为 px，超出后自动滚动
+2. **自动移除隐藏属性**：HTML 类型自动移除 `display:none`、`visibility:hidden`、`opacity:0`
+3. **动态加载 DOM**：实时查找并克隆页面元素
+4. **支持复杂 HTML**：可引用包含复杂结构的页面元素
+5. **错误处理**：未找到元素时显示友好提示
 
 ### 数学公式 (`tex: true`)
 ```markdown
