@@ -7,65 +7,355 @@
         <link rel="stylesheet" href="../css/editormd.preview.min.css" />
         <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
         <style>
-            body {padding: 40px;}
-            
-            #layout > header, .btns {
-                width: auto;
-            }
-            
-            #sidebar {
-                width: 400px;
-                height: 100%;
-                position: fixed;
-                top: 0;
-                right: 0;
-                overflow: hidden;
-                background: #fff;
-                z-index: 100;
-                padding: 18px; 
-                border: 1px solid #ddd;
-                border-top: none;
-                border-bottom: none;
-            }
-            
-            #sidebar:hover {
-                overflow: auto;
-            }
-            
-            #sidebar h1 {
-                font-size: 16px;
-            }
-            
-            #custom-toc-container {
-                padding-left: 0;
-            }
-            
-            #test-editormd-view, #test-editormd-view2 {
-                padding-left: 0;
-                padding-right: 430px;
+            * { box-sizing: border-box; }
+            body {
                 margin: 0;
+                padding: 24px 32px;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+                color: #333;
+                background: #f5f6f8;
+            }
+            
+            #layout {
+                max-width: 1320px;
+                margin: 0 auto;
+            }
+
+            #layout > header {
+                background: #fff;
+                border-radius: 10px;
+                padding: 24px 32px;
+                margin-bottom: 16px;
+                box-shadow: 0 1px 3px rgba(0,0,0,.06);
+            }
+            #layout > header h1 {
+                margin: 0 0 6px;
+                font-size: 22px;
+                color: #1a1a2e;
+            }
+            #layout > header p {
+                margin: 0;
+                font-size: 13px;
+                color: #888;
+            }
+
+            .btns {
+                margin-bottom: 16px;
+                display: flex;
+                gap: 10px;
+            }
+            .btns button {
+                padding: 7px 18px;
+                border: 1px solid #d0d5dd;
+                border-radius: 6px;
+                background: #fff;
+                font-size: 13px;
+                color: #555;
+                cursor: pointer;
+                transition: all .15s;
+            }
+            .btns button:hover {
+                background: #f0f2f5;
+                border-color: #b0b5bd;
+            }
+
+            /* ── 主内容区：flex 两栏 ── */
+            .main-area {
+                display: flex;
+                gap: 0;
+                align-items: flex-start;
+            }
+
+            /* ── 正文区 ── */
+            .content-col {
+                flex: 1 1 0;
+                min-width: 0;
+                transition: flex .35s ease;
+                background: #fff;
+                border-radius: 10px;
+                box-shadow: 0 1px 3px rgba(0,0,0,.06);
+                padding: 28px 32px;
+            }
+
+            /* ── 侧栏（TOC） ── */
+            .toc-col {
+                flex: 0 0 260px;
+                width: 260px;
+                margin-left: 16px;
+                transition: flex .35s ease, margin .35s ease, opacity .25s ease, width .35s ease;
+                overflow: hidden;
+                border-radius: 10px;
+                background: #fff;
+                box-shadow: 0 1px 3px rgba(0,0,0,.06);
+                position: sticky;
+                top: 24px;
+            }
+            .toc-col.collapsed {
+                flex: 0 0 0;
+                width: 0;
+                margin-left: 0;
+                opacity: 0;
+                pointer-events: none;
+            }
+
+            /* ── 侧栏头部 ── */
+            .toc-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 12px 16px 10px;
+                border-bottom: 1px solid #eef0f5;
+                background: linear-gradient(135deg, #fafbfc 0%, #f6f7fa 100%);
+                border-radius: 10px 10px 0 0;
+            }
+            .toc-header h1 {
+                margin: 0;
+                font-size: 13px;
+                font-weight: 700;
+                color: #1a1a2e;
+                white-space: nowrap;
+                letter-spacing: .02em;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+            .toc-header h1::before {
+                content: '';
+                display: inline-block;
+                width: 3px;
+                height: 14px;
+                border-radius: 2px;
+                background: #5b6abf;
+                flex-shrink: 0;
+            }
+            .toc-toggle {
+                flex: 0 0 auto;
+                width: 26px;
+                height: 26px;
+                border: none;
+                border-radius: 6px;
+                background: #e8eaef;
+                font-size: 11px;
+                line-height: 26px;
+                text-align: center;
+                cursor: pointer;
+                color: #888;
+                transition: all .2s;
+                padding: 0;
+            }
+            .toc-toggle:hover {
+                background: #d0d4de;
+                color: #444;
+                transform: rotate(90deg);
+            }
+
+            /* ── 全局浮动开关 ── */
+            .toc-float-btn {
+                position: fixed;
+                right: 24px;
+                bottom: 40px;
+                z-index: 200;
+                width: 46px;
+                height: 46px;
+                border-radius: 50%;
+                border: none;
+                background: #fff;
+                box-shadow: 0 3px 16px rgba(91,106,191,.18), 0 1px 4px rgba(0,0,0,.08);
+                font-size: 18px;
+                line-height: 46px;
+                text-align: center;
+                cursor: pointer;
+                color: #5b6abf;
+                transition: all .25s cubic-bezier(.4,0,.2,1);
+                animation: toc-float-pulse 2.4s ease-in-out infinite;
+            }
+            @keyframes toc-float-pulse {
+                0%, 100% { box-shadow: 0 3px 16px rgba(91,106,191,.18), 0 1px 4px rgba(0,0,0,.08); }
+                50%      { box-shadow: 0 3px 24px rgba(91,106,191,.32), 0 2px 8px rgba(0,0,0,.12); }
+            }
+            .toc-float-btn:hover {
+                background: #5b6abf;
+                color: #fff;
+                box-shadow: 0 6px 24px rgba(91,106,191,.35);
+                transform: translateY(-2px) scale(1.06);
+                animation: none;
+            }
+
+            /* ── TOC 列表容器 ── */
+            #custom-toc-container {
+                padding: 4px 0 8px;
+                max-height: calc(100vh - 140px);
+                overflow-y: auto;
+                scroll-behavior: smooth;
+            }
+            /* 抹掉 .markdown-toc 自带的 padding/margin/border */
+            #custom-toc-container .markdown-toc {
+                padding: 0;
+                margin: 0;
+                border: none;
+                border-radius: 0;
+                background: transparent;
+                font-size: 13px;
+            }
+            /* 抹掉 .markdown-toc-list 自带 ul 的 18px 缩进 */
+            #custom-toc-container .markdown-toc-list ul {
+                padding-left: 10px;
+            }
+
+            /* 美化滚动条 */
+            #custom-toc-container::-webkit-scrollbar {
+                width: 4px;
+            }
+            #custom-toc-container::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            #custom-toc-container::-webkit-scrollbar-thumb {
+                background: #d5d9e2;
+                border-radius: 4px;
+            }
+            #custom-toc-container::-webkit-scrollbar-thumb:hover {
+                background: #b8bdc9;
+            }
+
+            /* ── TOC 列表样式 ── */
+            #custom-toc-container ul {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+            }
+            #custom-toc-container li {
+                margin: 0;
+                padding: 0;
+                line-height: 1.4;
+                position: relative;
+            }
+            #custom-toc-container a {
+                display: block;
+                padding: 4px 10px 4px 14px;
+                margin: 0 8px;
+                border-radius: 5px;
+                font-size: 12.5px;
+                color: #666;
+                text-decoration: none;
+                transition: all .15s ease;
+                border-left: 3px solid transparent;
+                line-height: 1.45;
+            }
+            #custom-toc-container a:hover {
+                color: #2d2d40;
+                background: #f2f3f8;
+                border-left-color: #c8cde0;
+                padding-left: 16px;
+            }
+            #custom-toc-container a:active,
+            #custom-toc-container a.toc-active {
+                color: #1a1a2e;
+                background: #eef0f8;
+                border-left-color: #5b6abf;
+                font-weight: 500;
+                padding-left: 16px;
+            }
+
+            /* ── 层级差异样式 ── */
+            /* H2（顶层） */
+            #custom-toc-container > ul > li > a,
+            #custom-toc-container .markdown-toc-list > ul > li > a {
+                font-weight: 600;
+                font-size: 13px;
+                color: #444;
+                padding: 5px 10px 5px 14px;
+            }
+            #custom-toc-container > ul > li > a:hover,
+            #custom-toc-container .markdown-toc-list > ul > li > a:hover {
+                padding-left: 16px;
+            }
+            /* H3 */
+            #custom-toc-container ul ul > li > a {
+                font-size: 12px;
+                font-weight: 500;
+                color: #555;
+            }
+            /* H4 */
+            #custom-toc-container ul ul ul > li > a {
+                font-size: 11.5px;
+                font-weight: 400;
+                color: #888;
+            }
+            /* H5+ */
+            #custom-toc-container ul ul ul ul > li > a {
+                font-size: 11px;
+                color: #aaa;
+            }
+
+            /* 层级缩进 — 在侧栏窄空间下收紧 */
+            #custom-toc-container ul ul { padding-left: 10px; }
+            #custom-toc-container ul ul ul { padding-left: 10px; }
+            #custom-toc-container ul ul ul ul { padding-left: 10px; }
+
+            /* ── 底部回到顶部 ── */
+            .toc-back-top {
+                display: block;
+                text-align: center;
+                padding: 8px 0;
+                margin: 2px 8px;
+                border-top: 1px solid #eef0f5;
+                font-size: 11.5px;
+                color: #999;
+                text-decoration: none;
+                transition: color .15s;
+                cursor: pointer;
+            }
+            .toc-back-top:hover {
+                color: #5b6abf;
+            }
+            .toc-back-top::before {
+                content: '↑ ';
+            }
+
+            /* 响应式：窄屏时侧栏自动收起 */
+            @media (max-width: 860px) {
+                .toc-col {
+                    flex: 0 0 0;
+                    width: 0;
+                    margin-left: 0;
+                    opacity: 0;
+                    pointer-events: none;
+                }
+                .content-col {
+                    padding: 20px 18px;
+                }
+                body {
+                    padding: 16px 16px;
+                }
+                .toc-float-btn {
+                    right: 16px;
+                    bottom: 24px;
+                    width: 40px;
+                    height: 40px;
+                    line-height: 40px;
+                    font-size: 16px;
+                }
+                .toc-back-top { display: none; }
             }
         </style>
     </head>
     <body>
         <div id="layout">
             <header>
-                <h1>Markdown转HTML的显示处理之自定义 ToC 容器</h1> 
-                <p>即：非编辑情况下的HTML预览</p>
-                <p>HTML Preview (markdown to html and custom ToC container)</p>       
+                <h1>Markdown转HTML的显示处理之自定义 ToC 容器</h1>
+                <p>HTML Preview (markdown to html and custom ToC container)</p>
             </header>
             <div class="btns">
-                <button onclick="location.href='./html-preview-markdown-to-html.html';">返回 Back</button>
+                <button onclick="location.href='./html-preview-markdown-to-html.html';">← 返回 Back</button>
+                <button id="btn-toggle-toc" onclick="toggleTOC()" style="display:none;">☰ 目录</button>
             </div>
-            <div id="sidebar">
-                <h1>Table of Contents</h1>
-                <div class="markdown-body editormd-preview-container" id="custom-toc-container">#custom-toc-container</div>
-            </div>
-            <div id="test-editormd-view">
-               <textarea style="display:none;" name="test-editormd-markdown-doc">###Hello world!</textarea>               
-            </div>
-            <div id="test-editormd-view2">
-                <textarea id="append-test" style="display:none;">
+            <div class="main-area">
+                <div class="content-col">
+                    <div id="test-editormd-view">
+                       <textarea style="display:none;" name="test-editormd-markdown-doc">###Hello world!</textarea>               
+                    </div>
+                    <div id="test-editormd-view2">
+                        <textarea id="append-test" style="display:none;">
 
 ###科学公式 TeX(KaTeX)
                     
@@ -118,8 +408,19 @@ alert("script");
 &lt;script type="text/javscript"&gt;
 alert("script");
 &lt;/script&gt;</textarea>          
+                    </div>
+                </div>
+                <div class="toc-col" id="toc-sidebar">
+                    <div class="toc-header">
+                        <h1>📑 Table of Contents</h1>
+                        <button class="toc-toggle" onclick="toggleTOC()" title="收起目录">✕</button>
+                    </div>
+                    <div class="markdown-body editormd-preview-container" id="custom-toc-container">#custom-toc-container</div>
+                    <a class="toc-back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">回到顶部</a>
+                </div>
             </div>
         </div>
+        <button class="toc-float-btn" id="toc-float-btn" onclick="toggleTOC()" title="展开目录" style="display:none;">☰</button>
         <script src="js/jquery.min.js"></script>
         <script src="../lib/marked.min.js"></script>
         <script src="../lib/prettify.min.js"></script>
@@ -134,6 +435,72 @@ alert("script");
             editormd.defaults.path = "../lib/";
         </script>
         <script type="text/javascript">
+            // ── TOC 目录 显示/隐藏 ──
+            var tocVisible = true;
+            function toggleTOC() {
+                tocVisible = !tocVisible;
+                var $sidebar = $('#toc-sidebar');
+                var $floatBtn = $('#toc-float-btn');
+                var $btnToggle = $('#btn-toggle-toc');
+                if (tocVisible) {
+                    $sidebar.removeClass('collapsed');
+                    $floatBtn.hide();
+                    $btnToggle.hide();
+                } else {
+                    $sidebar.addClass('collapsed');
+                    $floatBtn.show();
+                    $btnToggle.show();
+                }
+            }
+
+            // ── Scroll Spy：滚动时高亮当前章节 ──
+            function initScrollSpy() {
+                var $tocLinks = $('#custom-toc-container a[href^="#"]');
+                if (!$tocLinks.length) return;
+                var headings = [];
+                $tocLinks.each(function() {
+                    var id = this.getAttribute('href').slice(1);
+                    var el = document.getElementById(id);
+                    if (el) headings.push({ id: id, el: el, link: this });
+                });
+                if (!headings.length) return;
+
+                var ticking = false;
+                function onScroll() {
+                    if (!ticking) {
+                        requestAnimationFrame(function() {
+                            var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                            var activeId = null;
+                            for (var i = headings.length - 1; i >= 0; i--) {
+                                if (headings[i].el.offsetTop - 80 <= scrollTop) {
+                                    activeId = headings[i].id;
+                                    break;
+                                }
+                            }
+                            $tocLinks.removeClass('toc-active');
+                            if (activeId) {
+                                var $active = $('#custom-toc-container a[href="#' + activeId + '"]');
+                                $active.addClass('toc-active');
+                                // 不在当前视口内的激活项自动滚动到可视区
+                                var tocEl = document.getElementById('custom-toc-container');
+                                var activeEl = $active[0];
+                                if (tocEl && activeEl) {
+                                    var tocRect = tocEl.getBoundingClientRect();
+                                    var linkRect = activeEl.getBoundingClientRect();
+                                    if (linkRect.top < tocRect.top || linkRect.bottom > tocRect.bottom) {
+                                        tocEl.scrollTop = activeEl.offsetTop - tocEl.clientHeight / 3;
+                                    }
+                                }
+                            }
+                            ticking = false;
+                        });
+                        ticking = true;
+                    }
+                }
+                window.addEventListener('scroll', onScroll, { passive: true });
+                onScroll();
+            }
+
             $(function() {
                 var testEditormdView, testEditormdView2;
                 
@@ -172,6 +539,9 @@ alert("script");
                     //console.log(testEditormdView.getMarkdown());
                     
                     //alert(testEditormdView.getMarkdown());
+
+                    // Scroll spy 初始化
+                    setTimeout(initScrollSpy, 300);
                 });
                     
                 testEditormdView2 = editormd.markdownToHTML("test-editormd-view2", {

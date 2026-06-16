@@ -1,6 +1,6 @@
 # xfEditor 使用指南
 
-> xfEditor v1.12.0 完整使用手册
+> xfEditor v1.15.0 完整使用手册
 
 ---
 
@@ -81,6 +81,7 @@ editormd.markdownToHTML("preview-container", {
 | 选项 | 默认值 | 说明 |
 |------|--------|------|
 | `watch` | `true` | 实时预览 |
+| `syncScrolling` | `true` | 同步滚动：`true`（双向）/ `false`（禁用）/ `"single"`（仅编辑区→预览区） |
 | `delay` | `300` | 解析延迟 (ms) |
 | `previewCodeHighlight` | `true` | 预览区代码高亮 |
 
@@ -112,8 +113,9 @@ editormd.markdownToHTML("preview-container", {
 
 ### 1. ECharts 图表 (`echarts: true`)
 
-支持柱状图、折线图、饼图、雷达图、漏斗图：
+支持柱状图、折线图、饼图、雷达图、漏斗图、**树图/脑图**（v1.15.0 新增）：
 
+#### 基础图表
 ````markdown
 ```echarts
 {
@@ -126,7 +128,115 @@ editormd.markdownToHTML("preview-container", {
 ```
 ````
 
-### 2. Tabs 标签页 (`tabs: true`)
+#### 树图/脑图（v1.15.0 新增）
+````markdown
+```echarts
+{
+  "theme": "dark",
+  "type": "tree",
+  "height": 500,
+  "title": {"text": "产品技术架构", "subtext": "点击节点圆圈可折叠/展开"},
+  "series": [{
+    "type": "tree",
+    "data": [{
+      "name": "🚀 智能中枢",
+      "children": [
+        {"name": "📊 数据分析", "children": [
+          {"name": "实时看板", "value": 95},
+          {"name": "异常检测", "value": 88}
+        ]},
+        {"name": "🤖 AI 引擎", "children": [
+          {"name": "NLP", "value": 92},
+          {"name": "CV", "value": 85}
+        ]}
+      ]
+    }],
+    "layout": "orthogonal",
+    "orient": "LR",
+    "expandAndCollapse": true,
+    "initialTreeDepth": 2
+  }]
+}
+```
+````
+
+**树图配置参数**：
+| 参数 | 说明 | 可选值 |
+|------|------|--------|
+| `"type"` | 图表类型 | `"tree"` |
+| `"theme"` | ECharts 主题 | `"dark"`, `"light"` |
+| `"height"` | 容器高度（px） | 默认 400 |
+| `"layout"` | 树图布局 | `"orthogonal"` 正交 |
+| `"orient"` | 树方向 | `"LR"`, `"TB"`, `"RL"`, `"BT"` |
+| `"expandAndCollapse"` | 节点折叠展开 | `true` / `false` |
+| `"initialTreeDepth"` | 初始展开层级 | 数字（-1 表示全部展开） |
+| `"roam"` | 缩放/平移 | `true` / `false` / `"scale"` / `"move"` |
+
+所有图表类型均支持 `"theme"` 和 `"height"` 通用配置🎨
+
+### 2. 代码块属性扩展（v1.14.0 新增 / v1.15.0 增强）
+
+代码块支持设置 `<pre>` 标签的 **class**、**id** 或 **hidden** 属性，用于自定义样式、DOM 操作或隐藏代码块。
+
+**语法**：
+
+````markdown
+# 设置 class 属性
+```(.test_class_dom)
+Hello World
+```
+
+# 设置 id 属性
+```(#test_id_dom)
+Hello World
+```
+
+# 同时设置 class 和 id
+```(.myclass#myid)
+Hello World
+```
+
+# 隐藏代码块（v1.15.0 新增）
+```(hidden)
+这段代码块在页面上不可见
+```
+
+# 隐藏 + class + id
+```html(hidden.code-snippet#example1)
+<div>隐藏的 HTML 代码</div>
+```
+
+# 带语言标识 + 属性
+```javascript(.code-snippet#example1)
+const x = 42;
+```
+````
+
+**生成的 HTML**：
+```html
+<!-- ```(.test_class_dom) →  -->
+<pre class="test_class_dom"><code>Hello World</code></pre>
+
+<!-- ```javascript(#example1) →  -->
+<pre id="example1"><code class="lang-javascript">const x = 42;</code></pre>
+
+<!-- ```(.myclass#myid) →  -->
+<pre class="myclass" id="myid"><code>Hello World</code></pre>
+
+<!-- ```(hidden) →  -->
+<pre style="display:none!important"><code>这段代码块在页面上不可见</code></pre>
+
+<!-- ```html(hidden.code-snippet#example1) →  -->
+<pre class="code-snippet" id="example1" style="display:none!important"><code class="lang-html">...</code></pre>
+```
+
+**应用场景**：
+- 与 `tooltip:iframe:pre#xxx` 配合使用，实现代码块内容悬浮预览
+- 使用 `hidden` 隐藏代码块，通过 tooltip 悬浮展示预览效果
+- 自定义特定代码块的 CSS 样式
+- JavaScript 中快速定位特定代码块
+
+### 3. Tabs 标签页 (`tabs: true`)
 
 ```markdown
 [[tabs]]
@@ -149,7 +259,7 @@ xfEditor 是一款开源 Markdown 编辑器...
 - Tabs 内可嵌套代码块、表格、图表
 - 支持多级嵌套（最多 20 层）
 
-### 3. 多列排版 (`columns: true`)
+### 4. 多列排版 (`columns: true`)
 
 ```markdown
 [[columns:3]]
@@ -164,7 +274,7 @@ xfEditor 是一款开源 Markdown 编辑器...
 [[/columns]]
 ```
 
-### 4. 纸张页面 (`pageBlock: true`)
+### 5. 纸张页面 (`pageBlock: true`)
 
 以标准纸张尺寸展示内容，支持自动分页：
 
@@ -190,7 +300,7 @@ xfEditor 是一款开源 Markdown 编辑器...
 - `{page}` - 当前页码
 - `{total}` - 总页数
 
-### 5. 拼音标注 (`pinyin: true`)
+### 6. 拼音标注 (`pinyin: true`)
 
 ```markdown
 {你 | nǐ} {好 | hǎo}
@@ -218,9 +328,9 @@ xfEditor 是一款开源 Markdown 编辑器...
 - `Ctrl+Alt+R` - 右对齐
 - `Ctrl+Alt+J` - 两端对齐
 
-### 7. 悬浮提示 (`tooltip: true`)
+### 8. 悬浮提示 (`tooltip: true`)
 
-**新版统一语法**（v1.12.0）：
+**新版统一语法**（v1.14.0）：
 
 ```markdown
 [触发文本](tooltip:类型:内容)<宽度,高度>
@@ -230,11 +340,12 @@ xfEditor 是一款开源 Markdown 编辑器...
 - `text` - 文本内容
 - `image` - 图片URL
 - `iframe` - 页面URL
+- `iframe:pre` - 代码块内容（页面 `<pre>` 元素，配合代码块属性扩展使用）✨ v1.14.0 新增
 - `html` - CSS选择器（引用页面DOM元素）
 
 ---
 
-#### 7.1 文本类型
+#### 8.1 文本类型
 
 **基础用法**：
 ```markdown
@@ -253,7 +364,7 @@ xfEditor 是一款开源 Markdown 编辑器...
 
 ---
 
-#### 7.2 图片类型
+#### 8.2 图片类型
 
 **基础用法**（自动宽高）：
 ```markdown
@@ -274,7 +385,7 @@ xfEditor 是一款开源 Markdown 编辑器...
 
 ---
 
-#### 7.3 iframe 类型
+#### 8.3 iframe 类型
 
 **基础用法**：
 ```markdown
@@ -295,7 +406,7 @@ xfEditor 是一款开源 Markdown 编辑器...
 
 ---
 
-#### 7.4 HTML 类型（CSS选择器）
+#### 8.4 HTML 类型（CSS选择器）
 
 **Class选择器**：
 ```markdown
@@ -339,7 +450,51 @@ xfEditor 是一款开源 Markdown 编辑器...
 
 ---
 
-#### 7.5 宽度和高度参数
+#### 8.5 iframe:pre 类型（代码块悬浮预览）✨ v1.14.0 新增
+
+配合**代码块属性扩展**使用，可以将页面中指定 `<pre>` 元素的内容以悬浮 iframe 方式展示。
+
+**语法**：
+
+```markdown
+# 按 ID 选择器
+[查看代码示例](tooltip:iframe:pre#test_id_dom)
+
+# 按 class 选择器
+[查看代码示例](tooltip:iframe:pre.test_class_dom)
+```
+
+**前提条件**：需要先在代码块中设置对应的 class 或 id 属性：
+
+````markdown
+```(.test_class_dom)
+function hello() {
+    console.log("Hello World");
+}
+```
+````
+
+**行为特性**：
+- **HTML 内容**会被浏览器解析渲染为完整页面效果（DOM + CSS + JS）
+- **纯文本内容**（JS/Python 等）在 iframe 中以默认样式直接显示
+- **每次鼠标悬停**动态创建 Blob URL，确保 iframe 中的 JS 代码每次悬停都重新执行
+- **鼠标离开**时自动释放 Blob URL，避免内存泄漏
+- Tooltip 背景为白色，与文本类型的深色背景区分
+
+````markdown
+```html(#demo-page)
+<!DOCTYPE html>
+<html><body><h1>Hello</h1><script>console.log("hover!")</script></body></html>
+```
+
+[预览页面](tooltip:iframe:pre#demo-page)<420,280>
+````
+
+> 💡 **提示**：鼠标悬停时将看到 "Hello" 大标题，控制台输出 "hover!"。鼠标离开后下一次悬停会再次输出。
+
+---
+
+#### 8.6 宽度和高度参数
 
 **参数格式**：`<宽度,高度>`
 
@@ -361,7 +516,7 @@ xfEditor 是一款开源 Markdown 编辑器...
 
 ---
 
-#### 7.6 完整示例
+#### 8.7 完整示例
 
 ```markdown
 ## 文本类型
@@ -382,7 +537,7 @@ xfEditor 是一款开源 Markdown 编辑器...
 [查看详情](tooltip:html:"#detail-content")<160,80>
 ```
 
-### 8. 字帖 (`copybook: true`)
+### 9. 字帖 (`copybook: true`)
 
 **田字格**：
 ```markdown
@@ -684,6 +839,54 @@ editor.on("onfullscreen", function() {
 - `onimagechange` - 图片尺寸变化
 - `onkeydown` / `onkeyup` - 键盘事件
 - `onpaste` / `ondrop` - 粘贴/拖放
+- `onscroll` - 编辑区同步滚动时触发
+- `onpreviewscroll` - 预览区同步滚动时触发
+- `onactivesidechange` - 活动侧切换时触发（参数："left" / "right" / null）
+
+---
+
+## 🔄 同步滚动详解（v1.13.0+）
+
+### 基本用法
+编辑器默认开启双向同步滚动（`syncScrolling: true`），用户无需任何配置：
+```javascript
+editormd("editor", {
+    syncScrolling: true,    // 默认值，双向同步
+    // 或 syncScrolling: "single"，仅编辑区→预览区同步
+    // 或 syncScrolling: false，禁用同步滚动
+});
+```
+
+### 活动侧感知
+编辑器自动检测用户操作侧并智能同步：
+
+| 操作位置 | 检测的操作 | 同步方向 |
+|----------|-----------|----------|
+| **编辑区** | 输入、粘贴、键盘事件、鼠标按下、获得焦点、光标移动、滚动 | 编辑区 → 预览区 |
+| **预览区** | 滚动、表格编辑、图片缩放、Tabs 切换、TOC 点击 | 预览区 → 编辑区 |
+
+```javascript
+// 监听活动侧切换
+editormd("editor", {
+    onactivesidechange: function(side) {
+        console.log("活动侧切换:", side); // "left" / "right" / null
+    },
+    onscroll: function(event) {
+        console.log("编辑区滚动同步到预览区");
+    },
+    onpreviewscroll: function(event) {
+        console.log("预览区滚动同步到编辑区");
+    }
+});
+
+// 运行时获取当前活动侧
+console.log(editor.state.activeSide); // "left" / "right" / null
+```
+
+### 精确定位
+- **编辑区→预览区**：使用 `data-source-line` 行属性映射精确定位，确保预览区显示编辑区对应内容
+- **预览区→编辑区**：反向查找可视区域最近的 `data-source-line` 元素，定位到对应源行
+- **Fallback**：当行映射不可用时，自动降级为百分比滚动
 
 ---
 

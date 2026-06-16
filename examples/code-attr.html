@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8" />
+    <title>代码块 class/id 属性扩展 — xfEditor v1.14.0</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="../css/editormd.min.css" />
+    <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
+    <style>
+        .code-demo-custom { border-left: 4px solid #4CAF50 !important; background: #f0fff4 !important; }
+        #special-block { border: 2px dashed #2196F3; box-shadow: 0 4px 12px rgba(33,150,243,0.2); }
+        .large-code { font-size: 18px !important; }
+        .highlight-block { background: linear-gradient(135deg, #fff3e0, #fff8e1) !important; border: 1px solid #ff9800 !important; }
+    </style>
+</head>
+<body>
+    <div id="layout">
+        <header>
+            <h1>🎨 代码块 class/id 属性扩展</h1>
+            <p>v1.14.0 全新功能 — 为代码块的 &lt;pre&gt; 标签设置自定义 class 或 id 属性</p>
+        </header>
+
+        <div id="test-editormd" style="margin: 0 auto;">
+            <textarea style="display:none;"># 代码块 class/id 属性扩展
+
+## 一、基本语法
+
+在围栏代码块起始标识后添加小括号 `(...)`，支持 `.class`、`#id` 和 `hidden` 三种形式：
+
+### 语法格式
+- `` ```(.class_name) ... ```  `` → 给 `<pre>` 添加 class 属性
+- `` ```(#id_name) ... ```  `` → 给 `<pre>` 添加 id 属性
+- `` ```(hidden) ... ```  `` → 给 `<pre>` 添加 `style="display:none!important"` 隐藏代码块
+- `` ```(.class1.class2) ... ```  `` → 同时添加多个 class
+- `` ```(.className#idName) ... ```  `` → 同时设置 class 和 id
+- `` ```(hidden.className#idName) ... ```  `` → 同时隐藏 + 设置 class 和 id
+
+---
+
+## 二、设置 class 属性
+
+### 2.1 绿色左边框样式 (.code-demo-custom)
+
+使用语法 ` ```(.code-demo-custom) `：
+
+```(.code-demo-custom)
+// 这段代码的 pre 标签有 class="code-demo-custom"
+// 对应的 CSS: border-left: 4px solid #4CAF50; background: #f0fff4;
+function hello() {
+    console.log("这是一段带绿色左边框的代码！");
+}
+```
+
+### 2.2 大字代码块 (.large-code)
+
+使用语法 ` ```javascript(.large-code) `：
+
+```javascript(.large-code)
+// 这段代码字体放大到 18px
+class Demo {
+    constructor() {
+        this.title = "大字体代码演示";
+    }
+}
+```
+
+### 2.3 高亮背景 (.highlight-block)
+
+使用语法 ` ```(.highlight-block) `：
+
+```(.highlight-block)
+// 这段代码有渐变黄色背景
+// 适合用来突出展示重要代码或警告信息
+注意：此功能为 xfEditor v1.14.0 新增功能！
+```
+
+---
+
+## 三、设置 id 属性
+
+### 3.1 蓝色虚线边框 (#special-block)
+
+使用语法 ` ```(#special-block) `：
+
+```(#special-block)
+// 这段代码的 pre 有 id="special-block"
+// CSS: border: 2px dashed #2196F3; box-shadow
+// 可以通过 JavaScript: document.getElementById("special-block") 直接定位
+```
+
+### 3.2 配合 iframe:pre 悬浮预览 (#demo-code)
+
+使用语法 ` ```javascript(#demo-code) `：
+
+```javascript(#demo-code)
+// 这是一个带语法高亮的代码块
+// 配合 tooltip:iframe:pre#demo-code 可实现悬浮预览
+function fibonacci(n) {
+    if (n <= 1) return n;
+    let a = 0, b = 1;
+    for (let i = 2; i <= n; i++) {
+        [a, b] = [b, a + b];
+    }
+    return b;
+}
+
+console.log(fibonacci(10)); // 55
+console.log(fibonacci(20)); // 6765
+```
+
+[将鼠标悬停在此处查看上方的代码块](tooltip:iframe:pre#demo-code)<400,300>
+
+---
+
+## 四、组合使用：class + id
+
+使用语法 ` ```python(.code-box#box-1) `：
+
+```python(.code-box#box-1)
+# 同时设置 class="code-box" 和 id="box-1"
+# 可以通过 CSS 设置样式，通过 JS 精确定位
+import asyncio
+
+async def fetch_data(url):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            return await response.json()
+
+# 运行异步函数
+loop = asyncio.get_event_loop()
+data = loop.run_until_complete(fetch_data('https://api.example.com'))
+```
+
+---
+
+## 五、与语言标识组合
+
+代码块属性扩展与语言标识完全兼容：
+
+```javascript(.api-demo#user-service)
+// 这是 JavaScript 代码，语言标识为 javascript
+// pre 标签有 class="api-demo" 和 id="user-service"
+// code 标签有 class="lang-javascript" (语法高亮)
+const userService = {
+    baseUrl: '/api/users',
+    async fetch(id) {
+        const res = await fetch(`${this.baseUrl}/${id}`);
+        return res.json();
+    }
+};
+```
+
+```css(.style-demo)
+/* CSS 代码块同样支持属性扩展 */
+/* pre 有 class="style-demo" */
+body { margin: 0; }
+```
+
+```html(.html-demo)
+<!DOCTYPE html>
+<html>
+<head><title>HTML Demo</title></head>
+<body><h1>Hello World</h1></body>
+</html>
+```
+
+---
+
+## 六、hidden 隐藏代码块（v1.15.0 新增）
+
+使用 `hidden` 关键词隐藏代码块，配合 `iframe:pre` 悬浮预览实现"点击查看代码"效果：
+
+### 6.1 纯隐藏代码块
+
+使用语法 ` ```html(hidden) ` — 代码块在页面上不可见：
+
+```html(hidden)
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hidden Code Demo</title>
+    <style>
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        h1 { font-size: 3rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+    </style>
+</head>
+<body>
+    <h1>🌟 Hidden Code Preview</h1>
+</body>
+</html>
+```
+
+### 6.2 隐藏 + class 组合
+
+使用语法 ` ```html(hidden.secret-code) ` — 隐藏的同时设置 class：
+
+```html(hidden.secret-code)
+<style>
+    .card { background: #1a1a2e; border-radius: 16px; padding: 32px; max-width: 400px; margin: 0 auto; text-align: center; }
+    .card h2 { color: #e94560; margin-bottom: 8px; }
+    .card p { color: #a0a0b0; }
+</style>
+<div class="card">
+    <h2>🔐 Secret Card</h2>
+    <p>This is a hidden code block template</p>
+</div>
+```
+
+### 6.3 隐藏 + id 组合（配合 iframe:pre）
+
+使用语法 ` ```html(hidden#preview-demo) `：
+
+```html(hidden#preview-demo)
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Preview Demo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #0f0f23; font-family: monospace; }
+        .terminal { background: #1a1a2e; border-radius: 8px; padding: 24px; color: #00ff88; min-width: 320px; box-shadow: 0 8px 32px rgba(0,255,136,0.15); }
+        .terminal .prompt { color: #e94560; }
+        .terminal .line { margin: 4px 0; }
+        .terminal .cursor { animation: blink 1s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+    </style>
+</head>
+<body>
+    <div class="terminal">
+        <div class="line"><span class="prompt">$</span> cat /etc/xf-editor/version</div>
+        <div class="line">xfEditor v1.15.0</div>
+        <div class="line"><span class="prompt">$</span> echo "Hidden code block preview works!"</div>
+        <div class="line">Hidden code block preview works!</div>
+        <div class="line"><span class="prompt">$</span> <span class="cursor">█</span></div>
+    </div>
+</body>
+</html>
+```
+
+[🖱 将鼠标悬停在此处预览隐藏代码块的效果](tooltip:iframe:pre#preview-demo)<480,300>
+
+> 💡 **提示**：hidden 代码块在页面上不可见（`display:none!important`），但可以通过 `[文本](tooltip:iframe:pre#id)` 语法配合悬浮提示预览其渲染效果。
+
+---
+
+## 七、应用场景
+
+| 场景 | 语法示例 | 说明 |
+|------|----------|------|
+| 自定义样式 | `` ```(.my-style) `` | 通过 CSS 美化特定代码块 |
+| JavaScript 定位 | `` ```(#block-1) `` | document.getElementById("block-1") |
+| 悬浮预览配合 | `` ```(#code) `` + `(tooltip:iframe:pre#code)` | 代码悬浮展示 |
+| 隐藏+预览 | `` ```(hidden#preview) `` | 隐藏代码块+悬浮预览 |
+| 文档标记 | `` ```(.important) `` | 标记重要代码段 |
+| 测试定位 | `` ```(#test-case) `` | 自动化测试定位元素 |
+
+---
+
+## 八、兼容性说明
+
+- ✅ 与所有现有代码块功能兼容（语法高亮/复制/流程图/时序图/KaTeX/ECharts）
+- ✅ 与 tooltip:iframe:pre 悬浮预览无缝配合
+- ✅ 独立 HTML 输出（getHTML/markdownToHTML）完全支持
+- ✅ class 和 id 以标准 HTML 属性形式输出，不污染  `<code>` 标签
+- ✅ 支持多个 class 同时设置（空格分隔）
+</textarea>
+        </div>
+    </div>
+
+    <script src="js/jquery.min.js"></script>
+    <script src="../editormd.min.js"></script>
+    <script type="text/javascript">
+        $(function() {
+            editormd("test-editormd", {
+                width: "100%",
+                height: 800,
+                path: "../lib/",
+                theme: "default",
+                previewTheme: "default",
+                watch: true,
+                htmlDecode: true,
+                taskList: true,
+                tocm: true,
+                tooltip: true,
+                syncScrolling: true,
+                onload: function() {
+                    console.log("✅ 代码块 class/id 属性扩展示例已加载");
+                }
+            });
+        });
+    </script>
+</body>
+</html>

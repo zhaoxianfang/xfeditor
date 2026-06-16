@@ -613,8 +613,8 @@ hr.editormd-page-break {
 #{$prefix}tooltip-popup {
     position: fixed;
     z-index: 99999;
-    background: #000;         // ★ 黑色背景
-    color: #fff;              // ★ 白色文字
+    background: #fff;         // ★ 白色背景（非文本类型）
+    color: #333;              // ★ 深色文字
     padding: 0;               // ★ padding 为 0
     margin: 0;                // ★ margin 为 0
     border-radius: 8px;
@@ -626,29 +626,34 @@ hr.editormd-page-break {
     opacity: 0;
     transition: opacity 0.2s;
     pointer-events: auto;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
 
     &.show {
         opacity: 1;
     }
 
-    // Text content
+    // Text content — 纯文本类型保持黑色背景
+    &#{$prefix}tooltip-text {
+        background: #1e1e1e;
+        color: #d4d4d4;
+    }
+
     #{$prefix}tooltip-text-content {
         white-space: pre-wrap;
-        background: #000;
-        color: #fff;
+        background: #1e1e1e;
+        color: #d4d4d4;
         padding: 10px 16px;
         border-radius: 8px;
         display: inline-block;
     }
 
-    // Image/iframe tooltip — 使用制定尺寸精确限制
+    // Image/iframe tooltip — 白色背景
     &#{$prefix}tooltip-image,
     &#{$prefix}tooltip-iframe {
         padding: 0;
         margin: 0;
         max-width: 90vw;
-        background: #000;
+        background: #fff;
         border: none;
         pointer-events: auto;
         min-width: 100px;
@@ -669,42 +674,43 @@ hr.editormd-page-break {
             width: 340px;
             height: 210px;
             border-radius: 4px;
+            background: #fff;
         }
     }
 
-    // HTML content tooltip
+    // HTML content tooltip — 白色背景、深色文字
     &#{$prefix}tooltip-html,
     &#{$prefix}tooltip-html-selector {
         max-width: 420px;
         max-height: 360px;
         overflow-y: auto;
         overflow-x: hidden;
-        background: #000;
-        color: #fff;
+        background: #fff;
+        color: #333;
         padding: 0;
         margin: 0;
         pointer-events: auto;
 
         #{$prefix}tooltip-html-content {
             overflow-wrap: break-word;
-            background: #000;
-            color: #fff;
+            background: #fff;
+            color: #333;
             padding: 0;
             margin: 0;
             img { max-width: 100%; height: auto; }
             table { font-size: 12px; border-collapse: collapse; width: 100%; }
-            table th, table td { border: 1px solid rgba(255,255,255,0.25); padding: 4px 8px; }
-            table th { background: rgba(255,255,255,0.08); }
-            a { color: #58a6ff; }
-            code { background: rgba(255,255,255,0.12); padding: 1px 5px; border-radius: 3px; font-size: 12px; color: #ffa657; }
-            pre { background: rgba(255,255,255,0.08); padding: 8px; border-radius: 4px; overflow-x: auto; font-size: 12px; }
+            table th, table td { border: 1px solid rgba(0,0,0,0.15); padding: 4px 8px; }
+            table th { background: rgba(0,0,0,0.05); }
+            a { color: #2C7EEA; }
+            code { background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 3px; font-size: 12px; color: #d63384; }
+            pre { background: rgba(0,0,0,0.04); padding: 8px; border-radius: 4px; overflow-x: auto; font-size: 12px; }
             ul, ol { padding-left: 20px; }
-            hr { border-color: rgba(255,255,255,0.2); }
+            hr { border-color: rgba(0,0,0,0.15); }
             blockquote {
-                border-left: 3px solid rgba(255,255,255,0.3);
+                border-left: 3px solid rgba(0,0,0,0.2);
                 padding-left: 10px;
                 margin: 4px 0;
-                color: rgba(255,255,255,0.75);
+                color: rgba(0,0,0,0.65);
             }
         }
     }
@@ -717,6 +723,7 @@ hr.editormd-page-break {
         padding: 20px;
         color: #999;
         font-size: 12px;
+        background: #fff;
     }
 }
 
@@ -734,23 +741,43 @@ hr.editormd-page-break {
 
 #{$prefix}tooltip-arrow-bottom #{$prefix}tooltip-arrow {
     top: 100%;
-    border-top: 7px solid #000;
+    border-top: 7px solid #1e1e1e;
 }
 
 #{$prefix}tooltip-arrow-top #{$prefix}tooltip-arrow {
     bottom: 100%;
-    border-bottom: 7px solid #000;
+    border-bottom: 7px solid #1e1e1e;
 }
 
-// Image/iframe arrow colors (same as base — black background)
+// Image/iframe arrow colors (white background)
 #{$prefix}tooltip-arrow-top#{$prefix}tooltip-image #{$prefix}tooltip-arrow,
 #{$prefix}tooltip-arrow-top#{$prefix}tooltip-iframe #{$prefix}tooltip-arrow {
-    border-bottom-color: #000;
+    border-bottom-color: #fff;
 }
 
 #{$prefix}tooltip-arrow-bottom#{$prefix}tooltip-image #{$prefix}tooltip-arrow,
 #{$prefix}tooltip-arrow-bottom#{$prefix}tooltip-iframe #{$prefix}tooltip-arrow {
-    border-top-color: #000;
+    border-top-color: #fff;
+}
+
+// Text tooltip arrow colors (dark background)
+#{$prefix}tooltip-arrow-top#{$prefix}tooltip-text #{$prefix}tooltip-arrow {
+    border-bottom-color: #1e1e1e;
+}
+
+#{$prefix}tooltip-arrow-bottom#{$prefix}tooltip-text #{$prefix}tooltip-arrow {
+    border-top-color: #1e1e1e;
+}
+
+// HTML/Html-selector tooltip arrow colors (white background)
+#{$prefix}tooltip-arrow-top#{$prefix}tooltip-html #{$prefix}tooltip-arrow,
+#{$prefix}tooltip-arrow-top#{$prefix}tooltip-html-selector #{$prefix}tooltip-arrow {
+    border-bottom-color: #fff;
+}
+
+#{$prefix}tooltip-arrow-bottom#{$prefix}tooltip-html #{$prefix}tooltip-arrow,
+#{$prefix}tooltip-arrow-bottom#{$prefix}tooltip-html-selector #{$prefix}tooltip-arrow {
+    border-top-color: #fff;
 }
 
 // ★ 组合上下标容器：<<下标>^<上标>> → 上下标垂直堆叠、同级并列
@@ -817,6 +844,123 @@ hr.editormd-page-break {
 .editormd-preview-active {
     width: 100%;
     padding: 40px;
+}
+
+/* ========== Preview Components: Pinyin, Text Align, Tabs, Columns ========== */
+
+/* Pinyin ruby annotation */
+#{$prefix}pinyin {
+    display: ruby;
+    ruby-align: center;
+    line-height: 2.2;
+
+    rb { display: ruby-base; }
+    rt {
+        display: ruby-text;
+        font-size: 0.65em;
+        color: #666;
+        line-height: 1;
+    }
+}
+
+/* Text alignment */
+#{$prefix}text-align {
+    display: block;
+    margin: 0.5em 0;
+
+    &-left   { text-align: left !important; }
+    &-center { text-align: center !important; }
+    &-right  { text-align: right !important; }
+}
+
+/* Image resize in preview */
+#{$prefix}img-wrapper {
+    position: relative;
+    display: inline-block;
+}
+#{$prefix}img-resizable {
+    cursor: pointer;
+}
+#{$prefix}img-resize-handle {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 12px;
+    height: 12px;
+    background: #2C7EEA;
+    cursor: se-resize;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+#{$prefix}img-wrapper:hover #{$prefix}img-resize-handle {
+    opacity: 1;
+}
+#{$prefix}img-wrapper:hover #{$prefix}img-resizable {
+    outline: 2px solid #2C7EEA;
+}
+
+/* ECharts container */
+#{$prefix}echarts {
+    width: 100% !important;
+    max-width: 100%;
+    margin: 15px 0;
+    border: 1px solid #eee;
+    border-radius: 4px;
+}
+
+/* Tabs in preview */
+#{$prefix}tabs {
+    margin: 15px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #fff;
+}
+#{$prefix}tab-nav {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    border-bottom: 1px solid #ddd;
+    background: #f8f8f8;
+
+    li {
+        padding: 10px 20px;
+        cursor: pointer;
+        border-right: 1px solid #ddd;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s;
+        margin: 0;
+
+        &:hover { background: #eee; }
+
+        &.active {
+            background: #fff;
+            border-bottom-color: #2C7EEA;
+            color: #2C7EEA;
+            font-weight: bold;
+        }
+    }
+}
+#{$prefix}tab-body {
+    padding: 15px;
+    min-height: 60px;
+}
+#{$prefix}tab-panel {
+    display: none;
+
+    &.active { display: block; }
+}
+
+/* Multi-column layout */
+#{$prefix}columns {
+    margin: 15px 0;
+    padding: 15px;
+    border: 1px dashed #ddd;
+    border-radius: 4px;
+    -webkit-column-gap: 30px;
+    -moz-column-gap: 30px;
+    column-gap: 30px;
 }
 
 /* ========== 字帖样式 (Copybook) ========== */

@@ -2,7 +2,7 @@
 <html lang="zh">
     <head>
         <meta charset="utf-8" />
-        <title>Apache ECharts 图表 - xfEditor v1.12.0</title>
+        <title>Apache ECharts 图表 - xfEditor v1.15.0</title>
         <link rel="stylesheet" href="css/style.css" />
         <link rel="stylesheet" href="../css/editormd.min.css" />
         <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
@@ -16,7 +16,7 @@
         <div id="layout">
             <header>
                 <h1>ECharts 交互式图表示例</h1>
-                <p>使用 <code>```echarts</code> 代码块语法插入 Apache ECharts 图表，支持柱状图、折线图、饼图、雷达图、漏斗图等</p>
+                <p>使用 <code>```echarts</code> 代码块语法插入 Apache ECharts 图表，支持柱状图、折线图、饼图、雷达图、漏斗图、树图/脑图等</p>
             </header>
 
             <div class="intro">
@@ -117,6 +117,65 @@
 }
 ```
 
+
+## 树图/脑图 🆕v1.15.0
+
+```echarts
+{
+  "theme": "dark",
+  "type": "tree",
+  "height": 500,
+  "title": {"text": "产品技术架构", "subtext": "点击节点圆圈可折叠/展开", "left": "center", "top": 10},
+  "tooltip": {"trigger": "item", "triggerOn": "mousemove"},
+  "series": [{
+    "type": "tree",
+    "data": [{
+      "name": "🚀 智能中枢",
+      "symbolSize": 18,
+      "children": [{
+        "name": "📊 数据分析",
+        "itemStyle": {"color": "#4fc3f7"},
+        "children": [
+          {"name": "实时看板", "value": 95},
+          {"name": "异常检测", "value": 88},
+          {"name": "趋势预测", "value": 76}
+        ]
+      }, {
+        "name": "🤖 AI 引擎",
+        "itemStyle": {"color": "#81c784"},
+        "children": [
+          {"name": "NLP", "value": 92},
+          {"name": "CV", "value": 85},
+          {"name": "大语言模型", "value": 96}
+        ]
+      }, {
+        "name": "⚙️ 基础设施",
+        "itemStyle": {"color": "#ffb74d"},
+        "children": [
+          {"name": "云原生", "value": 90},
+          {"name": "边缘计算", "value": 78},
+          {"name": "安全合规", "value": 82}
+        ]
+      }]
+    }],
+    "layout": "orthogonal",
+    "orient": "LR",
+    "roam": true,
+    "expandAndCollapse": true,
+    "initialTreeDepth": 2,
+    "top": "5%", "left": "3%", "bottom": "3%", "right": "8%",
+    "symbol": "circle",
+    "symbolSize": 14,
+    "lineStyle": {"color": "rgba(255,255,255,0.15)", "width": 2, "curveness": 0.3},
+    "edgeShape": "curve",
+    "label": {"position": "left", "verticalAlign": "middle", "align": "right", "fontSize": 12, "color": "#e0e0e0"},
+    "leaves": {"label": {"position": "right", "verticalAlign": "middle", "align": "left"}, "symbolSize": 8},
+    "emphasis": {"focus": "descendant", "lineStyle": {"color": "#4a6cf7", "width": 3}},
+    "nodePadding": 25, "nodeGap": 15,
+    "animationDuration": 800
+  }]
+}
+```
 
 </textarea>
             </div>

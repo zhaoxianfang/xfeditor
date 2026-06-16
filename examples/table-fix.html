@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8" />
+    <title>表格空单元格修复演示 — xfEditor v1.14.0</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="../css/editormd.min.css" />
+    <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
+</head>
+<body>
+    <div id="layout">
+        <header>
+            <h1>📊 表格空单元格修复演示</h1>
+            <p>v1.14.0 修复 marked.js v0.3.3 表格解析 Bug — 最后一列为空时不再丢失单元格</p>
+        </header>
+
+        <div id="test-editormd" style="margin: 0 auto;">
+            <textarea style="display:none;"># 表格空单元格修复演示
+
+## 一、Bug 说明
+
+在 marked.js v0.3.3 中，解析 pipe-table 时使用贪婪正则 `replace(/^ *\| *| *\| *$/g, "")`，当表格**最后一行最后一列为空**时，贪婪正则会吞掉前一列到行尾的全部内容，导致该行少一列，造成显示错位。
+
+xfEditor v1.14.0 通过后处理函数 `fixTableEmptyCells()` 修复此 Bug：以 `thead` 列数为基准，自动补齐 `tbody` 中缺失的空 `td`。
+
+---
+
+## 二、修复前后对比
+
+### 修复前（marked.js v0.3.3 Bug 导致）
+
+下面这个表格在旧版本编辑器中会导致"格式"列缺失：
+
+| 功能项 | 说明 | 格式 |
+|--------|------|------|
+| 代码高亮 | 30+语言支持 | .js, .ts, .py, .go |
+| 图片上传 | 拖拽+粘贴上传 | .png, .jpg, .webp |
+| 文件上传 | 附件管理 | .pdf, .doc, .zip |
+
+**Bug 表现**：最后一行 `.pdf, .doc, .zip` 会向左错位到"说明"列，"格式"列消失。
+
+**修复后** ✅：所有列正常对齐，空单元格自动补齐。
+
+---
+
+## 三、各种空单元格场景测试
+
+### 3.1 最后一行最后一列为空
+
+| 名称 | 版本 | 状态 | 备注 |
+|------|------|------|------|
+| 实时预览 | v1.0 | 已发布 | 支持同步滚动 |
+| 流程图 | v1.0 | 已发布 | — |
+| 时序图 | v1.0 | 已发布 | — |
+
+### 3.2 中间行末列为空
+
+| 功能 | 优先级 | 负责人 | 截止日期 |
+|------|--------|--------|----------|
+| 登录模块 | 高 | 张三 | 2026-07-01 |
+| 数据统计 | 中 | — | — |
+| 报表导出 | 低 | — | 2026-08-15 |
+
+### 3.3 多列为空
+
+| 商品编号 | 商品名称 | 规格 | 价格 | 库存 | 备注 |
+|----------|----------|------|------|------|------|
+| P001 | 无线鼠标 | — | 99 | — | 热销 |
+| P002 | 机械键盘 | — | 299 | — | 新品 |
+| P003 | 显示器支架 | — | 159 | — | — |
+
+### 3.4 表格编辑器交互
+
+| 操作 | 快捷键 | 说明 |
+|------|--------|------|
+| 插入行 | 工具栏按钮 | — |
+| 删除行 | 工具栏按钮 | — |
+| 插入列 | 工具栏按钮 | 在当前位置后插入 |
+| 删除列 | 工具栏按钮 | — |
+
+> 提示：点击预览区表格单元格，可弹出工具栏进行插入/删除行列操作。
+
+---
+
+## 四、修复技术细节
+
+| 修复项 | 方式 |
+|--------|------|
+| 修复函数 | `editormd.fixTableEmptyCells(html)` |
+| 触发时机 | 所有渲染路径的后处理阶段 |
+| 覆盖范围 | 主预览 / getHTML / standalone / markdownToHTML |
+| 修复原理 | 以 `thead` 列数为基准，补齐 `tbody` 缺失的空 `td` |
+| 性能影响 | 仅处理含 `table` 的 HTML，正则快速定位 |
+
+---
+
+## 五、复杂嵌套测试
+
+在 Tabs 标签页中嵌套包含空单元格的表格：
+
+[[tabs]]
+[[tab:功能对比]]
+| 项目 | 旧版本 | 新版本 |
+|------|--------|--------|
+| 代码高亮 | 支持 | 增强版 |
+| 表格空单元格 | ❌ 丢失 | ✅ 自动补齐 |
+| Tooltip | 基础 | 增强 |
+[[/tab]]
+
+[[tab:更多测试]]
+| 测试项 | 结果 |
+|--------|------|
+| 空单元格修复 | ✅ |
+| 嵌套兼容 | ✅ |
+| 多列空值 | ✅ |
+[[/tab]]
+[[/tabs]]
+</textarea>
+        </div>
+    </div>
+
+    <script src="js/jquery.min.js"></script>
+    <script src="../editormd.min.js"></script>
+    <script type="text/javascript">
+        $(function() {
+            editormd("test-editormd", {
+                width: "100%",
+                height: 800,
+                path: "../lib/",
+                theme: "default",
+                previewTheme: "default",
+                watch: true,
+                htmlDecode: true,
+                taskList: true,
+                tocm: true,
+                tabs: true,
+                tableEdit: true,
+                onload: function() {
+                    console.log("✅ 表格空单元格修复演示已加载");
+                }
+            });
+        });
+    </script>
+</body>
+</html>

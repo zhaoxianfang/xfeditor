@@ -2,7 +2,7 @@
 <html lang="zh">
     <head>
         <meta charset="utf-8" />
-        <title>悬浮提示 Tooltip - xfEditor v1.12.1</title>
+        <title>悬浮提示 Tooltip - xfEditor v1.14.0</title>
         <link rel="stylesheet" href="css/style.css" />
         <link rel="stylesheet" href="../css/editormd.min.css" />
         <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
@@ -144,6 +144,33 @@
 ### 3.3 使用引号包围URL
 
 - [外部页面](tooltip:iframe:"https://example.com")<200,150>
+
+### 3.4 iframe:pre 代码块预览 <span class="badge badge-new">NEW v1.14.0</span>
+
+**原理**：配合代码块 class/id 属性扩展，提取 `<pre>` 元素内的原始内容通过 Blob URL 在 iframe 中进行悬浮预览。HTML 内容会被浏览器解析渲染为完整页面效果。
+
+```html(#tooltip-demo-pre)
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tooltip Demo</title>
+</head>
+<body>
+<h1>Hello Tooltip!</h1>
+<div> test Dom </div>
+<script>
+console.log("iframe:pre works!");
+</script>
+</body>
+</html>
+```
+
+- [查看渲染效果（420×280）](tooltip:iframe:pre#tooltip-demo-pre)<420,280>
+- [查看渲染效果（自动尺寸）](tooltip:iframe:pre#tooltip-demo-pre)
+
+> 💡 鼠标悬停时，iframe 会将上方代码块内容作为完整 HTML 页面解析渲染，你将看到 "Hello Tooltip!" 标题和 test Dom 文字。
 
 ---
 

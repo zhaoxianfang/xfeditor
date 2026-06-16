@@ -144,6 +144,88 @@
             fill: #5879B4;
         }
     }
+
+    /* Tabs */
+    #{$prefix}tabs {
+        background: #2a2a2a;
+        border-color: #444;
+    }
+    #{$prefix}tab-nav {
+        background: #222;
+        border-bottom-color: #444;
+
+        li {
+            border-right-color: #444;
+            color: #aaa;
+
+            &:hover { background: #333; }
+
+            &.active {
+                background: #2a2a2a;
+                border-bottom-color: #58a6ff;
+                color: #58a6ff;
+            }
+        }
+    }
+
+    /* Columns */
+    #{$prefix}columns {
+        border-color: #444;
+    }
+
+    /* ECharts */
+    #{$prefix}echarts {
+        border-color: #444;
+        background: #1a1a1a;
+    }
+
+    /* Pinyin */
+    #{$prefix}pinyin rt {
+        color: #999;
+    }
+
+    /* Tooltip text */
+    #{$prefix}tooltip-popup#{$prefix}tooltip-text {
+        background: #2a2a2a;
+    }
+
+    /* Badges */
+    .badge {
+        color: #ccc;
+        background: #333;
+    }
+    .badge-new {
+        color: #6ee7b7;
+        background: #064e3b;
+    }
+
+    /* Attachment */
+    #{$prefix}file-list {
+        background: #222;
+        border-color: #444;
+    }
+    #{$prefix}attachment-link {
+        color: #58a6ff;
+        background: #2a2a2a;
+        border-color: #444;
+
+        &:hover {
+            color: #fff;
+            background: #58a6ff;
+            border-color: #58a6ff;
+        }
+    }
+
+    /* Copybook */
+    #{$prefix}copybook {
+        background: #2a2218;
+    }
+
+    /* Page Block */
+    #{$prefix}page-block {
+        background: #242424;
+        border-color: #444;
+    }
 }
 
 @media screen {

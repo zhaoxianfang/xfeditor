@@ -2,30 +2,126 @@
 <html lang="zh">
     <head>
         <meta charset="utf-8" />
-        <title>xfEditor Markdown 编辑器 - 基础示例</title>
+        <title>xfEditor - 智能同步滚动示例</title>
         <link rel="stylesheet" href="css/style.css" />
         <link rel="stylesheet" href="../css/editormd.min.css" />
         <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
+        <style>
+            .sync-status {
+                margin: 10px 0;
+                padding: 12px 18px;
+                border-radius: 6px;
+                font-family: monospace;
+                font-size: 14px;
+                background: #f0f4f8;
+                border: 1px solid #d0d7de;
+            }
+            .sync-status .label { font-weight: bold; color: #1a73e8; }
+            .sync-status .side-left { color: #e37400; font-weight: bold; }
+            .sync-status .side-right { color: #188038; font-weight: bold; }
+            .sync-status .side-none { color: #5f6368; }
+            .control-panel {
+                margin: 10px 0;
+                display: flex;
+                gap: 12px;
+                flex-wrap: wrap;
+            }
+            .control-panel button {
+                padding: 8px 16px;
+                border: 1px solid #d0d7de;
+                border-radius: 4px;
+                background: #fff;
+                cursor: pointer;
+                font-size: 13px;
+            }
+            .control-panel button:hover { background: #f0f4f8; }
+            .control-panel button.active { background: #1a73e8; color: #fff; border-color: #1a73e8; }
+        </style>
     </head>
     <body>
         <div id="layout">
             <header>
-                <h1>Markdown 编辑器 - 基础示例</h1>
+                <h1>Markdown 编辑器 - 智能同步滚动示例</h1>
+                <p>本示例演示 v1.13.0 新增的「活动侧感知」智能同步滚动功能</p>
             </header>
+            <div class="sync-status" id="sync-status">
+                <span class="label">活动侧：</span><span id="active-side-display" class="side-none">null（无活动）</span> | 
+                <span class="label">同步模式：</span><span id="sync-mode-display">双向同步</span>
+            </div>
+            <div class="control-panel" id="control-panel">
+                <button data-mode="both" class="active">双向同步</button>
+                <button data-mode="single">仅编辑→预览</button>
+                <button data-mode="off">禁用同步</button>
+            </div>
             <div id="test-editormd">
-                <textarea style="display:none;"># 编辑器示例
+                <textarea style="display:none;"># 智能同步滚动演示
 
-### 欢迎使用 xfEditor
+## 基本 Markdown 语法
 
-这是一个功能丰富的 Markdown 在线编辑器。
+### 文本格式
+**加粗文本**、*斜体文本*、~~删除线~~、`行内代码`
 
-默认支持：
-- **加粗**、*斜体*、~~删除线~~
-- 数学公式：$E = mc^2$
-- 流程图、时序图
-- 表格编辑
-- 图片拖拽缩放
-- 更多功能...
+### 列表
+- 项目列表 1
+- 项目列表 2
+  - 嵌套列表 2.1
+  - 嵌套列表 2.2
+
+### 有序列表
+1. 第一项
+2. 第二项
+3. 第三项
+
+### 引用
+> 这是一段引用文字
+> 可以有多行
+
+## 代码块
+
+```javascript
+function hello() {
+    console.log("Hello, xfEditor!");
+    return "同步滚动很棒！";
+}
+```
+
+## 表格
+
+| 功能 | 状态 | 说明 |
+|------|------|------|
+| 同步滚动 | ✅ | 支持活动侧感知 |
+| 行映射定位 | ✅ | 精确定位到对应行 |
+| 反向映射 | ✅ | 预览区→编辑区定位 |
+
+## 链接和图片
+
+[GitHub 项目地址](https://github.com/zhaoxianfang/editor)
+
+## 更多功能
+
+### 数学公式
+行内公式：$E = mc^2$
+
+### 任务列表
+- [x] 已完成任务
+- [ ] 待完成任务
+
+---
+
+## 操作说明
+
+1. **在左侧编辑区滚动鼠标** → 右侧预览区自动跟随
+2. **在右侧预览区滚动鼠标** → 左侧编辑区自动跟随
+3. **在编辑区输入内容** → 会触发渲染并保持滚动同步
+4. **点击右侧预览区表格** → 可进行表格编辑操作
+5. **点击预览区图片拖拽手柄** → 可调整图片尺寸
+6. **观察上方「活动侧」状态** → 实时显示当前操作位置
+
+### 同步模式切换
+使用上方按钮切换同步模式：
+- **双向同步**：编辑区↔预览区双向滚动同步
+- **仅编辑→预览**：只在编辑区滚动时同步到预览区
+- **禁用同步**：完全关闭滚动同步
 </textarea>
             </div>
         </div>
@@ -36,7 +132,56 @@
                 var testEditor = editormd("test-editormd", {
                     width   : "90%",
                     height  : 640,
-                    path    : "../lib/"
+                    path    : "../lib/",
+                    syncScrolling : true,
+                    tex     : true,
+                    toc     : true,
+                    taskList : true,
+                    
+                    onactivesidechange : function(side) {
+                        var display = $("#active-side-display");
+                        display.removeClass("side-left side-right side-none");
+                        if (side === "left") {
+                            display.text("左侧编辑区").addClass("side-left");
+                        } else if (side === "right") {
+                            display.text("右侧预览区").addClass("side-right");
+                        } else {
+                            display.text("null（无活动）").addClass("side-none");
+                        }
+                    },
+                    
+                    onscroll : function(event) {
+                        console.log("[编辑区滚动] 同步到预览区");
+                    },
+                    
+                    onpreviewscroll : function(event) {
+                        console.log("[预览区滚动] 同步到编辑区");
+                    }
+                });
+                
+                // 同步模式切换按钮
+                $("#control-panel button").on("click", function() {
+                    var mode = $(this).data("mode");
+                    $("#control-panel button").removeClass("active");
+                    $(this).addClass("active");
+                    
+                    var modeDisplay = $("#sync-mode-display");
+                    switch(mode) {
+                        case "both":
+                            testEditor.settings.syncScrolling = true;
+                            modeDisplay.text("双向同步");
+                            break;
+                        case "single":
+                            testEditor.settings.syncScrolling = "single";
+                            modeDisplay.text("仅编辑→预览");
+                            break;
+                        case "off":
+                            testEditor.settings.syncScrolling = false;
+                            modeDisplay.text("已禁用");
+                            break;
+                    }
+                    // 重新绑定滚动事件
+                    testEditor.bindScrollEvent();
                 });
             });
         </script>

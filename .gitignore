@@ -46,11 +46,3 @@ Thumbs.db
 ~'$'*.pptx
 ~'$'*.xlsx
 ~'$'*.xls
-
-/public/album
-/public/audio
-/public/file
-/public/img
-/public/video
-/public/soft
-

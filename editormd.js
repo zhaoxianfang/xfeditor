@@ -64,7 +64,7 @@
     };
     
     editormd.title        = editormd.$name = "xfEditor";
-    editormd.version      = "1.10.0";
+    editormd.version      = "1.15.0";
     editormd.homePage     = "https://github.com/zhaoxianfang/editor";
     editormd.classPrefix  = "editormd-";
     
@@ -81,6 +81,9 @@
                   .replace(/'/g, "&#39;");
     };
     
+    // 别名：保持大写的 escapeHTML 与 escapeHtml 一致（历史代码中两处均有调用）
+    editormd.escapeHTML = editormd.escapeHtml;
+    
     /**
      * HTML 属性值转义（仅转义引号相关，保留 &<> 供 link href 等场景使用）
      */
@@ -88,6 +91,7 @@
         if (str == null || typeof str !== "string") return "";
         return str.replace(/&/g, "&amp;")
                   .replace(/"/g, "&quot;")
+                  .replace(/'/g, "&#39;")
                   .replace(/</g, "&lt;")
                   .replace(/>/g, "&gt;");
     };
@@ -98,7 +102,13 @@
     editormd.base64Encode = function(str) {
         if (str == null) return "";
         try {
-            return btoa(unescape(encodeURIComponent(str)));
+            // 使用现代标准 API 替代已弃用的 unescape(encodeURIComponent(...))
+            var utf8Bytes = new TextEncoder().encode(str);
+            var binary = '';
+            for (var i = 0; i < utf8Bytes.length; i++) {
+                binary += String.fromCharCode(utf8Bytes[i]);
+            }
+            return btoa(binary);
         } catch(e) {
             return "";
         }
@@ -110,7 +120,13 @@
     editormd.base64Decode = function(b64) {
         if (!b64) return "";
         try {
-            return decodeURIComponent(escape(atob(b64)));
+            // 使用现代标准 API 替代已弃用的 decodeURIComponent(escape(atob(...)))
+            var binary = atob(b64);
+            var bytes = new Uint8Array(binary.length);
+            for (var i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            return new TextDecoder().decode(bytes);
         } catch(e) {
             return "";
         }
@@ -132,7 +148,7 @@
             "|",
             "pinyin",
             "|",
-            { "chart" : ["echarts-bar", "echarts-line", "echarts-pie", "echarts-radar", "echarts-funnel"] },
+            { "chart" : ["echarts-tree", "echarts-bar", "echarts-line", "echarts-pie", "echarts-radar", "echarts-funnel"] },
             "|",
             { "copybook" : ["copybook-tian", "copybook-mi", "copybook-pinyin"] },
             "|",
@@ -169,10 +185,10 @@
         width                : "100%",
         height               : "100%",
         path                 : "./lib/",       // 依赖模块文件目录
-        pluginPath           : "",             // 插件目录（空则默认使用 settings.path + "../plugins/"）
-        delay                : 300,            // Markdown 解析延迟，单位：毫秒
+        pluginPath           : "",         delay                : 300,            // Markdown 解析延迟，单位：毫秒
         autoLoadModules      : true,           // 是否自动加载依赖模块文件
         watch                : true,
+        syncScrolling        : true,           // 同步滚动：true | false | "single"，默认 true（双向同步）
         placeholder          : "写点什么吧~",
         gotoLine             : true,
         codeFold             : false,
@@ -210,6 +226,9 @@
         onpreviewed          : function() {},
         onfullscreen         : function() {},
         onfullscreenExit     : function() {},
+        onscroll             : function() {},  // 编辑区同步滚动时触发
+        onpreviewscroll      : function() {},  // 预览区同步滚动时触发
+        onactivesidechange   : function() {},  // 活动侧切换时触发（"left" | "right" | null）
 
         onbeforesave         : function() {},
         onaftersave          : function() {},
@@ -250,11 +269,8 @@
         
         toc                  : true,           // 启用目录生成
         tocm                 : false,          // 使用 [TOCM] 自动创建目录下拉菜单
-        tocTitle             : "",             // 目录下拉菜单按钮文本
-        tocDropdown          : false,          // 自动创建目录下拉菜单
-        tocContainer         : "",             // 目录容器选择器
-        tocStartLevel        : 1,              // 目录起始标题级别（从H1开始）
-        htmlDecode           : false,          // 开启 HTML 标签识别解析，XSS 安全过滤始终生效
+        tocTitle             : "",         tocDropdown          : false,          // 自动创建目录下拉菜单
+        tocContainer         : "",         tocStartLevel        : 1,          htmlDecode           : false,          // 开启 HTML 标签识别解析，XSS 安全过滤始终生效
         pageBreak            : true,           // 启用分页符解析 [========]
         atLink               : true,           // 启用 @link 语法
         emailLink            : true,           // 启用邮件地址自动链接
@@ -289,8 +305,7 @@
                 return editormd.toolbarHandlers.lowercase;
             }
         },
-        toolbarCustomIcons   : {               // 使用 HTML 标签创建工具栏图标（不使用默认的 <a> 标签）
-            lowercase        : "<a href=\"javascript:;\" title=\"\" unselectable=\"on\"><i class=\"fa\" name=\"lowercase\" style=\"font-size:24px;margin-top: -10px;\">a</i></a>",
+        toolbarCustomIcons   : {               lowercase        : "<a href=\"javascript:;\" title=\"\" unselectable=\"on\"><i class=\"fa\" name=\"lowercase\" style=\"font-size:24px;margin-top: -10px;\">a</i></a>",
             "ucwords"        : "<a href=\"javascript:;\" title=\"\" unselectable=\"on\"><i class=\"fa\" name=\"ucwords\" style=\"font-size:20px;margin-top: -3px;\">Aa</i></a>",
             "formula"         : "<a href=\"javascript:;\" title=\"\" unselectable=\"on\"><i class=\"fa\" name=\"formula\" style=\"font-size:20px;font-weight:bold;line-height:20px;\">∑</i></a>"
         }, 
@@ -340,6 +355,7 @@
             "insert"         : "fa-plus",
             "pinyin"         : "fa-language",
             "image-resize"   : "fa-arrows-alt",
+            "echarts-tree"   : "fa-tree",
             "echarts-bar"    : "fa-bar-chart",
             "echarts-line"   : "fa-line-chart",
             "echarts-pie"    : "fa-pie-chart",
@@ -417,6 +433,7 @@
                 insert           : "插入",
                 pinyin           : "拼音标注",
                 "image-resize"   : "图片尺寸",
+                "echarts-tree"   : "树图/脑图",
                 "echarts-bar"    : "柱状图",
                 "echarts-line"   : "折线图",
                 "echarts-pie"    : "饼图",
@@ -574,7 +591,8 @@
             watching   : false,
             loaded     : false,
             preview    : false,
-            fullscreen : false
+            fullscreen : false,
+            activeSide : null     // 当前操作侧："left"（编辑区）、"right"（预览区）或 null（无活动）
         },
         
         /**
@@ -946,8 +964,7 @@
                 autoCloseBrackets         : settings.autoCloseBrackets,
                 showTrailingSpace         : settings.showTrailingSpace,
                 highlightSelectionMatches : ( (!settings.matchWordHighlight) ? false : { showToken: (settings.matchWordHighlight === "onselected") ? false : /\w/ } ),
-                // ★★★ 禁用自动滚动到光标位置，防止编辑区滚动位置被意外改变
-                scrollIntoView           : false
+                    scrollIntoView           : false
             };
             
             this.codeEditor = this.cm        = editormd.$CodeMirror.fromTextArea(this.markdownTextarea[0], codeMirrorConfig);
@@ -1089,39 +1106,8 @@
             
             if (settings.watch)
             {            
-                var cmScroll  = this.codeMirror.find(".CodeMirror-scroll")[0];
-                var height    = $(cmScroll).height(); 
-                var scrollTop = cmScroll.scrollTop;
-                var topLine   = cm.lineAtHeight(scrollTop, "local");
-                if (scrollTop === 0)
-                {
-                    preview.scrollTop(0);
-                } 
-                else if (scrollTop + height >= cmScroll.scrollHeight - 16)
-                { 
-                    preview.scrollTop(preview[0].scrollHeight);                    
-                } 
-                else
-                {                    
-                    // ★ 使用 data-source-line 映射进行精确定位
-                    var previewH = preview.height();
-                    var targetPreviewTop = null;
-                    previewContainer.find('[data-source-line]').each(function() {
-                        var sl = parseInt($(this).attr('data-source-line'), 10);
-                        if (!isNaN(sl) && sl <= topLine) {
-                            var elTop = $(this).offset().top - preview.offset().top + preview.scrollTop();
-                            targetPreviewTop = elTop;
-                        }
-                    });
-                    if (targetPreviewTop !== null) {
-                        preview.scrollTop(Math.max(0, targetPreviewTop - previewH / 3));
-                    } else {
-                        // fallback: 百分比滚动
-                        var totalLines = cm.lineCount();
-                        var linePercent = totalLines > 1 ? (topLine / (totalLines - 1)) : 0;
-                        preview.scrollTop(preview[0].scrollHeight * linePercent);
-                    }
-                }
+                // 使用标题锚点映射同步预览区滚动
+                this._syncEditorToPreview();
             }
 
             cm.focus();
@@ -2063,58 +2049,8 @@
                 }
             }
                     
-            // ★ 流程图/时序图渲染后预览区内容高度可能变化，重新定位预览区滚动
-            // 使用行映射进行精确定位，而非简单百分比
-            var preview    = $this.preview;
-            var codeMirror = $this.codeMirror;
-            var codeView   = codeMirror.find(".CodeMirror-scroll");
-            var cm         = $this.cm;
-            var previewContainer = $this.previewContainer;
-
-            var height    = codeView.height();
-            var scrollTop = codeView.scrollTop();
-            var scrollHeight = codeView[0].scrollHeight;
-
-            if (scrollTop === 0) 
-            {
-                preview.scrollTop(0);
-            } 
-            else if (scrollTop + height >= scrollHeight - 16)
-            { 
-                preview.scrollTop(preview[0].scrollHeight);                        
-            } 
-            else
-            {                  
-                // 使用行映射精确定位
-                var maxScroll = Math.max(1, scrollHeight - height);
-                var cursorLine = cm.lineAtHeight ? cm.lineAtHeight(scrollTop, "local") : 0;
-                cursorLine = Math.max(0, Math.min(cm.lineCount() - 1, cursorLine));
-                var previewH = preview.height();
-
-                // 在预览中查找与光标行最匹配的元素
-                var $bestEl = null;
-                previewContainer.find('[data-source-line]').each(function() {
-                    var sl = parseInt($(this).attr('data-source-line'), 10);
-                    if (!isNaN(sl) && sl <= cursorLine) {
-                        $bestEl = $(this);
-                    }
-                });
-
-                if ($bestEl && $bestEl.length) {
-                    var targetTop = $bestEl.offset().top - preview.offset().top + preview.scrollTop();
-                    preview.scrollTop(Math.max(0, targetTop - previewH / 3));
-                } else {
-                    // fallback: 基于可用高度计算
-                    var tocHeight = 0;
-                    preview.find(".markdown-toc-list").each(function(){
-                        tocHeight += $(this).height();
-                    });
-                    var tocMenuHeight = preview.find(".editormd-toc-menu").height();
-                    tocMenuHeight = (!tocMenuHeight) ? 0 : tocMenuHeight;
-                    var scrollPct = Math.max(0, Math.min(1, scrollTop / Math.max(1, scrollHeight - height)));
-                    preview.scrollTop(Math.max(0, (preview[0].scrollHeight + tocHeight + tocMenuHeight) * scrollPct));
-                }
-            }
+            // 使用标题锚点进行精确定位（与主滚动同步逻辑一致）
+            $this._syncEditorToPreview();
 
             return this;
         },
@@ -2211,6 +2147,8 @@
             var editor           = this.editor;
             
             cm.on("change", function(_cm, changeObj) {
+                // 标记用户正在左侧编辑区进行操作
+                _this._markActiveLeft();
                 
                 if (settings.watch)
                 {
@@ -2228,6 +2166,7 @@
             
             // 增强的事件处理（keydown/keyup/mouseup/mousedown/paste/drop/copy/cut/focus/blur）
             cm.on("keydown", function(_cm, e) {
+                _this._markActiveLeft();
                 settings.onkeydown.call(_this, _cm, e);
             });
             
@@ -2240,10 +2179,12 @@
             });
             
             cm.on("mousedown", function(_cm, e) {
+                _this._markActiveLeft();
                 settings.onmousedown.call(_this, _cm, e);
             });
             
             cm.on("paste", function(_cm, e) {
+                _this._markActiveLeft();
                 settings.onpaste.call(_this, _cm, e);
             });
             
@@ -2260,6 +2201,7 @@
             });
             
             cm.on("focus", function(_cm, e) {
+                _this._markActiveLeft();
                 editor.addClass("editormd-focus");
                 settings.onfocus.call(_this, _cm, e);
             });
@@ -2270,9 +2212,422 @@
             });
             
             cm.on("cursorActivity", function(_cm) {
+                _this._markActiveLeft();
                 settings.oncursoractivity.call(_this, _cm);
             });
 
+            return this;
+        },
+        
+        /**
+         * 标记当前活动侧为左侧（编辑区操作）
+         * Mark active side as left (editor operations)
+         * @private
+         */
+        _markActiveLeft : function() {
+            if (this.state.activeSide !== "left") {
+                this.state.activeSide = "left";
+                this.settings.onactivesidechange.call(this, "left");
+            }
+            clearTimeout(this._activeSideTimer);
+            this._activeSideTimer = setTimeout($.proxy(function() {
+                if (this.state.activeSide === "left") {
+                    this.state.activeSide = null;
+                    this.settings.onactivesidechange.call(this, null);
+                }
+            }, this), 3000);
+        },
+        
+        /**
+         * 标记当前活动侧为右侧（预览区操作）
+         * Mark active side as right (preview operations)
+         * @private
+         */
+        _markActiveRight : function() {
+            if (this.state.activeSide !== "right") {
+                this.state.activeSide = "right";
+                this.settings.onactivesidechange.call(this, "right");
+            }
+            clearTimeout(this._activeSideTimer);
+            this._activeSideTimer = setTimeout($.proxy(function() {
+                if (this.state.activeSide === "right") {
+                    this.state.activeSide = null;
+                    this.settings.onactivesidechange.call(this, null);
+                }
+            }, this), 3000);
+        },
+        
+        /**
+         * 构建标题行号映射表，为预览区标题注入 data-source-line 属性
+         * Build heading-to-line mapping for precise scroll sync.
+         * 
+         * ★ 核心策略：基于顺序匹配（Order-based matching）
+         * 编辑器和预览区中的标题严格按出现顺序一一对应，因此通过索引直接匹配，
+         * 完全避免了文本匹配的不确定性。
+         * 
+         * ★ 排除 TOC 区域：使用 .markdown-toc-list 排除目录中的标题，
+         * 避免 TOC 标题干扰顺序匹配。
+         * 
+         * @returns {editormd} return this
+         * @private
+         */
+        _buildHeadingLineMap : function() {
+            var cm = this.cm;
+            var previewContainer = this.previewContainer;
+            
+            if (!cm || !previewContainer) return this;
+            
+            // 步骤 1：扫描编辑器内容，构建有序标题行号数组
+            // 这些行不是真正的 Markdown 标题，不应参与映射
+            var editorHeadings = [];
+            var lineCount = cm.lineCount();
+            var inCodeBlock = false;
+            
+            for (var i = 0; i < lineCount; i++) {
+                var lineText = cm.getLine(i);
+                
+                // 检测围栏代码块边界（支持 3+ 个反引号或波浪号）
+                if (/^\s*(```+|~~~+)/.test(lineText)) {
+                    inCodeBlock = !inCodeBlock;
+                    continue;
+                }
+                
+                // 跳过代码块内部的行
+                if (inCodeBlock) continue;
+                
+                var match = lineText.match(/^(#{1,6})\s+(.+)/);
+                if (match) {
+                    editorHeadings.push({
+                        line: i,
+                        level: match[1].length
+                    });
+                }
+            }
+            
+            // 步骤 2：扫描预览区标题（排除 TOC 区域），构建有序 DOM 元素数组
+            var previewHeadings = [];
+            previewContainer.find('h1, h2, h3, h4, h5, h6').each(function() {
+                var $el = $(this);
+                
+                    if ($el.closest('.markdown-toc-list, .editormd-toc-menu').length > 0) return;
+                
+                var level = parseInt(this.tagName.substring(1), 10);
+                previewHeadings.push({
+                    el: $el,
+                    level: level
+                });
+            });
+            
+            // 步骤 3：按顺序匹配 —— 第 i 个编辑器标题对应第 i 个预览区标题
+            // 清除旧映射
+            previewContainer.find('[data-source-line]').removeAttr('data-source-line');
+            
+            var matchCount = Math.min(editorHeadings.length, previewHeadings.length);
+            for (var j = 0; j < matchCount; j++) {
+                previewHeadings[j].el.attr('data-source-line', editorHeadings[j].line);
+            }
+            
+            this._headingMap = {
+                editorHeadings: editorHeadings,
+                previewHeadings: previewHeadings
+            };
+            
+            return this;
+        },
+        
+        /**
+         * 编辑器 → 预览区：基于标题锚点的精确滚动同步
+         * Sync scroll from editor to preview using heading anchors.
+         * 
+         * 策略：
+         * 1. 获取编辑器可视区域顶部的行号
+         * 2. 向前查找最近的 Markdown 标题行
+         * 3. 通过 _headingMap 索引找到对应预览区标题
+         * 4. 将预览区精确定位到该标题
+         * 
+         * @private
+         */
+        _syncEditorToPreview : function() {
+            var cm = this.cm;
+            var preview = this.preview;
+            var previewContainer = this.previewContainer;
+            var codeView = this.codeMirror.find(".CodeMirror-scroll");
+            
+            if (!cm || !preview || !previewContainer) return;
+            
+            var scrollTop = codeView.scrollTop();
+            var height = codeView.height();
+            var scrollHeight = codeView[0].scrollHeight;
+            
+            // 边界情况
+            if (scrollTop <= 10) {
+                preview.scrollTop(0);
+                return;
+            }
+            if (scrollTop + height >= scrollHeight - 16) {
+                preview.scrollTop(preview[0].scrollHeight);
+                return;
+            }
+            
+            // 获取可视区域顶部的行号
+            var topLine = 0;
+            if (cm.lineAtHeight) {
+                topLine = cm.lineAtHeight(scrollTop, "local");
+            } else {
+                // 降级：通过 scrollTop 和默认行高估算
+                topLine = Math.floor(scrollTop / cm.defaultTextHeight());
+            }
+            topLine = Math.max(0, Math.min(cm.lineCount() - 1, topLine));
+            
+            // 向前搜索最近的标题行，同时确定它在 editorHeadings 中的索引
+            var headingIdx = -1;
+            var headingLine = -1;
+            var headingMap = this._headingMap;
+            
+            if (headingMap && headingMap.editorHeadings) {
+                for (var k = headingMap.editorHeadings.length - 1; k >= 0; k--) {
+                    if (headingMap.editorHeadings[k].line <= topLine) {
+                        headingIdx = k;
+                        headingLine = headingMap.editorHeadings[k].line;
+                        break;
+                    }
+                }
+            } else {
+                // 降级：直接扫描编辑器
+                for (var i = topLine; i >= 0; i--) {
+                    if (/^#{1,6}\s+/.test(cm.getLine(i))) {
+                        headingLine = i;
+                        break;
+                    }
+                }
+            }
+            
+            if (headingIdx >= 0 && headingMap && headingMap.previewHeadings && 
+                headingIdx < headingMap.previewHeadings.length) {
+                    var $targetEl = headingMap.previewHeadings[headingIdx].el;
+                if ($targetEl && $targetEl.length) {
+                    var targetDom = $targetEl[0];
+                    var targetRect = targetDom.getBoundingClientRect();
+                    if (targetRect.height > 0) {
+                        var previewRect2 = preview[0].getBoundingClientRect();
+                        var targetTop = targetRect.top - previewRect2.top + preview.scrollTop();
+                        preview.scrollTop(Math.max(0, targetTop - 20));
+                        return;
+                    }
+                }
+            }
+            
+            if (headingLine >= 0) {
+                var $bestEl = null;
+                previewContainer.find('[data-source-line]').each(function() {
+                    var sl = parseInt($(this).attr('data-source-line'), 10);
+                    if (!isNaN(sl) && sl <= headingLine) {
+                        $bestEl = $(this);
+                    }
+                });
+                
+                if ($bestEl && $bestEl.length) {
+                    var bestDom = $bestEl[0];
+                    var bestRect = bestDom.getBoundingClientRect();
+                    if (bestRect.height > 0) {
+                        var previewRect3 = preview[0].getBoundingClientRect();
+                        var targetTop2 = bestRect.top - previewRect3.top + preview.scrollTop();
+                        preview.scrollTop(Math.max(0, targetTop2 - 20));
+                        return;
+                    }
+                }
+            }
+            
+            if (headingLine >= 0 && cm.lineCount() > 1) {
+                var linePercent = headingLine / (cm.lineCount() - 1);
+                var tocHeight = 0;
+                preview.find(".markdown-toc-list").each(function(){
+                    tocHeight += $(this).height();
+                });
+                preview.scrollTop(Math.max(0, preview[0].scrollHeight * linePercent + tocHeight * linePercent));
+                return;
+            }
+            
+            var percent = scrollTop / Math.max(1, scrollHeight);
+            preview.scrollTop(preview[0].scrollHeight * percent);
+        },
+        
+        /**
+         * 预览区 → 编辑器：基于标题锚点的精确滚动同步
+         * Sync scroll from preview to editor using heading anchors.
+         * 
+         * ★ 核心策略：
+         * 1. 查找预览区可视区域内第一个可见的标题元素
+         * 2. 通过 _headingMap 索引找到对应的编辑器行号
+         * 3. 使用 cm.scrollIntoView() 精确滚动编辑器到目标行
+         * 
+         * ★ 为什么用 scrollIntoView 而不是 charCoords：
+         * scrollIntoView 内部处理了 CodeMirror 的所有偏移和间距计算，
+         * 比手动 charCoords + scrollTop 更可靠。
+         * 
+         * @private
+         */
+        _syncPreviewToEditor : function() {
+            var cm = this.cm;
+            var preview = this.preview;
+            var previewContainer = this.previewContainer;
+            var codeView = this.codeMirror.find(".CodeMirror-scroll");
+            
+            if (!cm || !preview) return;
+            
+            var scrollTop = preview.scrollTop();
+            var height = preview.height();
+            var scrollHeight = preview[0].scrollHeight;
+            
+            // 边界情况
+            if (scrollTop <= 10) {
+                codeView.scrollTop(0);
+                return;
+            }
+            if (scrollTop + height >= scrollHeight) {
+                codeView.scrollTop(codeView[0].scrollHeight);
+                return;
+            }
+            
+            // 策略：使用 getBoundingClientRect() 获取视口相对坐标，
+            // 找到其顶部最接近预览区可视区域顶部的标题
+            var foundLine = -1;
+            var minDist = Infinity;
+            var previewDom = preview[0];
+            var previewRect = previewDom.getBoundingClientRect();
+            
+            // 优先级 1：通过 _headingMap 索引匹配
+            var headingMap = this._headingMap;
+            if (headingMap && headingMap.previewHeadings && headingMap.editorHeadings) {
+                var previewHeadings = headingMap.previewHeadings;
+                var editorHeadings = headingMap.editorHeadings;
+                
+                for (var p = 0; p < previewHeadings.length; p++) {
+                    var domEl = previewHeadings[p].el[0];
+                    if (!domEl) continue;
+                    
+                    var rect = domEl.getBoundingClientRect();
+                    // 跳过高度为 0 的元素（display:none 或被折叠）
+                    if (rect.height === 0) continue;
+                    
+                    // 相对于预览区可视区域顶部的距离
+                    var relTop = rect.top - previewRect.top;
+                    
+                    // 找到最接近可视区域顶部且在其下方（或略微上方）的标题
+                    if (relTop >= -8 && relTop < minDist) {
+                        minDist = relTop;
+                        foundLine = editorHeadings[p].line;
+                    }
+                }
+            }
+            
+            // 优先级 2（降级）：通过 data-source-line 属性查找
+            if (foundLine < 0) {
+                previewContainer.find('[data-source-line]').each(function() {
+                    var rect = this.getBoundingClientRect();
+                    if (rect.height === 0) return;
+                    var relTop = rect.top - previewRect.top;
+                    if (relTop >= -8 && relTop < 10000) {
+                        foundLine = parseInt($(this).attr('data-source-line'), 10);
+                        return false;
+                    }
+                });
+            }
+            
+            if (foundLine >= 0 && foundLine < cm.lineCount()) {
+                    cm.scrollIntoView({line: foundLine, ch: 0}, 30);
+                return;
+            }
+            
+            if (cm.lineCount() > 1 && scrollHeight > 0) {
+                var percent = scrollTop / scrollHeight;
+                var estLine = Math.floor(percent * (cm.lineCount() - 1));
+                cm.scrollIntoView({line: Math.max(0, estLine), ch: 0}, 30);
+            }
+        },
+        
+        /**
+         * 绑定同步滚动（智能双向同步，基于标题锚点精确定位）
+         * Bind sync scrolling with heading-anchor-based precision
+         * 
+         * 当用户在左侧编辑区操作时（activeSide === "left"）：
+         *   - 编辑区滚动 → 通过标题锚点映射到预览区
+         *   - 预览区滚动事件被忽略（不触发左侧更新）
+         * 
+         * 当用户在右侧预览区操作时（activeSide === "right"）：
+         *   - 预览区滚动 → 通过标题锚点映射到编辑区
+         *   - 编辑区滚动事件被忽略（不触发右侧更新）
+         * 
+         * @returns {editormd} return this
+         */
+        
+        bindScrollEvent : function() {
+            
+            var _this            = this;
+            var preview          = this.preview;
+            var settings         = this.settings;
+            var codeMirror       = this.codeMirror;
+            var previewContainer = this.previewContainer;
+            
+            if (!settings.syncScrolling) {
+                return this;
+            }
+            
+            // 编辑区 → 预览区 滚动同步（基于标题锚点）
+            var codeMirrorScrollHandler = function(event) {
+                if (_this.state.activeSide === "right") {
+                    return;
+                }
+                _this._syncEditorToPreview();
+                _this._markActiveLeft();
+                settings.onscroll.call(_this, event);
+            };
+            
+            // 预览区 → 编辑区 滚动同步（基于标题锚点）
+            var previewScrollHandler = function(event) {
+                if (_this.state.activeSide === "left") {
+                    return;
+                }
+                _this._syncPreviewToEditor();
+                _this._markActiveRight();
+                settings.onpreviewscroll.call(_this, event);
+            };
+            
+            // 编辑区鼠标进入 → 绑定编辑区滚动 → 标记左侧活动
+            codeMirror.on("mouseenter.editormd-sync", function() {
+                codeMirror.find(".CodeMirror-scroll").on("scroll.editormd-sync", codeMirrorScrollHandler);
+                _this._markActiveLeft();
+            });
+            
+            // 编辑区鼠标离开 → 解绑编辑区滚动
+            codeMirror.on("mouseleave.editormd-sync", function() {
+                codeMirror.find(".CodeMirror-scroll").off("scroll.editormd-sync");
+            });
+            
+            // 如果是双向同步模式
+            if (settings.syncScrolling !== "single") {
+                // 预览区鼠标进入 → 绑定预览区滚动 → 标记右侧活动
+                preview.on("mouseenter.editormd-sync", function() {
+                    preview.on("scroll.editormd-sync", previewScrollHandler);
+                    _this._markActiveRight();
+                });
+                
+                // 预览区鼠标离开 → 解绑预览区滚动
+                preview.on("mouseleave.editormd-sync", function() {
+                    preview.off("scroll.editormd-sync");
+                });
+                
+                // 预览区点击事件 → 标记右侧活动（覆盖图片缩放、表格编辑、TOC 等交互）
+                previewContainer.on("mousedown.editormd-sync touchstart.editormd-sync", function() {
+                    _this._markActiveRight();
+                });
+            }
+            
+            // 编辑区 CodeMirror 获得焦点 → 标记左侧活动（覆盖键盘输入、粘贴等）
+            this.cm.on("focus", function() {
+                _this._markActiveLeft();
+            });
+            
             return this;
         },
         
@@ -2314,6 +2669,7 @@
             });
             
             this.bindChangeEvent();
+            this.bindScrollEvent();
             
             if (!recreate)
             {
@@ -2329,7 +2685,7 @@
             });
             
             // 绑定 onPageAllLoad 事件（网页所有资源加载完成，包括图片、iframe 等）
-            $(window).on("load", function() {
+            $(window).on("load.editormd-pageload", function() {
                 settings.onPageAllLoad.call(_this);
             });
             
@@ -2348,6 +2704,9 @@
             if (this._asyncLoadCount <= 0) 
             {
                 this._allAsyncLoaded = true;
+                
+                    // 重新构建标题映射以确保滚动同步精确性
+                this._buildHeadingLineMap();
                 
                 this.settings.onAllAsyncLoad.call(this);
             }
@@ -2556,6 +2915,7 @@
             newMarkdownDoc = editormd.restorePlaceholders(newMarkdownDoc, preprocessResult.placeholders);
             newMarkdownDoc = editormd.restoreTeXSyntax(newMarkdownDoc);
             newMarkdownDoc = editormd.fixSmartypantsHTML(newMarkdownDoc);
+            newMarkdownDoc = editormd.fixTableEmptyCells(newMarkdownDoc);
             if (settings.taskList) newMarkdownDoc = editormd.postProcessTaskLists(newMarkdownDoc);
 
             //console.info("cmValue", cmValue, newMarkdownDoc);
@@ -2578,6 +2938,10 @@
                 previewContainer.html(newMarkdownDoc);
 
                 this.previewCodeHighlight();
+                
+                    // 必须在 previewCodeHighlight() 之后、TOC 之前执行，
+                // 确保 CodeMirror 和预览 HTML 都是最新的
+                this._buildHeadingLineMap();
                 
                 if (settings.toc) 
                 {
@@ -2608,8 +2972,7 @@
                 {
                     if (!editormd.kaTeXLoaded && settings.autoLoadModules) 
                     {
-                        // 传入 settings.path 作为前缀，解决 examples 子目录下 KaTeX 资源 404 问题
-                        _this._asyncLoadCount++;
+                                    _this._asyncLoadCount++;
                         editormd.loadKaTeX(settings.path, function() {
                             if (typeof katex !== "undefined") {
                                 editormd.$katex = katex;
@@ -2696,6 +3059,8 @@
                 
                 if (settings.pageBlock) {
                     _this.initPages();
+                    // initPages() 可能重建 DOM，重新构建标题映射
+                    _this._buildHeadingLineMap();
                 }
                 // 纯预览模式下跳过表格编辑和图片缩放初始化
                 if (settings.tableEdit && !isPreviewOnly) {
@@ -2863,6 +3228,8 @@
                 $wrapper.find(".editormd-table-btn").on("click", function(e) {
                     e.stopPropagation();
                     e.preventDefault();
+                    // 标记用户正在右侧预览区进行操作
+                    _this._markActiveRight();
                     if (!currentCell) return;
                     
                     var action = $(this).data("action");
@@ -3015,7 +3382,6 @@
                 $wrapper.data("table-end", tableStart + tableLines.length - 1);
             }
             
-            // ★ 先清除旧的防抖定时器，防止 cm.setValue() 触发的 change 事件在 delay 后再次 save() 导致滚动位置二次丢失
             if (this.timer && this.timer !== 0) { clearTimeout(this.timer); this.timer = null; }
             
             var cursor = cm.getCursor();
@@ -3024,7 +3390,6 @@
             
             cm.setValue(lines.join("\n"));
             
-            // ★ setValue() 会同步触发 change 事件→change handler 会设置新的 timer，立即再次清除
             if (this.timer && this.timer !== 0) { clearTimeout(this.timer); this.timer = null; }
             
             cm.setCursor(Math.min(cursor.line, lines.length - 1), cursor.ch);
@@ -3035,7 +3400,7 @@
             this.save();
             
             this.preview.scrollTop(previewScroll);
-            this.timer = null; // ★ 恢复正常状态，下个用户输入可以正常触发防抖
+            this.timer = null; // 恢复正常状态，下个用户输入可以正常触发防抖
             
             this.settings.ontablechange.call(this, action, rowIndex, colIndex);
         },
@@ -3048,7 +3413,6 @@
             var previewContainer = this.previewContainer;
             var cm = this.cm;
             
-            // ★ 建立 src 出现次数计数，用于区分同名图片的多次出现
             var srcOccurrenceCounter = {};
             
             previewContainer.find("img").each(function() {
@@ -3058,8 +3422,7 @@
                 }
                 $img.addClass("editormd-img-resizable");
                 
-                // ★ 计算该 src 的第几次出现（1-based），用于精准定位 Markdown 源中对应的图片语法
-                var imgSrc = $img.attr("src") || "";
+                    var imgSrc = $img.attr("src") || "";
                 var cleanSrc = imgSrc.replace(/\s*=\s*\d+x\d+/, "").trim();
                 var srcKey = cleanSrc;
                 srcOccurrenceCounter[srcKey] = (srcOccurrenceCounter[srcKey] || 0) + 1;
@@ -3068,8 +3431,7 @@
                 var $wrapper = $('<div class="editormd-img-wrapper" style="display:inline-block;position:relative;"></div>');
                 $img.wrap($wrapper);
                 $wrapper = $img.parent();
-                // ★ 在 wrapper 上记录出现序号，供事件回调精确使用
-                $wrapper.attr("data-image-occurrence", occurrence);
+                    $wrapper.attr("data-image-occurrence", occurrence);
                 $wrapper.attr("data-image-src", srcKey);
                 
                 // 添加缩放拖拽手柄
@@ -3080,6 +3442,8 @@
                 var startX, startY, startWidth, startHeight;
                 
                 handle.on("mousedown", function(e) {
+                    // 标记用户正在右侧预览区进行操作（拖拽调整图片尺寸）
+                    _this._markActiveRight();
                     isResizing = true;
                     startX = e.clientX;
                     startY = e.clientY;
@@ -3111,8 +3475,7 @@
                     var finalWidth = Math.round($img.width());
                     var finalHeight = Math.round($img.height());
                     
-                    // ★ 从 wrapper 上读取出现序号和 srcKey，精准定位
-                    var occIdx = parseInt($wrapper.attr("data-image-occurrence"), 10) || 1;
+                            var occIdx = parseInt($wrapper.attr("data-image-occurrence"), 10) || 1;
                     _this.modifyImageSizeInMarkdown(imgSrc, $img.attr("alt"), finalWidth, finalHeight, occIdx);
                     
 
@@ -3148,14 +3511,12 @@
             var sizeStr = "<" + width + "," + height + ">";
             occurrence = occurrence || 1;  // 默认第一次出现，向后兼容
 
-            // ★ 使用 matchCount 追踪当前匹配到第几次，仅替换第 occurrence 次
             // 正则说明：匹配 ![alt](url "title")<W,H> 或 ![alt](url)<W,H> 或 ![alt](url)
             // - [^\]]* 匹配 alt 文本
             // - ([^)\s]+) 匹配 URL（不含空格和右括号）
             // - (?:\s+"[^"]*")? 可选匹配标题部分
             // - (?:<(\d+),\s*(\d+)>)? 可选匹配尺寸后缀
             
-            // ★ URL 匹配辅助函数：处理相对路径、绝对路径、浏览器解析后的 URL
             var urlMatches = function(mUrl, srcUrl) {
                 // 去除尺寸后缀和查询参数
                 var clean1 = mUrl.replace(/\s*=\s*\d+x\d+/, "").replace(/\?.*$/, "").trim();
@@ -3179,8 +3540,7 @@
             var newMarkdown = markdown.replace(
                 /!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)(?:<(\d+),\s*(\d+)>)?/g,
                 function(match, mAlt, mUrl, mW, mH) {
-                    // ★ 使用 URL 匹配函数
-                    if (urlMatches(mUrl, src)) {
+                            if (urlMatches(mUrl, src)) {
                         matchCount++;
                         if (matchCount === occurrence) {
                             return "![" + (alt || mAlt) + "](" + mUrl + ")" + sizeStr;
@@ -3191,16 +3551,14 @@
             );
 
             if (newMarkdown !== markdown) {
-                // ★ 先清除旧的防抖定时器，防止 cm.setValue() 触发的 change 事件在 delay 后再次 save() 导致滚动位置二次丢失
-                if (this.timer && this.timer !== 0) { clearTimeout(this.timer); this.timer = null; }
+                    if (this.timer && this.timer !== 0) { clearTimeout(this.timer); this.timer = null; }
                 
                 var editorScroll = cm.getScrollInfo();
                 var previewScroll = this.preview.scrollTop();
                 
                 cm.setValue(newMarkdown);
                 
-                // ★ setValue() 会同步触发 change 事件→change handler 会设置新的 timer，立即再次清除
-                if (this.timer && this.timer !== 0) { clearTimeout(this.timer); this.timer = null; }
+                    if (this.timer && this.timer !== 0) { clearTimeout(this.timer); this.timer = null; }
                 
                 cm.scrollTo(editorScroll.left, editorScroll.top);
                 this.timer = 0;
@@ -3208,7 +3566,7 @@
                 this.save();
                 
                 this.preview.scrollTop(previewScroll);
-                this.timer = null; // ★ 恢复正常状态，下个用户输入可以正常触发防抖
+                this.timer = null; // 恢复正常状态，下个用户输入可以正常触发防抖
                 
                 this.settings.onimagechange.call(this, src, width, height);
             }
@@ -3219,6 +3577,7 @@
          */
         initECharts : function() {
             var previewContainer = this.previewContainer;
+            var editorTheme    = this.settings.theme;
 
             previewContainer.find(".editormd-echarts").each(function() {
                 var $chart = $(this);
@@ -3238,27 +3597,47 @@
                 }
 
                 if (typeof echarts !== "undefined") {
-                    var chartInstance = echarts.init(this);
-                    var option = {
-                        title: config.title || {},
-                        tooltip: config.tooltip || {},
-                        legend: config.legend || {},
-                        radar: config.radar || {},
-                        series: config.series || []
-                    };
+                    try {
+                        // 主题优先级：用户显式设置 > 编辑器主题 > 无主题(默认)
+                        var chartTheme = config.theme || editorTheme || undefined;
+                        var chartInstance = echarts.init(this, chartTheme);
+                        var option = {
+                            title: config.title || {},
+                            tooltip: config.tooltip || {},
+                            series: config.series || []
+                        };
+                        // 只在显式定义时添加 legend/radar，避免空对象干扰无坐标轴图表
+                        if (config.legend !== undefined) option.legend = config.legend;
+                        if (config.radar !== undefined) option.radar = config.radar;
 
-                    var chartType = config.type || (config.series && config.series[0] && config.series[0].type) || "";
-                    var noAxisTypes = ["pie", "funnel", "gauge", "graph", "treemap", "sunburst"];
-                    if (noAxisTypes.indexOf(chartType) === -1) {
-                        option.xAxis = config.xAxis || {};
-                        option.yAxis = config.yAxis || {};
-                    }
+                        var chartType = config.type || (config.series && config.series[0] && config.series[0].type) || "";
+                        var noAxisTypes = ["pie", "funnel", "gauge", "graph", "treemap", "sunburst", "tree"];
+                        if (noAxisTypes.indexOf(chartType) === -1) {
+                            option.xAxis = config.xAxis || {};
+                            option.yAxis = config.yAxis || {};
+                        }
 
-                    if (config.tooltip === undefined) {
-                        option.tooltip = { trigger: "axis" };
+                        // 智能 tooltip 默认值：无坐标轴类型使用 item，有坐标轴使用 axis
+                        if (config.tooltip === undefined) {
+                            var hasAxis = (noAxisTypes.indexOf(chartType) === -1);
+                            option.tooltip = { trigger: hasAxis ? "axis" : "item" };
+                        }
+                        // 传入其他常用顶级配置
+                        if (config.backgroundColor !== undefined) option.backgroundColor = config.backgroundColor;
+                        if (config.grid !== undefined) option.grid = config.grid;
+                        if (config.dataZoom !== undefined) option.dataZoom = config.dataZoom;
+                        if (config.visualMap !== undefined) option.visualMap = config.visualMap;
+                        if (config.toolbox !== undefined) option.toolbox = config.toolbox;
+                        chartInstance.setOption(option);
+                        // 确保图表在容器内正确渲染
+                        chartInstance.resize();
+                        $chart.attr("data-initialized", "true");
+                    } catch(e) {
+                        // 图表初始化失败（如主题未注册等），静默跳过
+                        if (typeof console !== "undefined" && console.warn) {
+                            console.warn("[xfEditor] ECharts init failed:", e.message);
+                        }
                     }
-                    chartInstance.setOption(option);
-                    $chart.attr("data-initialized", "true");
 
                     // 使用命名空间+debounce避免累积大量 resize handler
                     // 每个 chart instance 只绑定一次 resize
@@ -3315,25 +3694,39 @@
                     } catch(e) { return; }
 
                     if (typeof echarts !== "undefined") {
-                        var chartInstance2 = echarts.init(this);
-                        var option2 = {
-                            title: config.title || {},
-                            tooltip: config.tooltip || {},
-                            legend: config.legend || {},
-                            radar: config.radar || {},
-                            series: config.series || []
-                        };
-                        var chartType2 = config.type || (config.series && config.series[0] && config.series[0].type) || "";
-                        var noAxisTypes2 = ["pie", "funnel", "gauge", "graph", "treemap", "sunburst"];
-                        if (noAxisTypes2.indexOf(chartType2) === -1) {
-                            option2.xAxis = config.xAxis || {};
-                            option2.yAxis = config.yAxis || {};
+                        try {
+                            var chartTheme2 = config.theme || _this.settings.theme || undefined;
+                            var chartInstance2 = echarts.init(this, chartTheme2);
+                            var option2 = {
+                                title: config.title || {},
+                                tooltip: config.tooltip || {},
+                                series: config.series || []
+                            };
+                            if (config.legend !== undefined) option2.legend = config.legend;
+                            if (config.radar !== undefined) option2.radar = config.radar;
+                            var chartType2 = config.type || (config.series && config.series[0] && config.series[0].type) || "";
+                            var noAxisTypes2 = ["pie", "funnel", "gauge", "graph", "treemap", "sunburst", "tree"];
+                            if (noAxisTypes2.indexOf(chartType2) === -1) {
+                                option2.xAxis = config.xAxis || {};
+                                option2.yAxis = config.yAxis || {};
+                            }
+                            if (config.tooltip === undefined) {
+                                var hasAxis2 = (noAxisTypes2.indexOf(chartType2) === -1);
+                                option2.tooltip = { trigger: hasAxis2 ? "axis" : "item" };
+                            }
+                            if (config.backgroundColor !== undefined) option2.backgroundColor = config.backgroundColor;
+                            if (config.grid !== undefined) option2.grid = config.grid;
+                            if (config.dataZoom !== undefined) option2.dataZoom = config.dataZoom;
+                            if (config.visualMap !== undefined) option2.visualMap = config.visualMap;
+                            if (config.toolbox !== undefined) option2.toolbox = config.toolbox;
+                            chartInstance2.setOption(option2);
+                            chartInstance2.resize();
+                            $chart.attr("data-initialized", "true");
+                        } catch(e) {
+                            if (typeof console !== "undefined" && console.warn) {
+                                console.warn("[xfEditor] ECharts tab-reinit failed:", e.message);
+                            }
                         }
-                        if (config.tooltip === undefined) {
-                            option2.tooltip = { trigger: "axis" };
-                        }
-                        chartInstance2.setOption(option2);
-                        $chart.attr("data-initialized", "true");
                         if (!$chart.attr("data-resize-bound")) {
                             $chart.attr("data-resize-bound", "true");
                             var resizeTimer2 = null;
@@ -3432,6 +3825,8 @@
                 }
                 
                 $nav.off("click", "li").on("click", "li", function() {
+                    // 标记用户正在右侧预览区进行操作
+                    _this._markActiveRight();
                     var $li = $(this);
                     var index = $li.attr("data-index");
                     
@@ -4346,7 +4741,6 @@
             var _this    = this;
             var settings = this.settings;
             
-            // ★ 获取预览 HTML 内容，始终从 markdown 重渲染保证干净独立
             var previewOptions = $.extend({}, options, {
                 includeStyles : false,
                 includeScripts: false
@@ -4370,6 +4764,7 @@
                     previewHTML = editormd.restorePlaceholders(previewHTML, mdPreprocess.placeholders);
                     previewHTML = editormd.restoreTeXSyntax(previewHTML);
                     previewHTML = editormd.fixSmartypantsHTML(previewHTML);
+                    previewHTML = editormd.fixTableEmptyCells(previewHTML);
                     if (settings.taskList) previewHTML = editormd.postProcessTaskLists(previewHTML);
                     previewHTML = editormd.filterHTMLTags(previewHTML, settings.htmlDecode);
                     contentHTML = '<div class="markdown-body editormd-html-preview">\n  ' + previewHTML + '\n</div>';
@@ -4386,15 +4781,13 @@
                 inlineScripts = this._getInitScripts();
             }
             
-            // ★ 生成完整的独立 HTML 文档，包含完整样式和交互脚本
             var html = '<!DOCTYPE html>\n';
             html += '<html lang="' + opts.lang + '">\n';
             html += '<head>\n';
             html += '  <meta charset="' + opts.charset + '">\n';
             html += '  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n';
-            html += '  <meta name="generator" content="xfEditor v1.12.0">\n';
+            html += '  <meta name="generator" content="xfEditor v1.15.0">\n';
             
-            // ★ 添加 SEO meta 标签
             if (opts.description) {
                 html += '  <meta name="description" content="' + editormd.escapeAttr(opts.description) + '">\n';
             }
@@ -4405,7 +4798,6 @@
                 html += '  <meta name="keywords" content="' + editormd.escapeAttr(opts.keywords) + '">\n';
             }
             
-            // ★ 添加自定义 meta 标签
             if (opts.customMeta && typeof opts.customMeta === 'object') {
                 for (var metaName in opts.customMeta) {
                     if (opts.customMeta.hasOwnProperty(metaName)) {
@@ -4416,7 +4808,6 @@
             
             html += '  <title>' + editormd.escapeHTML(opts.title) + '</title>\n';
             
-            // ★ 添加外部样式表
             if (Array.isArray(opts.externalStyles)) {
                 opts.externalStyles.forEach(function(styleUrl) {
                     if (styleUrl && typeof styleUrl === 'string') {
@@ -4425,7 +4816,6 @@
                 });
             }
             
-            // ★ 添加内联样式
             if (opts.includeStyles && inlineStyles) {
                 html += '  <style>\n' + inlineStyles + '\n  </style>\n';
             }
@@ -4434,7 +4824,6 @@
             html += '<body>\n';
             html += contentHTML + '\n';
             
-            // ★ 添加外部脚本
             if (Array.isArray(opts.externalScripts)) {
                 opts.externalScripts.forEach(function(scriptUrl) {
                     if (scriptUrl && typeof scriptUrl === 'string') {
@@ -4443,7 +4832,6 @@
                 });
             }
             
-            // ★ 添加内联脚本
             if (opts.includeScripts && inlineScripts) {
                 html += '<script>\n' + inlineScripts + '\n<\/script>\n';
             }
@@ -4451,7 +4839,6 @@
             html += '</body>\n';
             html += '</html>';
             
-            // ★ 压缩输出（移除多余空白）
             if (opts.minify) {
                 html = html.replace(/\n\s+/g, '\n').replace(/\n{2,}/g, '\n');
             }
@@ -4499,315 +4886,65 @@
          * @returns {String}
          */
         _getCoreStyles : function() {
-            var css = [];
-            
-            // ──── 组合上下标：<<下标>^<上标>> 垂直堆叠 ────
-            css.push('.editormd-supsub{display:inline-block;vertical-align:text-bottom;font-size:50%;line-height:1.05;text-align:left;}');
-            css.push('.editormd-supsub sup,.editormd-supsub sub{display:block;position:relative;line-height:1.05;font-size:1em;}');
-            css.push('.editormd-supsub sup{bottom:0.1em;}');
-            css.push('.editormd-supsub sub{top:0.12em;}');
-            
-            // Pinyin ruby annotation
-            css.push('.editormd-pinyin{display:ruby;ruby-align:center;line-height:2.2;}');
-            css.push('.editormd-pinyin rb{display:ruby-base;}');
-            css.push('.editormd-pinyin rt{display:ruby-text;font-size:0.65em;color:#666;line-height:1;}');
-            css.push('.editormd-pinyin rp{display:none;}');
-            
-            // Tooltip / Popover — 黑色背景、padding/margin 为 0
-            css.push('.editormd-tooltip-trigger{border-bottom:1px dashed #2C7EEA;color:#2C7EEA;cursor:help;position:relative;display:inline;}');
-            css.push('.editormd-tooltip-trigger:focus{outline:2px solid #2C7EEA;outline-offset:2px;border-radius:2px;}');
-            css.push('.editormd-tooltip-popup{position:fixed;z-index:99999;background:#000;color:#fff;padding:0;margin:0;border-radius:8px;font-size:13px;line-height:1.5;max-width:320px;word-wrap:break-word;display:none;opacity:0;transition:opacity 0.2s;pointer-events:auto;box-shadow:0 4px 20px rgba(0,0,0,0.35);}');
-            css.push('.editormd-tooltip-popup.show{opacity:1;}');
-            css.push('.editormd-tooltip-text-content{white-space:pre-wrap;background:#000;color:#fff;padding:10px 16px;border-radius:8px;display:inline-block;}');
-            // Arrow styles
-            css.push('.editormd-tooltip-arrow{position:absolute;left:50%;margin-left:-8px;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;z-index:10000;}');
-            css.push('.editormd-tooltip-arrow-bottom .editormd-tooltip-arrow{top:100%;border-top:7px solid #000;}');
-            css.push('.editormd-tooltip-arrow-top .editormd-tooltip-arrow{bottom:100%;border-bottom:7px solid #000;}');
-            // Image/iframe popup
-            css.push('.editormd-tooltip-popup.editormd-tooltip-image,.editormd-tooltip-popup.editormd-tooltip-iframe{padding:0;margin:0;max-width:90vw;background:#000;border:none;pointer-events:auto;min-width:100px;min-height:60px;}');
-            css.push('.editormd-tooltip-popup.editormd-tooltip-image img{display:block;max-width:340px;max-height:220px;width:auto;height:auto;border-radius:4px;object-fit:contain;}');
-            css.push('.editormd-tooltip-popup.editormd-tooltip-iframe iframe{display:block;width:340px;height:210px;border-radius:4px;}');
-            css.push('.editormd-tooltip-arrow-top.editormd-tooltip-image .editormd-tooltip-arrow,.editormd-tooltip-arrow-top.editormd-tooltip-iframe .editormd-tooltip-arrow{border-bottom-color:#000;}');
-            css.push('.editormd-tooltip-arrow-bottom.editormd-tooltip-image .editormd-tooltip-arrow,.editormd-tooltip-arrow-bottom.editormd-tooltip-iframe .editormd-tooltip-arrow{border-top-color:#000;}');
-            // HTML content tooltip
-            css.push('.editormd-tooltip-popup.editormd-tooltip-html,.editormd-tooltip-popup.editormd-tooltip-html-selector{max-width:420px;max-height:360px;overflow-y:auto;overflow-x:hidden;background:#000;color:#fff;padding:0;margin:0;pointer-events:auto;}');
-            css.push('.editormd-tooltip-html-content{overflow-wrap:break-word;background:#000;color:#fff;padding:0;margin:0;}');
-            css.push('.editormd-tooltip-html-content img{max-width:100%;height:auto;}');
-            css.push('.editormd-tooltip-html-content table{font-size:12px;border-collapse:collapse;width:100%;}');
-            css.push('.editormd-tooltip-html-content table th,.editormd-tooltip-html-content table td{border:1px solid rgba(255,255,255,0.25);padding:4px 8px;}');
-            css.push('.editormd-tooltip-html-content table th{background:rgba(255,255,255,0.08);}');
-            css.push('.editormd-tooltip-html-content a{color:#58a6ff;}');
-            css.push('.editormd-tooltip-html-content code{background:rgba(255,255,255,0.12);padding:1px 5px;border-radius:3px;font-size:12px;color:#ffa657;}');
-            css.push('.editormd-tooltip-html-content pre{background:rgba(255,255,255,0.08);padding:8px;border-radius:4px;overflow-x:auto;font-size:12px;}');
-            css.push('.editormd-tooltip-html-content ul,.editormd-tooltip-html-content ol{padding-left:20px;}');
-            css.push('.editormd-tooltip-html-content hr{border-color:rgba(255,255,255,0.2);}');
-            css.push('.editormd-tooltip-html-content blockquote{border-left:3px solid rgba(255,255,255,0.3);padding-left:10px;margin:4px 0;color:rgba(255,255,255,0.75);}');
-            // Loading state
-            css.push('.editormd-tooltip-loading{display:flex;align-items:center;justify-content:center;padding:20px;color:#999;font-size:12px;}');
-            
-            // Tabs
-            css.push('.editormd-tabs{margin:15px 0;border:1px solid #ddd;border-radius:4px;overflow:hidden;background:#fff;}');
-            css.push('.editormd-tab-nav{list-style:none;margin:0;padding:0;display:flex;background:#f8f9fa;border-bottom:1px solid #ddd;}');
-            css.push('.editormd-tab-nav li{padding:10px 18px;cursor:pointer;border-right:1px solid #eee;font-size:14px;color:#666;transition:all 200ms ease;user-select:none;}');
-            css.push('.editormd-tab-nav li:hover{background:#fff;color:#333;}');
-            css.push('.editormd-tab-nav li.active{background:#fff;color:#2C7EEA;font-weight:600;border-bottom:2px solid #2C7EEA;margin-bottom:-1px;}');
-            css.push('.editormd-tab-body{padding:16px;min-height:60px;}');
-            css.push('.editormd-tab-panel{display:none;}');
-            css.push('.editormd-tab-panel.active{display:block;}');
-            css.push('.editormd-tab-panel>:first-child{margin-top:0;}');
-            
-            // Columns
-            css.push('.editormd-columns{margin:15px 0;padding:15px;border:1px dashed #ddd;border-radius:4px;column-gap:30px;-webkit-column-gap:30px;-moz-column-gap:30px;column-rule:1px solid #ccc;-webkit-column-rule:1px solid #ccc;-moz-column-rule:1px solid #ccc;}');
-            
-            // Video
-            css.push('.editormd-video-player{display:block;max-width:100%;border-radius:4px;background:#000;margin:10px 0;}');
-            
-            // File list
-            css.push('.editormd-file-list{margin:10px 0;}');
-            css.push('.editormd-file-list a{display:inline-block;margin:3px 6px 3px 0;padding:4px 10px;border:1px solid #ddd;border-radius:3px;text-decoration:none;color:#333;font-size:13px;}');
-            css.push('.editormd-file-list a:hover{background:#f0f0f0;}');
-            
-            // Text align
-            css.push('.editormd-text-align{display:block;margin:0.5em 0;}');
-            css.push('.editormd-text-align-center{text-align:center!important;}');
-            css.push('.editormd-text-align-left{text-align:left!important;}');
-            css.push('.editormd-text-align-right{text-align:right!important;}');
-            css.push('.editormd-text-align-justify{text-align:justify!important;}');
-            
-            // ECharts
-            css.push('.editormd-echarts{margin:15px 0;border:1px solid #eee;border-radius:4px;}');
-            
-            // Preview container
-            css.push('.editormd-html-preview{text-align:left;font-size:16px;line-height:1.6;padding:20px;overflow:auto;width:100%;background-color:#fff;color:#333;word-wrap:break-word;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";}');
-            css.push('.editormd-html-preview *{box-sizing:border-box;}');
-            css.push('.editormd-html-preview p{margin-top:0;margin-bottom:10px;}');
-            css.push('.editormd-html-preview strong{font-weight:600;}');
-            css.push('.editormd-html-preview em{font-style:italic;}');
-            css.push('.editormd-html-preview del{text-decoration:line-through;}');
-            css.push('.editormd-html-preview blockquote{padding:0 1em;color:#6a737d;border-left:0.25em solid #dfe2e5;margin:0 0 16px 0;}');
-            css.push('.editormd-html-preview blockquote>:first-child{margin-top:0;}');
-            css.push('.editormd-html-preview blockquote>:last-child{margin-bottom:0;}');
-            css.push('.editormd-html-preview pre{position:relative;border:1px solid #e1e4e8;background:#f6f8fa;padding:16px;margin-bottom:16px;overflow:auto;line-height:1.6;font-size:13px;font-family:"SF Mono","Fira Code",Consolas,"Liberation Mono",Menlo,monospace;color:#24292e;word-wrap:normal;border-radius:6px;}');
-            css.push('.editormd-html-preview pre code{border:none;background:transparent;padding:0;font-size:13px;line-height:1.6;color:inherit;white-space:pre;word-break:normal;font-family:inherit;}');
-            css.push('.editormd-html-preview code{font-family:"SF Mono","Fira Code",Consolas,"Liberation Mono",Menlo,monospace;}');
-            css.push('.editormd-html-preview code:not(pre code){color:#c7254e;background:#f9f2f4;border:1px solid #f0d0d8;padding:2px 6px;border-radius:3px;font-size:85%;white-space:nowrap;}');
-            css.push('.editormd-html-preview img{max-width:100%;}');
-            css.push('.editormd-html-preview table{border-collapse:collapse;border-spacing:0;width:100%;margin-bottom:16px;display:block;overflow:auto;}');
-            css.push('.editormd-html-preview table th,.editormd-html-preview table td{padding:6px 13px;border:1px solid #dfe2e5;}');
-            css.push('.editormd-html-preview table th{font-weight:600;background:#f6f8fa;}');
-            css.push('.editormd-html-preview table tr{background:#fff;border-top:1px solid #c6cbd1;}');
-            css.push('.editormd-html-preview table tr:nth-child(2n){background:#f6f8fa;}');
-            css.push('.editormd-html-preview hr{height:0.25em;padding:0;margin:24px 0;background-color:#e1e4e8;border:0;overflow:hidden;}');
-            css.push('.editormd-html-preview hr.editormd-page-break{border:1px dotted #ccc;font-size:0;height:2px;margin:10px 0;padding:0;background:transparent;}');
-            css.push('.editormd-html-preview h1,.editormd-html-preview h2,.editormd-html-preview h3,.editormd-html-preview h4,.editormd-html-preview h5,.editormd-html-preview h6{margin-top:24px;margin-bottom:16px;font-weight:600;line-height:1.25;}');
-            css.push('.editormd-html-preview h1{font-size:2em;border-bottom:1px solid #eee;padding-bottom:0.3em;}');
-            css.push('.editormd-html-preview h2{font-size:1.5em;border-bottom:1px solid #eee;padding-bottom:0.3em;}');
-            css.push('.editormd-html-preview h3{font-size:1.25em;}');
-            css.push('.editormd-html-preview h4{font-size:1em;}');
-            css.push('.editormd-html-preview h5{font-size:0.875em;}');
-            css.push('.editormd-html-preview h6{font-size:0.85em;color:#6a737d;}');
-            css.push('.editormd-html-preview a{color:#0366d6;text-decoration:none;}');
-            css.push('.editormd-html-preview a:hover{text-decoration:underline;}');
-            css.push('.editormd-html-preview ul,.editormd-html-preview ol{padding-left:2em;margin-top:0;margin-bottom:16px;}');
-            css.push('.editormd-html-preview ul ul,.editormd-html-preview ul ol,.editormd-html-preview ol ol,.editormd-html-preview ol ul{margin-top:0;margin-bottom:0;}');
-            css.push('.editormd-html-preview li{word-wrap:break-all;}');
-            css.push('.editormd-html-preview li>p{margin-top:16px;}');
-            css.push('.editormd-html-preview li+li{margin-top:0.25em;}');
-            
-            // Code copy button (floating at top-right inside pre)
-            css.push('.editormd-code-copy-btn{position:absolute;top:6px;right:6px;z-index:10;display:inline-flex;align-items:center;padding:4px 8px;font-size:11px;line-height:1.3;color:#57606a;background:#fff;border:1px solid #d0d7de;border-radius:5px;cursor:pointer;user-select:none;-webkit-user-select:none;transition:all 0.15s ease;opacity:0;box-shadow:0 1px 2px rgba(0,0,0,0.04);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}');
-            css.push('pre:hover .editormd-code-copy-btn{opacity:1;}');
-            css.push('.editormd-code-copy-btn:hover{color:#0969da;border-color:#0969da;background:#f6f8fe;opacity:1;}');
-            css.push('.editormd-code-copy-btn.copied{color:#1a7f37;border-color:#1a7f37;background:#dafbe1;cursor:default;pointer-events:none;opacity:1;}');
-            css.push('.editormd-code-copy-btn.failed{color:#cf222e;border-color:#cf222e;background:#ffebe9;cursor:default;pointer-events:none;opacity:1;}');
-            // Task list styling for standalone HTML preview
-            css.push('.editormd-html-preview li.task-list-item{list-style:none;}');
-            css.push('.editormd-html-preview li.task-list-item+li.task-list-item{margin-top:3px;}');
-            css.push('.editormd-html-preview .task-list-item-checkbox{float:left;margin:0.35em 0 0.25em -1.6em;vertical-align:middle;}');
-            
-            // Flow chart & sequence
-            css.push('.editormd-html-preview .flowchart,.editormd-html-preview .sequence-diagram{margin:0 auto;text-align:center;}');
-            css.push('.editormd-html-preview .flowchart svg,.editormd-html-preview .sequence-diagram svg{margin:0 auto;}');
-            css.push('.editormd-html-preview .flowchart text,.editormd-html-preview .sequence-diagram text{font-size:15px!important;}');
-            
-            // KaTeX - embed full KaTeX CSS (non-font-face rules) for standalone rendering
-            // The @font-face rules reference font files; we load those dynamically
-            css.push('.katex-display{display:block;margin:1em 0;text-align:center;}');
-            css.push('.katex-display>.katex{display:inline-block;}');
-            css.push('.katex{font:400 1.21em KaTeX_Main;line-height:1.2;white-space:nowrap;}');
-            css.push('.katex .katex-html{display:inline-block;}');
-            css.push('.katex .katex-mathml{position:absolute;clip:rect(1px,1px,1px,1px);padding:0;border:0;height:1px;width:1px;overflow:hidden;}');
-            css.push('.katex .base,.katex .strut{display:inline-block;}');
-            css.push('.katex .mathit{font-family:KaTeX_Math;font-style:italic;}');
-            css.push('.katex .amsrm{font-family:KaTeX_AMS;}');
-            css.push('.katex .textstyle>.mord+.mop{margin-left:.16667em;}');
-            css.push('.katex .textstyle>.mord+.mbin{margin-left:.22222em;}');
-            css.push('.katex .textstyle>.mord+.mrel{margin-left:.27778em;}');
-            css.push('.katex .textstyle>.mop+.mop,.katex .textstyle>.mop+.mord,.katex .textstyle>.mord+.minner{margin-left:.16667em;}');
-            css.push('.katex .textstyle>.mop+.mrel{margin-left:.27778em;}');
-            css.push('.katex .textstyle>.mop+.minner{margin-left:.16667em;}');
-            css.push('.katex .textstyle>.mbin+.minner,.katex .textstyle>.mbin+.mop,.katex .textstyle>.mbin+.mopen,.katex .textstyle>.mbin+.mord{margin-left:.22222em;}');
-            css.push('.katex .textstyle>.mrel+.minner,.katex .textstyle>.mrel+.mop,.katex .textstyle>.mrel+.mopen,.katex .textstyle>.mrel+.mord{margin-left:.27778em;}');
-            css.push('.katex .textstyle>.mclose+.mop{margin-left:.16667em;}');
-            css.push('.katex .textstyle>.mclose+.mbin{margin-left:.22222em;}');
-            css.push('.katex .textstyle>.mclose+.mrel{margin-left:.27778em;}');
-            css.push('.katex .textstyle>.mclose+.minner,.katex .textstyle>.minner+.mop,.katex .textstyle>.minner+.mord,.katex .textstyle>.mpunct+.mclose,.katex .textstyle>.mpunct+.minner,.katex .textstyle>.mpunct+.mop,.katex .textstyle>.mpunct+.mopen,.katex .textstyle>.mpunct+.mord,.katex .textstyle>.mpunct+.mpunct,.katex .textstyle>.mpunct+.mrel{margin-left:.16667em;}');
-            css.push('.katex .textstyle>.minner+.mbin{margin-left:.22222em;}');
-            css.push('.katex .textstyle>.minner+.mrel{margin-left:.27778em;}');
-            css.push('.katex .mclose+.mop,.katex .minner+.mop,.katex .mop+.mop,.katex .mop+.mord,.katex .mord+.mop,.katex .textstyle>.minner+.minner,.katex .textstyle>.minner+.mopen,.katex .textstyle>.minner+.mpunct{margin-left:.16667em;}');
-            css.push('.katex .reset-textstyle.textstyle{font-size:1em;}');
-            css.push('.katex .reset-textstyle.scriptstyle{font-size:.7em;}');
-            css.push('.katex .reset-textstyle.scriptscriptstyle{font-size:.5em;}');
-            css.push('.katex .reset-scriptstyle.textstyle{font-size:1.42857em;}');
-            css.push('.katex .reset-scriptstyle.scriptstyle{font-size:1em;}');
-            css.push('.katex .reset-scriptstyle.scriptscriptstyle{font-size:.71429em;}');
-            css.push('.katex .reset-scriptscriptstyle.textstyle{font-size:2em;}');
-            css.push('.katex .reset-scriptscriptstyle.scriptstyle{font-size:1.4em;}');
-            css.push('.katex .reset-scriptscriptstyle.scriptscriptstyle{font-size:1em;}');
-            css.push('.katex .style-wrap{position:relative;}');
-            css.push('.katex .vlist{display:inline-block;}');
-            css.push('.katex .vlist>span{display:block;height:0;position:relative;}');
-            css.push('.katex .vlist>span>span{display:inline-block;}');
-            css.push('.katex .vlist .baseline-fix{display:inline-table;table-layout:fixed;}');
-            css.push('.katex .msupsub{text-align:left;}');
-            css.push('.katex .mfrac>span>span{text-align:center;}');
-            css.push('.katex .mfrac .frac-line{width:100%;}');
-            css.push('.katex .mfrac .frac-line:before{border-bottom-style:solid;border-bottom-width:1px;content:"";display:block;}');
-            css.push('.katex .mfrac .frac-line:after{border-bottom-style:solid;border-bottom-width:.04em;content:"";display:block;margin-top:-1px;}');
-            css.push('.katex .mspace{display:inline-block;}');
-            css.push('.katex .mspace.negativethinspace{margin-left:-.16667em;}');
-            css.push('.katex .mspace.thinspace{width:.16667em;}');
-            css.push('.katex .mspace.mediumspace{width:.22222em;}');
-            css.push('.katex .mspace.thickspace{width:.27778em;}');
-            css.push('.katex .mspace.enspace{width:.5em;}');
-            css.push('.katex .mspace.quad{width:1em;}');
-            css.push('.katex .mspace.qquad{width:2em;}');
-            css.push('.katex .llap,.katex .rlap{width:0;position:relative;}');
-            css.push('.katex .llap>.inner,.katex .rlap>.inner{position:absolute;}');
-            css.push('.katex .llap>.fix,.katex .rlap>.fix{display:inline-block;}');
-            css.push('.katex .llap>.inner{right:0;}');
-            css.push('.katex .rlap>.inner{left:0;}');
-            css.push('.katex .katex-logo .a{font-size:.75em;margin-left:-.32em;position:relative;top:-.2em;}');
-            css.push('.katex .katex-logo .t{margin-left:-.23em;}');
-            css.push('.katex .katex-logo .e{margin-left:-.1667em;position:relative;top:.2155em;}');
-            css.push('.katex .katex-logo .x{margin-left:-.125em;}');
-            css.push('.katex .rule{display:inline-block;border-style:solid;position:relative;}');
-            css.push('.katex .overline .overline-line{width:100%;}');
-            css.push('.katex .overline .overline-line:before{border-bottom-style:solid;border-bottom-width:1px;content:"";display:block;}');
-            css.push('.katex .overline .overline-line:after{border-bottom-style:solid;border-bottom-width:.04em;content:"";display:block;margin-top:-1px;}');
-            css.push('.katex .sqrt>.sqrt-sign{position:relative;}');
-            css.push('.katex .sqrt .sqrt-line{width:100%;}');
-            css.push('.katex .sqrt .sqrt-line:before{border-bottom-style:solid;border-bottom-width:1px;content:"";display:block;}');
-            css.push('.katex .sqrt .sqrt-line:after{border-bottom-style:solid;border-bottom-width:.04em;content:"";display:block;margin-top:-1px;}');
-            css.push('.katex .fontsize-ensurer,.katex .sizing{display:inline-block;}');
-            css.push('.katex .fontsize-ensurer.reset-size1.size1,.katex .sizing.reset-size1.size1{font-size:1em;}');
-            css.push('.katex .fontsize-ensurer.reset-size1.size2,.katex .sizing.reset-size1.size2{font-size:1.4em;}');
-            css.push('.katex .fontsize-ensurer.reset-size1.size3,.katex .sizing.reset-size1.size3{font-size:1.6em;}');
-            css.push('.katex .fontsize-ensurer.reset-size1.size4,.katex .sizing.reset-size1.size4{font-size:1.8em;}');
-            css.push('.katex .fontsize-ensurer.reset-size1.size5,.katex .sizing.reset-size1.size5{font-size:2em;}');
-            css.push('.katex .fontsize-ensurer.reset-size1.size6,.katex .sizing.reset-size1.size6{font-size:2.4em;}');
-            css.push('.katex .fontsize-ensurer.reset-size1.size7,.katex .sizing.reset-size1.size7{font-size:2.88em;}');
-            css.push('.katex .fontsize-ensurer.reset-size1.size8,.katex .sizing.reset-size1.size8{font-size:3.46em;}');
-            css.push('.katex .fontsize-ensurer.reset-size1.size9,.katex .sizing.reset-size1.size9{font-size:4.14em;}');
-            css.push('.katex .fontsize-ensurer.reset-size1.size10,.katex .sizing.reset-size1.size10{font-size:4.98em;}');
-            css.push('.katex .delimsizing.size1{font-family:KaTeX_Size1;}');
-            css.push('.katex .delimsizing.size2{font-family:KaTeX_Size2;}');
-            css.push('.katex .delimsizing.size3{font-family:KaTeX_Size3;}');
-            css.push('.katex .delimsizing.size4{font-family:KaTeX_Size4;}');
-            css.push('.katex .delimsizing.mult .delim-size1>span{font-family:KaTeX_Size1;}');
-            css.push('.katex .delimsizing.mult .delim-size4>span{font-family:KaTeX_Size4;}');
-            css.push('.katex .nulldelimiter{display:inline-block;width:.12em;}');
-            css.push('.katex .op-symbol{position:relative;}');
-            css.push('.katex .op-symbol.small-op{font-family:KaTeX_Size1;}');
-            css.push('.katex .op-symbol.large-op{font-family:KaTeX_Size2;}');
-            css.push('.katex .accent>.vlist>span,.katex .op-limits>.vlist>span{text-align:center;}');
-            css.push('.katex .accent .accent-body>span{width:0;}');
-            css.push('.katex .accent .accent-body.accent-vec>span{position:relative;left:.326em;}');
-            css.push('.editormd-html-preview .katex{font-size:1.4em;}');
-            css.push('.editormd-html-preview p.editormd-tex{text-align:center;}');
-            css.push('.editormd-html-preview span.editormd-tex{margin:0 5px;}');
-            
-            // Prettify / code highlighting CSS
-            css.push('.prettyprint .pln{color:#24292e;}');
-            css.push('.prettyprint .str,.prettyprint .atv{color:#032f62;}');
-            css.push('.prettyprint .kwd,.prettyprint .tag{color:#d73a49;}');
-            css.push('.prettyprint .com{color:#6a737d;font-style:italic;}');
-            css.push('.prettyprint .typ,.prettyprint .atn,.prettyprint .dec,.prettyprint .var{color:#005cc5;}');
-            css.push('.prettyprint .lit,.prettyprint .pun{color:#005cc5;}');
-            css.push('.prettyprint .opn,.prettyprint .clo{color:#d73a49;}');
-            css.push('.prettyprint .fun{color:#6f42c1;}');
-            css.push('pre.prettyprint{position:relative !important;padding:16px !important;overflow:auto !important;}');
-            css.push('ol.linenums{margin:0 !important;padding:0 0 0 3.5em !important;color:#8b949e;}');
-            css.push('ol.linenums li{list-style-type:decimal !important;padding-left:6px;min-height:1.5em;line-height:1.6;}');
-            css.push('ol.linenums li.L0,ol.linenums li.L1,ol.linenums li.L2,ol.linenums li.L3,ol.linenums li.L4,ol.linenums li.L5,ol.linenums li.L6,ol.linenums li.L7,ol.linenums li.L8,ol.linenums li.L9{list-style-type:decimal !important;}');
-            css.push('ol.linenums li:nth-child(odd){background:#fafbfc;}');
-            
-            // ═══════════════ 自定义工具栏图标：字帖系列 ═══════════════
-            css.push('.fa.editormd-icon-copybook,.fa.editormd-icon-tian,.fa.editormd-icon-mi,.fa.editormd-icon-pinyin{width:15px;height:15px;vertical-align:middle;position:relative;font-family:inherit!important;overflow:visible;margin-top:-1px;}');
-            // 字帖 - 文档/笔记本
-            css.push('.fa.editormd-icon-copybook{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 14 14%27%3E%3Cpath d=%27M2 1h7l3 3v9a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z%27 fill=%27none%27 stroke=%27%23555%27 stroke-width=%271.2%27/%3E%3Cpath d=%27M9 1v3h3%27 fill=%27none%27 stroke=%27%23555%27 stroke-width=%271.2%27/%3E%3Cline x1=%274%27 y1=%276%27 x2=%2710%27 y2=%276%27 stroke=%27%23999%27 stroke-width=%270.6%27/%3E%3Cline x1=%274%27 y1=%278%27 x2=%279%27 y2=%278%27 stroke=%27%23999%27 stroke-width=%270.5%27/%3E%3Cline x1=%274%27 y1=%2710%27 x2=%278%27 y2=%2710%27 stroke=%27%23999%27 stroke-width=%270.5%27/%3E%3C/svg%3E");background-size:contain;background-repeat:no-repeat;background-position:center;}');
-            // 田字格 - 四等分网格
-            css.push('.fa.editormd-icon-tian{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 14 14%27%3E%3Crect x=%270.5%27 y=%270.5%27 width=%2713%27 height=%2713%27 fill=%27none%27 stroke=%27%23555%27 stroke-width=%271.5%27 rx=%271.5%27/%3E%3Cline x1=%270.5%27 y1=%277%27 x2=%2713.5%27 y2=%277%27 stroke=%27%23555%27 stroke-width=%271%27/%3E%3Cline x1=%277%27 y1=%270.5%27 x2=%277%27 y2=%2713.5%27 stroke=%27%23555%27 stroke-width=%271%27/%3E%3C/svg%3E");background-size:contain;background-repeat:no-repeat;background-position:center;}');
-            // 米字格 - 四等分+对角线
-            css.push('.fa.editormd-icon-mi{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 14 14%27%3E%3Crect x=%270.5%27 y=%270.5%27 width=%2713%27 height=%2713%27 fill=%27none%27 stroke=%27%23555%27 stroke-width=%271.5%27 rx=%271.5%27/%3E%3Cline x1=%270.5%27 y1=%277%27 x2=%2713.5%27 y2=%277%27 stroke=%27%23555%27 stroke-width=%270.8%27/%3E%3Cline x1=%277%27 y1=%270.5%27 x2=%277%27 y2=%2713.5%27 stroke=%27%23555%27 stroke-width=%270.8%27/%3E%3Cline x1=%270.5%27 y1=%270.5%27 x2=%2713.5%27 y2=%2713.5%27 stroke=%27%23555%27 stroke-width=%270.8%27/%3E%3Cline x1=%2713.5%27 y1=%270.5%27 x2=%270.5%27 y2=%2713.5%27 stroke=%27%23555%27 stroke-width=%270.8%27/%3E%3C/svg%3E");background-size:contain;background-repeat:no-repeat;background-position:center;}');
-            // 拼音格 - 四线格
-            css.push('.fa.editormd-icon-pinyin{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 14 14%27%3E%3Cline x1=%271%27 y1=%272%27 x2=%2713%27 y2=%272%27 stroke=%27%23555%27 stroke-width=%270.8%27/%3E%3Cline x1=%271%27 y1=%276%27 x2=%2713%27 y2=%276%27 stroke=%27%23555%27 stroke-width=%271.2%27/%3E%3Cline x1=%271%27 y1=%2710%27 x2=%2713%27 y2=%2710%27 stroke=%27%23555%27 stroke-width=%270.8%27/%3E%3Cline x1=%271%27 y1=%2712%27 x2=%2713%27 y2=%2712%27 stroke=%27%23555%27 stroke-width=%271.2%27/%3E%3C/svg%3E");background-size:contain;background-repeat:no-repeat;background-position:center;}');
-            
-            // ═══════════════ ToC 目录样式 ═══════════════
-            css.push('.markdown-toc.editormd-markdown-toc{padding:16px 20px;margin:16px 0;background:#f8f9fb;border:1px solid #e1e4e8;border-radius:8px;font-size:14px;}');
-            css.push('.markdown-toc.editormd-markdown-toc .markdown-toc-list{margin:0;padding:0 0 0 4px;list-style:none;}');
-            css.push('.markdown-toc.editormd-markdown-toc .markdown-toc-list ul{padding-left:18px;list-style:none;}');
-            css.push('.markdown-toc.editormd-markdown-toc .markdown-toc-list li{margin:4px 0;position:relative;}');
-            css.push('.markdown-toc.editormd-markdown-toc .markdown-toc-list a{color:#0366d6;text-decoration:none;font-size:13px;line-height:1.6;display:inline-block;padding:2px 0;transition:all 150ms ease;}');
-            css.push('.markdown-toc.editormd-markdown-toc .markdown-toc-list a:hover{color:#005cc5;text-decoration:underline;}');
-            css.push('.markdown-toc.editormd-markdown-toc .markdown-toc-list a.toc-level-1{font-weight:600;font-size:14px;}');
-            css.push('.markdown-toc.editormd-markdown-toc .markdown-toc-list a.toc-level-2{font-weight:500;font-size:13px;padding-left:4px;}');
-            css.push('.markdown-toc.editormd-markdown-toc .markdown-toc-list a.toc-level-3{font-weight:400;font-size:12.5px;padding-left:8px;color:#586069;}');
-            css.push('.markdown-toc.editormd-markdown-toc .markdown-toc-list a.toc-level-4,.markdown-toc.editormd-markdown-toc .markdown-toc-list a.toc-level-5,.markdown-toc.editormd-markdown-toc .markdown-toc-list a.toc-level-6{font-size:12px;padding-left:12px;color:#6a737d;}');
-            // ToC dropdown menu
-            css.push('.editormd-toc-menu{position:relative;display:inline-block;margin:8px 0;}');
-            css.push('.editormd-toc-menu .toc-menu-btn{display:inline-block;padding:6px 14px;background:#f6f8fa;border:1px solid #d1d5da;border-radius:6px;font-size:13px;color:#24292e;cursor:pointer;text-decoration:none!important;transition:all 200ms ease;}');
-            css.push('.editormd-toc-menu .toc-menu-btn:hover{background:#e1e4e8;border-color:#c6cbd1;}');
-            css.push('.editormd-toc-menu .toc-menu-btn .fa{margin-right:5px;font-size:12px;}');
-            css.push('.editormd-toc-menu .markdown-toc-list{display:none;position:absolute;top:100%;left:0;min-width:220px;max-height:460px;overflow-y:auto;background:#fff;border:1px solid #d1d5da;border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.12);z-index:400;margin-top:4px;padding:8px 0;}');
-            css.push('.editormd-toc-menu .markdown-toc-list li{padding:0;}');
-            css.push('.editormd-toc-menu .markdown-toc-list a{display:block;padding:5px 16px;color:#24292e;font-size:13px;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background 150ms ease;}');
-            css.push('.editormd-toc-menu .markdown-toc-list a:hover{background:#f1f8ff;color:#0366d6;}');
-            css.push('.editormd-toc-menu .markdown-toc-list a.toc-level-1{font-weight:600;}');
-            css.push('.editormd-toc-menu .markdown-toc-list a.toc-level-2{padding-left:24px;font-weight:500;}');
-            css.push('.editormd-toc-menu .markdown-toc-list a.toc-level-3{padding-left:32px;font-size:12.5px;}');
-            
-            // ──── 脚注样式 ────
-            css.push('.editormd-footnotes-section{margin-top:24px;padding-top:12px;border-top:1px solid #d1d5db;}');
-            css.push('.editormd-footnote-sep{display:none;}');
-            css.push('.editormd-footnote-title{font-size:14px;font-weight:700;color:#1f2937;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid #e5e7eb;}');
-            css.push('.editormd-footnote-list{padding:0;margin:0;list-style:none;counter-reset:editormd-fn-counter;}');
-            css.push('.editormd-footnote-item{position:relative;margin-bottom:6px;padding:8px 10px 8px 32px;font-size:13px;line-height:1.5;color:#4b5563;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;transition:all 0.25s ease;}');
-            css.push('.editormd-footnote-item::before{counter-increment:editormd-fn-counter;content:counter(editormd-fn-counter);position:absolute;left:8px;top:8px;font-size:11px;font-weight:700;color:#6b7280;min-width:18px;text-align:center;}');
-            css.push('.editormd-footnote-content{display:block;}');
-            css.push('.editormd-footnote-content p{margin:0 0 6px;}');
-            css.push('.editormd-footnote-backref{display:none;}');
-            css.push('.editormd-footnote-ref-wrapper{display:inline;margin:0 1px;font-size:75%;line-height:0;position:relative;bottom:0.5em;}');
-            css.push('.editormd-footnote-ref-wrapper a{text-decoration:none;color:#2563eb;font-weight:600;}');
-            css.push('.editormd-footnote-ref-wrapper a:hover{color:#1d4ed8;text-decoration:underline;}');
-            
-            // ──── 字帖样式（Copybook Grid）────────────────
-            css.push('.editormd-copybook{display:block;margin:1em 0;padding:12px 8px;background:#fef7e9;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.06);overflow-x:auto;}');
-            css.push('.editormd-copybook-row{display:flex;justify-content:center;gap:4px;margin-bottom:6px;}');
-            css.push('.editormd-copybook-row:last-child{margin-bottom:0;}');
-            css.push('.editormd-copybook-cell{position:relative;flex-shrink:0;}');
-            css.push('.editormd-copybook-grid-cell{width:52px;height:52px;background:#fff;border:1px solid #d4c296;box-shadow:0 1px 2px rgba(0,0,0,0.02);}');
-            css.push('.editormd-copybook-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;}');
-            css.push('.editormd-copybook-hanzi-text{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-family:"KaiTi","楷体","华文楷书",serif;color:#3e2a1a;line-height:1;z-index:3;}');
-            css.push('.editormd-copybook-pinyin-cell{display:flex;flex-direction:column;align-items:center;width:52px;}');
-            css.push('.editormd-copybook-pinyin-top{position:relative;width:100%;height:28px;background:#fffef8;border:none;}');
-            css.push('.editormd-copybook-pinyin-top .editormd-copybook-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;}');
-            css.push('.editormd-copybook-pinyin-text{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:0.75rem;color:#3a7d44;font-family:"KaiTi","楷体",serif;z-index:3;}');
-            css.push('.editormd-copybook-pinyin-bottom{position:relative;width:100%;height:52px;background:#fff;border:1px solid #d4c296;border-top:none;margin-top:2px;}');
-            css.push('.editormd-copybook-pinyin-bottom .editormd-copybook-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;}');
-            css.push('.editormd-copybook-pinyin-bottom .editormd-copybook-hanzi-text{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-family:"KaiTi","楷体",serif;color:#3e2a1a;line-height:1;z-index:3;}');
-            
-            return css.join('\n');
+            var c=[];
+            c.push('.editormd-supsub{display:inline-block;vertical-align:text-bottom;font-size:50%;line-height:1.05;text-align:left;}.editormd-supsub sup,.editormd-supsub sub{display:block;position:relative;line-height:1.05;font-size:1em;}.editormd-supsub sup{bottom:0.1em;}.editormd-supsub sub{top:0.12em;}');
+            c.push('.editormd-pinyin{display:ruby;ruby-align:center;line-height:2.2;}.editormd-pinyin rb{display:ruby-base;}.editormd-pinyin rt{display:ruby-text;font-size:0.65em;color:#666;line-height:1;}.editormd-pinyin rp{display:none;}');
+            c.push('.editormd-tooltip-trigger{border-bottom:1px dashed #2C7EEA;color:#2C7EEA;cursor:help;position:relative;display:inline;}.editormd-tooltip-trigger:focus{outline:2px solid #2C7EEA;outline-offset:2px;border-radius:2px;}');
+            c.push('.editormd-tooltip-popup{position:fixed;z-index:99999;background:#fff;color:#333;padding:0;margin:0;border-radius:8px;font-size:13px;line-height:1.5;max-width:320px;word-wrap:break-word;display:none;opacity:0;transition:opacity 0.2s;pointer-events:auto;box-shadow:0 4px 20px rgba(0,0,0,0.2);}.editormd-tooltip-popup.show{opacity:1;}');
+            c.push('.editormd-tooltip-popup.editormd-tooltip-text{background:#1e1e1e;color:#d4d4d4;}.editormd-tooltip-text-content{white-space:pre-wrap;background:#1e1e1e;color:#d4d4d4;padding:10px 16px;border-radius:8px;display:inline-block;}');
+            c.push('.editormd-tooltip-arrow{position:absolute;left:50%;margin-left:-8px;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;z-index:10000;}.editormd-tooltip-arrow-bottom .editormd-tooltip-arrow{top:100%;border-top:7px solid #1e1e1e;}.editormd-tooltip-arrow-top .editormd-tooltip-arrow{bottom:100%;border-bottom:7px solid #1e1e1e;}');
+            c.push('.editormd-tooltip-popup.editormd-tooltip-image,.editormd-tooltip-popup.editormd-tooltip-iframe{padding:0;margin:0;max-width:90vw;background:#fff;border:none;pointer-events:auto;min-width:100px;min-height:60px;}.editormd-tooltip-popup.editormd-tooltip-image img{display:block;max-width:340px;max-height:220px;width:auto;height:auto;border-radius:4px;object-fit:contain;}.editormd-tooltip-popup.editormd-tooltip-iframe iframe{display:block;width:340px;height:210px;border-radius:4px;background:#fff;}');
+            c.push('.editormd-tooltip-arrow-top.editormd-tooltip-image .editormd-tooltip-arrow,.editormd-tooltip-arrow-top.editormd-tooltip-iframe .editormd-tooltip-arrow{border-bottom-color:#fff;}.editormd-tooltip-arrow-bottom.editormd-tooltip-image .editormd-tooltip-arrow,.editormd-tooltip-arrow-bottom.editormd-tooltip-iframe .editormd-tooltip-arrow{border-top-color:#fff;}.editormd-tooltip-arrow-top.editormd-tooltip-text .editormd-tooltip-arrow{border-bottom-color:#1e1e1e;}.editormd-tooltip-arrow-bottom.editormd-tooltip-text .editormd-tooltip-arrow{border-top-color:#1e1e1e;}');
+            c.push('.editormd-tooltip-popup.editormd-tooltip-html,.editormd-tooltip-popup.editormd-tooltip-html-selector{max-width:420px;max-height:360px;overflow-y:auto;overflow-x:hidden;background:#fff;color:#333;padding:0;margin:0;pointer-events:auto;}.editormd-tooltip-html-content{overflow-wrap:break-word;background:#fff;color:#333;padding:0;margin:0;}.editormd-tooltip-html-content img{max-width:100%;height:auto;}.editormd-tooltip-html-content table{font-size:12px;border-collapse:collapse;width:100%;}.editormd-tooltip-html-content table th,.editormd-tooltip-html-content table td{border:1px solid rgba(0,0,0,0.15);padding:4px 8px;}.editormd-tooltip-html-content table th{background:rgba(0,0,0,0.05);}.editormd-tooltip-html-content a{color:#2C7EEA;}.editormd-tooltip-html-content code{background:rgba(0,0,0,0.06);padding:1px 5px;border-radius:3px;font-size:12px;color:#d63384;}.editormd-tooltip-html-content pre{background:rgba(0,0,0,0.04);padding:8px;border-radius:4px;overflow-x:auto;font-size:12px;}.editormd-tooltip-html-content ul,.editormd-tooltip-html-content ol{padding-left:20px;}.editormd-tooltip-html-content hr{border-color:rgba(0,0,0,0.15);}.editormd-tooltip-html-content blockquote{border-left:3px solid rgba(0,0,0,0.2);padding-left:10px;margin:4px 0;color:rgba(0,0,0,0.65);}.editormd-tooltip-loading{display:flex;align-items:center;justify-content:center;padding:20px;color:#999;font-size:12px;background:#fff;}');
+            c.push('.editormd-tabs{margin:15px 0;border:1px solid #ddd;border-radius:4px;overflow:hidden;background:#fff;}.editormd-tab-nav{list-style:none;margin:0;padding:0;display:flex;background:#f8f9fa;border-bottom:1px solid #ddd;}.editormd-tab-nav li{padding:10px 18px;cursor:pointer;border-right:1px solid #eee;font-size:14px;color:#666;transition:all 200ms ease;user-select:none;}.editormd-tab-nav li:hover{background:#fff;color:#333;}.editormd-tab-nav li.active{background:#fff;color:#2C7EEA;font-weight:600;border-bottom:2px solid #2C7EEA;margin-bottom:-1px;}.editormd-tab-body{padding:16px;min-height:60px;}.editormd-tab-panel{display:none;}.editormd-tab-panel.active{display:block;}.editormd-tab-panel>:first-child{margin-top:0;}');
+            c.push('.editormd-columns{margin:15px 0;padding:15px;border:1px dashed #ddd;border-radius:4px;column-gap:30px;-webkit-column-gap:30px;-moz-column-gap:30px;column-rule:1px solid #ccc;-webkit-column-rule:1px solid #ccc;-moz-column-rule:1px solid #ccc;}');
+            c.push('.editormd-video-player{display:block;max-width:100%;border-radius:4px;background:#000;margin:10px 0;}');
+            c.push('.editormd-file-list{margin:10px 0;}.editormd-file-list a{display:inline-block;margin:3px 6px 3px 0;padding:4px 10px;border:1px solid #ddd;border-radius:3px;text-decoration:none;color:#333;font-size:13px;}.editormd-file-list a:hover{background:#f0f0f0;}');
+            c.push('.editormd-text-align{display:block;margin:0.5em 0;}.editormd-text-align-center{text-align:center!important;}.editormd-text-align-left{text-align:left!important;}.editormd-text-align-right{text-align:right!important;}.editormd-text-align-justify{text-align:justify!important;}');
+            c.push('.editormd-echarts{margin:15px 0;border:1px solid #eee;border-radius:4px;}');
+            c.push('.editormd-html-preview{text-align:left;font-size:16px;line-height:1.6;padding:20px;overflow:auto;width:100%;background-color:#fff;color:#333;word-wrap:break-word;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";}.editormd-html-preview *{box-sizing:border-box;}.editormd-html-preview p{margin-top:0;margin-bottom:10px;}.editormd-html-preview strong{font-weight:600;}.editormd-html-preview em{font-style:italic;}.editormd-html-preview del{text-decoration:line-through;}');
+            c.push('.editormd-html-preview blockquote{padding:0 1em;color:#6a737d;border-left:0.25em solid #dfe2e5;margin:0 0 16px 0;}.editormd-html-preview blockquote>:first-child{margin-top:0;}.editormd-html-preview blockquote>:last-child{margin-bottom:0;}');
+            c.push('.editormd-html-preview pre{position:relative;border:1px solid #e1e4e8;background:#f6f8fa;padding:16px;margin-bottom:16px;overflow:auto;line-height:1.6;font-size:13px;font-family:"SF Mono","Fira Code",Consolas,"Liberation Mono",Menlo,monospace;color:#24292e;word-wrap:normal;border-radius:6px;}');
+            c.push('.editormd-html-preview pre code{border:none;background:transparent;padding:0;font-size:13px;line-height:1.6;color:inherit;white-space:pre;word-break:normal;font-family:inherit;}.editormd-html-preview code{font-family:"SF Mono","Fira Code",Consolas,"Liberation Mono",Menlo,monospace;}.editormd-html-preview code:not(pre code){color:#c7254e;background:#f9f2f4;border:1px solid #f0d0d8;padding:2px 6px;border-radius:3px;font-size:85%;white-space:nowrap;}');
+            c.push('.editormd-html-preview img{max-width:100%;}');
+            c.push('.editormd-html-preview table{border-collapse:collapse;border-spacing:0;width:100%;margin-bottom:16px;display:block;overflow:auto;}.editormd-html-preview table th,.editormd-html-preview table td{padding:6px 13px;border:1px solid #dfe2e5;}.editormd-html-preview table th{font-weight:600;background:#f6f8fa;}.editormd-html-preview table tr{background:#fff;border-top:1px solid #c6cbd1;}.editormd-html-preview table tr:nth-child(2n){background:#f6f8fa;}');
+            c.push('.editormd-html-preview hr{height:0.25em;padding:0;margin:24px 0;background-color:#e1e4e8;border:0;overflow:hidden;}.editormd-html-preview hr.editormd-page-break{border:1px dotted #ccc;font-size:0;height:2px;margin:10px 0;padding:0;background:transparent;}');
+            c.push('.editormd-html-preview h1,.editormd-html-preview h2,.editormd-html-preview h3,.editormd-html-preview h4,.editormd-html-preview h5,.editormd-html-preview h6{margin-top:24px;margin-bottom:16px;font-weight:600;line-height:1.25;}.editormd-html-preview h1{font-size:2em;border-bottom:1px solid #eee;padding-bottom:0.3em;}.editormd-html-preview h2{font-size:1.5em;border-bottom:1px solid #eee;padding-bottom:0.3em;}.editormd-html-preview h3{font-size:1.25em;}.editormd-html-preview h4{font-size:1em;}.editormd-html-preview h5{font-size:0.875em;}.editormd-html-preview h6{font-size:0.85em;color:#6a737d;}');
+            c.push('.editormd-html-preview a{color:#0366d6;text-decoration:none;}.editormd-html-preview a:hover{text-decoration:underline;}.editormd-html-preview ul,.editormd-html-preview ol{padding-left:2em;margin-top:0;margin-bottom:16px;}.editormd-html-preview ul ul,.editormd-html-preview ul ol,.editormd-html-preview ol ol,.editormd-html-preview ol ul{margin-top:0;margin-bottom:0;}.editormd-html-preview li{word-wrap:break-all;}.editormd-html-preview li>p{margin-top:16px;}.editormd-html-preview li+li{margin-top:0.25em;}');
+            c.push('.editormd-code-copy-btn{position:absolute;top:6px;right:6px;z-index:10;display:inline-flex;align-items:center;padding:4px 8px;font-size:11px;line-height:1.3;color:#57606a;background:#fff;border:1px solid #d0d7de;border-radius:5px;cursor:pointer;user-select:none;-webkit-user-select:none;transition:all 0.15s ease;opacity:0;box-shadow:0 1px 2px rgba(0,0,0,0.04);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}');
+            c.push('pre:hover .editormd-code-copy-btn{opacity:1;}.editormd-code-copy-btn:hover{color:#0969da;border-color:#0969da;background:#f6f8fe;opacity:1;}.editormd-code-copy-btn.copied{color:#1a7f37;border-color:#1a7f37;background:#dafbe1;cursor:default;pointer-events:none;opacity:1;}.editormd-code-copy-btn.failed{color:#cf222e;border-color:#cf222e;background:#ffebe9;cursor:default;pointer-events:none;opacity:1;}');
+            c.push('.editormd-html-preview li.task-list-item{list-style:none;}.editormd-html-preview li.task-list-item+li.task-list-item{margin-top:3px;}.editormd-html-preview .task-list-item-checkbox{float:left;margin:0.35em 0 0.25em -1.6em;vertical-align:middle;}');
+            c.push('.editormd-html-preview .flowchart,.editormd-html-preview .sequence-diagram{margin:0 auto;text-align:center;}.editormd-html-preview .flowchart svg,.editormd-html-preview .sequence-diagram svg{margin:0 auto;}.editormd-html-preview .flowchart text,.editormd-html-preview .sequence-diagram text{font-size:15px!important;}');
+            c.push('.katex-display{display:block;margin:1em 0;text-align:center;}.katex-display>.katex{display:inline-block;}.katex{font:400 1.21em KaTeX_Main;line-height:1.2;white-space:nowrap;}.katex .katex-html{display:inline-block;}.katex .katex-mathml{position:absolute;clip:rect(1px,1px,1px,1px);padding:0;border:0;height:1px;width:1px;overflow:hidden;}.katex .base,.katex .strut{display:inline-block;}.katex .mathit{font-family:KaTeX_Math;font-style:italic;}.katex .amsrm{font-family:KaTeX_AMS;}');
+            c.push('.katex .textstyle>.mord+.mop{margin-left:.16667em;}.katex .textstyle>.mord+.mbin{margin-left:.22222em;}.katex .textstyle>.mord+.mrel{margin-left:.27778em;}.katex .textstyle>.mop+.mop,.katex .textstyle>.mop+.mord,.katex .textstyle>.mord+.minner{margin-left:.16667em;}.katex .textstyle>.mop+.mrel{margin-left:.27778em;}.katex .textstyle>.mop+.minner{margin-left:.16667em;}.katex .textstyle>.mbin+.minner,.katex .textstyle>.mbin+.mop,.katex .textstyle>.mbin+.mopen,.katex .textstyle>.mbin+.mord{margin-left:.22222em;}.katex .textstyle>.mrel+.minner,.katex .textstyle>.mrel+.mop,.katex .textstyle>.mrel+.mopen,.katex .textstyle>.mrel+.mord{margin-left:.27778em;}');
+            c.push('.katex .textstyle>.mclose+.mop{margin-left:.16667em;}.katex .textstyle>.mclose+.mbin{margin-left:.22222em;}.katex .textstyle>.mclose+.mrel{margin-left:.27778em;}.katex .textstyle>.mclose+.minner,.katex .textstyle>.minner+.mop,.katex .textstyle>.minner+.mord,.katex .textstyle>.mpunct+.mclose,.katex .textstyle>.mpunct+.minner,.katex .textstyle>.mpunct+.mop,.katex .textstyle>.mpunct+.mopen,.katex .textstyle>.mpunct+.mord,.katex .textstyle>.mpunct+.mpunct,.katex .textstyle>.mpunct+.mrel{margin-left:.16667em;}.katex .textstyle>.minner+.mbin{margin-left:.22222em;}.katex .textstyle>.minner+.mrel{margin-left:.27778em;}.katex .mclose+.mop,.katex .minner+.mop,.katex .mop+.mop,.katex .mop+.mord,.katex .mord+.mop,.katex .textstyle>.minner+.minner,.katex .textstyle>.minner+.mopen,.katex .textstyle>.minner+.mpunct{margin-left:.16667em;}');
+            c.push('.katex .reset-textstyle.textstyle{font-size:1em;}.katex .reset-textstyle.scriptstyle{font-size:.7em;}.katex .reset-textstyle.scriptscriptstyle{font-size:.5em;}.katex .reset-scriptstyle.textstyle{font-size:1.42857em;}.katex .reset-scriptstyle.scriptstyle{font-size:1em;}.katex .reset-scriptstyle.scriptscriptstyle{font-size:.71429em;}.katex .reset-scriptscriptstyle.textstyle{font-size:2em;}.katex .reset-scriptscriptstyle.scriptstyle{font-size:1.4em;}.katex .reset-scriptscriptstyle.scriptscriptstyle{font-size:1em;}');
+            c.push('.katex .style-wrap{position:relative;}.katex .vlist{display:inline-block;}.katex .vlist>span{display:block;height:0;position:relative;}.katex .vlist>span>span{display:inline-block;}.katex .vlist .baseline-fix{display:inline-table;table-layout:fixed;}.katex .msupsub{text-align:left;}.katex .mfrac>span>span{text-align:center;}.katex .mfrac .frac-line{width:100%;}');
+            c.push('.katex .mfrac .frac-line:before{border-bottom-style:solid;border-bottom-width:1px;content:"";display:block;}.katex .mfrac .frac-line:after{border-bottom-style:solid;border-bottom-width:.04em;content:"";display:block;margin-top:-1px;}.katex .mspace{display:inline-block;}.katex .mspace.negativethinspace{margin-left:-.16667em;}.katex .mspace.thinspace{width:.16667em;}.katex .mspace.mediumspace{width:.22222em;}.katex .mspace.thickspace{width:.27778em;}.katex .mspace.enspace{width:.5em;}.katex .mspace.quad{width:1em;}.katex .mspace.qquad{width:2em;}');
+            c.push('.katex .llap,.katex .rlap{width:0;position:relative;}.katex .llap>.inner,.katex .rlap>.inner{position:absolute;}.katex .llap>.fix,.katex .rlap>.fix{display:inline-block;}.katex .llap>.inner{right:0;}.katex .rlap>.inner{left:0;}.katex .katex-logo .a{font-size:.75em;margin-left:-.32em;position:relative;top:-.2em;}.katex .katex-logo .t{margin-left:-.23em;}.katex .katex-logo .e{margin-left:-.1667em;position:relative;top:.2155em;}.katex .katex-logo .x{margin-left:-.125em;}');
+            c.push('.katex .rule{display:inline-block;border-style:solid;position:relative;}.katex .overline .overline-line{width:100%;}.katex .overline .overline-line:before{border-bottom-style:solid;border-bottom-width:1px;content:"";display:block;}.katex .overline .overline-line:after{border-bottom-style:solid;border-bottom-width:.04em;content:"";display:block;margin-top:-1px;}');
+            c.push('.katex .sqrt>.sqrt-sign{position:relative;}.katex .sqrt .sqrt-line{width:100%;}.katex .sqrt .sqrt-line:before{border-bottom-style:solid;border-bottom-width:1px;content:"";display:block;}.katex .sqrt .sqrt-line:after{border-bottom-style:solid;border-bottom-width:.04em;content:"";display:block;margin-top:-1px;}');
+            c.push('.katex .fontsize-ensurer,.katex .sizing{display:inline-block;}.katex .fontsize-ensurer.reset-size1.size1,.katex .sizing.reset-size1.size1{font-size:1em;}.katex .fontsize-ensurer.reset-size1.size2,.katex .sizing.reset-size1.size2{font-size:1.4em;}.katex .fontsize-ensurer.reset-size1.size3,.katex .sizing.reset-size1.size3{font-size:1.6em;}.katex .fontsize-ensurer.reset-size1.size4,.katex .sizing.reset-size1.size4{font-size:1.8em;}.katex .fontsize-ensurer.reset-size1.size5,.katex .sizing.reset-size1.size5{font-size:2em;}.katex .fontsize-ensurer.reset-size1.size6,.katex .sizing.reset-size1.size6{font-size:2.4em;}.katex .fontsize-ensurer.reset-size1.size7,.katex .sizing.reset-size1.size7{font-size:2.88em;}.katex .fontsize-ensurer.reset-size1.size8,.katex .sizing.reset-size1.size8{font-size:3.46em;}.katex .fontsize-ensurer.reset-size1.size9,.katex .sizing.reset-size1.size9{font-size:4.14em;}.katex .fontsize-ensurer.reset-size1.size10,.katex .sizing.reset-size1.size10{font-size:4.98em;}');
+            c.push('.katex .delimsizing.size1{font-family:KaTeX_Size1;}.katex .delimsizing.size2{font-family:KaTeX_Size2;}.katex .delimsizing.size3{font-family:KaTeX_Size3;}.katex .delimsizing.size4{font-family:KaTeX_Size4;}.katex .delimsizing.mult .delim-size1>span{font-family:KaTeX_Size1;}.katex .delimsizing.mult .delim-size4>span{font-family:KaTeX_Size4;}.katex .nulldelimiter{display:inline-block;width:.12em;}.katex .op-symbol{position:relative;}.katex .op-symbol.small-op{font-family:KaTeX_Size1;}.katex .op-symbol.large-op{font-family:KaTeX_Size2;}');
+            c.push('.katex .accent>.vlist>span,.katex .op-limits>.vlist>span{text-align:center;}.katex .accent .accent-body>span{width:0;}.katex .accent .accent-body.accent-vec>span{position:relative;left:.326em;}');
+            c.push('.editormd-html-preview .katex{font-size:1.4em;}.editormd-html-preview p.editormd-tex{text-align:center;}.editormd-html-preview span.editormd-tex{margin:0 5px;}');
+            c.push('.prettyprint .pln{color:#24292e;}.prettyprint .str,.prettyprint .atv{color:#032f62;}.prettyprint .kwd,.prettyprint .tag{color:#d73a49;}.prettyprint .com{color:#6a737d;font-style:italic;}.prettyprint .typ,.prettyprint .atn,.prettyprint .dec,.prettyprint .var{color:#005cc5;}.prettyprint .lit,.prettyprint .pun{color:#005cc5;}.prettyprint .opn,.prettyprint .clo{color:#d73a49;}.prettyprint .fun{color:#6f42c1;}');
+            c.push('pre.prettyprint{position:relative !important;padding:16px !important;overflow:auto !important;}ol.linenums{margin:0 !important;padding:0 0 0 3.5em !important;color:#8b949e;}ol.linenums li{list-style-type:decimal !important;padding-left:6px;min-height:1.5em;line-height:1.6;}ol.linenums li.L0,ol.linenums li.L1,ol.linenums li.L2,ol.linenums li.L3,ol.linenums li.L4,ol.linenums li.L5,ol.linenums li.L6,ol.linenums li.L7,ol.linenums li.L8,ol.linenums li.L9{list-style-type:decimal !important;}ol.linenums li:nth-child(odd){background:#fafbfc;}');
+            c.push('.fa.editormd-icon-copybook,.fa.editormd-icon-tian,.fa.editormd-icon-mi,.fa.editormd-icon-pinyin{width:15px;height:15px;vertical-align:middle;position:relative;font-family:inherit!important;overflow:visible;margin-top:-1px;}');
+            c.push('.fa.editormd-icon-copybook{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 14 14%27%3E%3Cpath d=%27M2 1h7l3 3v9a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z%27 fill=%27none%27 stroke=%27%23555%27 stroke-width=%271.2%27/%3E%3Cpath d=%27M9 1v3h3%27 fill=%27none%27 stroke=%27%23555%27 stroke-width=%271.2%27/%3E%3Cline x1=%274%27 y1=%276%27 x2=%2710%27 y2=%276%27 stroke=%27%23999%27 stroke-width=%270.6%27/%3E%3Cline x1=%274%27 y1=%278%27 x2=%279%27 y2=%278%27 stroke=%27%23999%27 stroke-width=%270.5%27/%3E%3Cline x1=%274%27 y1=%2710%27 x2=%278%27 y2=%2710%27 stroke=%27%23999%27 stroke-width=%270.5%27/%3E%3C/svg%3E");background-size:contain;background-repeat:no-repeat;background-position:center;}');
+            c.push('.fa.editormd-icon-tian{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 14 14%27%3E%3Crect x=%270.5%27 y=%270.5%27 width=%2713%27 height=%2713%27 fill=%27none%27 stroke=%27%23555%27 stroke-width=%271.5%27 rx=%271.5%27/%3E%3Cline x1=%270.5%27 y1=%277%27 x2=%2713.5%27 y2=%277%27 stroke=%27%23555%27 stroke-width=%271%27/%3E%3Cline x1=%277%27 y1=%270.5%27 x2=%277%27 y2=%2713.5%27 stroke=%27%23555%27 stroke-width=%271%27/%3E%3C/svg%3E");background-size:contain;background-repeat:no-repeat;background-position:center;}');
+            c.push('.fa.editormd-icon-mi{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 14 14%27%3E%3Crect x=%270.5%27 y=%270.5%27 width=%2713%27 height=%2713%27 fill=%27none%27 stroke=%27%23555%27 stroke-width=%271.5%27 rx=%271.5%27/%3E%3Cline x1=%270.5%27 y1=%277%27 x2=%2713.5%27 y2=%277%27 stroke=%27%23555%27 stroke-width=%270.8%27/%3E%3Cline x1=%277%27 y1=%270.5%27 x2=%277%27 y2=%2713.5%27 stroke=%27%23555%27 stroke-width=%270.8%27/%3E%3Cline x1=%270.5%27 y1=%270.5%27 x2=%2713.5%27 y2=%2713.5%27 stroke=%27%23555%27 stroke-width=%270.8%27/%3E%3Cline x1=%2713.5%27 y1=%270.5%27 x2=%270.5%27 y2=%2713.5%27 stroke=%27%23555%27 stroke-width=%270.8%27/%3E%3C/svg%3E");background-size:contain;background-repeat:no-repeat;background-position:center;}');
+            c.push('.fa.editormd-icon-pinyin{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 14 14%27%3E%3Cline x1=%271%27 y1=%272%27 x2=%2713%27 y2=%272%27 stroke=%27%23555%27 stroke-width=%270.8%27/%3E%3Cline x1=%271%27 y1=%276%27 x2=%2713%27 y2=%276%27 stroke=%27%23555%27 stroke-width=%271.2%27/%3E%3Cline x1=%271%27 y1=%2710%27 x2=%2713%27 y2=%2710%27 stroke=%27%23555%27 stroke-width=%270.8%27/%3E%3Cline x1=%271%27 y1=%2712%27 x2=%2713%27 y2=%2712%27 stroke=%27%23555%27 stroke-width=%271.2%27/%3E%3C/svg%3E");background-size:contain;background-repeat:no-repeat;background-position:center;}');
+            c.push('.markdown-toc.editormd-markdown-toc{padding:16px 20px;margin:16px 0;background:#f8f9fb;border:1px solid #e1e4e8;border-radius:8px;font-size:14px;}.markdown-toc.editormd-markdown-toc .markdown-toc-list{margin:0;padding:0 0 0 4px;list-style:none;}.markdown-toc.editormd-markdown-toc .markdown-toc-list ul{padding-left:18px;list-style:none;}.markdown-toc.editormd-markdown-toc .markdown-toc-list li{margin:4px 0;position:relative;}.markdown-toc.editormd-markdown-toc .markdown-toc-list a{color:#0366d6;text-decoration:none;font-size:13px;line-height:1.6;display:inline-block;padding:2px 0;transition:all 150ms ease;}.markdown-toc.editormd-markdown-toc .markdown-toc-list a:hover{color:#005cc5;text-decoration:underline;}.markdown-toc.editormd-markdown-toc .markdown-toc-list a.toc-level-1{font-weight:600;font-size:14px;}.markdown-toc.editormd-markdown-toc .markdown-toc-list a.toc-level-2{font-weight:500;font-size:13px;padding-left:4px;}.markdown-toc.editormd-markdown-toc .markdown-toc-list a.toc-level-3{font-weight:400;font-size:12.5px;padding-left:8px;color:#586069;}.markdown-toc.editormd-markdown-toc .markdown-toc-list a.toc-level-4,.markdown-toc.editormd-markdown-toc .markdown-toc-list a.toc-level-5,.markdown-toc.editormd-markdown-toc .markdown-toc-list a.toc-level-6{font-size:12px;padding-left:12px;color:#6a737d;}');
+            c.push('.editormd-toc-menu{position:relative;display:inline-block;margin:8px 0;}.editormd-toc-menu .toc-menu-btn{display:inline-block;padding:6px 14px;background:#f6f8fa;border:1px solid #d1d5da;border-radius:6px;font-size:13px;color:#24292e;cursor:pointer;text-decoration:none!important;transition:all 200ms ease;}.editormd-toc-menu .toc-menu-btn:hover{background:#e1e4e8;border-color:#c6cbd1;}.editormd-toc-menu .toc-menu-btn .fa{margin-right:5px;font-size:12px;}');
+            c.push('.editormd-toc-menu .markdown-toc-list{display:none;position:absolute;top:100%;left:0;min-width:220px;max-height:460px;overflow-y:auto;background:#fff;border:1px solid #d1d5da;border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.12);z-index:400;margin-top:4px;padding:8px 0;}.editormd-toc-menu .markdown-toc-list li{padding:0;}.editormd-toc-menu .markdown-toc-list a{display:block;padding:5px 16px;color:#24292e;font-size:13px;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background 150ms ease;}.editormd-toc-menu .markdown-toc-list a:hover{background:#f1f8ff;color:#0366d6;}.editormd-toc-menu .markdown-toc-list a.toc-level-1{font-weight:600;}.editormd-toc-menu .markdown-toc-list a.toc-level-2{padding-left:24px;font-weight:500;}.editormd-toc-menu .markdown-toc-list a.toc-level-3{padding-left:32px;font-size:12.5px;}');
+            c.push('.editormd-footnotes-section{margin-top:24px;padding-top:12px;border-top:1px solid #d1d5db;}.editormd-footnote-sep{display:none;}.editormd-footnote-title{font-size:14px;font-weight:700;color:#1f2937;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid #e5e7eb;}.editormd-footnote-list{padding:0;margin:0;list-style:none;counter-reset:editormd-fn-counter;}');
+            c.push('.editormd-footnote-item{position:relative;margin-bottom:6px;padding:8px 10px 8px 32px;font-size:13px;line-height:1.5;color:#4b5563;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;transition:all 0.25s ease;}.editormd-footnote-item::before{counter-increment:editormd-fn-counter;content:counter(editormd-fn-counter);position:absolute;left:8px;top:8px;font-size:11px;font-weight:700;color:#6b7280;min-width:18px;text-align:center;}.editormd-footnote-content{display:block;}.editormd-footnote-content p{margin:0 0 6px;}.editormd-footnote-backref{display:none;}');
+            c.push('.editormd-footnote-ref-wrapper{display:inline;margin:0 1px;font-size:75%;line-height:0;position:relative;bottom:0.5em;}.editormd-footnote-ref-wrapper a{text-decoration:none;color:#2563eb;font-weight:600;}.editormd-footnote-ref-wrapper a:hover{color:#1d4ed8;text-decoration:underline;}');
+            c.push('.editormd-copybook{display:block;margin:1em 0;padding:12px 8px;background:#fef7e9;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.06);overflow-x:auto;}.editormd-copybook-row{display:flex;justify-content:center;gap:4px;margin-bottom:6px;}.editormd-copybook-row:last-child{margin-bottom:0;}.editormd-copybook-cell{position:relative;flex-shrink:0;}.editormd-copybook-grid-cell{width:52px;height:52px;background:#fff;border:1px solid #d4c296;box-shadow:0 1px 2px rgba(0,0,0,0.02);}.editormd-copybook-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;}.editormd-copybook-hanzi-text{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-family:"KaiTi","楷体","华文楷书",serif;color:#3e2a1a;line-height:1;z-index:3;}');
+            c.push('.editormd-copybook-pinyin-cell{display:flex;flex-direction:column;align-items:center;width:52px;}.editormd-copybook-pinyin-top{position:relative;width:100%;height:28px;background:#fffef8;border:none;}.editormd-copybook-pinyin-top .editormd-copybook-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;}.editormd-copybook-pinyin-text{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:0.75rem;color:#3a7d44;font-family:"KaiTi","楷体",serif;z-index:3;}.editormd-copybook-pinyin-bottom{position:relative;width:100%;height:52px;background:#fff;border:1px solid #d4c296;border-top:none;margin-top:2px;}');
+            c.push('.editormd-copybook-pinyin-bottom .editormd-copybook-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;}.editormd-copybook-pinyin-bottom .editormd-copybook-hanzi-text{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-family:"KaiTi","楷体",serif;color:#3e2a1a;line-height:1;z-index:3;}');
+            return c.join('\n');
         },
         
         /**
@@ -4819,242 +4956,22 @@
             var scripts = [];
             
             // DOM 加载完毕后初始化交互组件
-            scripts.push('(function(){');
-            
-            // 自动检测 editormd.js 基路径，用于加载 KaTeX/ECharts 等资源
-            scripts.push('  function detectBasePath(){');
-            scripts.push('    var scripts=document.getElementsByTagName("script");');
-            scripts.push('    for(var i=scripts.length-1;i>=0;i--){');
-            scripts.push('      var s=scripts[i];');
-            scripts.push('      if(s.src&&s.src.indexOf("editormd")!==-1){');
-            scripts.push('        var m=s.src.match(/^(.*\\/)editormd/);');
-            scripts.push('        if(m) return m[1];');
-            scripts.push('      }');
-            scripts.push('    }');
-            // 回退：从当前页面 URL 推断
-            scripts.push('    var loc=window.location.href;');
-            scripts.push('    if(loc.indexOf("/examples/")!==-1) return loc.replace(/\\/examples\\/.*$/,"/lib/");');
-            scripts.push('    return "./lib/";');
-            scripts.push('  }');
-            
-            // 动态加载 CSS
-            scripts.push('  function loadCSS(url){');
-            scripts.push('    if(!document.querySelector(\'link[href="\'+url+\'"]\')){');
-            scripts.push('      var l=document.createElement("link");');
-            scripts.push('      l.rel="stylesheet";l.href=url;');
-            scripts.push('      document.head.appendChild(l);');
-            scripts.push('    }');
-            scripts.push('  }');
-            
-            // 动态加载 JS 脚本
-            scripts.push('  function loadScript(url,cb){');
-            scripts.push('    if(!document.querySelector(\'script[src="\'+url+\'"]\')){');
-            scripts.push('      var s=document.createElement("script");');
-            scripts.push('      s.src=url;s.onload=cb||function(){};s.onerror=cb||function(){};');
-            scripts.push('      document.head.appendChild(s);');
-            scripts.push('    }else if(cb){cb();}');
-            scripts.push('  }');
-            
-            // 加载 KaTeX CSS（用于独立 HTML 中的公式渲染）
-            scripts.push('  function loadKaTeXForStandalone(){');
-            scripts.push('    var bp=detectBasePath();');
-            // 已经在页面中通过 link 标签加载过吗？
-            scripts.push('    if(document.querySelector(\'link[href*="katex.min.css"]\')) return;');
-            // 尝试从 editormd.js 所在目录的 lib/katex/ 加载
-            scripts.push('    loadCSS(bp+"lib/katex/katex.min.css");');
-            scripts.push('  }');
-            
-            // ECharts 初始化
-            scripts.push('  function initECharts(container,callback){');
-            scripts.push('    if(!container||container.length===0){if(callback)callback();return;}');
-            scripts.push('    var $charts=container.find(".editormd-echarts");');
-            scripts.push('    if($charts.length===0){if(callback)callback();return;}');
-            // 重置 data-initialized 标记（HTML 来自编辑器已初始化过的预览）
-            scripts.push('    $charts.removeAttr("data-initialized");');
-            scripts.push('    function doInit(){');
-            scripts.push('      $charts.each(function(){');
-            scripts.push('        var $c=$(this);');
-            scripts.push('        if($c.attr("data-initialized")==="true") return;');
-            scripts.push('        if($c.is(":hidden")||$c.width()===0||$c.height()===0) return;');
-            scripts.push('        var config={};');
-            scripts.push('        try{config=JSON.parse($c.attr("data-config"));}catch(e){return;}');
-            scripts.push('        var ch=echarts.init(this);');
-            scripts.push('        var opt={title:config.title||{},tooltip:config.tooltip||{trigger:"axis"},legend:config.legend||{},radar:config.radar||{},series:config.series||[]};');
-            scripts.push('        var t=config.type||(config.series&&config.series[0]&&config.series[0].type)||"";');
-            scripts.push('        var noAxis=["pie","funnel","gauge","graph","treemap","sunburst"];');
-            scripts.push('        if(noAxis.indexOf(t)===-1){opt.xAxis=config.xAxis||{};opt.yAxis=config.yAxis||{};}');
-            scripts.push('        ch.setOption(opt);');
-            scripts.push('        $c.attr("data-initialized","true");');
-            scripts.push('        $(window).on("resize.echarts-standalone",function(){ch.resize();});');
-            scripts.push('      });');
-            scripts.push('    }');
-            scripts.push('    if(typeof echarts==="undefined"){');
-            scripts.push('      var bp=detectBasePath();');
-            scripts.push('      loadScript(bp+"lib/echarts.min.js",function(){setTimeout(doInit,100);if(callback)callback();});');
-            scripts.push('    }else{doInit();if(callback)callback();}');
-            scripts.push('  }');
-            
-            scripts.push('  function getViewport(){var d=document,e=d.documentElement;return{w:Math.max(e.clientWidth,window.innerWidth||0),h:Math.max(e.clientHeight,window.innerHeight||0),sl:window.pageXOffset||e.scrollLeft||0,st:window.pageYOffset||e.scrollTop||0};}');
-            scripts.push('  function initTooltips(container){');
-            scripts.push('    if(!container||container.length===0) return;');
-            // 清理旧的 popup，避免 DOM 碎片累积
-            scripts.push('    $(".editormd-tooltip-popup").not(":has(+ script)").remove();');
-            // 重置 tooltip 初始化标记
-            scripts.push('    container.find(".editormd-tooltip-trigger").removeAttr("data-tooltip-init");');
-            scripts.push('    container.find(".editormd-tooltip-trigger").each(function(){');
-            scripts.push('      var $t=$(this);');
-            scripts.push('      if($t.attr("data-tooltip-init")==="1") return;');
-            scripts.push('      var c=$t.attr("data-tooltip");');
-            scripts.push('      var ty=$t.attr("data-tooltip-type")||"text";');
-            scripts.push('      var w=$t.attr("data-tooltip-width")||"";');
-            scripts.push('      var h=$t.attr("data-tooltip-height")||"";');
-            scripts.push('      if(!c) return;');
-            scripts.push('      var html="";');
-            scripts.push('      if(ty==="image"){');
-            scripts.push('        var imgStyle="display:none;";');
-            scripts.push('        if(w) imgStyle+="width:"+w+"px;max-width:"+w+"px;";else imgStyle+="max-width:340px;";');
-            scripts.push('        if(h) imgStyle+="height:"+h+"px;max-height:"+h+"px;";else imgStyle+="max-height:220px;";');
-            scripts.push('        if(w||h) imgStyle+="object-fit:contain;";');
-            scripts.push('        html=\'<div class="editormd-tooltip-loading"><span>加载中...</span></div><img src="\'+c+\'" alt="" onload="$(this).prev().hide();$(this).show();" onerror="$(this).prev().html(\\\'<span>图片加载失败</span>\\\');" style="\'+imgStyle+\'">\';');
-            scripts.push('      }');
-            scripts.push('      else if(ty==="iframe"){');
-            scripts.push('        var iframeStyle="display:none;";');
-            scripts.push('        if(w) iframeStyle+="width:"+w+"px;max-width:"+w+"px;";else iframeStyle+="width:340px;";');
-            scripts.push('        if(h) iframeStyle+="height:"+h+"px;max-height:"+h+"px;";else iframeStyle+="height:210px;";');
-            scripts.push('        html=\'<div class="editormd-tooltip-loading"><span>加载中...</span></div><iframe src="\'+c+\'" frameborder="0" onload="$(this).prev().hide();$(this).show();" style="\'+iframeStyle+\'"></iframe>\';');
-            scripts.push('      }');
-            scripts.push('      else if(ty==="html"||ty==="html-selector"){');
-            scripts.push('        var sel=c;');
-            scripts.push('        var $el=$(sel);');
-            scripts.push('        if($el.length){');
-            scripts.push('          var $c=$el.clone();');
-            scripts.push('          $c.css({display:"block",visibility:"visible",opacity:"1",position:"relative",maxWidth:"100%",maxHeight:"300px",overflow:"auto"});');
-            scripts.push('          html=\'<div class="editormd-tooltip-html-content">\'+$c[0].outerHTML+\'</div>\';');
-            scripts.push('        }else{');
-            scripts.push('          html=\'<div class="editormd-tooltip-html-content" style="color:#ff6b6b;padding:10px;font-size:12px;">未找到元素: <code>\'+sel+\'</code></div>\';');
-            scripts.push('        }');
-            scripts.push('      }');
-            scripts.push('      else html=\'<div class="editormd-tooltip-text-content">\'+c+\'</div>\';');
-            scripts.push('      var arrow=\'<div class="editormd-tooltip-arrow"></div>\';');
-            scripts.push('      var $p=$(\'<div class="editormd-tooltip-popup editormd-tooltip-\'+ty+\'" role="tooltip" aria-hidden="true">\'+html+arrow+\'</div>\');');
-            // ★★★ 应用可选的宽度和高度（同时覆盖 max-width/max-height 防止 CSS 限制）
-            scripts.push('      if(w){$p.css({width:w+"px","max-width":w+"px"});$p.find("img,iframe,div.editormd-tooltip-text-content,div.editormd-tooltip-html-content").css("max-width",w+"px");}');
-            scripts.push('      if(h){$p.css({height:h+"px","max-height":h+"px"});$p.find("img,iframe,div.editormd-tooltip-text-content,div.editormd-tooltip-html-content").css("max-height",h+"px");}');
-            scripts.push('      $("body").append($p);');
-            scripts.push('      var showTimer=null,hideTimer=null;');
-            scripts.push('      var show=function(){clearTimeout(hideTimer);clearTimeout(showTimer);');
-            scripts.push('        showTimer=setTimeout(function(){');
-            scripts.push('          $p.css({display:"block",visibility:"hidden"});');
-            scripts.push('          var pw=$p.outerWidth();var ph=$p.outerHeight();');
-            scripts.push('          var tw=$t.outerWidth();var th=$t.outerHeight();');
-            // 使用 getBoundingClientRect 获取视口相对坐标（适配 position:fixed）
-            scripts.push('          var r=$t[0].getBoundingClientRect();');
-            scripts.push('          var l=r.left+(tw/2)-(pw/2);');
-            scripts.push('          var tp=r.top-ph-10;');
-            scripts.push('          var vp=getViewport();');
-            scripts.push('          var arrowPos="bottom";');
-            scripts.push('          if(tp<10){tp=r.bottom+10;arrowPos="top";if(tp+ph>vp.h-10) tp=vp.h-ph-10;}');
-            scripts.push('          if(l<10) l=10;');
-            scripts.push('          if(l+pw>vp.w-10) l=vp.w-pw-10;');
-            scripts.push('          $p.removeClass("editormd-tooltip-arrow-top editormd-tooltip-arrow-bottom");');
-            scripts.push('          $p.addClass("editormd-tooltip-arrow-"+arrowPos);');
-            scripts.push('          $p.css({left:l + "px",top:tp + "px",display:"block",visibility:"visible"}).addClass("show").attr("aria-hidden","false");');
-            scripts.push('        },150);');
-            scripts.push('      };');
-            scripts.push('      var hide=function(){clearTimeout(showTimer);clearTimeout(hideTimer);');
-            scripts.push('        hideTimer=setTimeout(function(){');
-            scripts.push('          $p.removeClass("show").attr("aria-hidden","true");');
-            scripts.push('          setTimeout(function(){if(!$p.hasClass("show")) $p.css({display:"none"});},220);');
-            scripts.push('        },200);');
-            scripts.push('      };');
-            scripts.push('      $t.on("mouseenter",show).on("mouseleave",hide);');
-            scripts.push('      $t.on("focus",show).on("blur",hide);');
-            scripts.push('      $p.on("mouseenter",function(){clearTimeout(hideTimer);clearTimeout(showTimer);}).on("mouseleave",function(){hide();});');
-            scripts.push('      $t.on("click",function(e){if("ontouchstart" in window||navigator.maxTouchPoints){e.preventDefault();$p.hasClass("show")?hide():show();}});');
-            scripts.push('      $(document).on("click.tooltip",function(e){if(!$(e.target).closest(".editormd-tooltip-trigger, .editormd-tooltip-popup").length) hide();});');
-            scripts.push('      $(document).on("keydown.tooltip",function(e){if(e.key==="Escape"&&$p.hasClass("show")){e.preventDefault();hide();}});');
-            scripts.push('      $t.attr("data-tooltip-init","1");');
-            scripts.push('    });');
-            scripts.push('  }');
-            
-            // 修复：重置 data-initialized 标记后初始化 Tabs
-            scripts.push('  function initTabs(container){');
-            scripts.push('    container.find(".editormd-tabs").each(function(){');
-            scripts.push('      var $tb=$(this);');
-            // 重要：重置 data-initialized 标记（编辑器预览输出时已标记为 true）
-            scripts.push('      $tb.removeAttr("data-initialized");');
-            scripts.push('      if($tb.attr("data-initialized")==="true") return;');
-            scripts.push('      var $n=$tb.find(">.editormd-tab-nav");');
-            scripts.push('      var $b=$tb.find(">.editormd-tab-body");');
-            // 移除旧的点击事件（防止重复绑定）
-            scripts.push('      $n.off("click",">li");');
-            scripts.push('      $n.on("click",">li",function(e){e.preventDefault();e.stopPropagation();');
-            scripts.push('        var $li=$(this),idx=$li.attr("data-index");');
-            scripts.push('        $n.find(">li").removeClass("active");$li.addClass("active");');
-            scripts.push('        $b.find(">.editormd-tab-panel").removeClass("active");');
-            scripts.push('        $b.find(\'>.editormd-tab-panel[data-index="\'+idx+\'"]\').addClass("active");');
-            scripts.push('      });');
-            scripts.push('      $tb.attr("data-initialized","true");');
-            scripts.push('    });');
-            scripts.push('  }');
-            
-            // 初始化多栏布局分隔线（Columns）
-            scripts.push('  function initColumns(container){');
-            scripts.push('    if(!container||container.length===0) return;');
-            scripts.push('    container.find(".editormd-columns").each(function(){');
-            scripts.push('      var $c=$(this);');
-            scripts.push('      if($c.attr("data-initialized")==="true") return;');
-            scripts.push('      var count=parseInt($c.attr("data-count"),10)||2;');
-            scripts.push('      $c.find(".editormd-column-divider").remove();');
-            scripts.push('      $c.css("position","relative");');
-            scripts.push('      for(var i=1;i<count;i++){');
-            scripts.push('        $c.append(\'<div class="editormd-column-divider" style="position:absolute;top:8px;bottom:8px;width:0;transform:translateX(-50%);border-left:1px dashed #bbb;pointer-events:none;z-index:1;" data-colidx="\'+i+\'"></div>\');');
-            scripts.push('      }');
-            scripts.push('      $c.attr("data-initialized","true");');
-            scripts.push('    });');
-            scripts.push('  }');
-            
-            scripts.push('  function initCodeCopy(container){');
-            scripts.push('    if(!container||container.length===0) return;');
-            scripts.push('    container.find("pre").each(function(){');
-            scripts.push('      var $pre=$(this);');
-            scripts.push('      if($pre.data("_copyBtnReady")) return;');
-            scripts.push('      $pre.data("_copyBtnReady",true);');
-            scripts.push('      if($pre.css("position")==="static") $pre.css("position","relative");');
-            // Store original code text at creation time for reliable copy
-            scripts.push('      if($pre.data("_originalCode")===undefined){var $c=$pre.find("code");if($c.length) $pre.data("_originalCode",$c.text());}');
-            scripts.push('      var $btn=$("<span>").addClass("editormd-code-copy-btn").text("复制").attr("title","复制");');
-            scripts.push('      $btn.on("click",function(e){');
-            scripts.push('        e.stopPropagation();e.preventDefault();');
-            scripts.push('        if($btn.hasClass("copied")||$btn.hasClass("failed")) return;');
-            scripts.push('        var code=$pre.data("_originalCode");if(!code){var $c=$pre.find("code");code=$c.length?$c.text():$pre.clone().find(".editormd-code-copy-btn").remove().end().text();}');
-            scripts.push('        var done=function(s){');
-            scripts.push('          $btn.removeClass("copied failed").addClass(s?"copied":"failed").text(s?"已复制":"复制失败");');
-            scripts.push('          clearTimeout($btn.data("_timer"));');
-            scripts.push('          $btn.data("_timer",setTimeout(function(){$btn.removeClass("copied failed").text("复制");},2500));};');
-            scripts.push('        if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(code).then(function(){done(true);}).catch(function(){done(false);});}');
-            scripts.push('        else{var t=document.createElement("textarea");t.value=code;t.style.position="fixed";t.style.left="-9999px";document.body.appendChild(t);t.select();try{done(document.execCommand("copy"));}catch(e){done(false);}document.body.removeChild(t);}');
-            scripts.push('      });');
-            scripts.push('      $pre.append($btn);');
-            scripts.push('    });');
-            scripts.push('  }');
-            
-            // DOM Ready — 按顺序初始化所有交互组件
-            scripts.push('  $(function(){');
-            scripts.push('    var $c=$(".editormd-html-preview");');
-            scripts.push('    if($c.length){');
-            // 加载 KaTeX CSS（用于公式渲染）
-            scripts.push('      loadKaTeXForStandalone();');
-            // 初始化不需要外部库的组件
-            scripts.push('      initTooltips($c);');
-            scripts.push('      initTabs($c);');
-            scripts.push('      initColumns($c);');
-            scripts.push('      initCodeCopy($c);');
-            // ECharts 异步加载（需要外部 echarts.min.js）
-            scripts.push('      initECharts($c);');
-            scripts.push('    }');
-            scripts.push('  });');
-            scripts.push('})();');
+                        scripts.push('(function(){\n  function detectBasePath(){\n    var scripts=document.getElementsByTagName("script");\n    for(var i=scripts.length-1;i>=0;i--){\n      var s=scripts[i];\n      if(s.src&&s.src.indexOf("editormd")!==-1){\n        var m=s.src.match(/^(.*\\/)editormd/);\n        if(m) return m[1];');
+            scripts.push('      }\n    }\n    var loc=window.location.href;\n    if(loc.indexOf("/examples/")!==-1) return loc.replace(/\\/examples\\/.*$/,"/lib/");\n    return "./lib/";\n  }\n  function loadCSS(url){\n      var l=document.createElement("link");');
+            scripts.push('      l.rel="stylesheet";l.href=url;\n      document.head.appendChild(l);\n    }\n  }\n  function loadScript(url,cb){\n      var s=document.createElement("script");\n      s.src=url;s.onload=cb||function(){};s.onerror=cb||function(){};\n      document.head.appendChild(s);');
+            scripts.push('    }else if(cb){cb();}\n  }\n  function loadKaTeXForStandalone(){\n    var bp=detectBasePath();\n    loadCSS(bp+"lib/katex/katex.min.css");\n  }\n  function initECharts(container,callback){\n    if(!container||container.length===0){if(callback)callback();return;}');
+            scripts.push('    var $charts=container.find(".editormd-echarts");\n    if($charts.length===0){if(callback)callback();return;}\n    $charts.removeAttr("data-initialized");\n    function doInit(){\n      $charts.each(function(){\n        var $c=$(this);\n        if($c.attr("data-initialized")==="true") return;\n        if($c.is(":hidden")||$c.width()===0||$c.height()===0) return;');
+            scripts.push('        var config={};\n        try{config=JSON.parse($c.attr("data-config"));}catch(e){return;}\n        try{\n        var ecTheme=config.theme;if(!ecTheme){var m=($c.closest("[class*=theme-]").attr("class")||"").match(/theme-(\\w+)/);if(m)ecTheme=m[1];}var ch=echarts.init(this,ecTheme);\n        var opt={title:config.title||{},tooltip:config.tooltip||{},series:config.series||[]};\n        if(config.legend!==undefined)opt.legend=config.legend;\n        if(config.radar!==undefined)opt.radar=config.radar;\n        var t=config.type||(config.series&&config.series[0]&&config.series[0].type)||"";\n        var noAxis=["pie","funnel","gauge","graph","treemap","sunburst","tree"];\n        if(noAxis.indexOf(t)===-1){opt.xAxis=config.xAxis||{};opt.yAxis=config.yAxis||{};}else if(!config.tooltip){opt.tooltip={trigger:"item"};}\n        if(config.backgroundColor)opt.backgroundColor=config.backgroundColor;\n        if(config.grid!==undefined)opt.grid=config.grid;\n        if(config.dataZoom!==undefined)opt.dataZoom=config.dataZoom;\n        if(config.visualMap!==undefined)opt.visualMap=config.visualMap;\n        if(config.toolbox!==undefined)opt.toolbox=config.toolbox;\n        ch.setOption(opt);\n        ch.resize();\n        $c.attr("data-initialized","true");\n        var ecNs="ec-"+($c.attr("id")||("sa"+Math.random().toString(36).slice(2,9)));\n        $(window).on("resize.echarts-standalone."+ecNs,function(){ch.resize();});\n        }catch(e){}\n      });\n    }\n    if(typeof echarts==="undefined"){\n      var bp=detectBasePath();\n      loadScript(bp+"lib/echarts.min.js",function(){setTimeout(doInit,100);if(callback)callback();});\n    }else{doInit();if(callback)callback();}');
+            scripts.push('  }\n  function getViewport(){var d=document,e=d.documentElement;return{w:Math.max(e.clientWidth,window.innerWidth||0),h:Math.max(e.clientHeight,window.innerHeight||0),sl:window.pageXOffset||e.scrollLeft||0,st:window.pageYOffset||e.scrollTop||0};}\n  function initTooltips(container){if(typeof editormd!=="undefined"&&typeof editormd.initTooltips==="function"){editormd.initTooltips(container);return;}');
+            scripts.push('  function initTabs(container){\n    container.find(".editormd-tabs").each(function(){\n      var $tb=$(this);\n      $tb.removeAttr("data-initialized");\n      if($tb.attr("data-initialized")==="true") return;\n      var $n=$tb.find(">.editormd-tab-nav");\n      var $b=$tb.find(">.editormd-tab-body");\n      $n.off("click",">li");');
+            scripts.push('      $n.on("click",">li",function(e){e.preventDefault();e.stopPropagation();\n        var $li=$(this),idx=$li.attr("data-index");\n        $n.find(">li").removeClass("active");$li.addClass("active");\n        $b.find(">.editormd-tab-panel").removeClass("active");\n        $b.find(\'>.editormd-tab-panel[data-index="\'+idx+\'"]\').addClass("active");\n        // 面板变为可见后，重新初始化其中的 ECharts/FlowChart 等隐藏内容\n        var $panel=$b.find(\'>.editormd-tab-panel[data-index="\'+idx+\'"]\');\n        if($panel.length) initECharts($panel);\n      });\n      $tb.attr("data-initialized","true");\n    });\n  }');
+            scripts.push('  function initColumns(container){\n    if(!container||container.length===0) return;\n    container.find(".editormd-columns").each(function(){\n      var $c=$(this);\n      if($c.attr("data-initialized")==="true") return;\n      var count=parseInt($c.attr("data-count"),10)||2;\n      $c.find(".editormd-column-divider").remove();\n      $c.css("position","relative");');
+            scripts.push('      for(var i=1;i<count;i++){\n        var d=document.createElement("div");d.className="editormd-column-divider";\n        d.style.cssText="position:absolute;left:"+(i/count*100)+"%;top:8px;bottom:8px;width:0;transform:translateX(-50%);border-left:1px dashed #bbb;pointer-events:none;z-index:1";\n        $c[0].appendChild(d);\n      }\n      $c.attr("data-initialized","true");\n    });\n  }\n  function initCodeCopy(container){\n    if(!container||container.length===0) return;\n    container.find("pre").each(function(){');
+            scripts.push('      var $pre=$(this);\n      if($pre.data("_copyBtnReady")) return;\n      $pre.data("_copyBtnReady",true);\n      if($pre.css("position")==="static") $pre.css("position","relative");\n      if($pre.data("_originalCode")===undefined){var $c=$pre.find("code");if($c.length) $pre.data("_originalCode",$c.text());}\n      var $btn=$("<span>").addClass("editormd-code-copy-btn").text("复制").attr("title","复制");\n      $btn.on("click",function(e){\n        e.stopPropagation();e.preventDefault();');
+            scripts.push('        if($btn.hasClass("copied")||$btn.hasClass("failed")) return;\n        var code=$pre.data("_originalCode");if(!code){var $c=$pre.find("code");code=$c.length?$c.text():$pre.clone().find(".editormd-code-copy-btn").remove().end().text();}\n        var done=function(s){\n          $btn.removeClass("copied failed").addClass(s?"copied":"failed").text(s?"已复制":"复制失败");\n          clearTimeout($btn.data("_timer"));\n          $btn.data("_timer",setTimeout(function(){$btn.removeClass("copied failed").text("复制");},2500));};\n        if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(code).then(function(){done(true);}).catch(function(){done(false);});}\n        else{var t=document.createElement("textarea");t.value=code;t.style.position="fixed";t.style.left="-9999px";document.body.appendChild(t);t.select();try{done(document.execCommand("copy"));}catch(e){done(false);}document.body.removeChild(t);}');
+            scripts.push('      });\n      $pre.append($btn);\n    });\n  }\n  $(function(){\n    var $c=$(".editormd-html-preview");\n    if($c.length){\n      loadKaTeXForStandalone();');
+            scripts.push('      initTooltips($c);\n      initTabs($c);\n      initColumns($c);\n      initCodeCopy($c);\n      initECharts($c);\n    }\n  });\n})();');
+
             
             return scripts.join('\n');
         },
@@ -5130,7 +5047,6 @@
             var markdownText = this.getMarkdown();
             var settings = this.settings;
             
-            // ★ 策略：当需要内联样式/脚本时，始终从 Markdown 完整重渲染，
             // 确保输出是干净的、不依赖外部 CSS/JS 的独立 HTML。
             // 纯内容片段（不含样式脚本）则使用预览区缓存以提升性能。
             var forceRender = opts.includeStyles || opts.includeScripts || opts.fullPage || opts.includeTOC;
@@ -5156,6 +5072,7 @@
                 rawHTML = editormd.restorePlaceholders(rawHTML, mdPreprocess.placeholders);
                 rawHTML = editormd.restoreTeXSyntax(rawHTML);
                 rawHTML = editormd.fixSmartypantsHTML(rawHTML);
+                rawHTML = editormd.fixTableEmptyCells(rawHTML);
                 if (settings.taskList) rawHTML = editormd.postProcessTaskLists(rawHTML);
                 rawHTML = editormd.filterHTMLTags(rawHTML, settings.htmlDecode);
             }
@@ -5176,7 +5093,6 @@
                 contentHTML += '<style>\n' + inlineStyles + '\n</style>\n';
             }
             
-            // ★ 添加外部样式表
             if (Array.isArray(opts.externalStyles)) {
                 opts.externalStyles.forEach(function(styleUrl) {
                     if (styleUrl && typeof styleUrl === 'string') {
@@ -5189,7 +5105,6 @@
             contentHTML += '  ' + (rawHTML || "") + '\n';
             contentHTML += '</div>';
             
-            // ★ 添加外部脚本
             if (Array.isArray(opts.externalScripts)) {
                 opts.externalScripts.forEach(function(scriptUrl) {
                     if (scriptUrl && typeof scriptUrl === 'string') {
@@ -5210,8 +5125,7 @@
                 fullHTML += '  <meta charset="UTF-8">\n';
                 fullHTML += '  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n';
                 
-                // ★ 添加 SEO meta 标签
-                if (opts.description) {
+                    if (opts.description) {
                     fullHTML += '  <meta name="description" content="' + editormd.escapeAttr(opts.description) + '">\n';
                 }
                 if (opts.author) {
@@ -5228,15 +5142,13 @@
                 fullHTML += '</body>\n';
                 fullHTML += '</html>';
                 
-                // ★ 压缩输出
-                if (opts.minify) {
+                    if (opts.minify) {
                     fullHTML = fullHTML.replace(/\n\s+/g, '\n').replace(/\n{2,}/g, '\n');
                 }
                 
                 return fullHTML;
             }
 
-            // ★ 压缩输出
             if (opts.minify) {
                 contentHTML = contentHTML.replace(/\n\s+/g, '\n').replace(/\n{2,}/g, '\n');
             }
@@ -5888,6 +5800,10 @@
                 clearInterval(this.draftTimer);
                 this.draftTimer = null;
             }
+            if (this._activeSideTimer) {
+                clearTimeout(this._activeSideTimer);
+                this._activeSideTimer = null;
+            }
 
             // 2. 解绑所有文档级事件（editormd 命名空间）
             $(document).off("click.editormd-table");
@@ -5896,27 +5812,47 @@
             $(document).off("mousedown.editormd-colorpicker");
             $(document).off("keyup.editormd-fs keyup.editormd-preview");
 
-            // 3. 解绑所有窗口 resize 事件（命名空间）
-            $(window).off("resize.editormd-echarts");
+            // 3. 解绑所有窗口事件（使用命名空间批量清理）
+            $(window).off("load.editormd-pageload");
+            $(window).off(".editormd-echarts");  // 匹配所有子命名空间如 resize.editormd-echarts.xxx
             $(window).off("resize.editormd-echarts-md");
             $(window).off("resize.editormdDraft");
             $(window).off("scroll.editormd-autofixed");
             $(window).off("keydown.editormd-fkeys");
             $(window).off("resize.editormd-dialog");
-            // 解绑通用 resize（可能影响其他实例， 
-            // 但对于匿名处理器这是最优解）
-            $(window).off("resize");
+            $(window).off(".editormd-auto");  // 匹配 editormd-auto 命名空间的元素级事件
+
+            // 3b. 销毁所有 ECharts 实例并解绑其 resize 事件
+            if (this.previewContainer) {
+                this.previewContainer.find(".editormd-echarts").each(function() {
+                    var $chart = $(this);
+                    var instanceId = $chart.attr("_echarts_instance");
+                    if (instanceId && typeof echarts !== "undefined") {
+                        try { echarts.dispose(this); } catch(ex) {}
+                    }
+                });
+            }
 
             // 解绑未命名空间的全局文档事件
             $(document).off("click.editormd-dropdown");
             $(document).off("click.tooltip keydown.tooltip");
             
-            // 解绑同步滚动事件（始终绑定的 scroll 事件）
+            // 清理对话框拖拽残留（防止幽灵拖拽）
+            if (document.onmousemove) {
+                // 检查是否是 editormd 对话框的拖拽处理器
+                try { document.onmousemove = null; } catch(ex) {}
+            }
+            try { document.onmouseup = null; } catch(ex) {}
+            try { document.onselectstart = null; } catch(ex) {}
+            
+            // 解绑同步滚动事件（始终绑定的 scroll 事件和鼠标进入/离开事件）
             if (this.codeMirror) {
                 this.codeMirror.find(".CodeMirror-scroll").off(".editormd-sync");
+                this.codeMirror.off(".editormd-sync");
             }
             if (this.preview) {
                 this.preview.off(".editormd-sync");
+                this.previewContainer.off(".editormd-sync");
             }
             
             
@@ -5957,8 +5893,19 @@
             this.state.loaded      = false;
             this.state.preview     = false;
             this.state.fullscreen  = false;
+            this.state.activeSide  = null;
 
-            // 9. 清除引用以辅助垃圾回收
+            // 9. 清理所有悬浮提示 popup 元素及其 Blob URL
+            $("body").children(".editormd-tooltip-popup").each(function() {
+                var $popup = $(this);
+                var blobUrl = $popup.attr("data-blob-url");
+                if (blobUrl) {
+                    try { (window.URL || window.webkitURL).revokeObjectURL(blobUrl); } catch(ex) {}
+                }
+                $popup.remove();
+            });
+
+            // 10. 清除引用以辅助垃圾回收
             this.toolbar         = null;
             this.preview         = null;
             this.previewContainer = null;
@@ -6532,6 +6479,13 @@
             cm.setCursor(cursor.line + 2, 0);
         },
 
+        "echarts-tree" : function() {
+            var cm = this.cm;
+            var cursor = cm.getCursor();
+            cm.replaceSelection("\n```echarts\n{\n  \"type\": \"tree\",\n  \"height\": 550,\n  \"title\": {\"text\": \"组织架构与能力图谱\", \"subtext\": \"点击节点圆圈可折叠/展开\", \"left\": \"center\", \"top\": 10},\n  \"tooltip\": {\"trigger\": \"item\", \"triggerOn\": \"mousemove\"},\n  \"series\": [{\n    \"type\": \"tree\",\n    \"data\": [{\n      \"name\": \"🚀 智能中枢\",\n      \"symbolSize\": 18,\n      \"children\": [{\n        \"name\": \"📊 数据分析\",\n        \"itemStyle\": {\"color\": \"#4fc3f7\"},\n        \"children\": [\n          {\"name\": \"实时看板\", \"value\": 95},\n          {\"name\": \"异常检测\", \"value\": 88},\n          {\"name\": \"趋势预测\", \"value\": 76},\n          {\"name\": \"用户画像\", \"value\": 82}\n        ]\n      }, {\n        \"name\": \"🤖 AI 引擎\",\n        \"itemStyle\": {\"color\": \"#81c784\"},\n        \"children\": [\n          {\"name\": \"自然语言处理(NLP)\", \"value\": 92},\n          {\"name\": \"计算机视觉(CV)\", \"value\": 85},\n          {\"name\": \"强化学习\", \"value\": 70},\n          {\"name\": \"大语言模型\", \"value\": 96}\n        ]\n      }, {\n        \"name\": \"⚙️ 基础设施\",\n        \"itemStyle\": {\"color\": \"#ffb74d\"},\n        \"children\": [\n          {\"name\": \"云原生架构\", \"value\": 90},\n          {\"name\": \"边缘计算\", \"value\": 78},\n          {\"name\": \"安全合规\", \"value\": 82},\n          {\"name\": \"自动化运维\", \"value\": 74}\n        ]\n      }, {\n        \"name\": \"🎨 产品设计\",\n        \"itemStyle\": {\"color\": \"#f06292\"},\n        \"children\": [\n          {\"name\": \"用户体验\", \"value\": 88},\n          {\"name\": \"交互设计\", \"value\": 85},\n          {\"name\": \"视觉设计\", \"value\": 91},\n          {\"name\": \"设计系统\", \"value\": 80}\n        ]\n      }]\n    }],\n    \"layout\": \"orthogonal\",\n    \"orient\": \"LR\",\n    \"roam\": true,\n    \"expandAndCollapse\": true,\n    \"initialTreeDepth\": 2,\n    \"nodeScale\": 1.2,\n    \"top\": \"5%\",\n    \"left\": \"3%\",\n    \"bottom\": \"3%\",\n    \"right\": \"8%\",\n    \"symbol\": \"circle\",\n    \"symbolSize\": 14,\n    \"lineStyle\": {\"width\": 2, \"curveness\": 0.3},\n    \"edgeShape\": \"curve\",\n    \"label\": {\n      \"position\": \"left\",\n      \"verticalAlign\": \"middle\",\n      \"align\": \"right\",\n      \"fontSize\": 12\n    },\n    \"leaves\": {\n      \"label\": {\"position\": \"right\", \"verticalAlign\": \"middle\", \"align\": \"left\", \"fontSize\": 11},\n      \"symbolSize\": 8\n    },\n    \"emphasis\": {\n      \"focus\": \"descendant\",\n      \"lineStyle\": {\"width\": 3},\n      \"itemStyle\": {\"shadowBlur\": 20, \"shadowColor\": \"rgba(74,108,247,0.6)\", \"borderWidth\": 2},\n      \"label\": {\"fontWeight\": 700, \"fontSize\": 14}\n    },\n    \"nodePadding\": 25,\n    \"nodeGap\": 15,\n    \"animationDuration\": 800,\n    \"animationDurationUpdate\": 600\n  }]\n}\n```\n");
+            cm.setCursor(cursor.line + 2, 0);
+        },
+
         tabs : function() {
             var cm = this.cm;
             var selection = cm.getSelection();
@@ -6583,7 +6537,6 @@
             var cursor      = cm.getCursor();
             var classPrefix = this.classPrefix;
 
-            // ★ 如果 KaTeX 未加载，先自动加载再打开弹窗
             if (!editormd.kaTeXLoaded) {
                 if (settings.autoLoadModules) {
                     editormd.loadKaTeX(settings.path, function() {
@@ -7362,6 +7315,54 @@
     };
 
     /**
+     * 修复 marked.js v0.3.3 表格解析中"最后一行最后一列为空时丢失单元格"的 Bug
+     * Fix marked.js v0.3.3 table bug: empty last cell in last row is dropped
+     *
+     * marked.js v0.3.3 中 pipe-table 的 cell 解析使用 greedy replace+split，
+     * 当最后一行最后一列为空（如 "| 图片上传 |  |"）时，贪婪的正则会吞掉
+     * 前一个单元格到管道符之间的全部内容，导致该行少一列。
+     *
+     * 本函数作为后处理：以 <thead> 的列数为基准，对 <tbody> 中列数不足的行自动补齐空 <td>。
+     *
+     * @param {string} html  marked.js 渲染后的 HTML 字符串
+     * @returns {string}     修复后的 HTML 字符串
+     */
+    editormd.fixTableEmptyCells = function(html) {
+        if (!html || html.indexOf("<table") === -1) return html;
+        
+        return html.replace(/<table[^>]*>([\s\S]*?)<\/table>/gi, function(tableMatch) {
+            // 提取 thead 的行（所有 th 行）
+            var theadMatch = tableMatch.match(/<thead[^>]*>([\s\S]*?)<\/thead>/i);
+            var headerColCount = 0;
+            if (theadMatch) {
+                var thCount = (theadMatch[1].match(/<th[\s>]/gi) || []).length;
+                headerColCount = thCount;
+            }
+            if (headerColCount === 0) return tableMatch;
+            
+            // 修复 tbody 中每行的列数
+            var fixed = tableMatch.replace(/<tr[^>]*>([\s\S]*?)<\/tr>/gi, function(trMatch, trContent) {
+                // 跳过 <thead> 内的行（它们已经是正确的）
+                if (trMatch.indexOf("<th") !== -1) return trMatch;
+                
+                // 计算当前行的 <td 数量
+                var tdCount = (trContent.match(/<td[\s>]/gi) || []).length;
+                if (tdCount >= headerColCount) return trMatch;
+                
+                // 补齐缺失的 <td></td>
+                var missing = headerColCount - tdCount;
+                var padding = "";
+                for (var p = 0; p < missing; p++) {
+                    padding += "<td></td>\n";
+                }
+                return trMatch.replace(/<\/tr>/i, padding + "</tr>");
+            });
+            
+            return fixed;
+        });
+    };
+
+    /**
      * Post-process HTML to convert task list markers ([ ] / [x]) into proper
      * checkbox HTML.  This runs after marked has finished rendering, so it is
      * immune to any inline transformations marked may have applied.
@@ -7404,6 +7405,10 @@
      * before passing to marked. This prevents conflicts with fenced code blocks.
      */
     editormd.preprocessMarkdownBlocks = function(markdown, options) {
+        if (!markdown || typeof markdown !== "string") {
+            return { markdown: markdown || "", placeholders: [] };
+        }
+        
         var placeholders = [];
         var placeholderId = 0;
 
@@ -7492,9 +7497,12 @@
         }
 
         function restoreCodeBlocks(text, codePlaceholders) {
+            if (!codePlaceholders || codePlaceholders.length === 0) return text;
             for (var i = 0; i < codePlaceholders.length; i++) {
                 var cp = codePlaceholders[i];
-                text = text.split("<!--" + cp.id + "-->").join(cp.html);
+                if (cp && cp.id) {
+                    text = text.split("<!--" + cp.id + "-->").join(cp.html || "");
+                }
             }
             return text;
         }
@@ -7531,16 +7539,8 @@
                 return blocks;
             }
 
-            // 克隆正则以保证 lastIndex 独立
-            try {
-                var openRe = new RegExp(openRegex.source, openRegex.flags.replace('g', '') + 'g');
-                var closeRe = new RegExp(closeRegex.source, closeRegex.flags.replace('g', '') + 'g');
-            } catch(e) {
-                if (typeof console !== "undefined" && console.warn) {
-                    console.warn("[xfEditor] findBalancedBlocks: Invalid regex:", e);
-                }
-                return blocks;
-            }
+            var openRe = new RegExp(openRegex.source, openRegex.flags.replace('g', '') + 'g');
+            var closeRe = new RegExp(closeRegex.source, closeRegex.flags.replace('g', '') + 'g');
 
             // 辅助函数：判断从指定位置开始是否真的存在匹配的闭标签对
             // 用于验证嵌套语法是否有效（避免将普通文本中的 [[columns:3]] 误判为嵌套）
@@ -8113,7 +8113,6 @@
             }
         }
 
-
         // ========== 脚注处理（必须在上标/下标之前，避免 [^name] 中的 ^ 被上标正则误匹配）==========
         // 收集脚注定义，然后替换脚注引用
         var footnotes = {};
@@ -8121,7 +8120,6 @@
         var footnoteIndex = 0;
 
         try {
-            // 第一步：在 markdown 文本中解析脚注定义
             // 定义格式：[^name]: content\n 内容持续到空行（\n\n）或下一个定义或文档结束
             // 此时代码块已被保护为占位符，不会误匹配
             var fnDefRegex = editormd.regexs.footnoteDefAnchor;
@@ -8161,8 +8159,7 @@
                     // 1. 查找最近的空行（\n\n）
                     var blankLineIdx = markdown.indexOf('\n\n', contentStart);
 
-                    // 2. 查找下一个脚注定义（如果有）
-                    var nextDefIdx = (di + 1 < defMatches.length) ? defMatches[di + 1].start : -1;
+                            var nextDefIdx = (di + 1 < defMatches.length) ? defMatches[di + 1].start : -1;
 
                     // 3. 取两者中较小的（或文档末尾）
                     if (blankLineIdx !== -1) {
@@ -8184,9 +8181,7 @@
                     dm.content = markdown.substring(contentStart, contentEnd).trim();
                 }
 
-
-                // 第三步：先从前往后记录所有脚注（保持原始顺序）
-                for (var di = 0; di < defMatches.length; di++) {
+                    for (var di = 0; di < defMatches.length; di++) {
                     var dm = defMatches[di];
                     if (!footnotes[dm.name]) {
                         footnoteIndex++;
@@ -8205,8 +8200,7 @@
                     markdown = markdown.substring(0, dm.start) + markdown.substring(dm.contentEnd);
                 }
 
-                // 第五步：替换所有脚注引用为可点击链接
-                editormd.regexs.footnoteRef.lastIndex = 0;
+                    editormd.regexs.footnoteRef.lastIndex = 0;
                 markdown = markdown.replace(editormd.regexs.footnoteRef, function(match, name) {
                     if (!name || name.length > 50) return match;
 
@@ -8220,8 +8214,7 @@
                     return '<sup class="editormd-footnote-ref-wrapper"><a href="#editormd-fn-' + fn.index + '" id="editormd-fnref-' + fn.index + '">[' + fn.index + ']</a></sup>';
                 });
 
-                // 第六步：在文档末尾添加脚注列表（紧凑 HTML 避免 marked breaks:true 产生多余 <br>）
-                if (footnoteOrder.length > 0) {
+                    if (footnoteOrder.length > 0) {
                     var footnoteHtml = '\n\n<div class="editormd-footnotes-section">';
                     footnoteHtml += '<hr class="editormd-footnote-sep">';
                     footnoteHtml += '<div class="editormd-footnote-title"><strong>脚注</strong></div>';
@@ -8231,12 +8224,9 @@
                         var fnName = footnoteOrder[fi];
                         var fn = footnotes[fnName];
 
-                        // 对脚注内容做 XSS 防护和内联 Markdown 处理
-                        var fnContent = fn.content;
+                                    var fnContent = fn.content;
 
-                        // 0. 先恢复脚注内容中的代码块占位符（行内代码等）
-                        // 因为脚注内容是在代码块保护阶段之后提取的，其中可能包含占位符
-                        fnContent = restoreCodeBlocks(fnContent, codeProtection.placeholders);
+                                                fnContent = restoreCodeBlocks(fnContent, codeProtection.placeholders);
 
                         // 1. 先转义 < 和 >（主要 XSS 向量）
                         fnContent = fnContent.replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -8278,15 +8268,13 @@
         // 下标：^^文本^^ → <sub>文本</sub>
         // 组合上下标：<<下标>^<上标>> → 垂直堆叠容器（sup 在上、sub 在下，同级并列）
         try {
-            // ★ 先处理组合上下标（<<X>^<Y>>），再处理下标（^^），最后处理上标（^），避免冲突
             editormd.regexs.supsub.lastIndex = 0;
             markdown = markdown.replace(editormd.regexs.supsub, function(match, subText, supText) {
                 if (!subText || subText.length > 100 || !supText || supText.length > 100) return match;
                 // 保护产生的 HTML 不被后续 ^ / ^^ 处理误匹配
                 var safeSub = subText.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\^/g, "&#94;");
                 var safeSup = supText.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\^/g, "&#94;");
-                // ★ 使用 inline-block 包装容器，sup/sub 同级并列垂直堆叠，均依附于基准字符
-                return '<span class="editormd-supsub"><sup>' + safeSup + '</sup><sub>' + safeSub + '</sub></span>';
+                    return '<span class="editormd-supsub"><sup>' + safeSup + '</sup><sub>' + safeSub + '</sub></span>';
             });
 
             // 再处理下标（双符号），避免冲突
@@ -8343,7 +8331,7 @@
         // 恢复之前保护的代码块，让 marked 正常解析代码高亮
         markdown = restoreCodeBlocks(markdown, codeProtection.placeholders);
 
-        // ★ 预处理 tooltip 语法：将 <宽,高> 转换为标准 title 格式
+        // 预处理 tooltip 语法：将 <宽,高> 转换为标准 title 格式
         // 将 [text](tooltip:type:content)<宽,高> 转换为 [text](tooltip:type:content "<宽,高>")
         // 注意：需要正确处理 content 中可能包含引号的情况
         if (options.tooltip) {
@@ -8357,15 +8345,15 @@
     };
 
     editormd.restorePlaceholders = function(html, placeholders) {
-        if (!placeholders || placeholders.length === 0) return html;
+        if (!html || !placeholders || placeholders.length === 0) return html;
         for (var i = 0; i < placeholders.length; i++) {
             var ph = placeholders[i];
-            html = html.split("<!--" + ph.id + "-->").join(ph.html);
+            if (ph && ph.id) {
+                html = html.split("<!--" + ph.id + "-->").join(ph.html || "");
+            }
         }
         return html;
     };
-
-
 
     /**
      * 自定义marked的解析器
@@ -8379,8 +8367,7 @@
         var defaults = {
             toc                  : true,           // 生成目录（Table of Contents）
             tocm                 : false,
-            tocStartLevel        : 1,              // 从第几级标题开始生成目录  
-            pageBreak            : true,
+            tocStartLevel        : 1,              pageBreak            : true,
             atLink               : true,           // 是否解析 @用户名 链接
             emailLink            : true,           // 是否解析邮箱地址自动链接
             taskList             : true,           // 启用 GitHub Flavored Markdown 任务列表
@@ -8396,8 +8383,7 @@
             columns              : true,           // 启用多栏布局 [[columns:N]] 语法
             pageBlock            : true,           // 启用纸张页面 [[page:A4]] / [[page:A5]] 语法
             tooltip              : true,           // 启用悬浮提示 [text](tooltip:content) 语法
-            copybook             : true            // 启用字帖语法 [[copybookTian]]、[[copybookMi]]、[[copybookPinyin]]
-        };
+            copybook             : true        };
         
         var settings        = $.extend(defaults, options || {});    
         var marked          = editormd.$marked;
@@ -8536,7 +8522,6 @@
                 return editormd.escapeHtml(text || href);
             }
             
-            // ★ 解码 marked.js 自动编码的 HTML 实体
             // marked.js 会将引号编码为 &quot;，尖括号编码为 &lt; &gt;
             if (href) {
                 href = href.replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
@@ -8548,9 +8533,9 @@
             // 转义 href 用于 HTML 属性
             var safeHref = editormd.escapeAttr(href || "");
 
-            // ★★★ 新版悬浮提示语法 ★★★
             // 语法格式：[触发文本](tooltip:类型:内容)<宽度,高度>
-            // 支持类型：text、image、iframe、html
+            // 支持类型：text、image、iframe、html、iframe:pre（提取pre元素内容以iframe展示）
+            // 新增 iframe:pre 类型：iframe:pre#id 或 iframe:pre.class 提取指定pre元素内容
             // 宽度和高度为可选参数
             if (settings.tooltip && href.indexOf("tooltip:") === 0) {
                 var tooltipBody = href.substring(8); // 去掉 "tooltip:" 前缀
@@ -8559,8 +8544,7 @@
                 var tooltipWidth = "";
                 var tooltipHeight = "";
                 
-                // ★ 解析可选的宽度和高度参数 <宽度,高度>
-                // 从 title 参数中提取（marked.js 会将 <> 中的内容作为 title）
+                    // 从 title 参数中提取（marked.js 会将 <> 中的内容作为 title）
                 if (title) {
                     var sizeMatch = title.match(/^<(\d+),(\d+)>$/);
                     if (sizeMatch) {
@@ -8570,14 +8554,12 @@
                     }
                 }
                 
-                // ★ 解析类型和内容
-                var typeMatch = tooltipBody.match(/^(text|image|iframe|html):/);
+                    var typeMatch = tooltipBody.match(/^(text|image|iframe|html):/);
                 if (typeMatch) {
                     tooltipType = typeMatch[1];
                     tooltipContent = tooltipBody.substring(typeMatch[0].length);
                     
-                    // ★ 处理不同类型的内容
-                    if (tooltipType === "image" || tooltipType === "iframe") {
+                            if (tooltipType === "image" || tooltipType === "iframe") {
                         // 图片和 iframe 类型：支持引号包围的 URL
                         if (tooltipContent.match(/^["']/) && tooltipContent.match(/["']$/)) {
                             tooltipContent = tooltipContent.replace(/^["']|["']$/g, '');
@@ -8607,8 +8589,7 @@
                     }
                 }
                 
-                // ★ 构建通用的 tooltip HTML
-                var attrs = 'data-tooltip="' + editormd.escapeAttr(tooltipContent) + '" data-tooltip-type="' + editormd.escapeAttr(tooltipType) + '"';
+                    var attrs = 'data-tooltip="' + editormd.escapeAttr(tooltipContent) + '" data-tooltip-type="' + editormd.escapeAttr(tooltipType) + '"';
                 if (tooltipWidth) attrs += ' data-tooltip-width="' + tooltipWidth + '"';
                 if (tooltipHeight) attrs += ' data-tooltip-height="' + tooltipHeight + '"';
                 return '<span class="editormd-tooltip-trigger" ' + attrs + ' tabindex="0">' + text + '</span>';
@@ -8670,7 +8651,6 @@
             var out = "<img src=\"" + href + "\" alt=\"" + text + "\"";
             var tooltipAttr = "";
             
-            // ★★★ 图片悬浮提示语法（已废弃，保留向后兼容）★★★
             // 新版建议使用：[![alt](url)](tooltip:type:content)<w,h>
             if (settings.tooltip && title && title.indexOf("tooltip:") === 0) {
                 var imgTooltipBody = title.substring(8);
@@ -8727,7 +8707,6 @@
             
             text = trim(text);
             
-            // TOC 目录文本过滤：清除 Unicode 对齐标记、删除线标记和 HTML 标签
             // 避免 TOC 中出现 ⁑⠕二级标题右对齐⠕⁑ 这样的原始语法标记
             var tocText = text
                 .replace(/⁑(⁑|⁖|⠕|⁛)/g, "")   // 移除对齐开始标记（居中⁑⁑、左⁑⁖、右⁑⠕、两端⁑⁛）
@@ -8814,19 +8793,76 @@
 
         markedRenderer.code = function (code, lang, escaped) { 
 
-            if (lang === "seq" || lang === "sequence" || lang === "sequenceDiagram")
+            // 扩展语法：代码块支持 class/id/hidden 属性
+            // ```(.test_class_dom)  → pre class="test_class_dom"
+            // ```(#test_id_dom)     → pre id="test_id_dom"
+            // ```js(.myclass)       → pre class="myclass" + code class="lang-js"
+            // ```js(#myid)          → pre id="myid"       + code class="lang-js"
+            // ```(.cls#id) 或 ```(#id.cls) → 同时设置 class 和 id
+            // ```(hidden)           → pre style="display:none!important" (隐藏代码块)
+            // ```(hidden.cls#id)    → pre class="cls" id="id" style="display:none!important"
+            var preClass = "";
+            var preId = "";
+            var preHidden = false;
+            var cleanLang = lang || "";
+            
+            if (cleanLang) {
+                // 提取 (...) 中的 class/id/hidden 定义
+                var attrMatch = cleanLang.match(/\(([^)]+)\)$/);
+                if (attrMatch) {
+                    var attrStr = attrMatch[1];
+                    // 移除括号部分，保留剩余语言标识
+                    cleanLang = cleanLang.substring(0, attrMatch.index);
+                    // 检测 hidden 标记（作为独立关键词，不以 . 或 # 开头）
+                    if (/\bhidden\b/.test(attrStr)) {
+                        preHidden = true;
+                        // 按 . 分割属性 token，过滤掉独立 "hidden" token
+                        // 使用分割方式避免误伤包含 hidden 的复合词（如 hidden-code-secret）
+                        var segments = attrStr.split('.');
+                        var filtered = [];
+                        for (var si = 0; si < segments.length; si++) {
+                            if (segments[si] !== 'hidden') {
+                                filtered.push(segments[si]);
+                            }
+                        }
+                        attrStr = filtered.join('.');
+                        // 清理多余点号
+                        attrStr = attrStr.replace(/^\.\.+|\.\.+$|\.{2,}/g, '.').replace(/^\.|\.$/g, '');
+                        // 如果过滤后剩余内容非空且不以 # 或 . 开头，补充 . 前缀
+                        if (attrStr && !/^[#.]/.test(attrStr)) {
+                            attrStr = '.' + attrStr;
+                        }
+                        if (!attrStr || attrStr === '.') {
+                            attrStr = '';
+                        }
+                    }
+                    // 解析 class 和 id
+                    var classParts = attrStr.match(/\.([a-zA-Z_][\w\-]*)/g);
+                    var idMatch = attrStr.match(/#([a-zA-Z_][\w\-]*)/);
+                    if (classParts) {
+                        for (var ci = 0; ci < classParts.length; ci++) {
+                            preClass += (preClass ? " " : "") + classParts[ci].substring(1);
+                        }
+                    }
+                    if (idMatch) {
+                        preId = idMatch[1];
+                    }
+                }
+            }
+
+            if (cleanLang === "seq" || cleanLang === "sequence" || cleanLang === "sequenceDiagram")
             {
                 return "<div class=\"sequence-diagram\">" + code + "</div>";
             } 
-            else if ( lang === "flow" || lang === "flowChart")
+            else if ( cleanLang === "flow" || cleanLang === "flowChart")
             {
                 return "<div class=\"flowchart\">" + code + "</div>";
             } 
-            else if ( lang === "math" || lang === "latex" || lang === "katex")
+            else if ( cleanLang === "math" || cleanLang === "latex" || cleanLang === "katex")
             {
                 return "<p class=\"" + editormd.classNames.tex + "\">" + code + "</p>";
             }
-            else if (lang === "echarts" && settings.echarts)
+            else if (cleanLang === "echarts" && settings.echarts)
             {
                 var chartId = "editormd-echarts-" + Math.random().toString(36).slice(2, 11);
                 var config = {};
@@ -8835,11 +8871,36 @@
                 } catch(e) {
                     config = { type: "bar", title: { text: "ECharts 配置错误" }, xAxis: { data: ["A"] }, yAxis: {}, series: [{ type: "bar", data: [0] }] };
                 }
-                return '<div id="' + chartId + '" class="editormd-echarts" data-config=\'' + JSON.stringify(config) + '\' style="width:100%;height:400px;"></div>';
+                var chartHeight = (config.height && typeof config.height === "number") ? config.height : 400;
+                return '<div id="' + chartId + '" class="editormd-echarts" data-config=\'' + JSON.stringify(config) + '\' style="width:100%;height:' + chartHeight + 'px;"></div>';
             }
             else 
             {
-
+                // 如果有自定义 class/id/hidden，需要修改 pre 标签
+                if (preClass || preId || preHidden) {
+                    // 先调用默认渲染器生成标准 HTML
+                    var defaultOutput = marked.Renderer.prototype.code.call(this, code, cleanLang, escaped);
+                    // 修改 <pre> 标签，添加 class / id / hidden style
+                    if (preClass) {
+                        defaultOutput = defaultOutput.replace(
+                            /^(<pre)([\s>])/,
+                            '$1 class="' + preClass + '"$2'
+                        );
+                    }
+                    if (preId) {
+                        defaultOutput = defaultOutput.replace(
+                            /^(<pre(?:\s[^>]*)?)([\s>])/,
+                            '$1 id="' + preId + '"$2'
+                        );
+                    }
+                    if (preHidden) {
+                        defaultOutput = defaultOutput.replace(
+                            /^(<pre(?:\s[^>]*)?)([\s>])/,
+                            '$1 style="display:none!important"$2'
+                        );
+                    }
+                    return defaultOutput;
+                }
                 return marked.Renderer.prototype.code.apply(this, arguments);
             }
         };
@@ -9173,6 +9234,9 @@
         $container.find("pre").each(function() {
             var $pre = $(this);
 
+            // 跳过隐藏的 pre 代码块（hidden 属性），避免无意义的 DOM 操作
+            if ($pre[0] && $pre[0].style && $pre[0].style.display === "none") return;
+
             // Avoid duplicate buttons
             if ($pre.data("_copyBtnReady")) return;
             $pre.data("_copyBtnReady", true);
@@ -9237,7 +9301,14 @@
         if (!$container || $container.length === 0) return;
         
         // Clean up orphaned tooltip popups from previous renders before re-initializing
-        $("body").children(".editormd-tooltip-popup").remove();
+        $("body").children(".editormd-tooltip-popup").each(function() {
+            // 释放 Blob URL（iframe:pre 类型会创建 Blob URL）
+            var $popup = $(this);
+            var blobUrl = $popup.attr("data-blob-url");
+            if (blobUrl) {
+                try { (window.URL || window.webkitURL).revokeObjectURL(blobUrl); } catch(e) {}
+            }
+        }).remove();
         
         $container.find(".editormd-tooltip-trigger").each(function() {
             var $trigger = $(this);
@@ -9250,7 +9321,6 @@
             var tooltipWidth   = $trigger.attr("data-tooltip-width") || "";
             var tooltipHeight  = $trigger.attr("data-tooltip-height") || "";
             
-            // ★ HTML 类型：从 data-tooltip-html 读取 Base64 编码的原始 HTML 内容并解码
             if (tooltipType === "html") {
                 tooltipContent = editormd.base64Decode($trigger.attr("data-tooltip-html") || "");
                 if (!tooltipContent) return;
@@ -9260,6 +9330,7 @@
             
             // 构造 tooltip 内容 HTML（v1.12.1: 精确尺寸限制 + 加载状态）
             var tooltipHtml = '';
+            var _rawPreCode = null; // iframe:pre 类型：存储原始代码，每次 hover 动态创建 Blob URL
             if (tooltipType === "image") {
                 var imgStyle = 'display:none;';
                 if (tooltipWidth) imgStyle += 'width:' + tooltipWidth + 'px;max-width:' + tooltipWidth + 'px;';
@@ -9267,20 +9338,56 @@
                 if (tooltipHeight) imgStyle += 'height:' + tooltipHeight + 'px;max-height:' + tooltipHeight + 'px;';
                 else imgStyle += 'max-height:220px;';
                 if (tooltipWidth || tooltipHeight) imgStyle += 'object-fit:contain;';
-                tooltipHtml = '<div class="editormd-tooltip-loading"><span>加载中...</span></div><img src="' + tooltipContent + '" alt="" style="' + imgStyle + '" onload="$(this).prev().hide();$(this).fadeIn(200);" onerror="$(this).prev().html(\'<span>图片加载失败</span>\');" />';
+                tooltipHtml = '<div class="editormd-tooltip-loading"><span>加载中...</span></div><img src="' + editormd.escapeAttr(tooltipContent) + '" alt="" style="' + imgStyle + '" onload="$(this).prev().hide();$(this).fadeIn(200);" onerror="$(this).prev().html(\'<span>图片加载失败</span>\');" />';
             } else if (tooltipType === "iframe") {
+                // 新增 iframe:pre 类型：提取页面中指定 pre 元素内容并以 iframe 展示
+                // 语法：[text](tooltip:iframe:pre#id) 或 [text](tooltip:iframe:pre.class)
+                // 支持 hidden 代码块：当通过 iframe:pre 引用隐藏的 pre（```(hidden)）时，
+                // 提取的原始文本内容在 Blob 中独立渲染，不受原 pre 的 display:none!important 影响
+                var iframeSrc = tooltipContent;
+                var isPreContent = false;
+                // 安全校验：确保 pre 选择器后必须有至少一个有效 CSS 标识符字符，防止 $("pre#") / $("pre.") 报错
+                // 允许连字符开头（CSS 规范合法但少用），如 pre.--my-class
+                if (tooltipContent && /^pre[#.][a-zA-Z_\-][\w\-]*$/.test(tooltipContent)) {
+                    var preSelector = tooltipContent; // 如 "pre#test_id_dom" 或 "pre.test_class_dom"
+                    var $pre;
+                    try {
+                        $pre = $(preSelector);
+                    } catch(e) {
+                        $pre = $([]);
+                    }
+                    if ($pre.length > 0) {
+                        isPreContent = true;
+                        // 提取 pre 中的原始文本内容（使用 .text() 获取解码后的原始 HTML）
+                        // 注意：.text() 会将 HTML 实体（如 &lt;）解码为原始字符（如 <），
+                        // 这样放入 Blob 后浏览器便可以正常解析渲染 HTML 页面效果
+                        // jQuery 可以正常访问 display:none!important 的隐藏元素，不受可见性影响
+                        _rawPreCode = ($pre.find("code").length > 0) ? $pre.find("code").text() : $pre.text();
+                        // 不在此处创建 Blob URL，而是存储原始代码，在每次 showTooltip 时动态创建
+                        // 这样每次鼠标悬停都会执行 iframe 中的 JS 代码
+                        // 隐藏 pre 的 display:none!important 不会传递到 iframe（iframe 是独立文档）
+                    }
+                }
                 var iframeStyle = 'display:none;';
                 if (tooltipWidth) iframeStyle += 'width:' + tooltipWidth + 'px;max-width:' + tooltipWidth + 'px;';
                 else iframeStyle += 'width:340px;';
                 if (tooltipHeight) iframeStyle += 'height:' + tooltipHeight + 'px;max-height:' + tooltipHeight + 'px;';
                 else iframeStyle += 'height:210px;';
-                tooltipHtml = '<div class="editormd-tooltip-loading"><span>加载中...</span></div><iframe src="' + tooltipContent + '" frameborder="0" style="' + iframeStyle + '" onload="$(this).prev().hide();$(this).fadeIn(200);"></iframe>';
+                if (isPreContent) {
+                    // iframe:pre 类型：初始 src 留空，在 showTooltip 时动态注入 Blob URL
+                    tooltipHtml = '<div class="editormd-tooltip-loading"><span>加载中...</span></div><iframe src="about:blank" frameborder="0" style="' + iframeStyle + '" onload="$(this).prev().hide();$(this).fadeIn(200);"></iframe>';
+                } else if (tooltipContent && /^pre[#.][a-zA-Z_\-][\w\-]*$/.test(tooltipContent)) {
+                    // pre 选择器模式匹配但 DOM 中未找到对应元素（如元素尚未渲染、选择器拼写错误等）
+                    // 防御性处理：使用 about:blank 避免将 "pre.xxx" 当作相对 URL 发起 404 请求
+                    console.warn('iframe:pre tooltip: 未找到 pre 元素 "' + tooltipContent + '"，请检查选择器是否正确。');
+                    tooltipHtml = '<div class="editormd-tooltip-loading" style="display:flex;align-items:center;justify-content:center;color:#888;font-size:12px;"><span>Pre 元素不存在</span></div><iframe src="about:blank" frameborder="0" style="' + iframeStyle + '" onload="$(this).prev().hide();$(this).fadeIn(200);"></iframe>';
+                } else {
+                    tooltipHtml = '<div class="editormd-tooltip-loading"><span>加载中...</span></div><iframe src="' + editormd.escapeAttr(tooltipContent) + '" frameborder="0" style="' + iframeStyle + '" onload="$(this).prev().hide();$(this).fadeIn(200);"></iframe>';
+                }
             } else if (tooltipType === "html") {
-                // ★ 复杂 HTML 内容：设置最大宽高防止溢出，允许内部样式
-                tooltipHtml = '<div class="editormd-tooltip-html-content">' + tooltipContent + '</div>';
+                    tooltipHtml = '<div class="editormd-tooltip-html-content">' + tooltipContent + '</div>';
             } else if (tooltipType === "html-selector") {
-                // ★ HTML 选择器类型：查找页面中的DOM元素
-                tooltipHtml = '<div class="editormd-tooltip-html-content editormd-tooltip-selector-loading">正在加载HTML内容...</div>';
+                    tooltipHtml = '<div class="editormd-tooltip-html-content editormd-tooltip-selector-loading">正在加载HTML内容...</div>';
             } else {
                 // 文本类型：包裹在 .editormd-tooltip-text-content 中
                 tooltipHtml = '<div class="editormd-tooltip-text-content">' + tooltipContent + '</div>';
@@ -9288,7 +9395,11 @@
             
             var $tooltip = $('<div class="editormd-tooltip-popup editormd-tooltip-' + tooltipType + '">' + tooltipHtml + '</div>');
             
-            // ★ v1.12.1: 应用可选宽度和高度 — 同时设置 popup 和内部元素
+            // iframe:pre 类型：存储原始代码内容，每次 hover 时动态创建 Blob URL
+            if (isPreContent && _rawPreCode) {
+                $tooltip.attr("data-iframepre-code", _rawPreCode);
+            }
+            
             if (tooltipWidth) {
                 $tooltip.css({width: tooltipWidth + "px", "max-width": tooltipWidth + "px"});
                 $tooltip.find("img,iframe,div.editormd-tooltip-html-content,div.editormd-tooltip-text-content").css("max-width", tooltipWidth + "px");
@@ -9306,26 +9417,39 @@
             var showTooltip = function(e) {
                 clearTimeout($trigger.data("tooltip-timer"));
                 
+                // iframe:pre 类型：每次 hover 动态创建 Blob URL，确保 JS 重新执行
+                var iframePreCode = $tooltip.attr("data-iframepre-code");
+                if (iframePreCode) {
+                    // 先释放上一次的 Blob URL
+                    var oldBlob = $tooltip.attr("data-blob-url");
+                    if (oldBlob) {
+                        try { (window.URL || window.webkitURL).revokeObjectURL(oldBlob); } catch(ex) {}
+                        $tooltip.removeAttr("data-blob-url");
+                    }
+                    // 创建新的 Blob URL（浏览器会将内容作为完整 HTML 渲染）
+                    try {
+                        var newBlob = new Blob([iframePreCode], {type: 'text/html;charset=utf-8'});
+                        var newBlobUrl = (window.URL || window.webkitURL).createObjectURL(newBlob);
+                        $tooltip.attr("data-blob-url", newBlobUrl);
+                        // 显示 loading，隐藏 iframe，设置新 src 触发 onload
+                        $tooltip.find(".editormd-tooltip-loading").show();
+                        $tooltip.find("iframe").hide().attr("src", newBlobUrl);
+                    } catch(ex) {
+                        // 降级：使用 data: URI
+                        $tooltip.find(".editormd-tooltip-loading").show();
+                        $tooltip.find("iframe").hide().attr("src", 'data:text/html;charset=utf-8,' + encodeURIComponent(iframePreCode));
+                    }
+                }
+                
                 // 如果是 html-selector 类型，需要动态加载DOM元素内容
                 if (tooltipType === "html-selector") {
                     // 查找页面中的DOM元素
                     var selector = tooltipContent;
-                    console.log('HTML选择器工具提示 - 查找元素:', selector, '类型:', tooltipType);
-                    
                     var $target = $(selector);
-                    console.log('HTML选择器工具提示 - 找到元素数量:', $target.length);
                     
                     if ($target.length > 0) {
                         // 克隆目标元素，移除隐藏属性（如display:none, visibility:hidden, opacity:0等）
                         var $clone = $target.clone();
-                        
-                        // 记录原始样式用于调试
-                        console.log('HTML选择器工具提示 - 原始元素样式:', {
-                            display: $target.css('display'),
-                            visibility: $target.css('visibility'),
-                            opacity: $target.css('opacity'),
-                            position: $target.css('position')
-                        });
                         
                         // 移除常见隐藏属性
                         $clone.css({
@@ -9377,15 +9501,16 @@
                             overflow: 'auto'
                         });
                         
-                        // 更新tooltip内容
-                        $tooltip.html('<div class="editormd-tooltip-html-content">' + $clone[0].outerHTML + '</div>');
+                        // 更新tooltip内容（安全防护：使用 .html() 设置）
+                        var cloneHtml = $clone[0] ? $clone[0].outerHTML : '';
+                        $tooltip.html('<div class="editormd-tooltip-html-content">' + cloneHtml + '</div>');
                         $tooltip.removeClass('editormd-tooltip-text editormd-tooltip-image editormd-tooltip-iframe editormd-tooltip-html');
                         $tooltip.addClass('editormd-tooltip-html');
-                        
-                        console.log('HTML选择器工具提示 - 成功加载元素到tooltip');
                     } else {
                         // 未找到元素，显示错误信息
-                        console.error('HTML选择器工具提示 - 未找到元素:', selector);
+                        if (typeof console !== "undefined" && console.warn) {
+                            console.warn('HTML selector tooltip - element not found:', selector);
+                        }
                         $tooltip.html('<div class="editormd-tooltip-html-content" style="color: #ff6b6b; padding: 10px; font-size: 12px;">未找到元素: <code>' + editormd.escapeHTML(selector) + '</code><br>请检查CSS选择器是否正确，元素是否存在于页面中。</div>');
                     }
                 }
@@ -9394,6 +9519,11 @@
                 $tooltip.css({ display: "block", visibility: "hidden" });
                 
                 // 使用 getBoundingClientRect() 获取 viewport-relative 坐标
+                // 空值防护：如果 trigger 元素已不存在于 DOM 中则直接返回
+                if (!$trigger[0]) {
+                    $tooltip.css({ display: "none", visibility: "hidden" });
+                    return;
+                }
                 var triggerRect = $trigger[0].getBoundingClientRect();
                 var tooltipW   = $tooltip.outerWidth();
                 var tooltipH   = $tooltip.outerHeight();
@@ -9407,13 +9537,13 @@
                 var winH = window.innerHeight;
                 
                 if (left < 10) left = 10;
-                if (left + tooltipW > winW - 10) left = winW - tooltipW - 10;
+                if (left + tooltipW > winW - 10) left = Math.max(10, winW - tooltipW - 10);
                 
                 if (top < 10) {
                     // 上方空间不足，显示在下方
                     top = triggerRect.bottom + 8;
                     if (top + tooltipH > winH - 10) {
-                        top = winH - tooltipH - 10;
+                        top = Math.max(10, winH - tooltipH - 10);
                     }
                 }
                 
@@ -9437,6 +9567,12 @@
             var hideTooltip = function() {
                 $trigger.data("tooltip-timer", setTimeout(function() {
                     $tooltip.removeClass("show");
+                    // 释放 iframe:pre 类型的 Blob URL，避免内存泄漏
+                    var blobUrl = $tooltip.attr("data-blob-url");
+                    if (blobUrl) {
+                        try { (window.URL || window.webkitURL).revokeObjectURL(blobUrl); } catch(ex) {}
+                        $tooltip.removeAttr("data-blob-url");
+                    }
                     // 等待 CSS transition 完成后彻底隐藏
                     setTimeout(function() {
                         if (!$tooltip.hasClass("show")) {
@@ -9570,6 +9706,7 @@
         markdownParsed = editormd.restorePlaceholders(markdownParsed, mdPreprocess.placeholders);
         markdownParsed = editormd.restoreTeXSyntax(markdownParsed);
         markdownParsed = editormd.fixSmartypantsHTML(markdownParsed);
+        markdownParsed = editormd.fixTableEmptyCells(markdownParsed);
         if (settings.taskList) markdownParsed = editormd.postProcessTaskLists(markdownParsed);
 
         markdownParsed = editormd.filterHTMLTags(markdownParsed, settings.htmlDecode);
@@ -9676,8 +9813,7 @@
             if (settings.autoLoadKaTeX && !editormd.$katex && !editormd.kaTeXLoaded)
             {
                 // 使用 editormd.defaults.path 作为 KaTeX 资源加载的基础路径
-                // 修复在 examples/ 等子目录下 KaTeX 路径 404 的问题
-                var katexBasePath = settings.path || editormd.defaults.path || "";
+                    var katexBasePath = settings.path || editormd.defaults.path || "";
                 this.loadKaTeX(katexBasePath, function() {
                     editormd.$katex      = katex;
                     editormd.kaTeXLoaded = true;
@@ -9692,7 +9828,21 @@
         
         if (settings.echarts)
         {
+            // 移除旧的 resize 处理器防止累积（使用通配命名空间）
+            $(window).off("resize.editormd-echarts-md");
+            $(window).off("resize.editormd-echarts-md-chart-");
+            
             var initMdECharts = function() {
+                // 自动检测主题：优先从 options.theme，其次从 div 上溯查找 theme-* class
+                var mdTheme = settings.theme;
+                if (!mdTheme) {
+                    var $themeParent = div.closest('[class*="theme-"]');
+                    if ($themeParent.length) {
+                        var m = $themeParent.attr("class").match(/(?:^|\s)theme-(\w+)/);
+                        if (m) mdTheme = m[1];
+                    }
+                }
+
                 div.find(".editormd-echarts").each(function() {
                     var $chart = $(this);
                     if ($chart.attr("data-initialized") === "true") return;
@@ -9703,25 +9853,42 @@
                         config = JSON.parse($chart.attr("data-config"));
                     } catch(e) { return; }
 
-                    var chartInstance = echarts.init(this);
-                    var option = {
-                        title: config.title || {},
-                        tooltip: config.tooltip || { trigger: "axis" },
-                        legend: config.legend || {},
-                        radar: config.radar || {},
-                        series: config.series || []
-                    };
+                    try {
+                        var chartMdTheme = config.theme || mdTheme || undefined;
+                        var chartInstance = echarts.init(this, chartMdTheme);
+                        var option = {
+                            title: config.title || {},
+                            tooltip: config.tooltip || {},
+                            series: config.series || []
+                        };
+                        if (config.legend !== undefined) option.legend = config.legend;
+                        if (config.radar !== undefined) option.radar = config.radar;
 
-                    var chartType = config.type || (config.series && config.series[0] && config.series[0].type) || "";
-                    var noAxisTypes = ["pie", "funnel", "gauge", "graph", "treemap", "sunburst"];
-                    if (noAxisTypes.indexOf(chartType) === -1) {
-                        option.xAxis = config.xAxis || {};
-                        option.yAxis = config.yAxis || {};
+                        var chartType = config.type || (config.series && config.series[0] && config.series[0].type) || "";
+                        var noAxisTypes = ["pie", "funnel", "gauge", "graph", "treemap", "sunburst", "tree"];
+                        if (noAxisTypes.indexOf(chartType) === -1) {
+                            option.xAxis = config.xAxis || {};
+                            option.yAxis = config.yAxis || {};
+                        } else if (config.tooltip === undefined) {
+                            option.tooltip = { trigger: "item" };
+                        }
+                        if (config.backgroundColor !== undefined) option.backgroundColor = config.backgroundColor;
+                        if (config.grid !== undefined) option.grid = config.grid;
+                        if (config.dataZoom !== undefined) option.dataZoom = config.dataZoom;
+                        if (config.visualMap !== undefined) option.visualMap = config.visualMap;
+                        if (config.toolbox !== undefined) option.toolbox = config.toolbox;
+
+                        chartInstance.setOption(option);
+                        chartInstance.resize();
+                        $chart.attr("data-initialized", "true");
+                        // 使用 chart id 作为命名空间，避免多个 ECharts 实例共享同一 resize handler
+                        var mdEcId = $chart.attr("id") || ("md-ec-" + Math.random().toString(36).slice(2, 9));
+                        $(window).on("resize.editormd-echarts-md-chart-" + mdEcId, function() { chartInstance.resize(); });
+                    } catch(e) {
+                        if (typeof console !== "undefined" && console.warn) {
+                            console.warn("[xfEditor] ECharts markdownToHTML init failed:", e.message);
+                        }
                     }
-
-                    chartInstance.setOption(option);
-                    $chart.attr("data-initialized", "true");
-                    $(window).on("resize.editormd-echarts-md", function() { chartInstance.resize(); });
                 });
             };
 
@@ -9751,7 +9918,12 @@
                     $nav.find("> li").removeClass("active");
                     $li.addClass("active");
                     $body.find("> .editormd-tab-panel").removeClass("active");
-                    $body.find('> .editormd-tab-panel[data-index="' + index + '"]').addClass("active");
+                    var $panel = $body.find('> .editormd-tab-panel[data-index="' + index + '"]');
+                    $panel.addClass("active");
+                    // 面板变为可见后，重新初始化隐藏的 ECharts 图表
+                    if ($panel.length && typeof initMdECharts === "function") {
+                        setTimeout(function() { initMdECharts(); }, 100);
+                    }
                 });
                 $tabs.attr("data-initialized", "true");
             });
@@ -10032,8 +10204,7 @@
         if (!basePath || basePath === "./lib/") {
             var autoPath = editormd._resolveBasePath();
             if (autoPath) {
-                // 从 autoPath 推导 lib 目录：editormd.js 在项目根目录
-                // 例如 autoPath = "https://example.com/editor.md/"
+                    // 例如 autoPath = "https://example.com/editor.md/"
                 // 则 KaTeX 应在 "https://example.com/editor.md/lib/katex/"
                 basePath = autoPath + "lib/";
             }
@@ -10330,7 +10501,6 @@
                     top = 0;
                     document.onmousemove = null;
                 }
-
 
                 document.onselectstart = function() {
                     return false;

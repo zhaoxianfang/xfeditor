@@ -398,6 +398,8 @@
 
 /* ECharts container */
 .editormd-echarts {
+  width: 100% !important;
+  max-width: 100%;
   margin: 15px 0;
   border: 1px solid #eee;
   border-radius: 4px;
@@ -5530,8 +5532,8 @@ hr.editormd-page-break {
 .editormd-tooltip-popup {
   position: fixed;
   z-index: 99999;
-  background: #000;
-  color: #fff;
+  background: #fff;
+  color: #333;
   padding: 0;
   margin: 0;
   border-radius: 8px;
@@ -5543,15 +5545,19 @@ hr.editormd-page-break {
   opacity: 0;
   transition: opacity 0.2s;
   pointer-events: auto;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 .editormd-tooltip-popup.show {
   opacity: 1;
 }
+.editormd-tooltip-popup.editormd-tooltip-text {
+  background: #1e1e1e;
+  color: #d4d4d4;
+}
 .editormd-tooltip-popup .editormd-tooltip-text-content {
   white-space: pre-wrap;
-  background: #000;
-  color: #fff;
+  background: #1e1e1e;
+  color: #d4d4d4;
   padding: 10px 16px;
   border-radius: 8px;
   display: inline-block;
@@ -5560,7 +5566,7 @@ hr.editormd-page-break {
   padding: 0;
   margin: 0;
   max-width: 90vw;
-  background: #000;
+  background: #fff;
   border: none;
   pointer-events: auto;
   min-width: 100px;
@@ -5580,22 +5586,23 @@ hr.editormd-page-break {
   width: 340px;
   height: 210px;
   border-radius: 4px;
+  background: #fff;
 }
 .editormd-tooltip-popup.editormd-tooltip-html, .editormd-tooltip-popup.editormd-tooltip-html-selector {
   max-width: 420px;
   max-height: 360px;
   overflow-y: auto;
   overflow-x: hidden;
-  background: #000;
-  color: #fff;
+  background: #fff;
+  color: #333;
   padding: 0;
   margin: 0;
   pointer-events: auto;
 }
 .editormd-tooltip-popup.editormd-tooltip-html .editormd-tooltip-html-content, .editormd-tooltip-popup.editormd-tooltip-html-selector .editormd-tooltip-html-content {
   overflow-wrap: break-word;
-  background: #000;
-  color: #fff;
+  background: #fff;
+  color: #333;
   padding: 0;
   margin: 0;
 }
@@ -5609,24 +5616,24 @@ hr.editormd-page-break {
   width: 100%;
 }
 .editormd-tooltip-popup.editormd-tooltip-html .editormd-tooltip-html-content table th, .editormd-tooltip-popup.editormd-tooltip-html .editormd-tooltip-html-content table td, .editormd-tooltip-popup.editormd-tooltip-html-selector .editormd-tooltip-html-content table th, .editormd-tooltip-popup.editormd-tooltip-html-selector .editormd-tooltip-html-content table td {
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(0, 0, 0, 0.15);
   padding: 4px 8px;
 }
 .editormd-tooltip-popup.editormd-tooltip-html .editormd-tooltip-html-content table th, .editormd-tooltip-popup.editormd-tooltip-html-selector .editormd-tooltip-html-content table th {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.05);
 }
 .editormd-tooltip-popup.editormd-tooltip-html .editormd-tooltip-html-content a, .editormd-tooltip-popup.editormd-tooltip-html-selector .editormd-tooltip-html-content a {
-  color: #58a6ff;
+  color: #2C7EEA;
 }
 .editormd-tooltip-popup.editormd-tooltip-html .editormd-tooltip-html-content code, .editormd-tooltip-popup.editormd-tooltip-html-selector .editormd-tooltip-html-content code {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.06);
   padding: 1px 5px;
   border-radius: 3px;
   font-size: 12px;
-  color: #ffa657;
+  color: #d63384;
 }
 .editormd-tooltip-popup.editormd-tooltip-html .editormd-tooltip-html-content pre, .editormd-tooltip-popup.editormd-tooltip-html-selector .editormd-tooltip-html-content pre {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.04);
   padding: 8px;
   border-radius: 4px;
   overflow-x: auto;
@@ -5636,13 +5643,13 @@ hr.editormd-page-break {
   padding-left: 20px;
 }
 .editormd-tooltip-popup.editormd-tooltip-html .editormd-tooltip-html-content hr, .editormd-tooltip-popup.editormd-tooltip-html-selector .editormd-tooltip-html-content hr {
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(0, 0, 0, 0.15);
 }
 .editormd-tooltip-popup.editormd-tooltip-html .editormd-tooltip-html-content blockquote, .editormd-tooltip-popup.editormd-tooltip-html-selector .editormd-tooltip-html-content blockquote {
-  border-left: 3px solid rgba(255, 255, 255, 0.3);
+  border-left: 3px solid rgba(0, 0, 0, 0.2);
   padding-left: 10px;
   margin: 4px 0;
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(0, 0, 0, 0.65);
 }
 .editormd-tooltip-popup .editormd-tooltip-loading {
   display: flex;
@@ -5651,6 +5658,7 @@ hr.editormd-page-break {
   padding: 20px;
   color: #999;
   font-size: 12px;
+  background: #fff;
 }
 
 .editormd-tooltip-arrow {
@@ -5666,22 +5674,40 @@ hr.editormd-page-break {
 
 .editormd-tooltip-arrow-bottom .editormd-tooltip-arrow {
   top: 100%;
-  border-top: 7px solid #000;
+  border-top: 7px solid #1e1e1e;
 }
 
 .editormd-tooltip-arrow-top .editormd-tooltip-arrow {
   bottom: 100%;
-  border-bottom: 7px solid #000;
+  border-bottom: 7px solid #1e1e1e;
 }
 
 .editormd-tooltip-arrow-top.editormd-tooltip-image .editormd-tooltip-arrow,
 .editormd-tooltip-arrow-top.editormd-tooltip-iframe .editormd-tooltip-arrow {
-  border-bottom-color: #000;
+  border-bottom-color: #fff;
 }
 
 .editormd-tooltip-arrow-bottom.editormd-tooltip-image .editormd-tooltip-arrow,
 .editormd-tooltip-arrow-bottom.editormd-tooltip-iframe .editormd-tooltip-arrow {
-  border-top-color: #000;
+  border-top-color: #fff;
+}
+
+.editormd-tooltip-arrow-top.editormd-tooltip-text .editormd-tooltip-arrow {
+  border-bottom-color: #1e1e1e;
+}
+
+.editormd-tooltip-arrow-bottom.editormd-tooltip-text .editormd-tooltip-arrow {
+  border-top-color: #1e1e1e;
+}
+
+.editormd-tooltip-arrow-top.editormd-tooltip-html .editormd-tooltip-arrow,
+.editormd-tooltip-arrow-top.editormd-tooltip-html-selector .editormd-tooltip-arrow {
+  border-bottom-color: #fff;
+}
+
+.editormd-tooltip-arrow-bottom.editormd-tooltip-html .editormd-tooltip-arrow,
+.editormd-tooltip-arrow-bottom.editormd-tooltip-html-selector .editormd-tooltip-arrow {
+  border-top-color: #fff;
 }
 
 .editormd-supsub {

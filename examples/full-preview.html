@@ -2,7 +2,7 @@
 <html lang="zh">
     <head>
         <meta charset="utf-8" />
-        <title>完整独立预览 - xfEditor v1.12.1</title>
+        <title>完整独立预览 - xfEditor v1.15.0</title>
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="../css/editormd.preview.min.css" />
     <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
@@ -33,17 +33,19 @@
     <body>
         <div id="layout">
             <header>
-                <h1>xfEditor v1.12.1 完整独立预览</h1>
+                <h1>xfEditor v1.15.0 完整独立预览</h1>
                 <p>Full Preview Page — 本页面仅加载预览所需资源，演示所有 Markdown 扩展语法的渲染效果</p>
             </header>
             <div id="full-preview">
                 <textarea style="display:none;">[TOC]
 
-# xfEditor v1.12.1 全部语法预览
+# xfEditor v1.15.0 全部功能演示
+
+---
 
 ## 一、Markdown 基础语法
 
-### 1.1 标题
+### 1.1 标题与文本样式
 
 # 一级标题
 ## 二级标题
@@ -52,13 +54,11 @@
 ##### 五级标题
 ###### 六级标题
 
-### 1.2 文本样式
+**粗体文本**、*斜体文本*、~~删除线文本~~、`行内代码`、[超链接](https://github.com/zhaoxianfang/editor)
 
-**粗体文本**、*斜体文本*、~~删除线文本~~、`行内代码`
+> 这是一段引用文本。xfEditor 是一款开源的、可嵌入的 Markdown 在线编辑器（组件），基于 CodeMirror、jQuery 和 Marked 构建。
 
-> 这是一段引用文本。xfEditor 支持标准 Markdown 和 GFM 语法。
-
-### 1.3 列表
+### 1.2 列表与任务列表
 
 - 无序列表项 1
 - 无序列表项 2
@@ -70,50 +70,251 @@
 2. 有序列表项 2
 3. 有序列表项 3
 
-### 1.4 任务列表（Task Lists）
+**GFM 任务列表：**
 
 - [x] 已完成任务
 - [ ] 未完成任务
-- [x] 支持 GFM 任务列表语法
+- [x] @mentions 提醒功能
+- [x] #标签 引用功能
 
 ---
 
-## 二、表格
+## 二、表格与表格编辑
 
-| 功能 | 说明 | 状态 |
-|------|------|------|
-| 实时预览 | 编辑与预览同步 | 已启用 |
-| 表格编辑 | 点击单元格插入/删除行列 | 已启用 |
-| 图片上传 | 支持跨域上传 | 可选 |
+| 功能 | 版本 | 状态 | 说明 |
+|------|------|------|------|
+| 实时预览 | v1.0 | 已发布 | 编辑与预览同步滚动 |
+| 图片上传 | v1.0 | 已发布 | 支持拖拽和跨域上传 |
+| 流程图 | v1.0 | 已发布 | flowchart.js 渲染 |
+| 时序图 | v1.0 | 已发布 | js-sequence-diagrams 渲染 |
+| Tabs 标签页 | v1.7.0 | 已发布 | 支持任意嵌套 Markdown 内容 |
+| ECharts 图表 | v1.7.0 | 已发布 | 5 种图表类型 |
+
+> 提示：点击预览区表格单元格，可弹出工具栏进行插入/删除行列操作，并自动同步到 Markdown 源码。
 
 ---
 
-## 三、代码高亮
+## 三、代码高亮（JetBrains 风格）
+
+### JavaScript
 
 ```javascript
-// JavaScript 示例
-function helloEditorMD() {
-    console.log("Hello, xfEditor v1.12.1!");
-    return {
-        version: "1.10.0",
-        features: ["ECharts", "Tabs", "Columns", "Tooltip", "Copybook", "Draft"]
-    };
+// Fibonacci 数列生成器
+function* fibonacci(n) {
+    let [a, b] = [0, 1];
+    for (let i = 0; i < n; i++) {
+        yield a;
+        [a, b] = [b, a + b];
+    }
+}
+
+const seq = [...fibonacci(10)];
+console.log(seq); // [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]
+
+// 使用 async/await 的示例
+async function fetchUserData(id) {
+    try {
+        const res = await fetch(`/api/users/${id}`);
+        const data = await res.json();
+        return data;
+    } catch (err) {
+        console.error("Failed:", err);
+        return null;
+    }
 }
 ```
 
-```python
-# Python 示例
-def greet(name):
-    return f"Hello, {name}! Welcome to xfEditor."
+### Python
 
-print(greet("Developer"))
+```python
+# 快速排序实现
+def quicksort(arr):
+    if len(arr) <= 1:
+        return arr
+    pivot = arr[len(arr) // 2]
+    left = [x for x in arr if x < pivot]
+    middle = [x for x in arr if x == pivot]
+    right = [x for x in arr if x > pivot]
+    return quicksort(left) + middle + quicksort(right)
+
+print(quicksort([3, 6, 8, 10, 1, 2, 1]))
+```
+
+### TypeScript
+
+```typescript
+interface User {
+    id: number;
+    name: string;
+    email: string;
+    role: "admin" | "editor" | "viewer";
+}
+
+class UserService {
+    private users: Map<number, User> = new Map();
+
+    addUser(user: User): void {
+        this.users.set(user.id, user);
+        console.log(`User ${user.name} added.`);
+    }
+
+    getUser(id: number): User | undefined {
+        return this.users.get(id);
+    }
+}
+```
+
+### Go
+
+```go
+package main
+
+import (
+    "fmt"
+    "sync"
+)
+
+func main() {
+    var wg sync.WaitGroup
+    urls := []string{"https://golang.org", "https://pkg.go.dev"}
+
+    for _, url := range urls {
+        wg.Add(1)
+        go func(u string) {
+            defer wg.Done()
+            fmt.Printf("Fetching %s...\n", u)
+            // http.Get(u) ...
+        }(url)
+    }
+
+    wg.Wait()
+    fmt.Println("All done!")
+}
+```
+
+### JSON 配置示例
+
+```json
+{
+    "name": "editor.md",
+    "version": "1.15.0",
+    "features": {
+        "echarts": true,
+        "tabs": true,
+        "columns": true,
+        "tooltip": true,
+        "tex": true,
+        "flowchart": true,
+        "superscript": true,
+        "fontSize": true,
+        "footnote": true,
+        "pageBlock": true,
+        "sequenceDiagram": true
+    },
+    "dependencies": {
+        "codemirror": "^5.65",
+        "marked": "^4.0",
+        "katex": "^0.16",
+        "echarts": "^5.4"
+    }
+}
 ```
 
 ---
 
-## 四、ECharts 交互式图表
+## 四、代码块属性扩展 <span class="badge badge-new">NEW v1.14.0</span>
 
-### 4.1 柱状图
+代码块支持设置 `<pre>` 标签的 **class** 或 **id** 属性，用于自定义样式、JS 定位或配合悬浮预览：
+
+```(.code-demo)
+// 语法：```(.className)
+// 效果：pre 标签有 class="code-demo"
+// 用法：通过 CSS .code-demo 自定义此代码块样式
+```
+
+```(#demo-block)
+// 语法：```(#idName)
+// 效果：pre 标签有 id="demo-block"
+// 用法：document.getElementById("demo-block") 精确定位
+```
+
+```javascript(.my-code#main-block)
+// 语法：```javascript(.class#id)
+// 效果：pre 有 class="my-code" 和 id="main-block"
+//       code 有 class="lang-javascript" 用于语法高亮
+class ApiClient {
+    constructor(baseUrl) { this.baseUrl = baseUrl; }
+    async request(path) { return fetch(this.baseUrl+path).then(r=>r.json()); }
+}
+```
+
+上述代码块可配合 iframe:pre 使用（见下方 Tooltip 8.4 节）。
+
+### 4.4 Hidden 隐藏代码块 <span class="badge badge-new">NEW v1.15.0</span>
+
+使用 `(hidden)` 标记可将代码块渲染为 **不可见** 的 `<pre style="display:none!important">` 标签。  
+隐藏的代码块在页面中不占用任何空间，但仍然存在于 DOM 中，可通过 JS 读取或配合 `tooltip:iframe:pre` 实现「阅后即焚」式悬浮预览。
+
+#### 基础隐藏
+
+```(hidden.hidden-code-secret)
+## 这段内容在页面上完全不可见
+console.log("这个代码块在预览区不占用任何空间");
+alert("但你可以通过 tooltip:iframe:pre 悬浮查看！");
+```
+
+**效果**：上方代码块在预览区不可见，但下方链接可提取其内容进行悬浮预览：
+
+- [👁 悬浮查看隐藏内容](tooltip:iframe:pre.hidden-code-secret)<400,200>
+
+#### 隐藏 + 语言高亮 + class/id 组合
+
+```javascript(hidden.important-code#secret-block)
+// 🔐 此代码块在页面中隐藏
+// 但可通过 CSS 选择器或 JS 获取其内容
+//
+// 用法1：tooltip:iframe:pre.important-code  （class 选择器）
+// 用法2：tooltip:iframe:pre#secret-block    （id 选择器）
+// 用法3：document.getElementById("secret-block")  （JS 获取）
+
+function topSecretAlgorithm(data) {
+    // 商业机密算法 - 页面不展示但可通过悬浮查看
+    return data.map(x => x * Math.PI).filter(x => x > 10);
+}
+
+console.log(topSecretAlgorithm([1, 2, 3, 5, 8]));
+```
+
+- [👁 悬浮查看机密代码（320×220）](tooltip:iframe:pre#secret-block)<320,220>
+
+```python(hidden.extra-info)
+# Python 隐藏代码 - 通过 class 选择器引用
+def fibonacci(n):
+    """生成斐波那契数列"""
+    a, b = 0, 1
+    result = []
+    for _ in range(n):
+        result.append(a)
+        a, b = b, a + b
+    return result
+
+print(fibonacci(15))
+```
+
+- [👁 查看 Python 隐藏代码](tooltip:iframe:pre.extra-info)<380,240>
+
+> **Hidden 代码块要点**：
+> - **完全不可见**：`display:none!important` 最高优先级隐藏，不占任何页面空间
+> - **DOM 可访问**：`document.querySelector()` / `$()` 仍可获取内容
+> - **完美配合 iframe:pre**：隐藏的 pre 能被 `tooltip:iframe:pre#id` 提取，悬浮时动态显示
+> - **initCodeCopy 跳过**：复制代码按钮自动跳过隐藏代码块
+> - **语法组合**：`(hidden)` 可与语言名、class、id 任意组合（如 `javascript(hidden.myClass#myId)`）
+
+---
+
+## 五、ECharts 交互式图表 <span class="badge badge-new">NEW</span>
+
+### 5.1 柱状图
 
 ```echarts
 {
@@ -121,11 +322,14 @@ print(greet("Developer"))
   "title": {"text": "月度销售额"},
   "xAxis": {"data": ["1月", "2月", "3月", "4月", "5月", "6月"]},
   "yAxis": {},
-  "series": [{"type": "bar", "data": [120, 200, 150, 80, 70, 110]}]
+  "series": [
+    {"type": "bar", "data": [120, 200, 150, 80, 70, 110], "name": "产品A"},
+    {"type": "bar", "data": [90, 140, 180, 120, 100, 130], "name": "产品B"}
+  ]
 }
 ```
 
-### 4.2 折线图
+### 5.2 折线图
 
 ```echarts
 {
@@ -133,11 +337,14 @@ print(greet("Developer"))
   "title": {"text": "用户增长趋势"},
   "xAxis": {"type": "category", "data": ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]},
   "yAxis": {"type": "value"},
-  "series": [{"type": "line", "data": [150, 230, 224, 218, 135, 147, 260], "smooth": true}]
+  "series": [
+    {"type": "line", "data": [150, 230, 224, 218, 135, 147, 260], "smooth": true, "name": "新增用户"},
+    {"type": "line", "data": [820, 932, 901, 934, 1290, 1330, 1320], "smooth": true, "name": "活跃用户"}
+  ]
 }
 ```
 
-### 4.3 饼图
+### 5.3 饼图
 
 ```echarts
 {
@@ -145,7 +352,7 @@ print(greet("Developer"))
   "title": {"text": "访问来源分布"},
   "series": [{
     "type": "pie",
-    "radius": "55%",
+    "radius": ["40%", "70%"],
     "data": [
       {"value": 1048, "name": "搜索引擎"},
       {"value": 735, "name": "直接访问"},
@@ -157,7 +364,7 @@ print(greet("Developer"))
 }
 ```
 
-### 4.4 雷达图
+### 5.4 雷达图
 
 ```echarts
 {
@@ -183,66 +390,167 @@ print(greet("Developer"))
 }
 ```
 
-### 4.5 漏斗图
+### 5.5 漏斗图
 
 ```echarts
 {
   "type": "funnel",
-  "title": {"text": "销售漏斗"},
+  "title": {"text": "销售转化漏斗"},
   "series": [{
     "type": "funnel",
     "data": [
+      {"value": 100, "name": "展现"},
+      {"value": 80, "name": "点击"},
       {"value": 60, "name": "访问"},
       {"value": 40, "name": "咨询"},
-      {"value": 20, "name": "订单"},
-      {"value": 80, "name": "点击"},
-      {"value": 100, "name": "展现"}
+      {"value": 20, "name": "订单"}
     ]
   }]
 }
 ```
 
+### 5.6 树图/脑图 <span class="badge badge-new">NEW v1.15.0</span>
+
+使用 `"type": "tree"` 配合 `layout: "orthogonal"` 和 `orient: "LR"` 可创建从左到右的组织架构树图。  
+主题自动跟随编辑器，无需手动设置 `"theme"`；点击节点圆圈可折叠/展开子分支。
+
+```echarts
+{
+  "type": "tree",
+  "height": 500,
+  "title": {"text": "产品技术架构", "subtext": "点击节点圆圈可折叠/展开", "left": "center", "top": 10},
+  "tooltip": {"trigger": "item", "triggerOn": "mousemove"},
+  "series": [{
+    "type": "tree",
+    "data": [{
+      "name": "🚀 智能中枢",
+      "symbolSize": 18,
+      "children": [{
+        "name": "📊 数据分析",
+        "itemStyle": {"color": "#4fc3f7"},
+        "children": [
+          {"name": "实时看板", "value": 95},
+          {"name": "异常检测", "value": 88},
+          {"name": "趋势预测", "value": 76}
+        ]
+      }, {
+        "name": "🤖 AI 引擎",
+        "itemStyle": {"color": "#81c784"},
+        "children": [
+          {"name": "NLP", "value": 92},
+          {"name": "CV", "value": 85},
+          {"name": "大语言模型", "value": 96}
+        ]
+      }, {
+        "name": "⚙️ 基础设施",
+        "itemStyle": {"color": "#ffb74d"},
+        "children": [
+          {"name": "云原生", "value": 90},
+          {"name": "边缘计算", "value": 78},
+          {"name": "安全合规", "value": 82}
+        ]
+      }]
+    }],
+    "layout": "orthogonal",
+    "orient": "LR",
+    "roam": true,
+    "expandAndCollapse": true,
+    "initialTreeDepth": 2,
+    "top": "5%",
+    "left": "3%",
+    "bottom": "3%",
+    "right": "8%",
+    "symbol": "circle",
+    "symbolSize": 14,
+    "lineStyle": {"width": 2, "curveness": 0.3},
+    "edgeShape": "curve",
+    "label": {"position": "left", "verticalAlign": "middle", "align": "right", "fontSize": 12},
+    "leaves": {"label": {"position": "right", "verticalAlign": "middle", "align": "left", "fontSize": 11}, "symbolSize": 8},
+    "emphasis": {"focus": "descendant"},
+    "nodePadding": 25,
+    "nodeGap": 15,
+    "animationDuration": 800
+  }]
+}
+```
+
+> **树图/脑图要点**：
+> - **主题自适应**：默认跟随编辑器主题（light/dark），也可通过 `"theme": "dark"` 手动指定
+> - **tooltip 类型**：使用 `"item"` 触发模式（非 axis），更符合树图交互
+> - **折叠交互**：`expandAndCollapse: true` 允许点击节点圆圈折叠/展开子分支
+> - **布局方向**：`orient: "LR"`（左→右）、`"TB"`（上→下）、`"RL"`（右→左）、`"BT"`（下→上）
+> - **自定义高度**：`"height": 500` 设置图表容器高度（默认 400px）
+> - **工具栏**：点击"图表"→"树图/脑图"可插入预设模板
+
 ---
 
-## 五、Tabs 标签页组件
+## 六、Tabs 标签页组件 <span class="badge badge-new">NEW</span>
+
+### 6.1 基础用法
 
 [[tabs]]
 [[tab:产品介绍]]
-xfEditor 是一款开源的、可嵌入的 Markdown 在线编辑器，基于 CodeMirror、jQuery 和 Marked 构建。
+xfEditor 是一款开源的、可嵌入的 Markdown 在线编辑器（组件），基于 CodeMirror、jQuery 和 Marked 构建。
 
-- 支持实时预览
-- 支持图片上传
-- 支持流程图和时序图
-- 支持 ECharts 图表
+**核心特性：**
+- 支持 Standard Markdown / GFM / CommonMark
+- 支持实时预览、图片上传、HTML 标签解析
+- 支持流程图、时序图
+- 支持 ECharts 交互式图表
+- 支持 KaTeX 科学公式
+- 支持代码语法高亮
 [[/tab]]
 
 [[tab:更新日志]]
-### v1.12.1（最新）
-- 🔧 Tooltip 尺寸修复：图片/iframe 显式宽高精确限制 + object-fit:contain
-- 🛡️ 编辑区滚动保护：渲染期间阻断同步，多重 rAF 恢复滚动位置
-- 🔄 同步优化：双向均检查渲染状态，锁定时长延长至 2000ms
-- 📄 getHTML/getPreviewedHTML 增强：完整内联样式，自包含输出
+### v1.15.0（最新）
+- 🌳 **Tree图/脑图**：`"type": "tree"` 支持，工具栏新增「树图/脑图」按钮，支持 theme 主题切换、折叠/展开
+- 🙈 **Hidden 隐藏代码块**：` ```(hidden) ` ` ```(hidden.class#id) ` 语法，渲染为 display:none!important
+- 🎯 Hidden 配合 iframe:pre 实现「阅后即焚」式悬浮预览，initCodeCopy 自动跳过隐藏 pre
+- 🎨 TOC 目录全面美化：渐变标题、滚动高亮（Scroll Spy）、层级字体差异化、自定义滚动条
+- 🔧 修复 iframe:pre 404 错误：hidden 关键词解析误伤复合词，pre 选择器防御性降级
+- 🛡 内存泄漏修复：destroy() 全面清理 ECharts 子命名空间事件、dispose 实例、对话框拖拽残留
+- ⚡ ECharts 智能 tooltip 默认：无坐标轴图表（pie/tree/funnel 等）自动使用 item 触发模式
+- 🎨 ECharts 主题支持：config.theme 属性可设 "dark"/"light" 等主题
+- 📏 ECharts 自定义高度：config.height 设置图表容器高度
+- 🔧 Gulp 3.x → 直接 UglifyJS/CleanCSS 构建，兼容 Node 22+
+
+### v1.12.1
+- 🔧 Tooltip 尺寸限制修复：图片/iframe 显式宽高 + object-fit:contain，max-width 放宽至 90vw
+- 📄 getHTML/getPreviewedHTML 增强：完整内联样式，不依赖外部 CSS/JS
 
 ### v1.12.0
-- 工具栏图片/视频/文件按钮失效修复
-- 编辑模式弹窗全面美化（渐变标题栏、现代按钮）
-- XSS 安全加固（6 项注入漏洞修复）
-- ECharts resize 事件内存泄漏修复
-- 上标 ^^ / 下标 ^^^^ / 字体大小 !32! / 脚注 [^name] 新语法
+- 左右同步滚动彻底加固（取消排队 rAF + 锁定/解锁机制 + 200ms 防抖）
+- TOC 目录点击跳转修复（精确 ID + 文本回退匹配）
+- 公式弹窗自动加载 KaTeX（无需 tex: true 也能使用公式面板）
+- 表格/图片编辑后编辑区滚动位置保持修复
+- UI 细节优化与多语言完善
+
+### v1.12.0
+- 新增组合上下标语法 <<下标>^<上标>> 同时显示上下角标
+- 修复渲染管线不一致（getPreviewedHTML/markdownToHTML 缺失步骤）
+- 全面代码审计、正则优化、事件泄漏修复
+
+### v1.12.0
+- 工具栏图片/视频/文件按钮失效修复、弹窗全面美化
+- XSS 安全加固（6 项注入漏洞修复）、ECharts 内存泄漏修复
+- 上标 ^^、下标 ^^^^、字体大小 !字!、脚注 [^name] 新语法
+- 公式面板去搜索、下拉菜单全方向溢出自动适配
 
 ### v1.9.0
-- 草稿弹窗美化、Tooltip 交互修复、全屏增强
+- 草稿弹窗美化、Tooltip 交互修复、全屏增强、KaTeX 安全防护
 
 ### v1.8.0
-- 新增字帖功能（田字格/米字格/拼音格）
-- 全屏编辑器增强（窗口自适应 + ESC 退出修复）
+- 全屏编辑修复、LaTeX 语法保护、嵌套深度限制、ESC 事件管理
 
 ### v1.7.0
-- 新增 Apache ECharts 图表支持
-- 新增 Tabs 标签页功能
-- 新增多列排版功能
-- 新增悬浮提示功能
-- 新增浏览器草稿暂存功能
+- 新增 Apache ECharts 图表支持（柱状图/折线图/饼图/雷达图/漏斗图）
+- 新增 Tabs 标签页功能（支持任意 Markdown 内容嵌套）
+- 新增多列排版 Columns 功能
+- 新增悬浮提示 Tooltip 功能
+- 新增浏览器草稿暂存 Draft 功能
+- 新增视频嵌入和附件链接功能
+- 新增字帖（田字格/米字格/拼音格）功能
+- JetBrains 风格代码块展示
 
 ### v1.6.0
 - 新增拼音标注语法
@@ -251,26 +559,82 @@ xfEditor 是一款开源的、可嵌入的 Markdown 在线编辑器，基于 Cod
 - 新增表格行列操作
 [[/tab]]
 
-[[tab:嵌套演示]]
-Tab 内支持任意 Markdown 内容：
+[[tab:使用帮助]]
+**快捷键：**
+1. **Ctrl + S** / **Cmd + S** — 保存内容
+2. **F11** — 切换全屏编辑
+3. **F10** — 切换预览模式
+4. **Ctrl + F** / **Cmd + F** — 搜索
+5. **Ctrl + Shift + F** / **Cmd + Option + F** — 替换
+6. **Ctrl + Q** / **Cmd + Q** — 代码折叠
 
+欢迎通过 GitHub 提交 Issue 和 PR 参与共建！
+[[/tab]]
+[[/tabs]]
+
+### 6.2 标签页内嵌套复杂内容
+
+以下演示在标签页内部嵌套代码块、表格、图表、任务列表等复杂内容：
+
+[[tabs]]
+[[tab:代码示例]]
 ```javascript
-function inTab() {
-    return "代码块正常渲染";
+// 在 Tab 内编写代码
+class TabDemo {
+    constructor(name) {
+        this.name = name;
+    }
+
+    greet() {
+        return `Hello from tab "${this.name}"!`;
+    }
+}
+
+const demo = new TabDemo("Code Demo");
+console.log(demo.greet());
+```
+[[/tab]]
+
+[[tab:表格示例]]
+| 功能 | 最低版本 | 状态 |
+|------|----------|------|
+| Tabs 标签页 | v1.7.0 | ✅ 已发布 |
+| ECharts 图表 | v1.7.0 | ✅ 已发布 |
+| 多列排版 | v1.7.0 | ✅ 已发布 |
+| 悬浮提示 | v1.7.0 | ✅ 已发布 |
+| 视频嵌入 | v1.7.0 | ✅ 已发布 |
+| 附件链接 | v1.7.0 | ✅ 已发布 |
+[[/tab]]
+
+[[tab:图表示例]]
+Tab 内部也可以嵌入 ECharts 图表：
+
+```echarts
+{
+  "type": "bar",
+  "title": {"text": "Tab 内图表"},
+  "xAxis": {"data": ["Q1", "Q2", "Q3", "Q4"]},
+  "yAxis": {},
+  "series": [
+    {"type": "bar", "data": [320, 450, 280, 510], "name": "收入"},
+    {"type": "bar", "data": [220, 380, 250, 420], "name": "支出"}
+  ]
 }
 ```
+[[/tab]]
 
-| 功能 | 状态 |
-|------|------|
-| 代码块 | 支持 |
-| 表格 | 支持 |
-| 图表 | 支持 |
+[[tab:任务列表]]
+- [x] 代码块嵌套 ✅
+- [x] 表格嵌套 ✅
+- [x] 图表嵌套 ✅
+- [x] 任务列表嵌套 ✅
+- [ ] 更多嵌套组合测试中...
 [[/tab]]
 [[/tabs]]
 
 ---
 
-## 六、多列排版
+## 七、多列排版 <span class="badge badge-new">NEW</span>
 
 [[columns:3]]
 ### 第一栏
@@ -281,11 +645,9 @@ function inTab() {
 - 响应式适配
 
 ### 第二栏
-使用 `[ [columns:N] ]` 语法即可开启多栏排版（N 为栏数，如 2、3、4 等）。
+使用 `[[columns:3]]` 语法即可开启三栏排版，数字可根据需要调整为 2、3、4 等。
 
-如需在文本中显示字面量 `[ [columns:3] ]` 而不被解析，可使用反斜杠转义：`\[\[columns:3\]\]`。
-
-> 提示：每一栏的内容都会独立渲染 Markdown，包括标题、列表、图片等。
+> 提示：每一栏的内容都会独立渲染 Markdown，包括标题、列表、图片、代码等。
 
 ### 第三栏
 您可以在每一栏中放入不同的产品介绍、功能特性或服务说明，让读者一目了然。
@@ -297,35 +659,181 @@ function inTab() {
 
 ---
 
-## 七、悬浮提示 Tooltip
+## 八、悬浮提示 Tooltip <span class="badge badge-new">NEW</span>
 
-### 7.1 文本悬浮提示
+### 8.1 文本悬浮提示
 
-请将鼠标悬停在此链接上查看效果：[百度](tooltip:text:百度是全球最大的中文搜索引擎，创立于2000年，总部位于北京。)
+#### 8.1.1 基础用法（自动宽高）
+请将鼠标悬停在此链接上查看效果：[百度](tooltip:text:百度（NASDAQ: BIDU）是全球最大的中文搜索引擎，创立于2000年1月1日，总部位于中国北京。)
 
-### 7.2 图片悬浮提示
+#### 8.1.2 设置固定宽高（超出自动滚动）
+- [百度简介](tooltip:text:百度（NASDAQ: BIDU）是全球最大的中文搜索引擎，创立于2000年1月1日，总部位于中国北京。百度拥有数万名研发工程师，是中国乃至全球都顶尖的技术团队。)<50,20>
+- [长文本](tooltip:text:这是一段很长的文本内容，用于测试固定高度后的自动滚动效果。当文本内容超过设置的高度时，会自动出现垂直滚动条。)<80,40>
 
-![示例图片](../images/logos/editormd-logo-180x180.png "tooltip:text:xfEditor 的 Logo 图标，代表着开源、简洁与强大的 Markdown 编辑体验。")
+### 8.2 图片悬浮提示
 
-### 7.3 图片型悬浮提示
+#### 8.2.1 图片作为触发对象
+![xfEditor Logo](../images/logos/editormd-logo-180x180.png "tooltip:text:这是 xfEditor 的 Logo 图标，代表着开源、简洁与强大的 Markdown 编辑体验。")
 
-请将鼠标悬停在此链接上查看图片提示效果：[查看 Logo](tooltip:image:../images/logos/editormd-logo-180x180.png)
+#### 8.2.2 图片类型悬浮提示
+- [查看Logo](tooltip:image:../images/logos/editormd-logo-180x180.png)
+- [Logo 50x40](tooltip:image:../images/logos/editormd-logo-180x180.png)<50,40>
+- [Logo 100x80](tooltip:image:../images/logos/editormd-logo-180x180.png)<100,80>
+- [外部图片](tooltip:image:"https://picsum.photos/300/200?random=1")<120,80>
 
-### 7.4 iframe 型悬浮提示
+### 8.3 iframe 型悬浮提示
 
-请将鼠标悬停在此链接上查看 iframe 提示效果：[查看示例页面](tooltip:iframe:./simple.html)
+- [查看示例页面](tooltip:iframe:./simple.html)
+- [小窗口 100x60](tooltip:iframe:./simple.html)<100,60>
+- [中窗口 200x120](tooltip:iframe:./simple.html)<200,120>
+
+### 8.4 iframe:pre 代码块悬浮预览 <span class="badge badge-new">NEW v1.14.0</span>
+
+**配合代码块属性扩展使用**，先给代码块设置 id 或 class，再用悬浮提示引用。  
+**原理**：提取 `<pre id="xxx">` 内部原始内容，通过 Blob URL 创建 iframe 页面进行悬浮预览。  
+- **HTML 内容**会被浏览器**解析渲染**为完整页面效果（DOM + 样式 + JS 执行）  
+- **非 HTML 内容**（JS/Python 等）会在 iframe 中作为纯文本显示
+
+#### 8.4.1 HTML 页面渲染预览 — 浏览器解析效果
+
+```(#demo-html-page)
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>test Iframe</title>
+</head>
+<body>
+<h1>我是H1</h1>
+<div> test Dom</div>
+<script>
+console.log(3, 6, 8, 10, 1, 2, 1);
+</script>
+</body>
+</html>
+```
+
+- [查看 HTML 渲染效果（420×280）](tooltip:iframe:pre#demo-html-page)<420,280>
+- [查看 HTML 渲染效果（自动尺寸）](tooltip:iframe:pre#demo-html-page)
+
+> 💡 **提示**：鼠标悬停时 iframe 会将上方代码块内容作为完整 HTML 页面解析渲染，你将看到 "我是H1" 标题、test Dom 文字，并且浏览器控制台会输出 `3, 6, 8, 10, 1, 2, 1`。
+
+#### 8.4.2 JavaScript 源码预览
+
+```javascript(#demo-js-quicksort)
+// JavaScript 快速排序算法
+function quickSort(arr) {
+    if (arr.length <= 1) return arr;
+    const pivot = arr[Math.floor(arr.length / 2)];
+    const left = arr.filter(x => x < pivot);
+    const middle = arr.filter(x => x === pivot);
+    const right = arr.filter(x => x > pivot);
+    return [...quickSort(left), ...middle, ...quickSort(right)];
+}
+
+console.log(quickSort([3, 6, 8, 10, 1, 2, 1]));
+```
+
+- [查看快速排序代码](tooltip:iframe:pre#demo-js-quicksort)<420,280>
+
+> 由于内容不是 HTML 文档，iframe 会以纯文本形式展示源码。
+
+#### 8.4.3 通过 class 选择器批量预览
+
+```python(.demo-python-code)
+# Python 归并排序
+def merge_sort(arr):
+    if len(arr) <= 1:
+        return arr
+    mid = len(arr) // 2
+    left = merge_sort(arr[:mid])
+    right = merge_sort(arr[mid:])
+    return merge(left, right)
+
+def merge(left, right):
+    result = []
+    i = j = 0
+    while i < len(left) and j < len(right):
+        if left[i] < right[j]:
+            result.append(left[i])
+            i += 1
+        else:
+            result.append(right[j])
+            j += 1
+    result.extend(left[i:])
+    result.extend(right[j:])
+    return result
+```
+
+- [查看 Python 代码](tooltip:iframe:pre.demo-python-code)<420,280>
+
+**iframe:pre 工作流程**：
+1. 解析 `[文字](tooltip:iframe:pre#id)` → `tooltipType = "iframe"`, `tooltipContent = "pre#id"`
+2. 正则 `/^pre[#.][a-zA-Z_][\w\-]*$/` 检测是否为 `pre#id` / `pre.class` 格式
+3. `$(preSelector)` 在 DOM 中查找对应 `<pre>` 元素
+4. `.text()` 提取解码后的原始内容（HTML 实体会被还原为原始字符），存入 `data-iframepre-code`
+5. **每次鼠标悬停**（`showTooltip`）→ 动态创建新 Blob URL → `new Blob([rawCode], {type:'text/html'})` → 设置 iframe.src
+6. iframe 加载完成 → 浏览器解析渲染 HTML 页面 → JS 代码重新执行
+7. 鼠标离开 → 隐藏 popup → `revokeObjectURL()` 释放 Blob URL
+8. **下次悬停再创建新 Blob URL**，确保 JS 每次都重新执行
+
+**Tooltip 背景颜色规则**：
+- 纯文本（text）类型：深色背景 `#1e1e1e`，浅色文字
+- 图片（image）、iframe、HTML 类型：白色背景 `#fff`，深色文字
+
+### 8.5 HTML 悬浮提示 <span class="badge badge-new">NEW v1.12</span>
+
+#### 8.5.1 Class选择器
+- [查看产品卡片](tooltip:html:.test_tooltip1)<150,100>
+- [查看产品卡片（自动宽高）](tooltip:html:.test_tooltip1)
+
+#### 8.5.2 ID选择器
+- [查看ID元素](tooltip:html:#test_tooltip_id)<160,80>
+- [查看ID元素（自动宽高）](tooltip:html:#test_tooltip_id)
+
+#### 8.5.3 使用引号包围选择器
+- [带引号的class](tooltip:html:".test_tooltip1")<140,90>
+- [带引号的ID](tooltip:html:"#test_tooltip_id")<150,85>
+
+> **新版 Tooltip 语法：**
+> - 基本格式：`[文本](tooltip:类型:内容)<宽度,高度>`
+> - 支持类型：text（文本）、image（图片）、iframe（嵌入页面）、html（DOM元素）
+> - 宽高参数可选，单位为px，超出后自动滚动
+> - HTML类型仅支持CSS选择器（#id、.class、[attribute]）
+> - 自动移除隐藏属性（display:none, visibility:hidden, opacity:0等）
+
+
+<div class="test_tooltip1" style="display:none; visibility:hidden;">
+    <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 15px; border-radius: 10px; color: #fff; text-align: center; min-width: 220px;">
+        <h4 style="margin: 0 0 8px; font-size: 16px;">🎯 高级功能</h4>
+        <p style="margin: 0 0 10px; font-size: 13px;">CSS选择器工具提示演示</p>
+        <ul style="text-align: left; font-size: 12px; margin: 0; padding: 0 0 0 18px;">
+            <li>支持CSS选择器引用</li>
+            <li>自动移除隐藏属性</li>
+            <li>动态加载DOM内容</li>
+        </ul>
+    </div>
+</div>
+
+<div id="test_tooltip_id" style="display:none;">
+    <div style="background: #f0f8ff; padding: 15px; border-radius: 8px; border-left: 4px solid #2196F3;">
+        <h4 style="margin: 0 0 8px; color: #1976D2;">📚 ID选择器示例</h4>
+        <p style="margin: 0; font-size: 13px; color: #555;">这是通过ID选择器 <code>#test_tooltip_id</code> 引用的内容。</p>
+    </div>
+</div>
 
 ---
 
-## 八、文本对齐
+## 九、文本对齐 <span class="badge badge-new">NEW</span>
 
-工具栏对齐按钮默认插入 Unicode 行内对齐标记，无需换行，可直接在标题、段落、列表项中使用：
+使用 Unicode 行内对齐标记（工具栏按钮插入）：
 
 ⁑⁑欢迎使用 xfEditor — 开源在线 Markdown 编辑器⁑⁑
 
 ⁑⁖开源、简洁、强大，支持实时预览与扩展语法⁖⁑
 
-⁑⠕版本号：v1.12.1 | 许可证：MIT⠕⁑
+⁑⠕版本号：v1.15.0 | 许可证：MIT⠕⁑
 
 ⁑⁛xfEditor 致力于为开发者和内容创作者提供最优秀的 Markdown 编辑体验，支持实时预览、图片上传、图表渲染等丰富功能。⁛⁑
 
@@ -343,143 +851,127 @@ function inTab() {
 - ⁑⠕列表项中的右对齐⠕⁑
 - ⁑⁛列表项中的两端对齐⁛⁑
 
+---
+
+## 十、拼音标注 <span class="badge">v1.6.0</span>
+
+{xfEditor | biān jí qì} 是一款非常优秀的 {Markdown | mā kè dáo nà} 编辑器，支持 {GitHub | jí tè bù} Flavored Markdown。
 
 ---
 
-## 九、拼音标注
+## 十一、科学公式 TeX / KaTeX
 
-{xfEditor | biān jí qì} 是一款非常优秀的 {Markdown | mā kè dáo nà} 编辑器。
+行内公式：$$E = mc^{2}$$
 
-
-{床前明月光 | chuáng qián míng yuè guāng}，
-
-{疑是地上霜 | yí shì dì shàng shuāng}。
-
-{举头望明月 | jǔ tóu wàng míng yuè}，
-
-{低头思故乡 | dī tóu sī gù xiāng}。
-
----
-
-## 十、科学公式 TeX / KaTeX
-
-行内公式： $$E=mc^2$$
-
-块级公式：
+块级公式（二次方程求根）：
 
 $$x = {-b \pm \sqrt{b^2-4ac} \over 2a}$$
 
+积分公式：
+
 $$\int_{a}^{b} f(x) \, dx = F(b) - F(a)$$
 
-多行公式：
+矩阵：
 
-```math
-f(x) = \int_{-\infty}^\infty
-    \hat f(\xi)\,e^{2 \pi i \xi x}
-    \,d\xi
-```
+$$\begin{pmatrix}
+a_{11} & a_{12} & a_{13} \\
+a_{21} & a_{22} & a_{23} \\
+a_{31} & a_{32} & a_{33}
+\end{pmatrix}$$
+
+分段函数：
+
+$$f(x) =
+\begin{cases}
+x^2 & \text{if } x \geq 0 \\
+-x^2 & \text{if } x < 0
+\end{cases}$$
+
+> 提示：双击预览区的公式可快速定位到 Markdown 源码中的对应位置。
 
 ---
 
-## 十一、流程图 Flowchart
+## 十二、流程图 Flowchart
 
 ```flow
-st=>start: 开始
-op=>operation: 用户操作
-cond=>condition: 判断条件
-sub=>subroutine: 子流程
-io=>inputoutput: 输入/输出
-ed=>end: 结束
+st=>start: 用户访问
+op1=>operation: 输入 Markdown
+op2=>operation: 实时预览渲染
+cond=>condition: 需要导出？
+sub1=>subroutine: 导出 HTML
+sub2=>subroutine: 导出 Markdown
+io=>inputoutput: 获取内容
+ed=>end: 完成
 
-st->op->cond
-cond(yes)->io->ed
-cond(no)->sub->op
+st->op1->op2->cond
+cond(yes)->sub1->io->ed
+cond(no)->sub2->ed
 ```
 
 ---
 
-## 十二、时序图 Sequence Diagram
+## 十三、时序图 Sequence Diagram
 
 ```seq
-Alice->Bob: Hello Bob, how are you?
-Note right of Bob: Bob thinks
-Bob-->Alice: I am good thanks!
-Bob-->Jack: How about you?
-Jack-->Bob: Fine too!
+Title: xfEditor 工作流程
+用户->编辑器: 输入 Markdown 文本
+编辑器->Marked解析器: 解析 Markdown
+Marked解析器-->编辑器: 返回 HTML
+编辑器->KaTeX渲染器: 渲染数学公式
+编辑器->ECharts渲染器: 渲染图表
+编辑器->FlowChart渲染器: 渲染流程图
+编辑器-->用户: 展示实时预览
+用户->编辑器: 点击导出按钮
+编辑器-->用户: 导出的文件
 ```
 
 ---
 
-## 十三、视频插入
+## 十四、视频嵌入 <span class="badge badge-new">NEW</span>
 
-### 13.1 video 标签语法
+### 14.1 video 标签语法
 
-### 13.2 视频链接自动识别
+[[video]]
+http://vjs.zencdn.net/v/oceans.mp4
+[[/video]]
 
-当链接指向视频文件（mp4/webm/ogv/mov）时，会自动渲染为视频播放器：
+### 14.2 原生 HTML5 video
 
-[示例视频](../images/sample-video.mp4)
-
-### 13.2 原生 HTML5 video 标签
-
-<video src="../images/sample-video.mp4" controls width="100%" height="300"></video>
+<video src="http://vjs.zencdn.net/v/oceans.mp4" controls width="100%" height="320"></video>
 
 ---
 
-## 十四、附件链接
+## 十五、附件链接 <span class="badge badge-new">NEW</span>
 
 [[file]]
-document.pdf | 项目文档
+document.pdf | 项目技术文档
 [[/file]]
 
 [[file]]
-report.xlsx | 数据报表
+report.xlsx | 2024年度数据报表
 [[/file]]
 
 ---
 
-## 十五、图片编辑与尺寸调整
+## 十六、图片尺寸编辑
 
-### 15.1 固定尺寸图片
+### 16.1 固定尺寸
 
-![xfEditor Logo](../images/logos/editormd-logo-180x180.png)<200,200>
+![xfEditor Logo](../images/logos/editormd-logo-180x180.png)<180,180>
 
-### 15.2 默认尺寸图片
+### 16.2 可拖拽调整
 
-![xfEditor Logo](../images/logos/editormd-logo-64x64.png)
+![可调整尺寸的图片](../images/logos/editormd-logo-64x64.png)
 
----
-
-## 十六、字帖（Copybook/书法练习）
-
-### 16.1 田字格
-
-[[copybookTian]]
-(春眠不觉晓)(处处闻啼鸟)
-(夜来风雨声)(花落知多少)
-[[/copybookTian]]
-
-### 16.2 米字格
-
-[[copybookMi]]
-(床前明月光)(疑是地上霜)
-(举头望明月)(低头思故乡)
-[[/copybookMi]]
-
-### 16.3 拼音格
-
-[[copybookPinyin]]
-(春眠不觉晓|chūn mián bù jué xiǎo)(处处闻啼鸟|chù chù wén tí niǎo)
-(夜来风雨声|yè lái fēng yǔ shēng)(花落知多少|huā luò zhī duō shǎo)
-[[/copybookPinyin]]
+> 提示：预览区拖拽图片右下角调尺寸；按住 **Shift** 保持宽高比；双击输入精确尺寸。
 
 ---
 
 ## 十七、HTML 标签解析
 
-<div style="padding: 10px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;">
-    <strong>自定义 HTML 区块</strong><br/>
-    xfEditor 支持识别和解析 HTML 标签，具有可靠的安全性和几乎无限的扩展性。
+<div style="padding: 12px; border: 1px solid #d1d5da; border-radius: 6px; background: #f6f8fa;">
+    <strong style="color: #24292e;">🎨 自定义 HTML 区块</strong><br/>
+    <span style="color: #586069;">xfEditor 支持解析 HTML 标签，并具有可靠的安全性和几乎无限的扩展性。</span>
 </div>
 
 ---
@@ -488,63 +980,162 @@ report.xlsx | 数据报表
 
 [========]
 
+---
+
 ## 十九、@链接
 
 @pandao 作者主页
 
 ---
 
-## 二十、上标与下标
+## 二十、分隔线
 
-### 20.1 上标 ^语法^
+---
 
-使用 `^内容^` 语法创建上标：
+## 二十一、字帖 Copybook
+
+### 21.1 田字格
+
+[[copybookTian]]
+(春眠不觉晓)(处处闻啼鸟)
+(夜来风雨声)(花落知多少)
+[[/copybookTian]]
+
+### 21.2 米字格
+
+[[copybookMi]]
+(床前明月光)(疑是地上霜)
+(举头望明月)(低头思故乡)
+[[/copybookMi]]
+
+### 21.3 拼音格
+
+[[copybookPinyin]]
+(春眠不觉晓|chūn mián bù jué xiǎo)(处处闻啼鸟|chù chù wén tí niǎo)
+(夜来风雨声|yè lái fēng yǔ shēng)(花落知多少|huā luò zhī duō shǎo)
+[[/copybookPinyin]]
+
+---
+
+## 二十二、上标与下标 <span class="badge badge-new">NEW</span>
+
+### 22.1 上标 ^语法^
+
+使用 `^内容^` 语法创建上标（字符显示在右上角）：
 
 - 数学公式：x^2^ + y^3^ = z^n^
+- 方程式：E = mc^2^
+- 版权年份：Copyright © 2024^All Rights Reserved^
+- 注释编号：重要说明^Footnote 1^ 和补充信息^Note 2^
 - 平方米：100m^2^ 建筑面积
-- 指数运算：2^10^ = 1024
+- 指数运算：2^10^ = 1024, a^b+c^ = d
 
-### 20.2 下标 ^^语法^^
+> 提示：上标使用单 `^` 包裹，文本会自动渲染在右上角位置。内容长度上限 100 字符。
 
-使用 `^^内容^^` 语法创建下标：
+### 22.2 下标 ^^语法^^
+
+使用 `^^内容^^` 语法创建下标（字符显示在右下角）：
 
 - 化学式：H^^2^^O（水分子）、CO^^2^^（二氧化碳）
-- 对数：log^^10^^(100) = 2
+- 硫酸：H^^2^^SO^^4^^
+- 数学：a^^0^^ + a^^1^^x + a^^2^^x^2^
+- 序列：元素^^1^^、元素^^n^^
+- 对数底数：log^^10^^(100) = 2
+- DNA 结构：5'^^端^^ 到 3'^^端^^
 
-### 20.3 组合使用
+> 提示：下标使用双 `^^` 包裹，可与上标组合使用：A^1^^2^^。内容长度上限 100 字符。
 
-- 同位素：U^235^^92^^（铀-235）
+### 22.3 组合上下标 <<下标>^<上标>> <span class="badge badge-new">NEW v1.11</span>
 
----
+使用 `<<下标>^<上标>>` 语法在同一个字符上同时显示下标和上标：
 
-## 二十一、字体大小
+- 同位素表示：U<<92>^<235>>（铀-235，92 在右下，235 在右上）
+- x 的 y 次方加下标：X<<2>^<3>> 表示 X₂³
+- 矩阵元素：A<<i>^<j>>（i 行 j 列）
+- 排列组合：C<<5>^<3>>（组合数 C₅³）
+- 求和下标上标：S<<k=1>^<n>>（1 到 n 求和）
+- 编码表示：UTF<<8>^<BOM>> 带标记的编码
 
-使用 `!字号 文本!` 语法（范围 8-200px）：
+> 提示：组合上下标使用 `<<内容>^<内容>>` 格式，`<` 前为下标，`^<` 后为上标。该语法比分开写更简洁精确，避免空格间隔。内容长度上限各 100 字符。
 
-- !12 12px小字!
-- !16 16px正常!
-- !24 24px大号!
-- !32 32px标题!
+### 22.4 上标和下标混合使用
 
----
-
-## 二十二、脚注功能
-
-这里有一个脚注引用[^fn1]，点一下查看。
-
-[^fn1]: 这是第一个脚注的内容 — 支持 **粗体**、*斜体* 等内联格式。
-
-xfEditor[^fn2] 是一款强大的开源编辑器。
-
-[^fn2]: xfEditor 基于 **CodeMirror**、**Marked**、**KaTeX**、**ECharts** 等构建，采用 `MIT` 许可证。
+- 化学方程式：C^^6^^H^^12^^O^^6^^ + 6O^^2^^ → 6CO^^2^^ + 6H^^2^^O
+- 数列公式：S^^n^^ = a^^1^^ + a^^2^^ + ... + a^^n^^
+- 传统方式：U^235^^^92^^（铀-235，使用独立上下标组合）
 
 ---
 
-## 二十三、结语
+## 二十三、字体大小 <span class="badge badge-new">NEW</span>
 
-xfEditor 持续迭代，致力于为开发者和内容创作者提供最优秀的 Markdown 编辑体验。欢迎通过 GitHub 提交 Issue 和 PR 参与共建！
+### 23.1 基础用法
 
-**Open source online markdown editor.**</textarea>
+使用 `!字号 文本!` 语法指定文字大小（字号范围 8-200px）：
+
+- !12 这是一段12px的小字!
+- !16 这是16px的正常文字!
+- !24 这是24px的较大文字!
+- !32 这是32px的大文字!
+- !48 这是48px的标题级文字!
+
+### 23.2 实用场景
+
+- 合同条款：!10 本协议最终解释权归甲方所有。!
+- 正文：!16 这里是标准的正文排版，适合大多数阅读场景。!
+- 强调声明：!20 **重要提示**：请仔细阅读以下内容!!
+- 海报标题：!36 限时特惠! !28 全场五折起!
+
+> 提示：字号取值范围 8-200px，超出范围会被忽略。字体大小语法可以和 Markdown 内联语法组合使用。
+
+---
+
+## 二十四、脚注功能 <span class="badge badge-new">NEW</span>
+
+### 24.1 基础脚注
+
+脚注系统分为两部分：**引用** `[^脚注名]` 和 **定义** `[^脚注名]: 内容`。
+
+这里有一个脚注引用[^example1]，点一下看看效果。这里还有一个脚注[^example2]。
+
+[^example1]: 这是第一个脚注的内容——点击页面底部的 "↩" 可以回到引用位置。
+
+[^example2]: 脚注定义可以写在文档的任何位置，最终都会统一显示在文档末尾。
+
+### 24.2 脚注内容支持内联格式
+
+脚注内容支持 **粗体**、*斜体*、`代码` 等简单的内联格式：
+
+xfEditor[^editor-footnote] 是一款强大的开源 Markdown 在线编辑器。
+
+[^editor-footnote]: xfEditor 的核心依赖包括 **CodeMirror**（编辑器）、**Marked**（解析器）、**KaTeX**（数学公式）、**ECharts**（图表）等。项目采用 `MIT` 许可证，欢迎参与贡献。
+
+### 24.3 标题中使用脚注
+
+#### 关于本编辑器[^about]
+
+[^about]: 本文档演示了 xfEditor v1.15.0 的全部功能，包括 Markdown 基础语法、扩展语法和 API 交互。更多功能请查阅 `USAGE_GUIDE.md` 和 `README.md`。
+
+### 24.4 多个脚注
+
+项目特色[^feature1]包括实时预览[^feature2]、图表渲染[^feature3]和脚注系统[^feature4]。
+
+[^feature1]: 实时编辑、实时渲染，所见即所得。
+[^feature2]: 编辑区和预览区双向同步滚动。
+[^feature3]: 支持 ECharts 柱状图、折线图、饼图、雷达图、漏斗图。
+[^feature4]: 本脚注系统支持引用跳转和内容自动汇总。
+
+> 提示：脚注定义按在文档中出现的顺序编号，所有脚注内容统一显示在文档末尾。
+
+---
+
+## 二十五、结语
+
+xfEditor 持续迭代，致力于为开发者和内容创作者提供最优秀的 Markdown 编辑体验。
+
+**Open source online markdown editor.**
+
+> Made with ❤️ by Pandao & Contributors
+</textarea>
             </div>
         </div>
 

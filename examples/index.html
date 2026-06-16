@@ -2,91 +2,155 @@
 <html lang="zh">
 <head>
     <meta charset="utf-8" />
-    <title>xfEditor v1.12.1 — Examples</title>
+    <title>xfEditor v1.15.0 — Examples</title>
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="../css/editormd.min.css" />
     <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
     <style>
+        :root {
+            --color-primary: #2C7EEA;
+            --color-primary-dark: #1a5dc4;
+            --color-success: #3fb950;
+            --color-success-dark: #2ea043;
+            --color-bg: #f5f6f8;
+            --color-card: #fff;
+            --color-text: #1a1a2e;
+            --color-text-secondary: #59636e;
+            --color-border: #e2e4e8;
+            --color-border-hover: #b6d4fe;
+            --radius: 12px;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.08);
+            --transition: 220ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
                          "Hiragino Sans GB", "Microsoft YaHei", Helvetica, Arial, sans-serif;
-            background: #f5f6f8;
-            color: #333;
+            background: var(--color-bg);
+            color: var(--color-text);
             line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
         }
-        #layout { padding-bottom: 80px; }
 
-        /* ── Header ── */
+        /* ═══ Header ═══ */
         #header {
-            width: 100%;
-            color: #fff;
+            width: 100%; color: #fff;
             background: linear-gradient(135deg, #0d1117 0%, #161b22 30%, #1a1a2e 60%, #16213e 100%);
-            padding: 80px 0 60px;
-            text-align: center;
-            margin-bottom: 48px;
-            position: relative;
-            overflow: hidden;
+            padding: 72px 0 32px; text-align: center;
+            position: relative; overflow: hidden;
         }
         #header::before {
-            content: '';
-            position: absolute;
-            top: -50%; left: -50%;
-            width: 200%; height: 200%;
-            background: radial-gradient(circle at 25% 45%, rgba(88,166,255,0.12) 0%, transparent 50%),
-                        radial-gradient(circle at 75% 55%, rgba(63,185,80,0.08) 0%, transparent 50%),
-                        radial-gradient(circle at 50% 30%, rgba(188,140,255,0.06) 0%, transparent 50%);
+            content: ''; position: absolute;
+            top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle at 20% 35%, rgba(88,166,255,0.15) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 45%, rgba(63,185,80,0.09) 0%, transparent 50%),
+                        radial-gradient(circle at 50% 20%, rgba(188,140,255,0.07) 0%, transparent 50%);
             pointer-events: none;
             animation: headerGlow 12s ease-in-out infinite alternate;
         }
         @keyframes headerGlow {
-            0% { opacity: 0.8; transform: scale(1); }
-            100% { opacity: 1; transform: scale(1.05); }
+            0%   { opacity: 0.7; transform: scale(1); }
+            100% { opacity: 1; transform: scale(1.04); }
         }
         #header > * { position: relative; z-index: 1; }
 
-        #header h1 { font-size: 44px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
-        #header .subtitle { font-size: 17px; opacity: 0.75; font-weight: 300; margin-bottom: 8px; }
-        #header .version { font-size: 13px; opacity: 0.5; margin-top: 6px; letter-spacing: 0.5px; }
-        #header .editormd-logo { margin-bottom: 12px; }
+        #header .logo-wrap { margin-bottom: 10px; opacity: 0.88; }
+        #header h1 { font-size: 40px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; }
+        #header .subtitle { font-size: 16px; opacity: 0.72; font-weight: 400; margin-bottom: 4px; max-width: 600px; margin-left: auto; margin-right: auto; }
+        #header .version { font-size: 13px; opacity: 0.45; margin-top: 6px; letter-spacing: 0.8px; font-weight: 300; }
 
-        .menu {
-            margin-top: 28px; text-align: center;
-            display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;
+        /* ═══ Stats bar ═══ */
+        .stats-bar {
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 12px;
+            margin-top: 20px; margin-bottom: 8px;
         }
-        .menu a {
-            color: rgba(255,255,255,0.8); display: inline-block;
-            text-decoration: none; padding: 7px 20px; border-radius: 20px;
-            font-size: 13.5px; border: 1px solid rgba(255,255,255,0.22);
-            transition: all 250ms ease; backdrop-filter: blur(4px); letter-spacing: 0.3px;
+        .stat-item {
+            display: flex; align-items: center; gap: 6px;
+            padding: 6px 16px; border-radius: 20px;
+            background: rgba(255,255,255,0.08); backdrop-filter: blur(4px);
+            font-size: 13px; color: rgba(255,255,255,0.7);
+            border: 1px solid rgba(255,255,255,0.1);
         }
-        .menu a:hover { background: rgba(255,255,255,0.13); border-color: rgba(255,255,255,0.45); color: #fff; transform: translateY(-1px); }
+        .stat-item .stat-num { font-weight: 700; color: #58a6ff; font-size: 16px; }
+        .stat-item .stat-icon { font-size: 15px; }
 
-        /* ── Container ── */
+        /* ═══ Nav pills ═══ */
+        .nav-wrap {
+            margin-top: 20px; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;
+        }
+        .nav-wrap a {
+            color: rgba(255,255,255,0.78); text-decoration: none;
+            padding: 7px 18px; border-radius: 20px; font-size: 13px;
+            border: 1px solid rgba(255,255,255,0.18);
+            transition: all var(--transition); backdrop-filter: blur(4px);
+            letter-spacing: 0.2px;
+        }
+        .nav-wrap a:hover,
+        .nav-wrap a:focus-visible {
+            background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.4);
+            color: #fff; transform: translateY(-1px);
+        }
+
+        /* ═══ Container ═══ */
         .content-wrap { width: 92%; max-width: 1260px; margin: 0 auto; }
 
-        /* ── Category titles ── */
+        /* ═══ Search ═══ */
+        .search-box {
+            position: sticky; top: 12px; z-index: 100;
+            margin: 28px auto 0; max-width: 500px;
+        }
+        .search-box input {
+            width: 100%; padding: 11px 18px 11px 42px;
+            border: 1.5px solid var(--color-border); border-radius: 24px;
+            font-size: 14px; color: var(--color-text); background: var(--color-card);
+            box-shadow: var(--shadow-sm); transition: all var(--transition);
+            outline: none;
+        }
+        .search-box input:focus {
+            border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(44,126,234,0.12);
+        }
+        .search-box::before {
+            content: '🔍'; position: absolute; left: 14px; top: 50%;
+            transform: translateY(-50%); font-size: 14px; opacity: 0.5; pointer-events: none;
+        }
+        .search-box {
+            position: sticky; top: 12px; z-index: 100;
+        }
+        .search-result-hint {
+            text-align: center; font-size: 13px; color: var(--color-text-secondary);
+            margin-top: 8px; display: none;
+        }
+        .search-result-hint.visible { display: block; }
+
+        /* ═══ Category section ═══ */
+        .category-section { margin-bottom: 16px; }
+
         .category {
-            padding: 18px 0; font-size: 21px; font-weight: 700;
-            color: #1a1a2e; margin: 28px 0 16px;
-            border-bottom: 2px solid #e2e4e8;
+            padding: 18px 0; font-size: 20px; font-weight: 700;
+            color: var(--color-text); margin: 28px 0 16px;
+            border-bottom: 2px solid var(--color-border);
             position: relative; display: flex; align-items: center; justify-content: space-between;
         }
-        .category::after{
+        .category::after {
             content: ''; position: absolute; bottom: -2px; left: 0;
-            width: 48px; height: 3px; background: linear-gradient(90deg, #58a6ff, #3fb950);
+            width: 52px; height: 3px; background: linear-gradient(90deg, var(--color-primary), var(--color-success));
             border-radius: 2px;
         }
+        .category .cat-title { display: flex; align-items: center; gap: 8px; }
+        .category .cat-count { font-size: 12px; font-weight: 500; color: var(--color-text-secondary); margin-left: 6px; }
         .category [href="#top"] {
             color: #bbb; font-size: 12px; font-weight: 400;
-            text-decoration: none; transition: color 200ms ease;
+            text-decoration: none; transition: color 200ms ease; white-space: nowrap;
         }
-        .category [href="#top"]:hover { color: #58a6ff; }
-        .category [href="#top"] .fa { margin-left: 5px; font-size: 1.2em; }
+        .category [href="#top"]:hover { color: var(--color-primary); }
 
-        /* ── Card grid ── */
-        ul {
+        /* ═══ Card grid ═══ */
+        .example-list {
             list-style: none;
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
@@ -94,110 +158,150 @@
             padding-bottom: 20px;
             margin: 0 auto;
         }
-        ul li a {
+        .example-list li a {
             display: flex; flex-direction: column;
             padding: 18px 22px; font-size: 14px; font-weight: 600;
-            text-align: left; color: #24292e; background: #fff;
-            border-radius: 12px; border: 1px solid #e8eaed;
-            transition: all 220ms cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+            color: #24292e; background: var(--color-card);
+            border-radius: var(--radius); border: 1px solid var(--color-border);
+            transition: all var(--transition);
+            position: relative; overflow: hidden; box-shadow: var(--shadow-sm);
+            text-decoration: none;
         }
-        ul li a::before {
+        .example-list li a::before {
             content: ''; position: absolute; left: 0; top: 0;
             height: 100%; width: 3px;
-            background: linear-gradient(180deg, #58a6ff, #3fb950);
+            background: linear-gradient(180deg, var(--color-primary), var(--color-success));
             border-radius: 0; opacity: 0;
-            transition: opacity 220ms ease;
+            transition: opacity var(--transition);
         }
-        ul li a:hover::before { opacity: 1; }
-        ul li a span { color: #8b949e; display: block; padding-top: 5px; font-size: 12px; font-weight: 400; line-height: 1.5; }
-        ul li a:hover {
+        .example-list li a:hover::before { opacity: 1; }
+        .example-list li a span {
+            color: var(--color-text-secondary); display: block;
+            padding-top: 5px; font-size: 12px; font-weight: 400; line-height: 1.5;
+        }
+        .example-list li a:hover {
             color: #0969da; background: #f6f8fe;
-            border-color: #b6d4fe; box-shadow: 0 6px 20px rgba(9,105,218,0.1);
+            border-color: var(--color-border-hover);
+            box-shadow: 0 6px 20px rgba(44,126,234,0.1);
             transform: translateY(-2px);
         }
-        ul li a:hover span { color: #58a6ff; }
+        .example-list li a:hover span { color: var(--color-primary); }
 
-        /* ── Featured card ── */
+        /* ═══ Featured card ═══ */
         .featured a {
-            border-color: #3fb950 !important;
+            border-color: var(--color-success) !important;
             background: linear-gradient(135deg, #f0fff4 0%, #fff 60%) !important;
             box-shadow: 0 2px 8px rgba(63,185,80,0.08) !important;
         }
-        .featured a::before { background: linear-gradient(180deg, #3fb950, #2ea043) !important; }
+        .featured a::before { background: linear-gradient(180deg, var(--color-success), var(--color-success-dark)) !important; }
         .featured a:hover {
-            border-color: #2ea043 !important;
+            border-color: var(--color-success-dark) !important;
             background: #f0fff4 !important;
             box-shadow: 0 6px 20px rgba(63,185,80,0.15) !important;
             color: #1a7f37 !important;
         }
 
-        /* ── Badge ── */
+        /* ═══ Badges ═══ */
         .badge {
             display: inline-flex; align-items: center; gap: 3px;
             padding: 2px 10px; font-size: 11px;
             border-radius: 12px; color: #fff;
-            margin-left: 9px; vertical-align: middle; font-weight: 600;
+            margin-left: 8px; vertical-align: middle; font-weight: 600;
             letter-spacing: 0.3px;
         }
-        .badge-main { background: linear-gradient(135deg, #58a6ff, #1f6feb); }
-        .badge-new { background: linear-gradient(135deg, #3fb950, #2ea043); }
-        .badge-hot { background: linear-gradient(135deg, #f778ba, #db61a2); }
+        .badge-main { background: linear-gradient(135deg, var(--color-primary), #1f6feb); }
+        .badge-new  { background: linear-gradient(135deg, var(--color-success), var(--color-success-dark)); }
+        .badge-hot  { background: linear-gradient(135deg, #f778ba, #db61a2); }
 
-        /* ── Category icon ── */
-        .cat-icon { font-size: 1.1em; margin-right: 8px; opacity: 0.7; }
+        /* ═══ Hidden (search filter) ═══ */
+        .example-list li.hidden { display: none; }
 
-        /* ── Footer ── */
+        /* ═══ Footer ═══ */
         .footer {
-            border-top: 1px solid #e8eaed; font-size: 12px;
-            margin-top: 40px; padding-top: 36px; text-align: center; color: #8b949e;
+            border-top: 1px solid var(--color-border);
+            font-size: 12px; margin-top: 32px; padding: 36px 0;
+            text-align: center; color: var(--color-text-secondary);
         }
-        .footer p { margin-bottom: 6px; }
-        .footer img { margin-bottom: 10px; opacity: 0.65; transition: opacity 200ms ease; }
+        .footer img { margin-bottom: 10px; opacity: 0.6; transition: opacity 200ms ease; }
         .footer img:hover { opacity: 1; }
-        .footer a { color: #58a6ff; text-decoration: none; }
+        .footer a { color: var(--color-primary); text-decoration: none; }
         .footer a:hover { text-decoration: underline; }
+        .footer p { margin-bottom: 6px; }
 
-        /* ── Responsive ── */
+        /* ═══ Scroll to top ═══ */
+        .scroll-top {
+            position: fixed; bottom: 24px; right: 24px;
+            width: 40px; height: 40px; border-radius: 50%;
+            background: var(--color-card); border: 1px solid var(--color-border);
+            box-shadow: var(--shadow-md); color: var(--color-text-secondary);
+            cursor: pointer; z-index: 99;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; opacity: 0; pointer-events: none;
+            transition: all var(--transition); text-decoration: none;
+        }
+        .scroll-top.visible { opacity: 1; pointer-events: auto; }
+        .scroll-top:hover { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+
+        /* ═══ Responsive ═══ */
         @media (max-width: 768px) {
-            #header { padding: 50px 20px 40px; }
-            #header h1 { font-size: 28px; }
-            ul { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
-            ul li a { padding: 14px 18px; }
-            .category { font-size: 18px; }
+            #header { padding: 44px 20px 28px; }
+            #header h1 { font-size: 26px; }
+            #header .subtitle { font-size: 14px; }
+            .example-list { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
+            .example-list li a { padding: 14px 18px; }
+            .category { font-size: 17px; }
+            .stats-bar { gap: 8px; }
+            .stat-item { padding: 5px 12px; font-size: 12px; }
+            .scroll-top { bottom: 16px; right: 16px; width: 36px; height: 36px; }
         }
         @media (max-width: 480px) {
-            ul { grid-template-columns: 1fr; }
-            #header h1 { font-size: 24px; }
-            .menu a { padding: 5px 14px; font-size: 12px; }
+            .example-list { grid-template-columns: 1fr; }
+            #header h1 { font-size: 22px; }
+            .nav-wrap a { padding: 5px 13px; font-size: 11px; }
+            .stat-item { font-size: 11px; padding: 4px 10px; }
         }
     </style>
 </head>
 <body>
-    <a name="top"></a>
-    <div id="layout">
-        <!-- ═══════════════ HEADER ═══════════════ -->
-        <div id="header">
-            <h1><i class="editormd-logo editormd-logo-3x"></i></h1>
-            <h1>xfEditor Examples</h1>
-            <p class="subtitle">开源在线 Markdown 编辑器 · 功能示例大全</p>
-            <p class="version">v1.12.1 — 50+ 示例 · 所有功能开箱即用</p>
-            <div class="menu">
-                <a href="#start">快速上手</a>
-                <a href="#all-features">全部功能</a>
-                <a href="#v112">v1.12.1 新特性</a>
-                <a href="#v110">v1.12.0 特性</a>
-                <a href="#markdown">Markdown 语法</a>
-                <a href="#customs">自定义扩展</a>
-                <a href="#upload">文件上传</a>
-                <a href="#events">事件处理</a>
-            </div>
+<a name="top"></a>
+<div id="layout">
+    <!-- ═══════════════ HEADER ═══════════════ -->
+    <div id="header">
+        <div class="logo-wrap"><i class="editormd-logo editormd-logo-3x"></i></div>
+        <h1>xfEditor Examples</h1>
+        <p class="subtitle">更适合教育、教学、网页演示、数据呈现、内容排版的现代化 Markdown 在线编辑器</p>
+        <p class="version">v1.15.0</p>
+        <div class="stats-bar">
+            <div class="stat-item"><span class="stat-icon">📁</span><span class="stat-num" id="total-count">-</span>Examples</div>
+            <div class="stat-item"><span class="stat-icon">✨</span><span class="stat-num" id="new-count">-</span>v1.15.0 新特性</div>
+            <div class="stat-item"><span class="stat-icon">🧩</span><span class="stat-num" id="syntax-count">-</span>扩展语法</div>
+            <div class="stat-item"><span class="stat-icon">🛠</span><span class="stat-num" id="custom-count">-</span>自定义扩展</div>
         </div>
+        <div class="nav-wrap">
+            <a href="#start">快速上手</a>
+            <a href="#all-features">全部功能</a>
+            <a href="#v115">v1.15.0</a>
+            <a href="#v113">v1.13.0</a>
+            <a href="#v110">v1.12.0</a>
+            <a href="#v170">v1.7.0</a>
+            <a href="#markdown">扩展语法</a>
+            <a href="#customs">自定义扩展</a>
+            <a href="#upload">文件上传</a>
+            <a href="#events">事件处理</a>
+        </div>
+    </div>
 
-        <div class="content-wrap">
+    <div class="content-wrap">
+        <!-- ═══════════════ Search ═══════════════ -->
+        <div class="search-box">
+            <input type="text" id="search-input" placeholder="搜索示例…（按名称或描述筛选）" autocomplete="off" />
+        </div>
+        <p class="search-result-hint" id="search-hint"></p>
+
         <!-- ═══════════════ 快速上手 ═══════════════ -->
-        <h1 class="category"><span><span class="cat-icon">&#9889;</span><a name="start"></a>快速上手 Getting Started</span><a href="#top">TOP<i class="fa fa-angle-up"></i></a></h1>
-        <ul>
+        <div class="category-section" data-category="start">
+        <h2 class="category"><span class="cat-title"><span>⚡</span><a name="start"></a>快速上手 Getting Started<span class="cat-count">7</span></span><a href="#top">TOP ↑</a></h2>
+        <ul class="example-list">
             <li><a href="./simple.html">最简示例 <span>Simple example — 最快上手的入门演示</span></a></li>
             <li><a href="./use-requirejs.html">Require.js 加载 <span>Using Require.js (AMD)</span></a></li>
             <li><a href="./use-seajs.html">Sea.js 加载 <span>Using Sea.js (CMD)</span></a></li>
@@ -206,35 +310,68 @@
             <li><a href="./manually-load-modules.html">手动加载依赖模块 <span>Manually loading dependent modules</span></a></li>
             <li><a href="./form-get-value.html">表单取值与提交 <span>Get/Send Markdown via form POST</span></a></li>
         </ul>
+        </div>
 
         <!-- ═══════════════ 全部功能综合演示 ═══════════════ -->
-        <h1 class="category">
-            <span><span class="cat-icon">&#127775;</span><a name="all-features"></a>全部功能综合演示 <span class="badge badge-main">推荐</span></span>
-            <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
-        </h1>
-        <ul>
+        <div class="category-section" data-category="all-features">
+        <h2 class="category">
+            <span class="cat-title"><span>🌟</span><a name="all-features"></a>全部功能综合演示 <span class="badge badge-main">推荐</span><span class="cat-count">4</span></span>
+            <a href="#top">TOP ↑</a>
+        </h2>
+        <ul class="example-list">
             <li class="featured"><a href="./all-features.html"><strong>🌟 全部功能完整演示</strong> <span>综合性全功能演示 — 涵盖所有语法: Markdown基础/代码高亮/KaTeX/ECharts/Tabs/Columns/Tooltip/Flowchart/时序图/拼音/对齐/视频/附件/图片/表格编辑/HTML标签/公式面板 — 并提供 API 交互按钮</span></a></li>
             <li><a href="./full-preview.html">完整独立预览 <span>markdownToHTML() 静态独立渲染</span></a></li>
             <li><a href="./api-reference.html">API 接口文档 <span>全部配置项、方法、事件回调 & 语法参考</span></a></li>
             <li><a href="./toolbar-reference.html">工具栏功能参考 <span>Toolbar icons, features & usage reference</span></a></li>
         </ul>
+        </div>
 
-        <!-- ═══════════════ v1.12.1 新特性 ═══════════════ -->
-        <h1 class="category">
-            <span><span class="cat-icon">&#10024;</span><a name="v112"></a>v1.12.1 新特性 <span class="badge badge-new">NEW</span></span>
-            <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
-        </h1>
-        <ul>
-            <li class="featured"><a href="./all-features.html"><strong>🌟 全部功能完整演示</strong> <span>综合性全功能演示 — 所有语法一站式体验</span></a></li>
-            <li class="featured"><a href="./sync-scrolling.html"><strong>🔄 操作区域锁定机制</strong> <span>智能识别用户操作区域，防止反向同步干扰，彻底解决编辑区滚动位置被意外改变的问题</span></a></li>
+        <!-- ═══════════════ v1.15.0 新特性 ═══════════════ -->
+        <div class="category-section" data-category="v115">
+        <h2 class="category">
+            <span class="cat-title"><span>✨</span><a name="v115"></a>v1.15.0 新特性 <span class="badge badge-new">NEW</span><span class="cat-count">6</span></span>
+            <a href="#top">TOP ↑</a>
+        </h2>
+        <ul class="example-list">
+            <li class="featured"><a href="./all-features.html"><strong>🌟 全部功能完整演示</strong> <span>综合性全功能演示 — 涵盖所有语法和 v1.15.0 新特性</span></a></li>
+            <li class="featured"><a href="./echarts.html"><strong>📊 树图/脑图主题自适应</strong> <span>v1.15.0：树图支持 light/dark 主题自动跟随，不再硬编码深色主题色</span></a></li>
+            <li class="featured"><a href="./code-attr.html"><strong>🎨 代码块 class/id/hidden 属性</strong> <span>```(.className) / ```(#idName) / ```(hidden) 组合支持</span></a></li>
+            <li class="featured"><a href="./tooltip.html"><strong>🖱 悬浮提示 iframe:pre 类型</strong> <span>配合代码块属性，通过 Blob URL 悬浮渲染 HTML 页面效果</span></a></li>
+            <li class="featured"><a href="./tabs.html"><strong>📑 标签页修复与增强</strong> <span>v1.15.0：修复独立页面标签切换缺失面板激活和 ECharts 重新初始化</span></a></li>
+            <li class="featured"><a href="./columns.html"><strong>📐 多栏布局分隔线修复</strong> <span>v1.15.0：修复独立页面多栏分隔线不渲染的问题</span></a></li>
         </ul>
+        </div>
+
+        <!-- ═══════════════ v1.14.0 ═══════════════ -->
+        <div class="category-section" data-category="v114">
+        <h2 class="category">
+            <span class="cat-title"><span>📦</span><a name="v114"></a>v1.14.0 特性</span>
+            <a href="#top">TOP ↑</a>
+        </h2>
+        <ul class="example-list">
+            <li class="featured"><a href="./table-fix.html"><strong>📊 表格空单元格修复</strong> <span>v1.14.0 修复：表格最后一列为空时单元格不再丢失，自动补全</span></a></li>
+        </ul>
+        </div>
+
+        <!-- ═══════════════ v1.13.0 新特性 ═══════════════ -->
+        <div class="category-section" data-category="v113">
+        <h2 class="category">
+            <span class="cat-title"><span>✨</span><a name="v113"></a>v1.13.0 新特性 <span class="cat-count">2</span></span>
+            <a href="#top">TOP ↑</a>
+        </h2>
+        <ul class="example-list">
+            <li class="featured"><a href="./all-features.html"><strong>🌟 全部功能完整演示</strong> <span>综合性全功能演示 — 所有语法一站式体验</span></a></li>
+            <li class="featured"><a href="./sync-scrolling.html"><strong>🔄 智能同步滚动（活动侧感知）</strong> <span>v1.13.0 全新功能：自动检测用户操作区域（编辑区/预览区），智能决定同步方向，支持双向/单向/禁用三种模式</span></a></li>
+        </ul>
+        </div>
 
         <!-- ═══════════════ v1.12.0 特性 ═══════════════ -->
-        <h1 class="category">
-            <span><span class="cat-icon">&#128218;</span><a name="v110"></a>v1.12.0 特性</span>
-            <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
-        </h1>
-        <ul>
+        <div class="category-section" data-category="v110">
+        <h2 class="category">
+            <span class="cat-title"><span>📚</span><a name="v110"></a>v1.12.0 特性<span class="cat-count">16</span></span>
+            <a href="#top">TOP ↑</a>
+        </h2>
+        <ul class="example-list">
             <li class="featured"><a href="./all-features.html"><strong>🌟 全部功能完整演示</strong> <span>综合性全功能演示 — 所有语法一站式体验</span></a></li>
             <li class="featured"><a href="./copybook.html"><strong>📝 字帖 Copybook</strong> <span>田字格/米字格/拼音格 — 三种汉字书写字帖</span></a></li>
             <li class="featured"><a href="./formula.html">📐 公式插入面板 <span>11 分类、100+LaTeX公式、Tab切换、一键插入</span></a></li>
@@ -247,27 +384,35 @@
             <li><a href="./tooltip.html">悬浮提示 Tooltip <span>文本/图片/iframe/HTML 四种类型 + 可选宽高</span></a></li>
             <li><a href="./video.html">视频插入 <span>video 标签和 HTML5 video</span></a></li>
             <li><a href="./page-syntax.html">📄 纸张页面 <span>[[page:A4]] 尺寸展示，页头页脚</span></a></li>
+            <li><a href="./image-upload.html">🖼️ 图片上传 <span>Image upload — 本地/远程图片插入、粘贴上传、尺寸编辑</span></a></li>
+            <li><a href="./file-upload.html">📎 文件上传 <span>File upload — 附件上传、格式白名单、文件名自动识别</span></a></li>
+            <li><a href="./video-upload.html">🎬 视频上传 <span>Video upload — 视频上传、尺寸控制、对齐方式</span></a></li>
+            <li><a href="./event-handlers.html">📡 全部事件综合演示 <span>28 个事件回调实时可视化 · 日志观察器</span></a></li>
         </ul>
+        </div>
 
         <!-- ═══════════════ v1.7.0 增强功能 ═══════════════ -->
-        <h1 class="category">
-            <span><span class="cat-icon">&#128736;</span><a name="v170"></a>v1.7.0 增强功能（已整合至 v1.12.0）</span>
-            <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
-        </h1>
-        <ul>
+        <div class="category-section" data-category="v170">
+        <h2 class="category">
+            <span class="cat-title"><span>🔧</span><a name="v170"></a>v1.7.0 增强功能<span class="cat-count">5</span></span>
+            <a href="#top">TOP ↑</a>
+        </h2>
+        <ul class="example-list">
             <li><a href="./pinyin.html">拼音标注语法 <span>{汉字 | pīn yīn} 注音标记</span></a></li>
             <li><a href="./text-align.html">文本对齐语法 <span>Unicode 行内对齐: 居中/左/右/两端</span></a></li>
             <li><a href="./table-edit.html">表格行列编辑 <span>Table row/col insert and delete</span></a></li>
             <li><a href="./image-resize.html">图片尺寸编辑 <span>拖拽调整 + 精确尺寸输入</span></a></li>
             <li><a href="./pinyin-reference.html">📖 拼音参照表 <span>声母/韵母/声调完整列表</span></a></li>
         </ul>
+        </div>
 
         <!-- ═══════════════ Markdown 扩展语法 ═══════════════ -->
-        <h1 class="category">
-            <span><span class="cat-icon">&#128216;</span><a name="markdown"></a>Markdown 扩展语法 Extensions</span>
-            <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
-        </h1>
-        <ul>
+        <div class="category-section" data-category="markdown">
+        <h2 class="category">
+            <span class="cat-title"><span>📖</span><a name="markdown"></a>Markdown 扩展语法 Extensions<span class="cat-count">8</span></span>
+            <a href="#top">TOP ↑</a>
+        </h2>
+        <ul class="example-list">
             <li><a href="./formula.html">KaTeX 科学公式 <span>TeX / LaTeX 数学公式渲染</span></a></li>
             <li><a href="./flowchart.html">流程图 Flowchart <span>基于 flowchart.js 的流程图绘制</span></a></li>
             <li><a href="./sequence-diagram.html">时序图 Sequence Diagram <span>基于 js-sequence-diagrams 的时序图</span></a></li>
@@ -277,13 +422,15 @@
             <li><a href="./html-tags-decode.html">HTML 标签解析 <span>识别和过滤 HTML 标签</span></a></li>
             <li><a href="./page-break.html">分页符 Page Break <span>打印分页标记</span></a></li>
         </ul>
+        </div>
 
         <!-- ═══════════════ 自定义与扩展 ═══════════════ -->
-        <h1 class="category">
-            <span><span class="cat-icon">&#128295;</span><a name="customs"></a>自定义与扩展 Customs & Extensions</span>
-            <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
-        </h1>
-        <ul>
+        <div class="category-section" data-category="customs">
+        <h2 class="category">
+            <span class="cat-title"><span>🔧</span><a name="customs"></a>自定义与扩展 Customs & Extensions<span class="cat-count">19</span></span>
+            <a href="#top">TOP ↑</a>
+        </h2>
+        <ul class="example-list">
             <li><a href="./custom-toolbar.html">自定义工具栏 <span>Custom toolbar icons and handlers</span></a></li>
             <li><a href="./themes.html">编辑器/预览主题 <span>Theme switching — default/dark/pastel-on-dark</span></a></li>
             <li><a href="./multi-languages.html">多语言国际化 <span>Multi-languages for l18n</span></a></li>
@@ -304,25 +451,29 @@
             <li><a href="./search-replace.html">搜索替换 <span>Search / Replace</span></a></li>
             <li><a href="./code-fold.html">代码折叠 <span>Code fold</span></a></li>
         </ul>
+        </div>
 
         <!-- ═══════════════ 文件上传 ═══════════════ -->
-        <h1 class="category">
-            <span><span class="cat-icon">&#128193;</span><a name="upload"></a>文件上传 File Upload</span>
-            <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
-        </h1>
-        <ul>
+        <div class="category-section" data-category="upload">
+        <h2 class="category">
+            <span class="cat-title"><span>📁</span><a name="upload"></a>文件上传 File Upload<span class="cat-count">4</span></span>
+            <a href="#top">TOP ↑</a>
+        </h2>
+        <ul class="example-list">
             <li class="featured"><a href="./image-upload.html">🖼️ 图片上传 <span>Image upload — 本地/远程图片插入、粘贴上传、尺寸编辑</span></a></li>
             <li><a href="./image-cross-domain-upload.html">图片跨域上传 <span>Cross-domain image upload with callback</span></a></li>
             <li class="featured"><a href="./file-upload.html">📎 文件上传 <span>File upload — 附件上传、格式白名单、文件名自动识别</span></a></li>
             <li class="featured"><a href="./video-upload.html">🎬 视频上传 <span>Video upload — 视频上传、尺寸控制、对齐方式</span></a></li>
         </ul>
+        </div>
 
         <!-- ═══════════════ 事件处理 ═══════════════ -->
-        <h1 class="category">
-            <span><span class="cat-icon">&#128226;</span><a name="events"></a>事件处理 Events</span>
-            <a href="#top">TOP<i class="fa fa-angle-up"></i></a>
-        </h1>
-        <ul>
+        <div class="category-section" data-category="events">
+        <h2 class="category">
+            <span class="cat-title"><span>📡</span><a name="events"></a>事件处理 Events<span class="cat-count">11</span></span>
+            <a href="#top">TOP ↑</a>
+        </h2>
+        <ul class="example-list">
             <li class="featured"><a href="./event-handlers.html">📡 全部事件综合演示 <span>28 个事件回调实时可视化 · 日志观察器</span></a></li>
             <li><a href="./on-off.html">事件注册与解绑 <span>On / Off (bind/unbind)</span></a></li>
             <li><a href="./onload.html">onload 加载完成 <span>Onload event handle</span></a></li>
@@ -336,39 +487,101 @@
             <li><a href="./html-preview-markdown-to-html-custom-toc-container.html">自定义 ToC 容器 <span>Custom ToC container for preview</span></a></li>
         </ul>
         </div>
-
-        <div class="clear"></div>
-        <div class="footer">
-            <p>
-                <a href="./"><img src="../images/logos/editormd-logo-64x64.png"/></a>
-            </p>
-            <p>Copyright &copy; 2015-2026 <a href="./">xfEditor</a></p>
-            <p>Open source online markdown editor. <a href="https://github.com/zhaoxianfang/editor" class="fa fa-github fa-lg" target="_blank"></a></p>
-            <p>The <a href="https://github.com/zhaoxianfang/editor/blob/master/LICENSE" target="_blank">MIT</a> license</p>
-        </div>
     </div>
 
-    <script src="js/jquery.min.js"></script>
-    <script>
-        var clickOrTouch = function(touchType) {
-            touchType = touchType || "touchend";
-            var eventType = "click";
-            try { document.createEvent("TouchEvent"); eventType = touchType; } catch(e) {}
-            return eventType;
-        };
-        $(function() {
-            $("a[href*='#']").on(clickOrTouch(), function() {
-                if (location.pathname.replace(/^\//, "") == this.pathname.replace(/^\//, "") && location.hostname == this.hostname) {
-                    var hash = this.hash;
-                    var target = $(hash);
-                    target = target.length && target || $("[name=" + hash.slice(1) + "]");
-                    if (target.length) {
-                        $("html, body").animate({ scrollTop: target.offset().top }, 800);
-                        return false;
-                    }
+    <div class="footer">
+        <p>
+            <a href="./"><img src="../images/logos/editormd-logo-64x64.png" alt="xfEditor Logo"/></a>
+        </p>
+        <p>Copyright &copy; 2015-2026 <a href="./">xfEditor</a></p>
+        <p>Open source online markdown editor. <a href="https://github.com/zhaoxianfang/editor" class="fa fa-github fa-lg" target="_blank"></a></p>
+        <p><a href="https://github.com/zhaoxianfang/editor/blob/master/LICENSE" target="_blank">MIT License</a></p>
+    </div>
+</div>
+
+<a class="scroll-top" id="scroll-top" href="#top" title="回到顶部">↑</a>
+
+<script src="js/jquery.min.js"></script>
+<script>
+(function() {
+    // ── Touch event compatibility ──
+    var clickOrTouch = function(touchType) {
+        touchType = touchType || "touchend";
+        var eventType = "click";
+        try { document.createEvent("TouchEvent"); eventType = touchType; } catch(e) {}
+        return eventType;
+    };
+
+    $(function() {
+        // ── Smooth anchor scroll ──
+        $("a[href*='#']").on(clickOrTouch(), function() {
+            if (location.pathname.replace(/^\//, "") == this.pathname.replace(/^\//, "") && location.hostname == this.hostname) {
+                var hash = this.hash;
+                var target = $(hash);
+                target = target.length ? target : $("[name=" + hash.slice(1) + "]");
+                if (target.length) {
+                    $("html, body").animate({ scrollTop: target.offset().top - 80 }, 600);
+                    return false;
+                }
+            }
+        });
+
+        // ── Scroll-to-top button ──
+        var $scrollTop = $("#scroll-top");
+        $(window).on("scroll", function() {
+            if ($(window).scrollTop() > 400) {
+                $scrollTop.addClass("visible");
+            } else {
+                $scrollTop.removeClass("visible");
+            }
+        });
+
+        // ── Search filter ──
+        var $searchInput = $("#search-input");
+        var $hint        = $("#search-hint");
+        var $allCards    = $(".example-list li");
+
+        $searchInput.on("input", function() {
+            var query = $.trim($searchInput.val()).toLowerCase();
+            var visibleCount = 0;
+
+            $allCards.each(function() {
+                var $card = $(this);
+                var text  = $card.text().toLowerCase();
+                if (!query || text.indexOf(query) !== -1) {
+                    $card.removeClass("hidden");
+                    visibleCount++;
+                } else {
+                    $card.addClass("hidden");
                 }
             });
+
+            if (query) {
+                $hint.text("找到 " + visibleCount + " 个匹配示例").addClass("visible");
+            } else {
+                $hint.removeClass("visible").text("");
+            }
+
+            // Hide empty category sections
+            $(".category-section").each(function() {
+                var $section = $(this);
+                var vis = $section.find(".example-list li:not(.hidden)").length;
+                $section.toggle(vis > 0);
+            });
         });
-    </script>
+
+        // ── Count stats ──
+        var totalAll  = $allCards.length;
+        var v114Cards = $(".category-section[data-category=v114] .example-list li").length;
+        var mdCards   = $(".category-section[data-category=markdown] .example-list li").length;
+        var custCards = $(".category-section[data-category=customs] .example-list li").length;
+
+        $("#total-count").text(totalAll);
+        $("#new-count").text(v114Cards);
+        $("#syntax-count").text(mdCards);
+        $("#custom-count").text(custCards);
+    });
+})();
+</script>
 </body>
 </html>

@@ -1,8 +1,108 @@
-# xfEditor 编辑器
+# xfEditor 编辑器 v1.15.0
 
-> **本编辑器是基于 [pandao/editor.md](https://github.com/zhaoxianfang/editor) 的深度改进和功能增强版本。** 在原有基础上进行了系统性优化、Bug 修复和新功能拓展。
+> **xfEditor 是一款更适合教育、教学、网页演示、数据呈现、内容排版的现代化 Markdown 开源在线编辑器。** 基于 [pandao/editor.md](https://github.com/zhaoxianfang/editor) 深度改进，在原有基础上进行了系统性优化、Bug 修复和新功能拓展。
 
-**xfEditor** 是一款开源可嵌入的 Markdown 在线编辑器组件，基于 CodeMirror、jQuery 和 marked 构建。
+**xfEditor** 是一款开源可嵌入的 Markdown 在线编辑器组件，基于 CodeMirror、jQuery 和 marked 构建。v1.15.0 新增代码块隐藏属性、Scroll Spy 目录高亮、全面美化 TOC 侧栏，并进行了系统级审计与性能优化。
+
+---
+
+## 📐 完整语法与功能速览
+
+xfEditor 支持 **40+ 种语法和功能**，远超标准 Markdown。以下为完整列表：
+
+### 🏷 Markdown 基础语法
+| 语法 | 说明 |
+|------|------|
+| `# H1` ~ `###### H6` | 六级标题 |
+| `**粗体**` `*斜体*` `~~删除线~~` | 文本样式 |
+| `` `行内代码` `` | 行内代码 |
+| `[文本](url)` | 超链接 |
+| `> 引用` | 引用块 |
+| `- / 1.` | 无序/有序列表 |
+| `---` | 分隔线 |
+| `![alt](url)` | 图片 |
+
+### 📊 代码与图表
+| 语法 | 说明 | 配置 |
+|------|------|------|
+| ` ```lang ` | 30+语言代码高亮（JetBrains 风格） | 默认 |
+| ` ```(.className) ` | 代码块设置 pre 的 class 属性 ⭐v1.14 | 默认 |
+| ` ```(#idName) ` | 代码块设置 pre 的 id 属性 ⭐v1.14 | 默认 |
+| ` ```(hidden) ` | 隐藏代码块（配合 tooltip 悬浮预览）🆕v1.15 | 默认 |
+| ` ```(.cls#id) ` | 同时设置 class 和 id ⭐v1.14 | 默认 |
+| ` ```(hidden.cls#id) ` | 隐藏 + class + id 组合 🆕v1.15 | 默认 |
+| ` ```echarts ` | ECharts 交互式图表 | `echarts: true` |
+| ` ```flow ` | 流程图 Flowchart | `flowChart: true` |
+| ` ```seq ` | 时序图 Sequence Diagram | `sequenceDiagram: true` |
+| ` $$ ` 或 ` $ ` | KaTeX 数学公式（行内/块级） | `tex: true` |
+
+### 🎯 扩展语法
+| 语法 | 说明 | 配置 |
+|------|------|------|
+| `[TOC]` / `[TOCM]` | 目录（平铺/下拉菜单） | `toc: true` |
+| `- [x]` / `- [ ]` | GFM 任务列表 | `taskList: true` |
+| `@username` | @链接提及 | `atLink: true` |
+| `[========]` | 打印分页符 | `pageBreak: true` |
+
+### 📐 版面布局
+| 语法 | 说明 | 配置 |
+|------|------|------|
+| `[[columns:N]]...[[/columns]]` | N 列多栏排版（2-6 列） | `columns: true` |
+| `[[tabs]]...[[/tabs]]` | 标签页组件（支持嵌套） | `tabs: true` |
+| `[[page:A4]]...[[/page]]` | 纸张页面（A0-A8/LETTER） | `pageBlock: true` |
+| `⁑⁑居中⁑⁑` / `⁑⠕右对齐⠕⁑` | Unicode 行内对齐 | `textAlign: true` |
+
+### 🛠 文本增强
+| 语法 | 说明 | 配置 |
+|------|------|------|
+| `{汉字 \| pīn yīn}` | 拼音标注 | `pinyin: true` |
+| `^上标^` | 上标 | `superscript: true` |
+| `^^下标^^` | 下标 | `subscript: true` |
+| `<<下标>^<上标>>` | 组合上下标 | `superscript/subscript` |
+| `!32 文字!` | 字体大小（8-200px） | `fontSize: true` |
+| `[^注解名]` / `[^注解名]: 内容` | 脚注系统 | `footnote: true` |
+
+### 🖱 悬浮提示 Tooltip
+| 语法 | 说明 | 配置 |
+|------|------|------|
+| `[文本](tooltip:text:内容)` | 文本悬浮提示 | `tooltip: true` |
+| `[文本](tooltip:image:url)` | 图片悬浮提示 | `tooltip: true` |
+| `[文本](tooltip:iframe:url)` | 嵌入页面悬浮提示 | `tooltip: true` |
+| `[文本](tooltip:html:#id)` | HTML DOM 元素悬浮提示 | `tooltip: true` |
+| `[文本](tooltip:iframe:pre#id)` | 代码块内容悬浮预览 ⭐v1.14 | `tooltip: true` |
+
+### 📝 字帖与教育
+| 语法 | 说明 | 配置 |
+|------|------|------|
+| `[[copybookTian]]...[[/copybookTian]]` | 田字格字帖 | `copybook: true` |
+| `[[copybookMi]]...[[/copybookMi]]` | 米字格字帖 | `copybook: true` |
+| `[[copybookPinyin]]...[[/copybookPinyin]]` | 拼音格字帖 | `copybook: true` |
+
+### 🎬 多媒体与附件
+| 语法 | 说明 | 配置 |
+|------|------|------|
+| `[[video]]url[[/video]]` | 视频嵌入 | 默认 |
+| `<video src="...">` | HTML5 视频 | `htmlDecode` |
+| `[[file]]url\|名称[[/file]]` | 附件链接 | `fileUpload: true` |
+| `[文本](url)` → .mp4 自动 | 视频链接自动识别 | 默认 |
+
+### 🔧 编辑器功能
+| 功能 | 说明 | 配置 |
+|------|------|------|
+| 表格行列编辑 | 预览区点击单元格插入/删除行列 | `tableEdit: true` |
+| 图片尺寸编辑 | 拖拽+精确输入图片尺寸 | `imageResize: true` |
+| 代码复制按钮 | 代码块右上角一键复制 | 默认 |
+| 图片/文件/视频上传 | 拖拽上传、粘贴上传、格式白名单 | `imageUpload/fileUpload` |
+| 草稿自动保存 | localStorage 定时保存+恢复 | `draftAutoSave: true` |
+| 搜索替换 | 编辑器内搜索/替换 | `searchReplace: true` |
+| 代码折叠 | CodeMirror 代码折叠 | `codeFold: true` |
+| 公式插入面板 | 100+公式模板、11 分类、一键插入 | 工具栏按钮 |
+| 同步滚动 | 活动侧感知智能双向同步 ⭐v1.13 | `syncScrolling: true` |
+| 全屏编辑 | 全屏沉浸式编辑 | F11 |
+| 多语言 | 简体中文/繁体中文/英文 | `lang` |
+| 主题切换 | 编辑器+预览区多套主题 | `theme`/`previewTheme` |
+| AMD/CMD 加载 | Require.js / Sea.js 支持 | — |
+| 表单集成 | `saveHTMLToTextarea: true` | — |
 
 ---
 
@@ -35,8 +135,28 @@
 - 支持 AMD/CMD 模块加载（Require.js / Sea.js）
 - 兼容 IE8+、iPad、Zepto.js
 
-### v1.12.1 改进
+### v1.15.0 改进
 | 特性 | 说明 |
+|------|------|
+| **Hidden 隐藏代码块** | 新增 ````(hidden)``` / ````(hidden.class#id)``` 语法，代码块添加 `display:none!important` 样式；配合 `tooltip:iframe:pre#id` 实现"隐藏+悬浮预览"；`initCodeCopy` 自动跳过隐藏代码块的复制按钮注入 |
+| **Scroll Spy 目录高亮** | TOC 目录新增滚动监听功能，页面滚动时自动高亮当前章节；激活项超出视区时自动滚动到可见位置；使用 requestAnimationFrame 节流 |
+| **TOC 侧栏美化** | 侧栏宽度从 320px 优化至 260px；渐变头部 + 紫色装饰条；浮动按钮脉冲呼吸动画；层级差异化字号与权重；自定义细滚动条；底部"回到顶部"链接 |
+| **目录样式精减** | 冲刷 `.markdown-toc` 自带 padding/margin/border；收紧目录项间距与层级缩进；hover 左移动画效果；左侧彩色边框激活指示器 |
+| **系统全面审计** | 对所有功能、语法、渲染逻辑进行全面审计排查；修复潜在边界条件问题；增强空值安全保护与正则安全处理 |
+| **构建与文档** | 所有 .js/.css .min 文件重新编译压缩；更新 README、USAGE_GUIDE、code-attr 示例文件；新增 hidden 代码块完整文档 |
+
+### v1.14.0 改进
+| 特性 | 说明 |
+|------|------|
+| **代码块属性扩展** | 新增 ````(.className)``` / ````(#idName)``` 语法，支持为代码块的 `<pre>` 标签设置 class/id 属性；支持与语言标识组合（如 ````javascript(.snippet#demo)```） |
+| **iframe:pre 悬浮预览** | 新增 `tooltip:iframe:pre#id` / `tooltip:iframe:pre.class` 悬浮提示类型，提取页面 `<pre>` 元素内容以 iframe 渲染展示（HTML 内容被浏览器解析渲染，纯文本直接显示），每次悬停动态创建 Blob URL 确保 JS 重新执行 |
+| **表格空单元格修复** | 修复 marked.js v0.3.3 表格解析 Bug：最后一行最后一列为空时单元格被丢失；通过后处理自动补齐缺失的空 `<td>` |
+| **内存泄漏修复** | `initTooltips` 清理时释放 Blob URL；`restoreCodeBlocks`/`restorePlaceholders` 增加空值安全保护 |
+| **全面审计** | 对所有功能、语法、渲染逻辑、事件绑定进行全面审计和优化修复；包含空输入保护、正则安全增强、嵌套语法验证等 |
+| **构建产物** | 所有 .js/.css 和 .min 版本已重新编译压缩 |
+| **示例与文档** | 更新 USAGE_GUIDE.md、README.md、FIX_SUMMARY.md；新增代码块属性扩展和 iframe:pre 文档 |
+
+### v1.13.0 改进
 |------|------|
 | **Tooltip 尺寸限制修复** | 修复悬浮图片/iframe 的宽度高度限制：用户指定 `<宽度,高度>` 时，直接设置图片的 `width`/`height` 属性并配合 `object-fit:contain` 保持比例；同时设置 popup 容器的 `max-width`/`max-height` 覆盖 CSS 限制；CSS 默认 `max-width` 从 360px 调整至 90vw |
 | **getHTML/getPreviewedHTML 加强** | `_getCoreStyles()` 内联 Tooltip CSS 同步更新（90vw max-width）；HTML 输出内联所有样式确保完全不依赖外部 CSS/JS |
@@ -261,6 +381,7 @@ editor.exportFile("文档", "markdown"); // 导出文件
 | 选项 | 默认值 | 说明 |
 |------|--------|------|
 | `watch` | `true` | 实时预览 |
+| `syncScrolling` | `true` | 同步滚动：`true`（双向）/ `false`（禁用）/ `"single"`（仅编辑区→预览区） |
 | `delay` | `300` | 解析延迟 (ms) |
 | `previewCodeHighlight` | `true` | 预览区代码高亮 |
 
@@ -466,7 +587,25 @@ editor.off("onchange");
 | `oncopy/oncut` | 复制/剪切 | `onfocus/onblur` | 焦点事件 |
 | `oncursoractivity` | 光标移动 | `onEditorLoad` | 编辑器加载完成 |
 | `onPageLoad` | 网页 DOM 加载完成 | `onAllAsyncLoad` | 所有异步模块加载完成 |
-| `onPageAllLoad` | 网页所有资源加载完成 | | |
+| `onPageAllLoad` | 网页所有资源加载完成 | `onscroll` | 编辑区同步滚动 |
+| `onpreviewscroll` | 预览区同步滚动 | `onactivesidechange` | 活动侧切换（"left"/"right"/null） |
+
+### 编辑器状态
+| 属性 | 类型 | 说明 |
+|------|------|------|
+| `state.watching` | Boolean | 是否启用实时预览 |
+| `state.loaded` | Boolean | 是否已完成加载 |
+| `state.preview` | Boolean | 是否处于预览模式 |
+| `state.fullscreen` | Boolean | 是否处于全屏模式 |
+| `state.activeSide` | String\|null | 当前操作侧：`"left"`（编辑区）/ `"right"`（预览区）/ `null`（无活动） |
+
+### 同步滚动机制（v1.13.0+）
+编辑器自动感知用户操作侧并智能同步滚动：
+- **编辑区活动** → 滚动位置同步到预览区（基于 `data-source-line` 行映射精确定位）
+- **预览区活动** → 滚动位置同步到编辑区（反向查找最近 source-line 元素定位）
+- **编辑区内容变更** → 自动渲染到预览区，预览区滚动不触发编辑区变更
+- **3 秒无操作** → 活动侧标记自动重置为 `null`
+- **同步模式**：`syncScrolling: true`（双向）、`false`（禁用）、`"single"`（仅编辑区→预览区）
 
 ---
 
@@ -478,7 +617,31 @@ editor.off("onchange");
 {"type":"bar","title":{"text":"月度销售"},"xAxis":{"data":["1月","2月","3月"]},"yAxis":{},"series":[{"type":"bar","data":[120,200,150]}]}
 ```
 ````
-支持 bar / line / pie / radar / funnel
+支持 bar / line / pie / radar / funnel / **tree（树图/脑图）** 🆕v1.15
+
+**Tree图/脑图示例**：
+````markdown
+```echarts
+{
+  "theme": "dark",
+  "type": "tree",
+  "height": 500,
+  "title": {"text": "组织架构"},
+  "series": [{
+    "type": "tree",
+    "data": [{"name": "CEO", "children": [
+      {"name": "CTO", "children": [{"name": "前端"}, {"name": "后端"}]},
+      {"name": "CFO"}
+    ]}],
+    "layout": "orthogonal", "orient": "LR",
+    "expandAndCollapse": true,
+    "initialTreeDepth": 2
+  }]
+}
+```
+````
+
+> ECharts 配置支持 `"theme": "dark"` / `"light"` 主题切换，`"height": 500` 自定义图表高度，`expandAndCollapse: true` 支持节点折叠展开
 
 ### Tabs 标签页 (`tabs: true`)
 ```markdown
