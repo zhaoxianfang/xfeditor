@@ -168,13 +168,18 @@
 - Shift 键等比缩放
 - ⭐v1.12 修复：精准追踪图片出现次数，拖拽第 N 个实例准确定位
 
-#### 📜 同步滚动 ⭐v1.12 加强
+#### 📜 核心功能
 
-- 编辑区与预览区双向同步滚动
-- 自适应锁定时长（根据滚动速度动态调整 120-400ms）
-- 惯性检测与平滑缓动过渡
-- 元素类型感知留白（标题/代码块/水平线分别计算偏移）
-- 配置项：`syncScrolling: true`（双向）/ `"single"`（单向）/ `false`（关闭）
+- 支持 Markdown 扩展语法（GFM 表格、任务列表、围栏代码块、脚注等）
+- 实时 HTML 预览（支持滚动）
+- ToC 目录导航
+- KaTeX 数学公式渲染
+- 流程图 / 时序图支持
+- ECharts 图表支持
+- 标签页 / 多栏布局语法
+- 图片拖拽缩放与编辑
+- 表格行/列编辑（插入、删除、上下移动）
+- 一键复制 HTML
 
 ---
 
@@ -257,7 +262,6 @@
 | `subscript` | Boolean | `true` | 下标 |
 | `fontSize` | Boolean | `true` | 字体大小 |
 | `imageResize` | Boolean | `true` | 图片尺寸编辑 |
-| `syncScrolling` | String | `true` | 同步滚动 (true/single/false) |
 | `watch` | Boolean | `true` | 实时预览 |
 | `htmlDecode` | Boolean/String | `false` | HTML标签解析 |
 
@@ -286,8 +290,6 @@
 | `oncut` | 剪切操作 |
 | `onfocus` | 编辑器获得焦点 |
 | `onblur` | 编辑器失去焦点 |
-| `onscroll` | 编辑器滚动 |
-| `onpreviewscroll` | 预览区滚动 |
 | `oncursoractivity` | 光标位置变化 |
 | `onEditorLoad` | 编辑器 DOM 加载完成 |
 | `onPageLoad` | 页面 DOM 就绪 |

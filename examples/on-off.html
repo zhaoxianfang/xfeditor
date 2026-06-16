@@ -17,26 +17,10 @@
                 <textarea style="display:none;">#### Example
 ```javascript
 {
-    onscroll : function(event) {
-        console.clear();
-        console.log("onscroll =>", this, this.id, this.settings, event);
-    },
-
-    onpreviewscroll : function(event) {
-        console.clear();
-        console.log("onpreviewscroll =>", this, this.id, this.settings, event);
-    },
-
     onload : function() {
-        this.off("previewscroll"); // unbind before handle
+        this.off("resize"); // unbind before handle
 
-        // Override settings.onpreviewscroll
-        this.on("previewscroll", function(){
-            console.clear();
-            console.log("on() => Override settings.onpreviewscroll =>", this, this.id, event, (new Date).getTime());
-        });
-
-        // defined event bind
+        // Override settings.onresize
         this.on("resize", function(){
             console.clear();
             console.log("onresize =>", this, this.id, event, (new Date).getTime());
@@ -72,21 +56,8 @@ editor.off("resize");
                         flowChart : true,
                         taskList  : true,
                         sequenceDiagram : true,
-                        onscroll : function(event) {
-                            console.clear();
-                            console.log("onscroll =>", this, this.id, this.settings, event);
-                        },
-                        onpreviewscroll : function(event) {
-                            console.clear();
-                            console.log("onpreviewscroll =>", this, this.id, this.settings, event);
-                        },
                         onload : function() {
-                            this.off("previewscroll");
-                            
-                            // Override settings.onpreviewscroll
-                            this.on("previewscroll", function(){
-                                console.clear();
-                                console.log("on() => Override settings.onpreviewscroll =>", this, this.id, event, (new Date).getTime());
+                            this.off("resize");
                             });
                             
                             // defined event bind

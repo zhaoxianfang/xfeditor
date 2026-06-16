@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
     <meta charset="utf-8">
-    <title>同步滚动和HTML工具提示测试</title>
+    <title>HTML工具提示测试</title>
     <link rel="stylesheet" href="css/editormd.min.css">
     <style>
         body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
@@ -20,7 +20,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>同步滚动和HTML工具提示功能测试</h1>
+        <h1>HTML工具提示功能测试</h1>
         
         <div class="test-section">
             <h2>隐藏的DOM元素（用于HTML工具提示测试）</h2>
@@ -133,11 +133,7 @@ Similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et d
                 <ul>
                     <li><strong>HTML工具提示选择器语法</strong>：支持 <code>[文本](tooltip:html:"元素选择器")</code></li>
                     <li><strong>隐藏属性自动移除</strong>：自动移除目标元素的 <code>display:none</code>、<code>visibility:hidden</code> 等隐藏属性</li>
-                    <li><strong>同步滚动防循环机制</strong>：使用 <code>_syncLockedUntil</code> 防止双向循环触发</li>
-                    <li><strong>编辑区优化</strong>：编辑区滚动/修改时，只滚动预览区，编辑区保持不动</li>
-                    <li><strong>预览区优化</strong>：预览区滚动/交互时，只滚动编辑区，预览区保持不动</li>
-                    <li><strong>图片拖拽同步</strong>：拖拽预览区图片时，编辑区定位到对应的Markdown代码</li>
-                    <li><strong>表格编辑同步</strong>：点击预览区表格单元格时，编辑区定位到对应的Markdown代码</li>
+
                 </ul>
             </div>
         </div>
@@ -154,18 +150,10 @@ Similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et d
                 theme: "default",
                 previewTheme: "default",
                 editorTheme: "default",
-                syncScrolling: true,
                 tooltip: true,
                 onload: function() {
                     console.log("测试编辑器已加载");
-                    console.log("同步滚动状态:", this.config("syncScrolling"));
                     console.log("工具提示状态:", this.config("tooltip"));
-                },
-                onscroll: function(event, scrollTop) {
-                    console.log("编辑器滚动事件，位置:", scrollTop);
-                },
-                onpreviewscroll: function(event, scrollTop) {
-                    console.log("预览区滚动事件，位置:", scrollTop);
                 }
             });
             

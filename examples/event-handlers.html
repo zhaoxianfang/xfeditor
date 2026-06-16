@@ -61,7 +61,6 @@
 
 ### 👁️ 预览事件
 - 按 F9 切换预览 → `onwatch` / `onunwatch`
-- 滚动编辑/预览区 → `onscroll` / `onpreviewscroll`
 - 预览渲染前后 → `onpreviewing` / `onpreviewed`
 
 ### 🔄 内容变化
@@ -216,17 +215,6 @@
 
             // ======== 滚动事件 ========
             onscroll: function() {
-                if (!this._lastScrollLog || Date.now() - this._lastScrollLog > 300) {
-                    this._lastScrollLog = Date.now();
-                    addLog("📜 onscroll", "scroll", "编辑器滚动");
-                }
-            },
-            onpreviewscroll: function() {
-                if (!this._lastPvScrollLog || Date.now() - this._lastPvScrollLog > 300) {
-                    this._lastPvScrollLog = Date.now();
-                    addLog("📜 onpreviewscroll", "scroll", "预览区滚动");
-                }
-            },
 
             // ======== 窗口事件 ========
             onresize: function() {

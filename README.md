@@ -38,24 +38,18 @@
 ### v1.12.1 改进
 | 特性 | 说明 |
 |------|------|
-| **编辑区滚动彻底保护** | 新增 `_isRendering` 渲染标志，渲染期间阻止所有滚动同步；锁定时间从 800ms 延长至 2000ms；`save()` 后通过 3 次 rAF + setTimeout 多重恢复滚动位置；异步渲染（KaTeX/流程图/ECharts）完成后 `_checkAllAsyncLoaded()` 再次验证滚动；不提前释放锁定，由渲染完成后的 rAF 控制释放时机 |
 | **Tooltip 尺寸限制修复** | 修复悬浮图片/iframe 的宽度高度限制：用户指定 `<宽度,高度>` 时，直接设置图片的 `width`/`height` 属性并配合 `object-fit:contain` 保持比例；同时设置 popup 容器的 `max-width`/`max-height` 覆盖 CSS 限制；CSS 默认 `max-width` 从 360px 调整至 90vw |
-| **同步滚动全面优化** | 双向滚动同步新增 `_isRendering` 检查，确保编辑区渲染时双向同步都被阻断；优化同步锁机制的自适应时长 |
 | **getHTML/getPreviewedHTML 加强** | `_getCoreStyles()` 内联 Tooltip CSS 同步更新（90vw max-width）；HTML 输出内联所有样式确保完全不依赖外部 CSS/JS |
 | **接口完善** | 完善所有核心接口的事件处理逻辑；API 文档和类型提示更新 |
 
 ### v1.12.0 改进
 | 特性 | 说明 |
 |------|------|
-| **操作区域锁定机制** | 新增智能操作区域锁定，用户在编辑区操作时，预览区更新不会反向影响编辑区滚动；用户在预览区操作时，编辑区更新不会反向影响预览区滚动。彻底解决编辑区滚动位置被意外改变的问题。**v1.12.0 增强**：新增 `extendActiveZoneLock()` 延长锁定方法（用于长时间操作如 save()）；新增 `releaseActiveZone()` 强制释放锁定方法；锁定时间延长至 3000ms 确保 save() 完成后才释放；滚动位置多重保护（change 事件、save() 开始、save() 结束三重检查） |
-| **同步滚动全面加强** | 自适应锁定时长（120-400ms 动态调整）；5 样本滑动窗口惯性检测；惯性阶段平滑缓动（0.4 系数）；元素类型感知留白（标题/代码块/水平线分别计算）；BLOCK_SEL 扩展至 figure/html-block 等元素 |
-| **同步滚动彻底加固** | 新增 `_lockSyncScroll()`/`_unlockSyncScroll()` 取消排队 rAF + 延迟释放锁机制；`PROGRAM_SCROLL_DEBOUNCE` 提高至 200ms；表格/图片编辑后编辑区滚动位置不跳转 |
 | **Tooltip 样式优化** | 所有悬浮提示框背景改为透明，padding 和 margin 设为 0，提供更大的自定义空间 |
 | **getHTML() 接口增强** | 新增 SEO meta 标签（description/author/keywords）、外部样式表/脚本链接、自定义 meta 标签、语言设置、字符编码、压缩输出等选项 |
 | **getPreviewedHTML() 接口增强** | 新增目录生成、行号标记、外部样式表/脚本链接、压缩输出等选项；支持更灵活的输出控制 |
 | **图片缩放出现次数追踪** | 修复拖拽第 N 次出现的图片时回写修改第一次出现位置的 Bug；新增 `data-image-occurrence` 属性精准定位 |
 | **复杂 HTML 悬浮提示** | 新增 `tooltip:html:"元素选择器"` 语法，支持通过CSS选择器引用页面中的DOM元素作为悬浮内容 |
-| **TOC 目录点击导航** | `bindScrollEvent()` 新增 TOC 链接点击事件委托，支持 ID 匹配 + 文本回退匹配，精确跳转到目标标题 |
 | **公式弹窗自动加载** | `formula()` 自动检测 KaTeX 加载状态，未加载时先 `loadKaTeX()` 再打开面板，无需手动配置 `tex: true` |
 | **组合上下标优化** | 缩小 `.editormd-supsub` 字号至 50%、调整 line-height 为 1.05、优化上标位置(bottom:0.1em)，视觉更紧凑协调 |
 | **独立 HTML 输出增强** | `getHTML()` 和 `getPreviewedHTML()` 现可生成完全自包含的 HTML（内联所有 CSS：组合上下标、脚注、字帖、KaTeX 等），无需依赖外部 CSS/JS 文件 |
@@ -268,7 +262,6 @@ editor.exportFile("文档", "markdown"); // 导出文件
 |------|--------|------|
 | `watch` | `true` | 实时预览 |
 | `delay` | `300` | 解析延迟 (ms) |
-| `syncScrolling` | `true` | 同步滚动 |
 | `previewCodeHighlight` | `true` | 预览区代码高亮 |
 
 ### CodeMirror 编辑
@@ -466,7 +459,7 @@ editor.off("onchange");
 | `onload` | 加载完成 | `onresize` | 尺寸变化 |
 | `onchange` | 内容变更 | `onwatch/onunwatch` | 开始/停止预览 |
 | `onpreviewing/onpreviewed` | 预览前/后 | `onfullscreen/onfullscreenExit` | 全屏/退出 |
-| `onscroll/onpreviewscroll` | 滚动 | `onbeforesave/onaftersave` | 保存前/后 |
+| `onbeforesave/onaftersave` | 保存前/后 |
 | `oninsert` | 插入文本 | `ontablechange` | 表格变化 |
 | `onimagechange` | 图片尺寸变化 | `onkeydown/onkeyup` | 键盘事件 |
 | `onmouseup/onmousedown` | 鼠标事件 | `onpaste/ondrop` | 粘贴/拖放 |

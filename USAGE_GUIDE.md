@@ -82,29 +82,7 @@ editormd.markdownToHTML("preview-container", {
 |------|--------|------|
 | `watch` | `true` | 实时预览 |
 | `delay` | `300` | 解析延迟 (ms) |
-| `syncScrolling` | `true` | 同步滚动 ⭐v1.12加强：自适应锁定时长、惯性检测与平滑缓动、元素类型感知留白、**操作区域锁定机制** |
 | `previewCodeHighlight` | `true` | 预览区代码高亮 |
-
-#### ⭐v1.12.0 操作区域锁定机制
-
-**核心原理**：智能识别用户当前操作的区域，防止反向同步干扰。
-
-- **编辑区锁定**：用户在编辑区操作（滚动、输入、键盘、鼠标等）时，预览区更新不会反向影响编辑区滚动位置
-- **预览区锁定**：用户在预览区操作（滚动、点击、鼠标等）时，编辑区更新不会反向影响预览区滚动位置
-- **自动释放**：800ms 无操作后自动释放锁定，支持智能切换
-- **事件覆盖**：覆盖所有用户交互事件（scroll、keydown、keyup、mousedown、mouseup、paste、drop、cut、focus、mouseenter 等）
-
-**v1.12.0 增强功能**：
-- **延长锁定**：`extendActiveZoneLock(ms)` 方法，用于长时间操作（如 save()）时延长锁定时间
-- **强制释放**：`releaseActiveZone()` 方法，用于操作完成后强制释放锁定
-- **多重保护**：change 事件、save() 开始、save() 结束三重滚动位置检查
-- **智能时机**：锁定时间延长至 3000ms，确保 save() 完成后才释放
-
-**解决的问题**：
-- ✅ 编辑区输入内容、回车换行时滚动位置不再被意外改变
-- ✅ 预览区滚动时编辑区滚动位置保持稳定
-- ✅ 表格编辑、图片缩放后滚动位置不跳转
-- ✅ 完全消除双向同步振荡
 
 ### 扩展语法
 
@@ -625,17 +603,6 @@ var html = editor.getPreviewedHTML({
 });
 ```
 
-**操作区域锁定**：⭐v1.12.1增强
-```javascript
-editor.setActiveZone('editor');      // 标记编辑区为活跃区域
-editor.setActiveZone('preview');     // 标记预览区为活跃区域
-editor.extendActiveZoneLock(5000);   // 延长锁定（用于长时间渲染，v1.12.1 默认5秒）
-editor.releaseActiveZone();          // 强制释放锁定
-editor.shouldSkipReverseSync(target);// 检查是否应跳过反向同步
-```
-> **v1.12.1 增强**：`_isRendering` 渲染标志在渲染期间完全阻断双向同步；3次 rAF + setTimeout 多重保护滚动位置；异步模块加载完成后自动验证。
-
-
 **编辑器操作**：
 ```javascript
 editor.cm;                     // CodeMirror 实例
@@ -713,7 +680,6 @@ editor.on("onfullscreen", function() {
 - `onfullscreen` / `onfullscreenExit` - 全屏/退出
 - `onwatch` / `onunwatch` - 开启/关闭预览
 - `onpreviewing` / `onpreviewed` - 预览前/后
-- `onscroll` / `onpreviewscroll` - 滚动
 - `ontablechange` - 表格变化
 - `onimagechange` - 图片尺寸变化
 - `onkeydown` / `onkeyup` - 键盘事件

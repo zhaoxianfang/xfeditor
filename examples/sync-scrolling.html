@@ -2,7 +2,7 @@
 <html lang="zh">
     <head>
         <meta charset="utf-8" />
-        <title>同步滚动与操作区域锁定 - xfEditor v1.12.0</title>
+        <title>xfEditor Markdown 编辑器 - 基础示例</title>
         <link rel="stylesheet" href="css/style.css" />
         <link rel="stylesheet" href="../css/editormd.min.css" />
         <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
@@ -10,80 +10,33 @@
     <body>
         <div id="layout">
             <header>
-                <h1>同步滚动与操作区域锁定</h1>
-                <p>v1.12.1 增强版同步滚动 - 智能操作区域锁定 + 渲染安全保护</p>
+                <h1>Markdown 编辑器 - 基础示例</h1>
             </header>
-            <div class="intro" style="width: 90%; margin: 15px auto; padding: 15px 20px; background: #f5f7fa; border-left: 4px solid #2196F3; border-radius: 4px; font-size: 14px; line-height: 1.8; color: #555;">
-                <h2>⭐ v1.12.1 操作区域锁定机制（增强版）</h2>
-                <p><strong>核心原理：</strong>智能识别用户当前操作的区域，防止反向同步干扰。</p>
-                <p><strong>工作原理：</strong></p>
-                <ul>
-                    <li><strong>编辑区锁定：</strong>当用户在编辑区操作时（滚动、输入、回车、粘贴等），系统标记编辑区为活跃区域，预览区更新不会反向影响编辑区滚动位置</li>
-                    <li><strong>预览区锁定：</strong>当用户在预览区操作时（滚动、拖拽图片、点击表格等），系统标记预览区为活跃区域，编辑区更新不会反向影响预览区滚动位置</li>
-                    <li><strong>自动释放：</strong>2000ms 无操作后自动释放锁定，恢复正常双向同步（v1.12.1 从 800ms 延长至 2000ms）</li>
-                    <li><strong>渲染保护：</strong>（v1.12.1 新增）save() 渲染期间使用 <code>_isRendering</code> 标志完全阻断双向滚动同步，配合多重 rAF 在渲染完成后恢复编辑区滚动位置</li>
-                </ul>
-                <p><strong>覆盖事件：</strong>鼠标滚动、键盘输入、回车换行、粘贴内容、图片拖拽、表格编辑等所有用户交互事件。</p>
-                <hr style="margin: 15px 0; border: none; border-top: 1px dashed #ccc;">
-                <h2>同步滚动模式</h2>
-                <p><strong>三种模式：</strong></p>
-                <ul>
-                    <li><strong>Bisynchronous（默认）：</strong>编辑区和预览区双向同步滚动，配合操作区域锁定机制</li>
-                    <li><strong>Single：</strong>仅编辑区滚动时同步预览区，预览区滚动不影响编辑区</li>
-                    <li><strong>Disabled：</strong>完全禁用同步滚动</li>
-                </ul>
-            </div>
-            <div class="btns">
-                <button class="bisync-btn">Bisynchronous (Default)</button>
-                <button class="single-btn">Single</button>
-                <button class="disabled-btn">Disabled</button>
-            </div>
             <div id="test-editormd">
-                <textarea style="display:none;">[TOC]
+                <textarea style="display:none;"># 编辑器示例
 
-#### Setting
+### 欢迎使用 xfEditor
 
-config:
+这是一个功能丰富的 Markdown 在线编辑器。
 
-```javascript
-{
-    // true -> bisync, false -> disabled, "single" -> Only editor area sync
-    syncScrolling : true | false | "single"
-}
-```
-
-function:
-
-```javascript
-editor.config("syncScrolling", true);
-//editor.config("syncScrolling", false);
-//editor.config("syncScrolling", "single");
-```
+默认支持：
+- **加粗**、*斜体*、~~删除线~~
+- 数学公式：$E = mc^2$
+- 流程图、时序图
+- 表格编辑
+- 图片拖拽缩放
+- 更多功能...
 </textarea>
             </div>
         </div>
         <script src="js/jquery.min.js"></script>
         <script src="../editormd.min.js"></script>
         <script type="text/javascript">
-			var testEditor;
-
             $(function() {
-                testEditor = editormd("test-editormd", {
+                var testEditor = editormd("test-editormd", {
                     width   : "90%",
-                    height  : 360,
+                    height  : 640,
                     path    : "../lib/"
-                });
-                
-                $(".bisync-btn").click(function(){
-                    testEditor.config("syncScrolling", true);
-                });
-                
-                $(".single-btn").click(function(){
-                    testEditor.config("syncScrolling", "single");
-                });
-                
-                $(".disabled-btn").click(function(){
-                    testEditor.config("syncScrolling", false);
                 });
             });
         </script>
