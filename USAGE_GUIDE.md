@@ -453,13 +453,13 @@ console.log("嵌套代码");
 
 **基础用法**（自动宽高）：
 ```markdown
-[查看Logo](tooltip:image:../images/logos/editormd-logo-180x180.png)
+[查看Logo](tooltip:image:../images/logos/xfeditor-180x180.png)
 ```
 
 **设置固定宽高**（图片拉伸/缩放）：
 ```markdown
-[Logo 50x40](tooltip:image:../images/logos/editormd-logo-180x180.png)<50,40>
-[Logo 100x80](tooltip:image:../images/logos/editormd-logo-180x180.png)<100,80>
+[Logo 50x40](tooltip:image:../images/logos/xfeditor-180x180.png)<50,40>
+[Logo 100x80](tooltip:image:../images/logos/xfeditor-180x180.png)<100,80>
 ```
 
 **使用引号包围URL**（推荐）：
