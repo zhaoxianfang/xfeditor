@@ -136,7 +136,7 @@
     
     editormd.title        = editormd.$name = "xfEditor";
     editormd.version      = "1.16.0";
-    editormd.homePage     = "https://github.com/zhaoxianfang/editor";
+    editormd.homePage     = "https://github.com/zhaoxianfang/xfeditor";
     editormd.classPrefix  = "editormd-";
     
     /**
@@ -1778,7 +1778,7 @@
                 "<strong>声明</strong><br>",
                 "本编辑器基于开源项目 <a href=\"https://github.com/pandao/editor.md\" target=\"_blank\" class=\"hover-link\">Editor.md</a> 改编而来，感谢原作者 Pandao 的杰出贡献。",
                 "</div>",
-                "<p style=\"font-size: 0.85em;\">Copyright &copy; 2015-2026 <a href=\"https://github.com/zhaoxianfang\" target=\"_blank\" class=\"hover-link\">zhaoxianfang</a>, The <a href=\"https://github.com/zhaoxianfang/editor/blob/master/LICENSE\" target=\"_blank\" class=\"hover-link\">MIT</a> License.</p>",
+                "<p style=\"font-size: 0.85em;\">Copyright &copy; 2015-2026 <a href=\"https://github.com/zhaoxianfang\" target=\"_blank\" class=\"hover-link\">zhaoxianfang</a>, The <a href=\"https://github.com/zhaoxianfang/xfeditor/blob/master/LICENSE\" target=\"_blank\" class=\"hover-link\">MIT</a> License.</p>",
                 "<p style=\"font-size: 0.75em;color:#8b949e;margin-top:8px;\">Powered by CodeMirror, marked.js, KaTeX, ECharts, Flowchart.js, js-sequence-diagrams</p>",
                 "</div>",
                 "<a href=\"javascript:;\" class=\"fa fa-close " + classPrefix + "dialog-close\"></a>",

@@ -5,7 +5,7 @@
  * @author      Editor.md
  * @version     1.7.0
  * @updateTime  2026-06-03
- * {@link       https://github.com/zhaoxianfang/editor}
+ * {@link       https://github.com/zhaoxianfang/xfeditor}
  * @license     MIT
  */
 

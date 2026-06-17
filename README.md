@@ -1,6 +1,12 @@
+<p align="center" style="text-align: center;">
+
+![xfEditor's Logo](./images/logos/long_logo.png)
+
+</p>
+
 # xfEditor 编辑器 v1.16.0
 
-> **xfEditor 是一款更适合教育、教学、网页演示、数据呈现、内容排版的现代化 Markdown 开源在线编辑器。** 基于 [pandao/editor.md](https://github.com/zhaoxianfang/editor) 深度改进，在原有基础上进行了系统性优化、Bug 修复和新功能拓展。
+> **xfEditor 是一款更适合教育、教学、网页演示、数据呈现、内容排版的现代化 Markdown 开源在线编辑器。** 基于 [pandao/editor.md](https://github.com/zhaoxianfang/xfeditor) 深度改进，在原有基础上进行了系统性优化、Bug 修复和新功能拓展。
 
 **xfEditor** 是一款开源可嵌入的 Markdown 在线编辑器组件，基于 CodeMirror、jQuery 和 marked 构建。v1.16.0 全面优化同步滚动引擎、章节编号规范化，并进行了系统级审计与性能优化。
 

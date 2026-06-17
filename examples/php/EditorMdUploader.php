@@ -11,7 +11,7 @@
  * @version   2.0.0
  * @author    Pandao
  * @license   MIT
- * @link      https://github.com/zhaoxianfang/editor
+ * @link      https://github.com/zhaoxianfang/xfeditor
  */
 
 declare(strict_types=1);

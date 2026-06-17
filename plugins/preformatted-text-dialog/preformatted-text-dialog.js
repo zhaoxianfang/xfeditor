@@ -5,7 +5,7 @@
  * @author zhaoxianfang
  * @version     1.2.0
  * @updateTime  2015-03-07
- * {@link       https://github.com/zhaoxianfang/editor}
+ * {@link       https://github.com/zhaoxianfang/xfeditor}
  * @license     MIT
  */
 

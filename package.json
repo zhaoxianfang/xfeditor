@@ -14,7 +14,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/zhaoxianfang/editor.git"
+    "url": "https://github.com/zhaoxianfang/xfeditor.git"
   },
   "keywords": [
     "editor.md",
@@ -33,9 +33,9 @@
   "author": "yoc,zhaoxianfang",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/zhaoxianfang/editor/issues"
+    "url": "https://github.com/zhaoxianfang/xfeditor/issues"
   },
-  "homepage": "https://github.com/zhaoxianfang/editor",
+  "homepage": "https://github.com/zhaoxianfang/xfeditor",
   "devDependencies": {
     "dateformatter": "^0.1.0",
     "gulp": "^3.8.11",
