@@ -2562,6 +2562,38 @@
   column-gap: 30px;
 }
 
+/* Grid Layout (Bootstrap-like 10-column system) */
+.editormd-row {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  margin: 12px 0;
+  gap: 0;
+  box-sizing: border-box;
+}
+.editormd-col {
+  box-sizing: border-box;
+  padding: 0 8px;
+  min-height: 1px;
+}
+.editormd-col:first-child {
+  padding-left: 0;
+}
+.editormd-col:last-child {
+  padding-right: 0;
+}
+/* Responsive: small screen stacks columns */
+@media (max-width: 768px) {
+  .editormd-row {
+    flex-wrap: wrap;
+  }
+  .editormd-col {
+    width: 100% !important;
+    padding: 0;
+    margin-bottom: 10px;
+  }
+}
+
 /* Badge styles for new feature indicators */
 .badge {
   display: inline-block;
@@ -4693,6 +4725,11 @@ hr.editormd-page-break {
 /* Dark Theme — Columns */
 .editormd-preview-theme-dark .editormd-columns {
   border-color: #444;
+}
+
+/* Dark Theme — Grid */
+.editormd-preview-theme-dark .editormd-row {
+  background: transparent;
 }
 
 /* Dark Theme — ECharts */

@@ -173,6 +173,14 @@
         border-color: #444;
     }
 
+    /* Grid (row/col) */
+    #{$prefix}row {
+        background: transparent;
+    }
+    #{$prefix}col {
+        // Inherit parent theme colors
+    }
+
     /* ECharts */
     #{$prefix}echarts {
         border-color: #444;

@@ -1,11 +1,54 @@
 # xfEditor 修复与改进总结
 
 ## 构建日期
-2026-06-16
+2026-06-17
 
 ---
 
-## v1.15.0 — Tree图/脑图、Hidden 隐藏代码块、全系统审计修复
+## v1.16.0 — 同步滚动全面优化、章节编号规范化、栅格语法修复
+
+### 同步滚动引擎全面强化
+
+#### 1. `_buildHeadingLineMap` 标题映射增强
+- **新增缩进代码块检测**：跳过 4 空格/Tab 开头的缩进代码块行，防止代码中的 `# ` 开头行被误识别为标题
+- **排除隐藏标题**：预览区标题扫描新增 `display:none`、`visibility:hidden`、`offsetHeight===0` 排除逻辑
+- **数量不匹配告警**：当编辑器与预览区标题数量差异过大时输出 console.warn，便于调试
+- **映射元数据**：新增 `matchCount` 和 `timestamp` 字段，支持后续验证
+
+#### 2. `_syncPreviewToEditor` 预览→编辑器同步增强
+- **容差提升**：从 -8px 提升至 -25px，确保标题即使略微滚过顶部也能正确匹配
+- **headingMap 自动重建**：检测到 DOM 标题数量变化超过 10% 时自动触发 `_buildHeadingLineMap()`
+- **DOM 有效性验证**：检查元素是否仍在 `document.body` 中，防止引用已移除的元素
+- **charCoords 精确定位回退**：在使用 `scrollIntoView` 后，额外检查目标行是否确实在可视区域内；若不在，使用 `charCoords.top` 计算精确 `scrollTop` 强制滚动
+- **降级方案改进**：百分比估算时优先使用 `charCoords` + `scrollTop`，仅在失败时回退到 `scrollIntoView`
+
+#### 3. `_syncEditorToPreview` 编辑器→预览同步增强
+- **DOM attachment 验证**：检查目标元素和 `data-source-line` 元素是否仍在文档中
+- **防止引用已移除元素**：当 DOM 被异步操作更新时，旧的 jQuery 引用可能指向已移除的节点
+
+### 栅格语法修复
+
+#### 4. `createMarkedOptions` 选项补全
+- **新增 `grid` 选项**：防止嵌套渲染时栅格语法被意外跳过
+- **新增 `textAlign` 选项**：确保嵌套内容（tabs/columns/page 内）的文本对齐语法正确渲染
+
+### 章节编号规范化
+
+#### 5. 示例文件编号修复
+- all-features.html / full-preview.html 中「七点五、栅格化布局 Grid」改为「八、栅格化布局 Grid」
+- 所有后续章节编号顺序递进（八→九、九→十...二十五→二十六）
+- 所有子标题编号同步更新（7.5.x → 8.x、8.x → 9.x 等）
+
+### 构建产物更新
+
+#### 6. 文件编译
+- `editormd.min.js`、`editormd.amd.min.js` 重新压缩（v1.16.0）
+- `css/editormd.min.css`、`css/editormd.preview.min.css` 重新压缩
+- `package.json` 版本号更新至 1.16.0
+- README.md、USAGE_GUIDE.md 更新至 v1.16.0
+
+---
+
 
 ### 新增功能
 
@@ -86,6 +129,49 @@
 | `scss/editormd.preview.scss` | 新增组件样式块 |
 | `scss/editormd.preview.themes.scss` | 新增暗色主题扩展 |
 | `fonts/FontAwesome.otf` | 已删除 |
+
+### v1.15.0 Bug 修复（第三轮 — 栅格化布局 + 同步滚动强化）
+
+#### 1. 🆕 栅格化布局语法 (Grid Layout) 🔴 NEW FEATURE
+**语法**：`[[row]]...[[/row]]` + `[[col:N]]...[[/col]]` (1≤N≤10)，类似 Bootstrap 10 栏栅格系统
+- `[[row]]` — 独占 100% 宽度的行容器（flexbox 实现）
+- `[[col:N]]` — 占 N×10% 宽度（N 为 1-10 的数字）
+- `[[col]]` — 省略数字时，按行内 col 个数平分剩余 100% 宽度
+- 支持显式/自动/混合列宽计算
+- **支持嵌套**：col 内部可包含代码块、表格、ECharts、Tabs 等全部 xfEditor 扩展语法
+- **响应式**：小屏幕（≤768px）自动堆叠为 100% 宽度
+
+#### 2. 🔧 同步滚动强化 (Sync Scroll Enhancement)
+- **activeSide 超时**：从 3 秒延长至 **5 秒**，防止滚轮惯性滚动时 activeSide 过早清除
+- **rAF 防抖 + 锁机制**：新增 `_syncLockScroll()` 方法，使用 `requestAnimationFrame` + 50ms 微延迟锁定，防止递归触发
+- **锁定保护**：`_markActiveLeft/_markActiveRight` 加锁检查，防止高频切换
+
+#### 3. 🧰 工具栏新增「栅格化」工具
+- 位于「插入」下拉菜单中，图标为 `fa-th`
+- 插入预设模板：3:7 分栏示例
+
+#### 4. 📐 CSS 样式扩展
+| 文件 | 变更 |
+|------|------|
+| `css/editormd.css` | 新增 `.editormd-row` / `.editormd-col` 栅格样式 |
+| `css/editormd.preview.css` | 新增栅格样式 + 暗色主题 |
+| `css/editormd.min.css` / `.preview.min.css` | 重新压缩 |
+| `scss/editormd.scss` | 新增栅格 SCSS |
+| `scss/editormd.preview.scss` | 新增栅格 SCSS + 响应式 |
+| `scss/editormd.preview.themes.scss` | 暗色主题栅格扩展 |
+
+#### 5. 📄 示例页面更新
+- `examples/all-features.html` — 新增 §7.5 栅格化布局章节（6 个子章节，含嵌套图表/Tabs 等复杂示例），添加 `grid: true` 配置
+- `examples/full-preview.html` — 同步新增 §7.5 章节和 `grid: true` 配置
+
+#### 6. 📦 构建确认
+| 文件 | 大小 |
+|------|------|
+| `editormd.js` | ~495K |
+| `editormd.min.js` | ~198K |
+| `editormd.amd.js` | ~498K |
+| `editormd.amd.min.js` | ~199K |
+| 所有 `.min.css` / `languages/*.min.js` | ✅ 已重建 |
 
 ---
 

@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
     <meta charset="utf-8" />
-    <title>xfEditor v1.15.0 — Examples</title>
+    <title>xfEditor v1.16.0 — Examples</title>
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="../css/editormd.min.css" />
     <link rel="shortcut icon" href="../images/logos/editormd-favicon-32x32.ico" type="image/x-icon" />
@@ -270,17 +270,17 @@
         <div class="logo-wrap"><i class="editormd-logo editormd-logo-3x"></i></div>
         <h1>xfEditor Examples</h1>
         <p class="subtitle">更适合教育、教学、网页演示、数据呈现、内容排版的现代化 Markdown 在线编辑器</p>
-        <p class="version">v1.15.0</p>
+        <p class="version">v1.16.0</p>
         <div class="stats-bar">
             <div class="stat-item"><span class="stat-icon">📁</span><span class="stat-num" id="total-count">-</span>Examples</div>
-            <div class="stat-item"><span class="stat-icon">✨</span><span class="stat-num" id="new-count">-</span>v1.15.0 新特性</div>
+            <div class="stat-item"><span class="stat-icon">✨</span><span class="stat-num" id="new-count">-</span>v1.16.0 新特性</div>
             <div class="stat-item"><span class="stat-icon">🧩</span><span class="stat-num" id="syntax-count">-</span>扩展语法</div>
             <div class="stat-item"><span class="stat-icon">🛠</span><span class="stat-num" id="custom-count">-</span>自定义扩展</div>
         </div>
         <div class="nav-wrap">
             <a href="#start">快速上手</a>
             <a href="#all-features">全部功能</a>
-            <a href="#v115">v1.15.0</a>
+            <a href="#v116">v1.16.0</a>
             <a href="#v113">v1.13.0</a>
             <a href="#v110">v1.12.0</a>
             <a href="#v170">v1.7.0</a>
@@ -326,19 +326,21 @@
         </ul>
         </div>
 
-        <!-- ═══════════════ v1.15.0 新特性 ═══════════════ -->
+        <!-- ═══════════════ v1.16.0 新特性 ═══════════════ -->
         <div class="category-section" data-category="v115">
         <h2 class="category">
-            <span class="cat-title"><span>✨</span><a name="v115"></a>v1.15.0 新特性 <span class="badge badge-new">NEW</span><span class="cat-count">6</span></span>
+            <span class="cat-title"><span>✨</span><a name="v115"></a>v1.16.0 新特性 <span class="badge badge-new">NEW</span><span class="cat-count">8</span></span>
             <a href="#top">TOP ↑</a>
         </h2>
         <ul class="example-list">
-            <li class="featured"><a href="./all-features.html"><strong>🌟 全部功能完整演示</strong> <span>综合性全功能演示 — 涵盖所有语法和 v1.15.0 新特性</span></a></li>
-            <li class="featured"><a href="./echarts.html"><strong>📊 树图/脑图主题自适应</strong> <span>v1.15.0：树图支持 light/dark 主题自动跟随，不再硬编码深色主题色</span></a></li>
+            <li class="featured"><a href="./all-features.html"><strong>🌟 全部功能完整演示</strong> <span>综合性全功能演示 — 涵盖所有语法和 v1.16.0 新特性</span></a></li>
+            <li class="featured"><a href="./echarts.html"><strong>📊 树图/脑图主题自适应</strong> <span>v1.16.0：树图支持 light/dark 主题自动跟随，不再硬编码深色主题色</span></a></li>
             <li class="featured"><a href="./code-attr.html"><strong>🎨 代码块 class/id/hidden 属性</strong> <span>```(.className) / ```(#idName) / ```(hidden) 组合支持</span></a></li>
             <li class="featured"><a href="./tooltip.html"><strong>🖱 悬浮提示 iframe:pre 类型</strong> <span>配合代码块属性，通过 Blob URL 悬浮渲染 HTML 页面效果</span></a></li>
-            <li class="featured"><a href="./tabs.html"><strong>📑 标签页修复与增强</strong> <span>v1.15.0：修复独立页面标签切换缺失面板激活和 ECharts 重新初始化</span></a></li>
-            <li class="featured"><a href="./columns.html"><strong>📐 多栏布局分隔线修复</strong> <span>v1.15.0：修复独立页面多栏分隔线不渲染的问题</span></a></li>
+            <li class="featured"><a href="./tabs.html"><strong>📑 标签页修复与增强</strong> <span>v1.16.0：修复独立页面标签切换缺失面板激活和 ECharts 重新初始化</span></a></li>
+            <li class="featured"><a href="./columns.html"><strong>📐 多栏布局分隔线修复</strong> <span>v1.16.0：修复独立页面多栏分隔线不渲染的问题</span></a></li>
+            <li class="featured"><a href="./all-features.html#L700"><strong>📏 栅格化布局</strong> <span>v1.16.0：[[row]]/[[col:N]] Bootstrap 风格 10 栏栅格，支持嵌套、自动平分</span></a></li>
+            <li class="featured"><a href="./all-features.html"><strong>🔄 同步滚动强化</strong> <span>v1.16.0：rAF 防抖 + 锁机制 + activeSide 5s 超时，防止递归触发</span></a></li>
         </ul>
         </div>
 
@@ -572,12 +574,12 @@
 
         // ── Count stats ──
         var totalAll  = $allCards.length;
-        var v114Cards = $(".category-section[data-category=v114] .example-list li").length;
+        var v115Cards = $(".category-section[data-category=v115] .example-list li").length;
         var mdCards   = $(".category-section[data-category=markdown] .example-list li").length;
         var custCards = $(".category-section[data-category=customs] .example-list li").length;
 
         $("#total-count").text(totalAll);
-        $("#new-count").text(v114Cards);
+        $("#new-count").text(v115Cards);
         $("#syntax-count").text(mdCards);
         $("#custom-count").text(custCards);
     });

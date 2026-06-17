@@ -254,6 +254,32 @@
     column-gap: 30px;
 }
 
+/* Grid Layout (Bootstrap-like 10-column system) */
+#{$prefix}row {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    margin: 12px 0;
+    gap: 0;
+    box-sizing: border-box;
+}
+#{$prefix}col {
+    box-sizing: border-box;
+    padding: 0 8px;
+    min-height: 1px;
+
+    &:first-child { padding-left: 0; }
+    &:last-child { padding-right: 0; }
+}
+@media (max-width: 768px) {
+    #{$prefix}row { flex-wrap: wrap; }
+    #{$prefix}col {
+        width: 100% !important;
+        padding: 0;
+        margin-bottom: 10px;
+    }
+}
+
 /* Tooltip / Popover styles are defined in editormd.preview.scss (line 457+)
    and imported via @import "editormd.preview" below.
    Duplicate definitions removed to avoid CSS bloat. */

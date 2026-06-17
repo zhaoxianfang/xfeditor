@@ -135,7 +135,7 @@
     };
     
     editormd.title        = editormd.$name = "xfEditor";
-    editormd.version      = "1.15.0";
+    editormd.version      = "1.16.0";
     editormd.homePage     = "https://github.com/zhaoxianfang/editor";
     editormd.classPrefix  = "editormd-";
     
@@ -211,7 +211,7 @@
             "|", 
             "list-ul", "list-ol", "hr", "|",
             "link", "reference-link", "image", "video", "file", "|",
-            { "insert" : ["code", "preformatted-text", "code-block", "table", "datetime", "html-entities", "pagebreak", "insert-flowchart", "insert-sequence"] },
+            { "insert" : ["code", "preformatted-text", "code-block", "table", "datetime", "html-entities", "pagebreak", "grid", "insert-flowchart", "insert-sequence"] },
             "|",
             { "page" : ["page-a3", "page-a4", "page-a5"] },
             "|",
@@ -357,6 +357,7 @@
         echarts              : false,          // 启用 Apache ECharts 图表支持
         tabs                 : true,           // 启用标签页语法 [[tabs]]
         columns              : true,           // 启用多栏布局语法 [[columns:N]]
+        grid                 : true,           // 启用栅格化布局语法 [[row]]/[[col:N]]
         pageBlock            : true,           // 启用纸张页面语法 [[page:A4]] / [[page:A5]]
         tooltip              : true,           // 启用悬浮提示语法 [text](tooltip:tip)
         previewOnly          : false,          // 纯预览模式（禁用表格编辑、图片缩放等交互功能）
@@ -435,6 +436,7 @@
             "chart"          : "fa-area-chart",
             "tabs"           : "fa-folder-o",
             "columns"        : "fa-newspaper-o",
+            "grid"           : "fa-th",
             "tooltip"        : "fa-comment-o",
             "color"          : "fa-font",
             "bg-color"       : "fa-paint-brush",
@@ -513,6 +515,7 @@
                 chart            : "图表",
                 tabs             : "标签页",
                 columns          : "多栏排版",
+                grid             : "栅格化",
                 tooltip          : "悬浮提示",
                 color            : "文字颜色",
                 "bg-color"       : "背景颜色",
@@ -2296,17 +2299,20 @@
          * @private
          */
         _markActiveLeft : function() {
+            // 使用锁机制防止短时间内反复切换
+            if (this._syncLocked) return;
             if (this.state.activeSide !== "left") {
                 this.state.activeSide = "left";
                 this.settings.onactivesidechange.call(this, "left");
             }
             clearTimeout(this._activeSideTimer);
+            // 延长超时到 5 秒，防止滚轮惯性滚动时 activeSide 提前清除
             this._activeSideTimer = setTimeout($.proxy(function() {
                 if (this.state.activeSide === "left") {
                     this.state.activeSide = null;
                     this.settings.onactivesidechange.call(this, null);
                 }
-            }, this), 3000);
+            }, this), 5000);
         },
         
         /**
@@ -2315,6 +2321,7 @@
          * @private
          */
         _markActiveRight : function() {
+            if (this._syncLocked) return;
             if (this.state.activeSide !== "right") {
                 this.state.activeSide = "right";
                 this.settings.onactivesidechange.call(this, "right");
@@ -2325,7 +2332,21 @@
                     this.state.activeSide = null;
                     this.settings.onactivesidechange.call(this, null);
                 }
-            }, this), 3000);
+            }, this), 5000);
+        },
+        
+        /**
+         * 同步滚动锁：在一侧滚动时短暂锁定，防止递归触发（通过 rAF + 微量延迟）
+         * @private
+         */
+        _syncLockScroll : function(side, callback) {
+            var _this = this;
+            if (this._syncRAF) { cancelAnimationFrame(this._syncRAF); }
+            this._syncRAF = requestAnimationFrame(function() {
+                _this._syncLocked = true;
+                callback();
+                setTimeout(function() { _this._syncLocked = false; }, 50);
+            });
         },
         
         /**
@@ -2644,24 +2665,28 @@
                 return this;
             }
             
-            // 编辑区 → 预览区 滚动同步（基于标题锚点）
+            // 编辑区 → 预览区 滚动同步（基于标题锚点，rAF 防抖 + 锁机制）
             var codeMirrorScrollHandler = function(event) {
                 if (_this.state.activeSide === "right") {
                     return;
                 }
-                _this._syncEditorToPreview();
-                _this._markActiveLeft();
-                settings.onscroll.call(_this, event);
+                _this._syncLockScroll("left", function() {
+                    _this._markActiveLeft();
+                    _this._syncEditorToPreview();
+                    settings.onscroll.call(_this, event);
+                });
             };
             
-            // 预览区 → 编辑区 滚动同步（基于标题锚点）
+            // 预览区 → 编辑区 滚动同步（基于标题锚点，rAF 防抖 + 锁机制）
             var previewScrollHandler = function(event) {
                 if (_this.state.activeSide === "left") {
                     return;
                 }
-                _this._syncPreviewToEditor();
-                _this._markActiveRight();
-                settings.onpreviewscroll.call(_this, event);
+                _this._syncLockScroll("right", function() {
+                    _this._markActiveRight();
+                    _this._syncPreviewToEditor();
+                    settings.onpreviewscroll.call(_this, event);
+                });
             };
             
             // 编辑区鼠标进入 → 绑定编辑区滚动 → 标记左侧活动
@@ -2961,6 +2986,7 @@
                 echarts              : settings.echarts,
                 tabs                 : settings.tabs,
                 columns              : settings.columns,
+                grid                 : settings.grid,
                 tooltip              : settings.tooltip,
                 copybook             : settings.copybook
             };
@@ -4943,6 +4969,7 @@
                 echarts            : settings.echarts,
                 tabs               : settings.tabs,
                 columns            : settings.columns,
+                grid               : settings.grid,
                 pageBlock          : settings.pageBlock,
                 tooltip            : settings.tooltip,
                 copybook           : settings.copybook,
@@ -6577,6 +6604,13 @@
             cm.replaceSelection("\n[[columns:3]]\n" + content + "\n[[/columns]]\n");
         },
 
+        grid : function() {
+            var cm = this.cm;
+            var cursor = cm.getCursor();
+            cm.replaceSelection("\n[[row]]\n[[col:3]]\n栅格内容（30%宽度）\n[[/col]]\n[[col:7]]\n栅格内容（70%宽度）\n[[/col]]\n[[/row]]\n");
+            cm.setCursor(cursor.line + 2, 0);
+        },
+
         tooltip : function() {
             var cm = this.cm;
             var cursor = cm.getCursor();
@@ -7890,6 +7924,79 @@
                 } catch(e) {
                     if (typeof console !== "undefined" && console.warn) {
                         console.warn("[xfEditor] Columns processing error:", e);
+                    }
+                }
+            }
+        }
+
+        // 处理栅格化布局语法：[[row]]...[[/row]]（支持 [[col:N]] / [[col]] 子元素）
+        // ★ 栅格化系统：类似 Bootstrap 10 栏栅格，每行 10 等份
+        //   - [[row]]...[[/row]] → 独占 100% 宽度的行容器
+        //   - [[col:N]](1≤N≤10)  → 占 N×10% 宽度
+        //   - [[col]]            → 按行内 col 个数平分 100% 宽度
+        if (options.grid !== false) {
+            var rowBlocks = findBalancedBlocks(markdown, /\[\[row\]\]/g, /\[\[\/row\]\]/g);
+            for (var ri = rowBlocks.length - 1; ri >= 0; ri--) {
+                var rowBlock = rowBlocks[ri];
+                if (!rowBlock || !rowBlock.fullMatch) continue;
+
+                var rowContent = rowBlock.content;
+                var rowOriginalEnd = rowBlock.end;
+                var rowMarkedOptions = createMarkedOptions(options, true);
+
+                try {
+                    // 在行内容中查找 col 块（col 可以是 [[col:N]] 或 [[col]]）
+                    var colBlocks = findBalancedBlocks(rowContent, /\[\[col(?::(\d+))?\]\]/g, /\[\[\/col\]\]/g);
+                    
+                    // 计算每个 col 的宽度：有数字的用 N*10%，没数字的平分剩余空间
+                    var autoCount = 0;
+                    var totalDefined = 0;
+                    var colWidths = [];
+                    for (var ci2 = 0; ci2 < colBlocks.length; ci2++) {
+                        var colMatch2 = colBlocks[ci2].fullMatch.match(/\[\[col(?::(\d+))?\]\]/);
+                        var colN = colMatch2 && colMatch2[1] ? parseInt(colMatch2[1], 10) : -1;
+                        if (colN >= 1 && colN <= 10) {
+                            colWidths.push(colN * 10);
+                            totalDefined += colN * 10;
+                        } else if (colN === -1) {
+                            colWidths.push(-1); // auto
+                            autoCount++;
+                        } else {
+                            // 无效值，当作 auto
+                            colWidths.push(-1);
+                            autoCount++;
+                        }
+                    }
+                    
+                    // 计算 auto col 的宽度
+                    var remaining = Math.max(0, 100 - totalDefined);
+                    var autoWidth = autoCount > 0 ? Math.floor(remaining / autoCount) : 0;
+                    var autoRemainder = autoCount > 0 ? remaining - autoWidth * autoCount : 0;
+                    
+                    // 生成每个 col 的 HTML
+                    var rowHtml = '<div class="editormd-row">';
+                    for (var cj = 0; cj < colBlocks.length; cj++) {
+                        var w = colWidths[cj];
+                        if (w === -1) {
+                            w = autoWidth + (autoRemainder-- > 0 ? 1 : 0);
+                        }
+                        w = Math.max(0, Math.min(100, w));
+                        
+                        var colContentRaw = colBlocks[cj].content;
+                        var colContentRestored = restoreCodeBlocks(colContentRaw.trim(), codeProtection.placeholders);
+                        var colPreprocessed = editormd.preprocessMarkdownBlocks(colContentRestored, options);
+                        var colContentHtml = editormd.$marked(colPreprocessed.markdown, rowMarkedOptions);
+                        colContentHtml = editormd.restorePlaceholders(colContentHtml, colPreprocessed.placeholders);
+                        
+                        rowHtml += '<div class="editormd-col editormd-col-' + w + '" style="width:' + w + '%;">' + colContentHtml + '</div>';
+                    }
+                    rowHtml += '</div>';
+                    
+                    var rowPlaceholder = addPlaceholder(rowHtml);
+                    markdown = markdown.substring(0, rowBlock.start) + rowPlaceholder + markdown.substring(rowOriginalEnd);
+                } catch(e) {
+                    if (typeof console !== "undefined" && console.warn) {
+                        console.warn("[xfEditor] Grid (row/col) processing error:", e);
                     }
                 }
             }
@@ -9752,6 +9859,7 @@
             echarts              : settings.echarts,
             tabs                 : settings.tabs,
             columns              : settings.columns,
+            grid                 : settings.grid,
             tooltip              : settings.tooltip,
             copybook             : settings.copybook
         };

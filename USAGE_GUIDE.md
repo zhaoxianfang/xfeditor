@@ -1,6 +1,6 @@
 # xfEditor 使用指南
 
-> xfEditor v1.15.0 完整使用手册
+> xfEditor v1.16.0 完整使用手册
 
 ---
 
@@ -102,6 +102,7 @@ editormd.markdownToHTML("preview-container", {
 | `echarts` | `false` | ECharts 图表 |
 | `tabs` | `true` | Tabs 标签页 |
 | `columns` | `true` | 多列排版 |
+| `grid` | `true` | 栅格化布局 |
 | `tooltip` | `true` | 悬浮提示 |
 | `copybook` | `true` | 字帖 |
 | `pageBlock` | `true` | 纸张页面 |
@@ -113,7 +114,7 @@ editormd.markdownToHTML("preview-container", {
 
 ### 1. ECharts 图表 (`echarts: true`)
 
-支持柱状图、折线图、饼图、雷达图、漏斗图、**树图/脑图**（v1.15.0 新增）：
+支持柱状图、折线图、饼图、雷达图、漏斗图、**树图/脑图**（v1.16.0 新增）：
 
 #### 基础图表
 ````markdown
@@ -128,7 +129,7 @@ editormd.markdownToHTML("preview-container", {
 ```
 ````
 
-#### 树图/脑图（v1.15.0 新增）
+#### 树图/脑图（v1.16.0 新增）
 ````markdown
 ```echarts
 {
@@ -174,7 +175,7 @@ editormd.markdownToHTML("preview-container", {
 
 所有图表类型均支持 `"theme"` 和 `"height"` 通用配置🎨
 
-### 2. 代码块属性扩展（v1.14.0 新增 / v1.15.0 增强）
+### 2. 代码块属性扩展（v1.14.0 新增 / v1.16.0 增强）
 
 代码块支持设置 `<pre>` 标签的 **class**、**id** 或 **hidden** 属性，用于自定义样式、DOM 操作或隐藏代码块。
 
@@ -196,7 +197,7 @@ Hello World
 Hello World
 ```
 
-# 隐藏代码块（v1.15.0 新增）
+# 隐藏代码块（v1.16.0 新增）
 ```(hidden)
 这段代码块在页面上不可见
 ```
@@ -274,7 +275,91 @@ xfEditor 是一款开源 Markdown 编辑器...
 [[/columns]]
 ```
 
-### 5. 纸张页面 (`pageBlock: true`)
+### 5. 栅格化布局 (`grid: true`) <span class="badge badge-new">NEW v1.16.0</span>
+
+实现类似 Bootstrap 的 10 栏栅格化布局系统，使用 `[[row]]...[[/row]]` 和 `[[col:N]]...[[/col]]` 语法。
+
+#### 5.1 基础语法
+
+```markdown
+[[row]]
+[[col:3]]
+占 3 栏 = 30% 宽度
+[[/col]]
+[[col:7]]
+占 7 栏 = 70% 宽度
+[[/col]]
+[[/row]]
+```
+
+#### 5.2 自动平分列宽
+
+当 `[[col]]` 不带数字时，行内所有 col 平分 100% 宽度：
+
+```markdown
+[[row]]
+[[col]]
+第 1 栏（2 个 col，各 50%）
+[[/col]]
+[[col]]
+第 2 栏（2 个 col，各 50%）
+[[/col]]
+[[/row]]
+```
+
+#### 5.3 混合显式与自动列宽
+
+```markdown
+[[row]]
+[[col:3]]
+显式 30%
+[[/col]]
+[[col:5]]
+显式 50%
+[[/col]]
+[[col]]
+自动 20%（剩余空间）
+[[/col]]
+[[/row]]
+```
+
+#### 5.4 嵌套支持
+
+每个 `[[col]]` 内部可以嵌套其他 xfEditor 扩展语法：
+- ✅ 代码块（\`\`\`）
+- ✅ 表格
+- ✅ ECharts 图表（\`\`\`echarts）
+- ✅ Tabs 标签页（[[tabs]]）
+- ✅ 所有 Markdown 基础语法
+
+```markdown
+[[row]]
+[[col:4]]
+### 代码示例
+\`\`\`javascript
+console.log("嵌套代码");
+\`\`\`
+[[/col]]
+[[col:6]]
+### 标签页
+[[tabs]]
+[[tab:标签A]]
+嵌套标签页内容
+[[/tab]]
+[[/tabs]]
+[[/col]]
+[[/row]]
+```
+
+#### 5.5 参数说明
+
+| 参数 | 说明 | 默认值 |
+|------|------|--------|
+| `N` in `[[col:N]]` | 列宽（1-10），占 N×10% 宽度 | 自动平分 |
+| 每个 `[[row]]` | 独占 100% 水平宽度 | - |
+| 响应式断点 | ≤768px 时自动堆叠 | 768px |
+
+### 6. 纸张页面 (`pageBlock: true`)
 
 以标准纸张尺寸展示内容，支持自动分页：
 
