@@ -725,6 +725,50 @@ hr.editormd-page-break {
         font-size: 12px;
         background: #fff;
     }
+    
+    // ★ v1.17.0: Tooltip 最大化/关闭按钮
+    #{$prefix}tooltip-max-btn,
+    #{$prefix}tooltip-close-btn {
+        position: absolute;
+        top: 5px;
+        z-index: 10001;
+        width: 22px;
+        height: 22px;
+        border: none;
+        border-radius: 3px;
+        font-size: 12px;
+        line-height: 22px;
+        text-align: center;
+        cursor: pointer;
+        opacity: 0.6;
+        transition: opacity 0.15s;
+        padding: 0;
+        color: #666;
+        background: rgba(255, 255, 255, 0.85);
+        
+        &:hover {
+            opacity: 1;
+        }
+    }
+    
+    #{$prefix}tooltip-close-btn {
+        right: 5px;
+        
+        &:hover {
+            background: #e74c3c;
+            color: #fff;
+        }
+    }
+    
+    #{$prefix}tooltip-max-btn {
+        right: 30px;
+        font-size: 14px;
+        
+        &:hover {
+            background: #3498db;
+            color: #fff;
+        }
+    }
 }
 
 // Arrow styles

@@ -81,6 +81,7 @@
                             }
 
                             var altText = (alt !== "") ? alt : url.substring(url.lastIndexOf("/") + 1);
+                            cm.focus();
                             cm.replaceSelection("[" + altText + "](" + url + ")");
 
                             this.hide().lockScreen(false).hideMask();

@@ -119,6 +119,7 @@
 
                             langName = (langName === "other") ? "" : langName;
 
+                            cm.focus();
                             cm.replaceSelection(["```" + langName, codeTexts, "```"].join("\n"));
 
                             if (langName === "") {

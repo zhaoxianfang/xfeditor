@@ -144,7 +144,7 @@
             "|",
             { "page" : ["page-a3", "page-a4", "page-a5"] },
             "|",
-            { "align" : ["align-left", "align-center", "align-right", "align-justify"] },
+            { "align" : ["align-left", "align-center", "align-right"] },
             "|",
             "pinyin",
             "|",
@@ -185,11 +185,10 @@
         width                : "100%",
         height               : "100%",
         path                 : "./lib/",       // 依赖模块文件目录
-        pluginPath           : "",         delay                : 300,            // Markdown 解析延迟，单位：毫秒
-        autoLoadModules      : true,           // 是否自动加载依赖模块文件
-        watch                : true,
-        syncScrolling        : true,           // 同步滚动：true | false | "single"，默认 true（双向同步）
-        placeholder          : "写点什么吧~",
+        pluginPath           : "",         delay                : 80,             // Markdown 解析延迟，单位：毫秒
+        	autoLoadModules      : true,           // 是否自动加载依赖模块文件
+        	watch                : true,
+        	placeholder          : "写点什么吧~",
         gotoLine             : true,
         codeFold             : false,
         autoHeight           : false,
@@ -224,13 +223,10 @@
         onunwatch            : null,
         onpreviewing         : function() {},
         onpreviewed          : function() {},
-        onfullscreen         : function() {},
-        onfullscreenExit     : function() {},
-        onscroll             : function() {},  // 编辑区同步滚动时触发
-        onpreviewscroll      : function() {},  // 预览区同步滚动时触发
-        onactivesidechange   : function() {},  // 活动侧切换时触发（"left" | "right" | null）
+        	onfullscreen         : function() {},
+        	onfullscreenExit     : function() {},
 
-        onbeforesave         : function() {},
+        	onbeforesave         : function() {},
         onaftersave          : function() {},
         oninsert             : function() {},
         ontablechange        : function() {},
@@ -289,6 +285,7 @@
         grid                 : true,           // 启用栅格化布局语法 [[row]]/[[col:N]]
         pageBlock            : true,           // 启用纸张页面语法 [[page:A4]] / [[page:A5]]
         tooltip              : true,           // 启用悬浮提示语法 [text](tooltip:tip)
+        syncScroll           : true,           // 启用编辑区和预览区同步滚动（v1.17.0）
         previewOnly          : false,          // 纯预览模式（禁用表格编辑、图片缩放等交互功能）
         draftAutoSave        : false,          // 启用浏览器草稿自动保存
         draftInterval        : 30,             // 草稿自动保存间隔（秒）
@@ -351,7 +348,6 @@
             "align-left"     : "fa-align-left",
             "align-center"   : "fa-align-center",
             "align-right"    : "fa-align-right",
-            "align-justify"  : "fa-align-justify",
             "table-edit"     : "fa-table",
             "insert"         : "fa-plus",
             "pinyin"         : "fa-language",
@@ -430,7 +426,6 @@
                 "align-left"     : "左对齐",
                 "align-center"   : "居中对齐",
                 "align-right"    : "右对齐",
-                "align-justify"  : "两端对齐",
                 "table-edit"     : "表格编辑",
                 insert           : "插入",
                 pinyin           : "拼音标注",
@@ -470,10 +465,16 @@
             },
             dialog : {
                 link : {
-                    title    : "添加链接",
-                    url      : "链接地址",
-                    urlTitle : "链接标题",
-                    urlEmpty : "错误：请填写链接地址。"
+                    title         : "添加链接",
+                    url           : "链接地址",
+                    urlTitle      : "链接标题",
+                    urlEmpty      : "错误：请填写链接地址。",
+                    target        : "跳转方式",
+                    targetDefault : "默认(当前页面)",
+                    targetBlank   : "新页面打开",
+                    targetSelf    : "当前页面打开",
+                    targetParent  : "父窗口打开",
+                    targetTop     : "顶层窗口打开"
                 },
                 referenceLink : {
                     title    : "添加引用链接",
@@ -594,8 +595,7 @@
             watching   : false,
             loaded     : false,
             preview    : false,
-            fullscreen : false,
-            activeSide : null     // 当前操作侧："left"（编辑区）、"right"（预览区）或 null（无活动）
+            fullscreen : false
         },
         
         /**
@@ -630,6 +630,21 @@
             this.flowchartTimer  = null;
             this._asyncLoadCount  = 0;        // 异步加载计数器
             this._allAsyncLoaded = false;    // onAllAsyncLoad 是否已触发
+            this._syncingScroll   = false;   // 同步滚动防抖标记
+            this._scrollSyncBound = false;   // 是否已绑定同步滚动事件
+            this._syncScrollActive = null;   // 当前鼠标所在区域："editor" | "preview" | null
+            this._applyingDomChanges = false;  // DOM 更新期间锁定滚动同步
+            // ★ v1.17.4: 统一同步滚动状态管理
+            this._syncState = {
+                suppressAllSync    : false,   // 完全禁用双向同步（preview→editor内容更新时）
+                programmaticScroll : false,   // 标记为程序化滚动（忽略该次scroll事件）
+                disablePreviewListener : false, // 禁用预览区→编辑区方向（editor→preview动画期间）
+                editorDestTop      : 0,       // 动画目标位置
+                editorAnimTimer    : null,    // 编辑器动画 timer
+                lastEditorSyncTime : 0,       // 防抖时间戳
+                lastPreviewSyncTime: 0,       // 防抖时间戳
+                mouseTarget        : null     // 鼠标所在区域 "editor" | "preview" | null
+            };
             
             var classNames       = this.classNames   = {
                 textarea : {
@@ -870,6 +885,9 @@
                 this.setEditorTheme(themeToEditorTheme[theme]);
             }
             
+            // ★ v1.17.8: 同步切换预览区主题 — 确保左右两侧都切换到暗色/默认主题
+            this.setPreviewTheme(theme);
+            
             return this;
         },
         
@@ -1107,12 +1125,6 @@
             
             cm.scrollTo(null, (coords.top + coords.bottom - clientHeight) / 2);
             
-            if (settings.watch)
-            {            
-                // 使用标题锚点映射同步预览区滚动
-                this._syncEditorToPreview();
-            }
-
             cm.focus();
             
             return this;
@@ -2052,9 +2064,6 @@
                 }
             }
                     
-            // 使用标题锚点进行精确定位（与主滚动同步逻辑一致）
-            $this._syncEditorToPreview();
-
             return this;
         },
         
@@ -2150,9 +2159,6 @@
             var editor           = this.editor;
             
             cm.on("change", function(_cm, changeObj) {
-                // 标记用户正在左侧编辑区进行操作
-                _this._markActiveLeft();
-                
                 if (settings.watch)
                 {
                     _this.previewContainer.css("padding", settings.autoHeight ? "20px 20px 50px 40px" : "20px");
@@ -2169,7 +2175,6 @@
             
             // 增强的事件处理（keydown/keyup/mouseup/mousedown/paste/drop/copy/cut/focus/blur）
             cm.on("keydown", function(_cm, e) {
-                _this._markActiveLeft();
                 settings.onkeydown.call(_this, _cm, e);
             });
             
@@ -2182,12 +2187,10 @@
             });
             
             cm.on("mousedown", function(_cm, e) {
-                _this._markActiveLeft();
                 settings.onmousedown.call(_this, _cm, e);
             });
             
             cm.on("paste", function(_cm, e) {
-                _this._markActiveLeft();
                 settings.onpaste.call(_this, _cm, e);
             });
             
@@ -2204,7 +2207,6 @@
             });
             
             cm.on("focus", function(_cm, e) {
-                _this._markActiveLeft();
                 editor.addClass("editormd-focus");
                 settings.onfocus.call(_this, _cm, e);
             });
@@ -2215,506 +2217,9 @@
             });
             
             cm.on("cursorActivity", function(_cm) {
-                _this._markActiveLeft();
                 settings.oncursoractivity.call(_this, _cm);
             });
 
-            return this;
-        },
-        
-        /**
-         * 标记当前活动侧为左侧（编辑区操作）
-         * Mark active side as left (editor operations)
-         * @private
-         */
-        _markActiveLeft : function() {
-            // 使用锁机制防止短时间内反复切换
-            if (this._syncLocked) return;
-            if (this.state.activeSide !== "left") {
-                this.state.activeSide = "left";
-                this.settings.onactivesidechange.call(this, "left");
-            }
-            clearTimeout(this._activeSideTimer);
-            // 延长超时到 5 秒，防止滚轮惯性滚动时 activeSide 提前清除
-            this._activeSideTimer = setTimeout($.proxy(function() {
-                if (this.state.activeSide === "left") {
-                    this.state.activeSide = null;
-                    this.settings.onactivesidechange.call(this, null);
-                }
-            }, this), 5000);
-        },
-        
-        /**
-         * 标记当前活动侧为右侧（预览区操作）
-         * Mark active side as right (preview operations)
-         * @private
-         */
-        _markActiveRight : function() {
-            if (this._syncLocked) return;
-            if (this.state.activeSide !== "right") {
-                this.state.activeSide = "right";
-                this.settings.onactivesidechange.call(this, "right");
-            }
-            clearTimeout(this._activeSideTimer);
-            this._activeSideTimer = setTimeout($.proxy(function() {
-                if (this.state.activeSide === "right") {
-                    this.state.activeSide = null;
-                    this.settings.onactivesidechange.call(this, null);
-                }
-            }, this), 5000);
-        },
-        
-        /**
-         * 同步滚动锁：在一侧滚动时短暂锁定，防止递归触发（通过 rAF + 微量延迟）
-         * @private
-         */
-        _syncLockScroll : function(side, callback) {
-            var _this = this;
-            if (this._syncRAF) { cancelAnimationFrame(this._syncRAF); }
-            this._syncRAF = requestAnimationFrame(function() {
-                _this._syncLocked = true;
-                callback();
-                setTimeout(function() { _this._syncLocked = false; }, 50);
-            });
-        },
-        
-        /**
-         * 构建标题行号映射表，为预览区标题注入 data-source-line 属性
-         * Build heading-to-line mapping for precise scroll sync.
-         * 
-         * ★ 核心策略：基于顺序匹配（Order-based matching）
-         * 编辑器和预览区中的标题严格按出现顺序一一对应，因此通过索引直接匹配，
-         * 完全避免了文本匹配的不确定性。
-         * 
-         * ★ 排除 TOC 区域：使用 .markdown-toc-list 排除目录中的标题，
-         * 避免 TOC 标题干扰顺序匹配。
-         * 
-         * @returns {editormd} return this
-         * @private
-         */
-        _buildHeadingLineMap : function() {
-            var cm = this.cm;
-            var previewContainer = this.previewContainer;
-            
-            if (!cm || !previewContainer) return this;
-            
-            // 步骤 1：扫描编辑器内容，构建有序标题行号数组
-            // ★ 增强：同时跳过围栏代码块和缩进代码块（4空格/1Tab 开头的行）
-            var editorHeadings = [];
-            var lineCount = cm.lineCount();
-            var inFencedBlock = false;
-            
-            for (var i = 0; i < lineCount; i++) {
-                var lineText = cm.getLine(i);
-                
-                // 检测围栏代码块边界（支持 3+ 个反引号或波浪号）
-                if (/^\s*(```+|~~~+)/.test(lineText)) {
-                    inFencedBlock = !inFencedBlock;
-                    continue;
-                }
-                
-                // 跳过围栏代码块内部的行
-                if (inFencedBlock) continue;
-                
-                // 跳过缩进代码块（4 空格或 Tab 开头，但不是空行）
-                if (/^( {4,}|\t)/.test(lineText) && lineText.trim() !== '') continue;
-                
-                var match = lineText.match(/^(#{1,6})\s+(.+)/);
-                if (match) {
-                    editorHeadings.push({
-                        line: i,
-                        level: match[1].length
-                    });
-                }
-            }
-            
-            // 步骤 2：扫描预览区标题（排除 TOC 区域），构建有序 DOM 元素数组
-            // ★ 排除隐藏元素（display:none, visibility:hidden）以及高度为 0 的元素
-            var previewHeadings = [];
-            previewContainer.find('h1, h2, h3, h4, h5, h6').each(function() {
-                var $el = $(this);
-                
-                // 排除 TOC 菜单中的标题
-                if ($el.closest('.markdown-toc-list, .editormd-toc-menu').length > 0) return;
-                
-                // 排除不可见元素（display:none / visibility:hidden / 0高度）
-                if ($el[0].offsetHeight === 0 && $el[0].clientHeight === 0) return;
-                var displayVal = $el.css('display');
-                var visibilityVal = $el.css('visibility');
-                if (displayVal === 'none' || visibilityVal === 'hidden') return;
-                
-                var level = parseInt(this.tagName.substring(1), 10);
-                previewHeadings.push({
-                    el: $el,
-                    level: level
-                });
-            });
-            
-            // 步骤 3：按顺序匹配 —— 第 i 个编辑器标题对应第 i 个预览区标题
-            // 清除旧映射
-            previewContainer.find('[data-source-line]').removeAttr('data-source-line');
-            
-            var matchCount = Math.min(editorHeadings.length, previewHeadings.length);
-            
-            // ★ 保存映射信息用于调试和验证
-            if (editorHeadings.length !== previewHeadings.length) {
-                if (typeof console !== "undefined" && console.warn) {
-                    console.warn("[xfEditor] Heading count mismatch: editor=" + editorHeadings.length + 
-                                 ", preview=" + previewHeadings.length + 
-                                 ". Order-based matching will use first " + matchCount + " headings.");
-                }
-            }
-            
-            for (var j = 0; j < matchCount; j++) {
-                previewHeadings[j].el.attr('data-source-line', editorHeadings[j].line);
-            }
-            
-            this._headingMap = {
-                editorHeadings: editorHeadings,
-                previewHeadings: previewHeadings,
-                matchCount: matchCount,
-                timestamp: Date.now()
-            };
-            
-            return this;
-        },
-        
-        /**
-         * 编辑器 → 预览区：基于标题锚点的精确滚动同步
-         * Sync scroll from editor to preview using heading anchors.
-         * 
-         * 策略：
-         * 1. 获取编辑器可视区域顶部的行号
-         * 2. 向前查找最近的 Markdown 标题行
-         * 3. 通过 _headingMap 索引找到对应预览区标题
-         * 4. 将预览区精确定位到该标题
-         * 
-         * @private
-         */
-        _syncEditorToPreview : function() {
-            var cm = this.cm;
-            var preview = this.preview;
-            var previewContainer = this.previewContainer;
-            var codeView = this.codeMirror.find(".CodeMirror-scroll");
-            
-            if (!cm || !preview || !previewContainer) return;
-            
-            var scrollTop = codeView.scrollTop();
-            var height = codeView.height();
-            var scrollHeight = codeView[0].scrollHeight;
-            
-            // 边界情况
-            if (scrollTop <= 10) {
-                preview.scrollTop(0);
-                return;
-            }
-            if (scrollTop + height >= scrollHeight - 16) {
-                preview.scrollTop(preview[0].scrollHeight);
-                return;
-            }
-            
-            // 获取可视区域顶部的行号
-            var topLine = 0;
-            if (cm.lineAtHeight) {
-                topLine = cm.lineAtHeight(scrollTop, "local");
-            } else {
-                // 降级：通过 scrollTop 和默认行高估算
-                topLine = Math.floor(scrollTop / cm.defaultTextHeight());
-            }
-            topLine = Math.max(0, Math.min(cm.lineCount() - 1, topLine));
-            
-            // 向前搜索最近的标题行，同时确定它在 editorHeadings 中的索引
-            var headingIdx = -1;
-            var headingLine = -1;
-            var headingMap = this._headingMap;
-            
-            if (headingMap && headingMap.editorHeadings) {
-                for (var k = headingMap.editorHeadings.length - 1; k >= 0; k--) {
-                    if (headingMap.editorHeadings[k].line <= topLine) {
-                        headingIdx = k;
-                        headingLine = headingMap.editorHeadings[k].line;
-                        break;
-                    }
-                }
-            } else {
-                // 降级：直接扫描编辑器
-                for (var i = topLine; i >= 0; i--) {
-                    if (/^#{1,6}\s+/.test(cm.getLine(i))) {
-                        headingLine = i;
-                        break;
-                    }
-                }
-            }
-            
-            if (headingIdx >= 0 && headingMap && headingMap.previewHeadings && 
-                headingIdx < headingMap.previewHeadings.length) {
-                    var $targetEl = headingMap.previewHeadings[headingIdx].el;
-                if ($targetEl && $targetEl.length && document.body.contains($targetEl[0])) {
-                    var targetDom = $targetEl[0];
-                    var targetRect = targetDom.getBoundingClientRect();
-                    if (targetRect.height > 0) {
-                        var previewRect2 = preview[0].getBoundingClientRect();
-                        var targetTop = targetRect.top - previewRect2.top + preview.scrollTop();
-                        preview.scrollTop(Math.max(0, targetTop - 20));
-                        return;
-                    }
-                }
-            }
-            
-            if (headingLine >= 0) {
-                var $bestEl = null;
-                previewContainer.find('[data-source-line]').each(function() {
-                    if (!document.body.contains(this)) return;
-                    var sl = parseInt($(this).attr('data-source-line'), 10);
-                    if (!isNaN(sl) && sl <= headingLine) {
-                        $bestEl = $(this);
-                    }
-                });
-                
-                if ($bestEl && $bestEl.length) {
-                    var bestDom = $bestEl[0];
-                    var bestRect = bestDom.getBoundingClientRect();
-                    if (bestRect.height > 0) {
-                        var previewRect3 = preview[0].getBoundingClientRect();
-                        var targetTop2 = bestRect.top - previewRect3.top + preview.scrollTop();
-                        preview.scrollTop(Math.max(0, targetTop2 - 20));
-                        return;
-                    }
-                }
-            }
-            
-            if (headingLine >= 0 && cm.lineCount() > 1) {
-                var linePercent = headingLine / (cm.lineCount() - 1);
-                var tocHeight = 0;
-                preview.find(".markdown-toc-list").each(function(){
-                    tocHeight += $(this).height();
-                });
-                preview.scrollTop(Math.max(0, preview[0].scrollHeight * linePercent + tocHeight * linePercent));
-                return;
-            }
-            
-            var percent = scrollTop / Math.max(1, scrollHeight);
-            preview.scrollTop(preview[0].scrollHeight * percent);
-        },
-        
-        /**
-         * 预览区 → 编辑器：基于标题锚点的精确滚动同步
-         * Sync scroll from preview to editor using heading anchors.
-         * 
-         * ★ 核心策略：
-         * 1. 查找预览区可视区域内第一个可见的标题元素
-         * 2. 通过 _headingMap 索引找到对应的编辑器行号
-         * 3. 使用 cm.scrollIntoView() 精确滚动编辑器到目标行
-         * 
-         * ★ 为什么用 scrollIntoView 而不是 charCoords：
-         * scrollIntoView 内部处理了 CodeMirror 的所有偏移和间距计算，
-         * 比手动 charCoords + scrollTop 更可靠。
-         * 
-         * @private
-         */
-        _syncPreviewToEditor : function() {
-            var cm = this.cm;
-            var preview = this.preview;
-            var previewContainer = this.previewContainer;
-            var codeView = this.codeMirror.find(".CodeMirror-scroll");
-            
-            if (!cm || !preview) return;
-            
-            var scrollTop = preview.scrollTop();
-            var height = preview.height();
-            var scrollHeight = preview[0].scrollHeight;
-            
-            // 边界情况
-            if (scrollTop <= 10) {
-                codeView.scrollTop(0);
-                return;
-            }
-            if (scrollTop + height >= scrollHeight) {
-                codeView.scrollTop(codeView[0].scrollHeight);
-                return;
-            }
-            
-            // ★ 验证 headingMap 是否有效：检查 DOM 中标题数量是否匹配
-            var headingMap = this._headingMap;
-            if (headingMap && headingMap.previewHeadings && previewContainer) {
-                var liveHeadingCount = previewContainer.find('h1, h2, h3, h4, h5, h6').length;
-                var mapCount = headingMap.previewHeadings.length;
-                // 如果 DOM 标题数量变化超过 10%，重建映射
-                if (liveHeadingCount > 0 && Math.abs(liveHeadingCount - mapCount) > Math.max(1, mapCount * 0.1)) {
-                    this._buildHeadingLineMap();
-                    headingMap = this._headingMap;
-                }
-            }
-            
-            // 优先级 1：通过 _headingMap 索引匹配
-            // ★ 增强：容差从 -8 提高到 -25，确保标题即使略微滚过顶部也能匹配
-            var foundLine = -1;
-            var minDist = Infinity;
-            var previewDom = preview[0];
-            var previewRect = previewDom.getBoundingClientRect();
-            var TOLERANCE = -25;
-            
-            if (headingMap && headingMap.previewHeadings && headingMap.editorHeadings) {
-                var previewHeadings = headingMap.previewHeadings;
-                var editorHeadings = headingMap.editorHeadings;
-                
-                for (var p = 0; p < previewHeadings.length; p++) {
-                    var domEl = previewHeadings[p].el[0];
-                    if (!domEl) continue;
-                    
-                    // 验证 DOM 元素仍在文档中
-                    if (!document.body.contains(domEl)) continue;
-                    
-                    var rect = domEl.getBoundingClientRect();
-                    // 跳过高度为 0 的元素（display:none 或被折叠）
-                    if (rect.height === 0) continue;
-                    
-                    // 相对于预览区可视区域顶部的距离
-                    var relTop = rect.top - previewRect.top;
-                    
-                    // 找到最接近可视区域顶部且在其下方（或略微上方）的标题
-                    if (relTop >= TOLERANCE && relTop < minDist) {
-                        minDist = relTop;
-                        foundLine = editorHeadings[p].line;
-                    }
-                }
-            }
-            
-            // 优先级 2（降级）：通过 data-source-line 属性查找
-            if (foundLine < 0) {
-                previewContainer.find('[data-source-line]').each(function() {
-                    if (!document.body.contains(this)) return;
-                    var rect = this.getBoundingClientRect();
-                    if (rect.height === 0) return;
-                    var relTop = rect.top - previewRect.top;
-                    if (relTop >= TOLERANCE && relTop < 10000) {
-                        foundLine = parseInt($(this).attr('data-source-line'), 10);
-                        return false;
-                    }
-                });
-            }
-            
-            if (foundLine >= 0 && foundLine < cm.lineCount()) {
-                // ★ 主要方式：使用 scrollIntoView
-                cm.scrollIntoView({line: foundLine, ch: 0}, 30);
-                
-                // ★ 补偿：charCoords + scrollTo 确保精确定位
-                // scrollIntoView 在某些情况下可能不滚动（行已部分可见时）
-                // 作为后备，计算目标行的确切坐标并确保它在可视区域内
-                try {
-                    var coords = cm.charCoords({line: foundLine, ch: 0}, "local");
-                    var codeScrollTop = codeView.scrollTop();
-                    var codeHeight = codeView.height();
-                    
-                    // 如果目标行在可视区域上方（已被滚过），或远在下方，强制滚动
-                    if (coords.top < codeScrollTop + 10 || coords.top > codeScrollTop + codeHeight - 60) {
-                        codeView.scrollTop(Math.max(0, coords.top - 40));
-                    }
-                } catch(e) {
-                    // charCoords 可能失败（行不可见等），忽略并使用 scrollIntoView 的结果
-                }
-                return;
-            }
-            
-            // 优先级 3（终极降级）：按百分比估算
-            if (cm.lineCount() > 1 && scrollHeight > 0) {
-                var percent = scrollTop / scrollHeight;
-                var estLine = Math.floor(percent * (cm.lineCount() - 1));
-                try {
-                    var estCoords = cm.charCoords({line: Math.max(0, estLine), ch: 0}, "local");
-                    codeView.scrollTop(Math.max(0, estCoords.top - 40));
-                } catch(e2) {
-                    cm.scrollIntoView({line: Math.max(0, estLine), ch: 0}, 30);
-                }
-            }
-        },
-        
-        /**
-         * 绑定同步滚动（智能双向同步，基于标题锚点精确定位）
-         * Bind sync scrolling with heading-anchor-based precision
-         * 
-         * 当用户在左侧编辑区操作时（activeSide === "left"）：
-         *   - 编辑区滚动 → 通过标题锚点映射到预览区
-         *   - 预览区滚动事件被忽略（不触发左侧更新）
-         * 
-         * 当用户在右侧预览区操作时（activeSide === "right"）：
-         *   - 预览区滚动 → 通过标题锚点映射到编辑区
-         *   - 编辑区滚动事件被忽略（不触发右侧更新）
-         * 
-         * @returns {editormd} return this
-         */
-        
-        bindScrollEvent : function() {
-            
-            var _this            = this;
-            var preview          = this.preview;
-            var settings         = this.settings;
-            var codeMirror       = this.codeMirror;
-            var previewContainer = this.previewContainer;
-            
-            if (!settings.syncScrolling) {
-                return this;
-            }
-            
-            // 编辑区 → 预览区 滚动同步（基于标题锚点，rAF 防抖 + 锁机制）
-            var codeMirrorScrollHandler = function(event) {
-                if (_this.state.activeSide === "right") {
-                    return;
-                }
-                _this._syncLockScroll("left", function() {
-                    _this._markActiveLeft();
-                    _this._syncEditorToPreview();
-                    settings.onscroll.call(_this, event);
-                });
-            };
-            
-            // 预览区 → 编辑区 滚动同步（基于标题锚点，rAF 防抖 + 锁机制）
-            var previewScrollHandler = function(event) {
-                if (_this.state.activeSide === "left") {
-                    return;
-                }
-                _this._syncLockScroll("right", function() {
-                    _this._markActiveRight();
-                    _this._syncPreviewToEditor();
-                    settings.onpreviewscroll.call(_this, event);
-                });
-            };
-            
-            // 编辑区鼠标进入 → 绑定编辑区滚动 → 标记左侧活动
-            codeMirror.on("mouseenter.editormd-sync", function() {
-                codeMirror.find(".CodeMirror-scroll").on("scroll.editormd-sync", codeMirrorScrollHandler);
-                _this._markActiveLeft();
-            });
-            
-            // 编辑区鼠标离开 → 解绑编辑区滚动
-            codeMirror.on("mouseleave.editormd-sync", function() {
-                codeMirror.find(".CodeMirror-scroll").off("scroll.editormd-sync");
-            });
-            
-            // 如果是双向同步模式
-            if (settings.syncScrolling !== "single") {
-                // 预览区鼠标进入 → 绑定预览区滚动 → 标记右侧活动
-                preview.on("mouseenter.editormd-sync", function() {
-                    preview.on("scroll.editormd-sync", previewScrollHandler);
-                    _this._markActiveRight();
-                });
-                
-                // 预览区鼠标离开 → 解绑预览区滚动
-                preview.on("mouseleave.editormd-sync", function() {
-                    preview.off("scroll.editormd-sync");
-                });
-                
-                // 预览区点击事件 → 标记右侧活动（覆盖图片缩放、表格编辑、TOC 等交互）
-                previewContainer.on("mousedown.editormd-sync touchstart.editormd-sync", function() {
-                    _this._markActiveRight();
-                });
-            }
-            
-            // 编辑区 CodeMirror 获得焦点 → 标记左侧活动（覆盖键盘输入、粘贴等）
-            this.cm.on("focus", function() {
-                _this._markActiveLeft();
-            });
-            
             return this;
         },
         
@@ -2756,7 +2261,6 @@
             });
             
             this.bindChangeEvent();
-            this.bindScrollEvent();
             
             if (!recreate)
             {
@@ -2791,9 +2295,6 @@
             if (this._asyncLoadCount <= 0) 
             {
                 this._allAsyncLoaded = true;
-                
-                    // 重新构建标题映射以确保滚动同步精确性
-                this._buildHeadingLineMap();
                 
                 this.settings.onAllAsyncLoad.call(this);
             }
@@ -2998,6 +2499,8 @@
             // 在 marked 解析之前预处理自定义块级语法（标签页、多栏、对齐）
             // 先保护 LaTeX 反斜杠，防止 marked.js 将其当作 Markdown 转义吃掉
             var markdownProtected = editormd.protectTeXSyntax(cmValue);
+            // ★ v1.17.2: 预处理链接 target 语法 [text](url){target=_blank} → [text](url "target=_blank")
+            markdownProtected = editormd.preprocessLinkTarget(markdownProtected);
             var preprocessResult = editormd.preprocessMarkdownBlocks(markdownProtected, rendererOptions);
             var newMarkdownDoc = editormd.$marked(preprocessResult.markdown, markedOptions);
             newMarkdownDoc = editormd.restorePlaceholders(newMarkdownDoc, preprocessResult.placeholders);
@@ -3023,13 +2526,24 @@
             
             if(settings.watch || (!settings.watch && state.preview))
             {
+                // ★ v1.17.1: DOM 更新期间锁定同步滚动，防止内容变化触发反向同步
+                this._applyingDomChanges = true;
+                clearTimeout(this.__syncDomLockTimer);
+                
+                // ★ v1.17.1: 注入 data-sign 块签名用于精准行号映射
+                if (settings.syncScroll) {
+                    var totalEditorLines = (cmValue.match(/\n/g) || []).length + 1;
+                    newMarkdownDoc = editormd.addBlockSignatures(newMarkdownDoc, totalEditorLines);
+                }
+                
                 previewContainer.html(newMarkdownDoc);
 
+                // ★ v1.17.1: 延迟解锁滚动同步，等待 DOM 高度稳定
+                this.__syncDomLockTimer = setTimeout(function() {
+                    _this._applyingDomChanges = false;
+                }, 100);
+
                 this.previewCodeHighlight();
-                
-                    // 必须在 previewCodeHighlight() 之后、TOC 之前执行，
-                // 确保 CodeMirror 和预览 HTML 都是最新的
-                this._buildHeadingLineMap();
                 
                 if (settings.toc) 
                 {
@@ -3147,8 +2661,6 @@
                 
                 if (settings.pageBlock) {
                     _this.initPages();
-                    // initPages() 可能重建 DOM，重新构建标题映射
-                    _this._buildHeadingLineMap();
                 }
                 // 纯预览模式下跳过表格编辑和图片缩放初始化
                 if (settings.tableEdit && !isPreviewOnly) {
@@ -3180,6 +2692,49 @@
                 }
                 if (settings.tooltip) {
                     _this.initTooltips();
+                }
+                if (settings.syncScroll) {
+                    // ★ v1.17.7: 确保首次绑定
+                    if (!_this._scrollSyncBound) {
+                        _this.bindSyncScroll();
+                    }
+                    // ★ v1.17.7: 内容变更后强制刷新同步状态
+                    // 即使 bindSyncScroll 已绑定，内容变更后也需要：
+                    // 1. 重新无效化锚点缓存（因为 data-sign 已变化）
+                    // 2. 延迟触发一次编辑区→预览区的同步滚动
+                    if (_this._syncState) {
+                        // 清除上一次的延迟同步定时器，防止累积
+                        if (_this.__lastSyncTimer) {
+                            clearTimeout(_this.__lastSyncTimer);
+                            _this.__lastSyncTimer = null;
+                        }
+                        // 延迟确保 DOM 已稳定（如 KaTeX/flowchart 等异步渲染）
+                        var _syncTimer = setTimeout(function() {
+                            if (!_this._syncState || _this._syncState.suppressAllSync) return;
+                            if (_this._applyingDomChanges) return;
+                            if (!_this.cm) return;
+                            try {
+                                var cm = _this.cm;
+                                var cmInfo = cm.getScrollInfo();
+                                var cmMaxScroll = Math.max(0, cmInfo.height - cmInfo.clientHeight);
+                                if (cmMaxScroll <= 0) return;
+                                var scrollRatio = cmInfo.top / cmMaxScroll;
+                                var totalLines = cm.lineCount();
+                                var centerLine = Math.round(scrollRatio * (totalLines - 1));
+                                // ★ 通过内部函数快速同步
+                                if (_this._syncState && typeof _this._syncState._refreshSync === 'function') {
+                                    _this._syncState._refreshSync(centerLine);
+                                } else {
+                                    // 回退：直接调用 editormd.resize() 触发重绘
+                                    if (typeof _this._syncState._invalidateAnchors === 'function') {
+                                        _this._syncState._invalidateAnchors();
+                                    }
+                                }
+                            } catch(e) {}
+                        }, 250);
+                        // 存储 timer 以便清理
+                        _this.__lastSyncTimer = _syncTimer;
+                    }
                 }
             }
             
@@ -3316,8 +2871,6 @@
                 $wrapper.find(".editormd-table-btn").on("click", function(e) {
                     e.stopPropagation();
                     e.preventDefault();
-                    // 标记用户正在右侧预览区进行操作
-                    _this._markActiveRight();
                     if (!currentCell) return;
                     
                     var action = $(this).data("action");
@@ -3472,6 +3025,9 @@
             
             if (this.timer && this.timer !== 0) { clearTimeout(this.timer); this.timer = null; }
             
+            // ★ v1.17.4: 暂停双向同步滚动
+            if (this.suspendSyncScroll) this.suspendSyncScroll();
+            
             var cursor = cm.getCursor();
             var editorScroll = cm.getScrollInfo();
             var previewScroll = this.preview.scrollTop();
@@ -3488,7 +3044,13 @@
             this.save();
             
             this.preview.scrollTop(previewScroll);
-            this.timer = null; // 恢复正常状态，下个用户输入可以正常触发防抖
+            this.timer = null;
+            
+            // ★ v1.17.4: 恢复同步滚动
+            var _thisTable = this;
+            setTimeout(function() {
+                if (_thisTable.resumeSyncScroll) _thisTable.resumeSyncScroll();
+            }, 150);
             
             this.settings.ontablechange.call(this, action, rowIndex, colIndex);
         },
@@ -3501,7 +3063,41 @@
             var previewContainer = this.previewContainer;
             var cm = this.cm;
             
+            // ★ v1.17.8: 冲突 prevention — 防止重复绑定文档级事件
+            $(document).off("mousemove.editormd-img").off("mouseup.editormd-img");
+            
             var srcOccurrenceCounter = {};
+            var _resizeState = null; // { img, wrapper, startX, startY, startWidth, startHeight, imgSrc }
+            
+            // ★ v1.17.8: 全局文档级事件 — 只绑定一次（避免 .each 循环内累积）
+            $(document).on("mousemove.editormd-img", function(e) {
+                if (!_resizeState) return;
+                var s = _resizeState;
+                var newWidth = s.startWidth + (e.clientX - s.startX);
+                var newHeight = s.startHeight + (e.clientY - s.startY);
+                var ratio = s.startWidth / s.startHeight;
+                
+                if (e.shiftKey) {
+                    newHeight = newWidth / ratio;
+                }
+                
+                if (newWidth > 20) s.img.css("width", newWidth + "px");
+                if (newHeight > 20) s.img.css("height", newHeight + "px");
+            });
+            
+            $(document).on("mouseup.editormd-img", function(e) {
+                if (!_resizeState) return;
+                var s = _resizeState;
+                _resizeState = null;
+                
+                // ★ v1.17.8: 恢复双向同步
+                if (_this.resumeSyncScroll) _this.resumeSyncScroll();
+                
+                var finalWidth = Math.round(s.img.width());
+                var finalHeight = Math.round(s.img.height());
+                var occIdx = parseInt(s.wrapper.attr("data-image-occurrence"), 10) || 1;
+                _this.modifyImageSizeInMarkdown(s.imgSrc, s.img.attr("alt"), finalWidth, finalHeight, occIdx);
+            });
             
             previewContainer.find("img").each(function() {
                 var $img = $(this);
@@ -3510,7 +3106,7 @@
                 }
                 $img.addClass("editormd-img-resizable");
                 
-                    var imgSrc = $img.attr("src") || "";
+                var imgSrc = $img.attr("src") || "";
                 var cleanSrc = imgSrc.replace(/\s*=\s*\d+x\d+/, "").trim();
                 var srcKey = cleanSrc;
                 srcOccurrenceCounter[srcKey] = (srcOccurrenceCounter[srcKey] || 0) + 1;
@@ -3519,58 +3115,31 @@
                 var $wrapper = $('<div class="editormd-img-wrapper" style="display:inline-block;position:relative;"></div>');
                 $img.wrap($wrapper);
                 $wrapper = $img.parent();
-                    $wrapper.attr("data-image-occurrence", occurrence);
+                $wrapper.attr("data-image-occurrence", occurrence);
                 $wrapper.attr("data-image-src", srcKey);
                 
-                // 添加缩放拖拽手柄
                 var handle = $('<div class="editormd-img-resize-handle" title="拖拽调整尺寸"></div>');
                 $wrapper.append(handle);
                 
-                var isResizing = false;
-                var startX, startY, startWidth, startHeight;
-                
                 handle.on("mousedown", function(e) {
-                    // 标记用户正在右侧预览区进行操作（拖拽调整图片尺寸）
-                    _this._markActiveRight();
-                    isResizing = true;
-                    startX = e.clientX;
-                    startY = e.clientY;
-                    startWidth = $img.width();
-                    startHeight = $img.height();
+                    // ★ v1.17.8: 拖拽期间暂停双向同步 — 预览区是主控区
+                    if (_this.suspendSyncScroll) _this.suspendSyncScroll();
+                    
+                    _resizeState = {
+                        img: $img,
+                        wrapper: $wrapper,
+                        startX: e.clientX,
+                        startY: e.clientY,
+                        startWidth: $img.width(),
+                        startHeight: $img.height(),
+                        imgSrc: imgSrc
+                    };
                     e.preventDefault();
                     e.stopPropagation();
                 });
                 
-                $(document).on("mousemove.editormd-img", function(e) {
-                    if (!isResizing) return;
-                    var newWidth = startWidth + (e.clientX - startX);
-                    var newHeight = startHeight + (e.clientY - startY);
-                    var ratio = startWidth / startHeight;
-                    
-                    // 按 Shift 键保持宽高比
-                    if (e.shiftKey) {
-                        newHeight = newWidth / ratio;
-                    }
-                    
-                    if (newWidth > 20) $img.css("width", newWidth + "px");
-                    if (newHeight > 20) $img.css("height", newHeight + "px");
-                });
-                
-                $(document).on("mouseup.editormd-img", function(e) {
-                    if (!isResizing) return;
-                    isResizing = false;
-                    
-                    var finalWidth = Math.round($img.width());
-                    var finalHeight = Math.round($img.height());
-                    
-                            var occIdx = parseInt($wrapper.attr("data-image-occurrence"), 10) || 1;
-                    _this.modifyImageSizeInMarkdown(imgSrc, $img.attr("alt"), finalWidth, finalHeight, occIdx);
-                    
-
-                });
-                
                 // 双击图片可编辑尺寸
-                $img.on("dblclick", function(e) {
+                $img.off("dblclick.editormd-img").on("dblclick.editormd-img", function(e) {
                     e.stopPropagation();
                     var currentWidth = $img.width();
                     var currentHeight = $img.height();
@@ -3641,6 +3210,9 @@
             if (newMarkdown !== markdown) {
                     if (this.timer && this.timer !== 0) { clearTimeout(this.timer); this.timer = null; }
                 
+                // ★ v1.17.4: 暂停双向同步滚动，防止内容更新触发滚动跳转
+                if (this.suspendSyncScroll) this.suspendSyncScroll();
+                
                 var editorScroll = cm.getScrollInfo();
                 var previewScroll = this.preview.scrollTop();
                 
@@ -3648,13 +3220,22 @@
                 
                     if (this.timer && this.timer !== 0) { clearTimeout(this.timer); this.timer = null; }
                 
+                // 保存编辑器滚动位置（需在 save 前恢复）
                 cm.scrollTo(editorScroll.left, editorScroll.top);
                 this.timer = 0;
                 
+                // save() 会触发 previewContainer.html() 重渲染，重置预览滚动位置
                 this.save();
                 
+                // ★ 恢复预览区滚动位置
                 this.preview.scrollTop(previewScroll);
-                this.timer = null; // 恢复正常状态，下个用户输入可以正常触发防抖
+                this.timer = null;
+                
+                // ★ v1.17.4: 恢复同步滚动（延迟确保 DOM 稳定后重建锚点）
+                var _thisImg = this;
+                setTimeout(function() {
+                    if (_thisImg.resumeSyncScroll) _thisImg.resumeSyncScroll();
+                }, 150);
                 
                 this.settings.onimagechange.call(this, src, width, height);
             }
@@ -3913,8 +3494,6 @@
                 }
                 
                 $nav.off("click", "li").on("click", "li", function() {
-                    // 标记用户正在右侧预览区进行操作
-                    _this._markActiveRight();
                     var $li = $(this);
                     var index = $li.attr("data-index");
                     
@@ -4847,6 +4426,7 @@
                         smartLists: true, smartypants: true
                     };
                     var markdownProtected2 = editormd.protectTeXSyntax(markdownText);
+                    markdownProtected2 = editormd.preprocessLinkTarget(markdownProtected2);
                     var mdPreprocess = editormd.preprocessMarkdownBlocks(markdownProtected2, rendererOptions);
                     var previewHTML = editormd.$marked(mdPreprocess.markdown, markedOptions);
                     previewHTML = editormd.restorePlaceholders(previewHTML, mdPreprocess.placeholders);
@@ -4874,7 +4454,7 @@
             html += '<head>\n';
             html += '  <meta charset="' + opts.charset + '">\n';
             html += '  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n';
-            html += '  <meta name="generator" content="xfEditor v1.16.0">\n';
+            html += '  <meta name="generator" content="xfEditor v1.17.5">\n';
             
             if (opts.description) {
                 html += '  <meta name="description" content="' + editormd.escapeAttr(opts.description) + '">\n';
@@ -4985,11 +4565,15 @@
             c.push('.editormd-tooltip-popup.editormd-tooltip-image,.editormd-tooltip-popup.editormd-tooltip-iframe{padding:0;margin:0;max-width:90vw;background:#fff;border:none;pointer-events:auto;min-width:100px;min-height:60px;}.editormd-tooltip-popup.editormd-tooltip-image img{display:block;max-width:340px;max-height:220px;width:auto;height:auto;border-radius:4px;object-fit:contain;}.editormd-tooltip-popup.editormd-tooltip-iframe iframe{display:block;width:340px;height:210px;border-radius:4px;background:#fff;}');
             c.push('.editormd-tooltip-arrow-top.editormd-tooltip-image .editormd-tooltip-arrow,.editormd-tooltip-arrow-top.editormd-tooltip-iframe .editormd-tooltip-arrow{border-bottom-color:#fff;}.editormd-tooltip-arrow-bottom.editormd-tooltip-image .editormd-tooltip-arrow,.editormd-tooltip-arrow-bottom.editormd-tooltip-iframe .editormd-tooltip-arrow{border-top-color:#fff;}.editormd-tooltip-arrow-top.editormd-tooltip-text .editormd-tooltip-arrow{border-bottom-color:#1e1e1e;}.editormd-tooltip-arrow-bottom.editormd-tooltip-text .editormd-tooltip-arrow{border-top-color:#1e1e1e;}');
             c.push('.editormd-tooltip-popup.editormd-tooltip-html,.editormd-tooltip-popup.editormd-tooltip-html-selector{max-width:420px;max-height:360px;overflow-y:auto;overflow-x:hidden;background:#fff;color:#333;padding:0;margin:0;pointer-events:auto;}.editormd-tooltip-html-content{overflow-wrap:break-word;background:#fff;color:#333;padding:0;margin:0;}.editormd-tooltip-html-content img{max-width:100%;height:auto;}.editormd-tooltip-html-content table{font-size:12px;border-collapse:collapse;width:100%;}.editormd-tooltip-html-content table th,.editormd-tooltip-html-content table td{border:1px solid rgba(0,0,0,0.15);padding:4px 8px;}.editormd-tooltip-html-content table th{background:rgba(0,0,0,0.05);}.editormd-tooltip-html-content a{color:#2C7EEA;}.editormd-tooltip-html-content code{background:rgba(0,0,0,0.06);padding:1px 5px;border-radius:3px;font-size:12px;color:#d63384;}.editormd-tooltip-html-content pre{background:rgba(0,0,0,0.04);padding:8px;border-radius:4px;overflow-x:auto;font-size:12px;}.editormd-tooltip-html-content ul,.editormd-tooltip-html-content ol{padding-left:20px;}.editormd-tooltip-html-content hr{border-color:rgba(0,0,0,0.15);}.editormd-tooltip-html-content blockquote{border-left:3px solid rgba(0,0,0,0.2);padding-left:10px;margin:4px 0;color:rgba(0,0,0,0.65);}.editormd-tooltip-loading{display:flex;align-items:center;justify-content:center;padding:20px;color:#999;font-size:12px;background:#fff;}');
-            c.push('.editormd-tabs{margin:15px 0;border:1px solid #ddd;border-radius:4px;overflow:hidden;background:#fff;}.editormd-tab-nav{list-style:none;margin:0;padding:0;display:flex;background:#f8f9fa;border-bottom:1px solid #ddd;}.editormd-tab-nav li{padding:10px 18px;cursor:pointer;border-right:1px solid #eee;font-size:14px;color:#666;transition:all 200ms ease;user-select:none;}.editormd-tab-nav li:hover{background:#fff;color:#333;}.editormd-tab-nav li.active{background:#fff;color:#2C7EEA;font-weight:600;border-bottom:2px solid #2C7EEA;margin-bottom:-1px;}.editormd-tab-body{padding:16px;min-height:60px;}.editormd-tab-panel{display:none;}.editormd-tab-panel.active{display:block;}.editormd-tab-panel>:first-child{margin-top:0;}');
+            // ★ v1.17.0: Tooltip 最大化/关闭按钮样式
+            c.push('.editormd-tooltip-max-btn,.editormd-tooltip-close-btn{position:absolute;top:5px;z-index:10001;width:22px;height:22px;border:none;border-radius:3px;font-size:12px;line-height:22px;text-align:center;cursor:pointer;opacity:0.6;transition:opacity 0.15s;padding:0;color:#666;background:rgba(255,255,255,0.85);}.editormd-tooltip-max-btn:hover,.editormd-tooltip-close-btn:hover{opacity:1;}.editormd-tooltip-close-btn{right:5px;}.editormd-tooltip-max-btn{right:30px;font-size:14px;}.editormd-tooltip-close-btn:hover{background:#e74c3c;color:#fff;}.editormd-tooltip-max-btn:hover{background:#3498db;color:#fff;}');
+            c.push('.editormd-tabs{margin:15px 0;border:1px solid #ddd;border-radius:4px;overflow:hidden;background:#fff;}.editormd-tab-nav{list-style:none;margin:0;padding:0;display:flex;background:#f8f8f8;border-bottom:1px solid #ddd;}.editormd-tab-nav li{padding:10px 20px;cursor:pointer;border-right:1px solid #ddd;border-bottom:2px solid transparent;font-size:14px;color:#666;transition:all 0.2s;user-select:none;margin:0;}.editormd-tab-nav li:hover{background:#eee;}.editormd-tab-nav li.active{background:#fff;color:#2C7EEA;font-weight:bold;border-bottom-color:#2C7EEA;}.editormd-tab-body{padding:15px;min-height:60px;}.editormd-tab-panel{display:none;}.editormd-tab-panel.active{display:block;}.editormd-tab-panel>:first-child{margin-top:0;}');
             c.push('.editormd-columns{margin:15px 0;padding:15px;border:1px dashed #ddd;border-radius:4px;column-gap:30px;-webkit-column-gap:30px;-moz-column-gap:30px;column-rule:1px solid #ccc;-webkit-column-rule:1px solid #ccc;-moz-column-rule:1px solid #ccc;}');
+            // ★ v1.17.0: 栅格化布局样式（[[row]]/[[col]] 语法）
+            c.push('.editormd-row{display:flex;flex-wrap:wrap;margin:10px 0;width:100%;box-sizing:border-box;}.editormd-row:after{content:"";display:table;clear:both;}.editormd-col{box-sizing:border-box;padding:8px 12px;min-width:0;word-wrap:break-word;overflow-wrap:break-word;}.editormd-col+.editormd-col{border-left:1px solid rgba(0,0,0,0.08);}.editormd-col>:first-child{margin-top:0;}.editormd-col>:last-child{margin-bottom:0;}');
             c.push('.editormd-video-player{display:block;max-width:100%;border-radius:4px;background:#000;margin:10px 0;}');
             c.push('.editormd-file-list{margin:10px 0;}.editormd-file-list a{display:inline-block;margin:3px 6px 3px 0;padding:4px 10px;border:1px solid #ddd;border-radius:3px;text-decoration:none;color:#333;font-size:13px;}.editormd-file-list a:hover{background:#f0f0f0;}');
-            c.push('.editormd-text-align{display:block;margin:0.5em 0;}.editormd-text-align-center{text-align:center!important;}.editormd-text-align-left{text-align:left!important;}.editormd-text-align-right{text-align:right!important;}.editormd-text-align-justify{text-align:justify!important;}');
+            c.push('.editormd-text-align{display:block;margin:0.5em 0;}.editormd-text-align-center{text-align:center!important;}.editormd-text-align-left{text-align:left!important;}.editormd-text-align-right{text-align:right!important;}');
             c.push('.editormd-echarts{margin:15px 0;border:1px solid #eee;border-radius:4px;}');
             c.push('.editormd-html-preview{text-align:left;font-size:16px;line-height:1.6;padding:20px;overflow:auto;width:100%;background-color:#fff;color:#333;word-wrap:break-word;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";}.editormd-html-preview *{box-sizing:border-box;}.editormd-html-preview p{margin-top:0;margin-bottom:10px;}.editormd-html-preview strong{font-weight:600;}.editormd-html-preview em{font-style:italic;}.editormd-html-preview del{text-decoration:line-through;}');
             c.push('.editormd-html-preview blockquote{padding:0 1em;color:#6a737d;border-left:0.25em solid #dfe2e5;margin:0 0 16px 0;}.editormd-html-preview blockquote>:first-child{margin-top:0;}.editormd-html-preview blockquote>:last-child{margin-bottom:0;}');
@@ -5029,10 +4613,12 @@
             c.push('.editormd-toc-menu .markdown-toc-list{display:none;position:absolute;top:100%;left:0;min-width:220px;max-height:460px;overflow-y:auto;background:#fff;border:1px solid #d1d5da;border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.12);z-index:400;margin-top:4px;padding:8px 0;}.editormd-toc-menu .markdown-toc-list li{padding:0;}.editormd-toc-menu .markdown-toc-list a{display:block;padding:5px 16px;color:#24292e;font-size:13px;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background 150ms ease;}.editormd-toc-menu .markdown-toc-list a:hover{background:#f1f8ff;color:#0366d6;}.editormd-toc-menu .markdown-toc-list a.toc-level-1{font-weight:600;}.editormd-toc-menu .markdown-toc-list a.toc-level-2{padding-left:24px;font-weight:500;}.editormd-toc-menu .markdown-toc-list a.toc-level-3{padding-left:32px;font-size:12.5px;}');
             c.push('.editormd-footnotes-section{margin-top:24px;padding-top:12px;border-top:1px solid #d1d5db;}.editormd-footnote-sep{display:none;}.editormd-footnote-title{font-size:14px;font-weight:700;color:#1f2937;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid #e5e7eb;}.editormd-footnote-list{padding:0;margin:0;list-style:none;counter-reset:editormd-fn-counter;}');
             c.push('.editormd-footnote-item{position:relative;margin-bottom:6px;padding:8px 10px 8px 32px;font-size:13px;line-height:1.5;color:#4b5563;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;transition:all 0.25s ease;}.editormd-footnote-item::before{counter-increment:editormd-fn-counter;content:counter(editormd-fn-counter);position:absolute;left:8px;top:8px;font-size:11px;font-weight:700;color:#6b7280;min-width:18px;text-align:center;}.editormd-footnote-content{display:block;}.editormd-footnote-content p{margin:0 0 6px;}.editormd-footnote-backref{display:none;}');
-            c.push('.editormd-footnote-ref-wrapper{display:inline;margin:0 1px;font-size:75%;line-height:0;position:relative;bottom:0.5em;}.editormd-footnote-ref-wrapper a{text-decoration:none;color:#2563eb;font-weight:600;}.editormd-footnote-ref-wrapper a:hover{color:#1d4ed8;text-decoration:underline;}');
-            c.push('.editormd-copybook{display:block;margin:1em 0;padding:12px 8px;background:#fef7e9;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.06);overflow-x:auto;}.editormd-copybook-row{display:flex;justify-content:center;gap:4px;margin-bottom:6px;}.editormd-copybook-row:last-child{margin-bottom:0;}.editormd-copybook-cell{position:relative;flex-shrink:0;}.editormd-copybook-grid-cell{width:52px;height:52px;background:#fff;border:1px solid #d4c296;box-shadow:0 1px 2px rgba(0,0,0,0.02);}.editormd-copybook-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;}.editormd-copybook-hanzi-text{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-family:"KaiTi","楷体","华文楷书",serif;color:#3e2a1a;line-height:1;z-index:3;}');
+            c.push('.editormd-footnote-ref-wrapper{display:inline;margin:0 1px;font-size:75%;line-height:0;position:relative;bottom:0.5em;}.editormd-footnote-ref-wrapper a{text-decoration:none;color:#2563eb;font-weight:600;}.editormd-footnote-ref-wrapper a:hover{color:#1d4ed8;text-decoration:underline;}.editormd-footnote-highlight{background:#fef3c7 !important;border-color:#f59e0b !important;box-shadow:0 0 12px rgba(245,158,11,0.3) !important;transition:all 0.3s ease;animation:editormd-footnote-pulse 0.6s ease-in-out;}@keyframes editormd-footnote-pulse{0%,100%{box-shadow:0 0 8px rgba(245,158,11,0.2);}50%{box-shadow:0 0 20px rgba(245,158,11,0.5);}}');
+            c.push('.editormd-copybook{display:block;margin:1em 0;padding:12px 8px;background:#fef7e9;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.06);overflow-x:auto;}.editormd-copybook-row{display:flex;justify-content:center;gap:4px;margin-bottom:6px;flex-wrap:wrap;}.editormd-copybook-row:last-child{margin-bottom:0;}.editormd-copybook-cell{position:relative;flex-shrink:0;}.editormd-copybook-grid-cell{width:52px;height:52px;background:#fff;border:1px solid #d4c296;box-shadow:0 1px 2px rgba(0,0,0,0.02);}.editormd-copybook-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;}.editormd-copybook-hanzi-text{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-family:"KaiTi","楷体","华文楷书",serif;color:#3e2a1a;line-height:1;z-index:3;}');
             c.push('.editormd-copybook-pinyin-cell{display:flex;flex-direction:column;align-items:center;width:52px;}.editormd-copybook-pinyin-top{position:relative;width:100%;height:28px;background:#fffef8;border:none;}.editormd-copybook-pinyin-top .editormd-copybook-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;}.editormd-copybook-pinyin-text{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:0.75rem;color:#3a7d44;font-family:"KaiTi","楷体",serif;z-index:3;}.editormd-copybook-pinyin-bottom{position:relative;width:100%;height:52px;background:#fff;border:1px solid #d4c296;border-top:none;margin-top:2px;}');
             c.push('.editormd-copybook-pinyin-bottom .editormd-copybook-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;}.editormd-copybook-pinyin-bottom .editormd-copybook-hanzi-text{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-family:"KaiTi","楷体",serif;color:#3e2a1a;line-height:1;z-index:3;}');
+            // ★ v1.17.6-FIX3: 拼音格宽度参数 — 两端对齐布局
+            c.push('.editormd-copybook-row-justified{justify-content:space-between !important;gap:0 !important;}.editormd-copybook-row-justified .editormd-copybook-pinyin-cell{flex:1 1 0;min-width:36px;max-width:80px;}.editormd-copybook-row-justified .editormd-copybook-pinyin-cell:not(:last-child){margin-right:2px;}');
             return c.join('\n');
         },
         
@@ -5156,6 +4742,7 @@
                     smartLists: true, smartypants: true
                 };
                 var markdownProtected3 = editormd.protectTeXSyntax(markdownText);
+                markdownProtected3 = editormd.preprocessLinkTarget(markdownProtected3);
                 var mdPreprocess = editormd.preprocessMarkdownBlocks(markdownProtected3, rendererOptions);
                 rawHTML = editormd.$marked(mdPreprocess.markdown, markedOptions);
                 rawHTML = editormd.restorePlaceholders(rawHTML, mdPreprocess.placeholders);
@@ -5321,6 +4908,1014 @@
             }
             
             settings.onunwatch.call(this);
+            
+            return this;
+        },
+        
+        /**
+         * ★ v1.17.4: 共享标题锚点映射构建函数（增强：文本验证 + 层级匹配）
+         * 解析 CM 源码提取标题行号 + 查询预览 DOM 标题元素 → 智能配对
+         * 供 bindSyncScroll 和 scrollToLineNum 共用
+         * 
+         * @returns {Array<{editorLine, editorLevel, previewElement, previewSignIndex}>}
+         */
+        _buildHeadingAnchorMap : function() {
+            var cm = this.cm;
+            var preview = this.previewContainer;
+            if (!cm || !preview || !preview[0]) return [];
+            
+            try {
+                var mdSource = cm.getValue();
+                var lines = mdSource.split('\n');
+                
+                // ★ v1.17.4: 只在非代码区域提取标题
+                var mdHeadingRegex = /^(#{1,6})\s+(.+?)(?:\s+#+)?\s*$/;
+                var inCodeBlock = false;
+                var editorHeadings = [];
+                for (var i = 0; i < lines.length; i++) {
+                    var line = lines[i];
+                    // 检测代码块边界
+                    if (/^\s*```/.test(line)) {
+                        inCodeBlock = !inCodeBlock;
+                        continue;
+                    }
+                    if (inCodeBlock) continue;
+                    
+                    var m = line.match(mdHeadingRegex);
+                    if (m) {
+                        editorHeadings.push({
+                            line: i,
+                            level: m[1].length,
+                            text: m[2].replace(/\{#[^\}]*\}/g, '').trim()
+                        });
+                    }
+                }
+                
+                if (editorHeadings.length === 0) return [];
+                
+                // 查找预览 DOM 中的所有标题元素（带 data-sign）
+                var allBlocks = preview[0].querySelectorAll('[data-sign]');
+                var previewHeadings = [];
+                for (var j = 0; j < allBlocks.length; j++) {
+                    var block = allBlocks[j];
+                    if (/^H[1-6]$/.test(block.tagName)) {
+                        var text = (block.textContent || '').replace(/[\s\u00a0\u200b]+/g, ' ').trim();
+                        previewHeadings.push({
+                            element: block,
+                            signIndex: j,
+                            level: parseInt(block.tagName.charAt(1)),
+                            text: text
+                        });
+                    }
+                }
+                
+                // ★ v1.17.4: 智能配对 — 优先文本+层级匹配，回退到顺序匹配
+                var anchors = [];
+                var usedPreview = {};
+                
+                // 第一轮：精确文本 + 层级匹配
+                for (var ei = 0; ei < editorHeadings.length; ei++) {
+                    var eH = editorHeadings[ei];
+                    var bestMatch = null;
+                    var bestScore = Infinity;
+                    
+                    for (var pi = 0; pi < previewHeadings.length; pi++) {
+                        if (usedPreview[pi]) continue;
+                        var pH = previewHeadings[pi];
+                        
+                        // 文本匹配度
+                        if (eH.text === pH.text && eH.level === pH.level) {
+                            // 完美匹配：优先选距离最近的
+                            var dist = Math.abs(ei - pi);
+                            if (dist < bestScore) {
+                                bestScore = dist;
+                                bestMatch = pi;
+                            }
+                        }
+                    }
+                    
+                    if (bestMatch !== null) {
+                        usedPreview[bestMatch] = true;
+                        anchors.push({
+                            editorLine: eH.line,
+                            editorLevel: eH.level,
+                            previewElement: previewHeadings[bestMatch].element,
+                            previewSignIndex: previewHeadings[bestMatch].signIndex
+                        });
+                    }
+                }
+                
+                // 第二轮：对剩余未匹配的，按顺序配对
+                var remainingEditor = [];
+                var remainingPreview = [];
+                for (ei = 0; ei < editorHeadings.length; ei++) {
+                    if (anchors.filter(function(a) { return a.editorLine === editorHeadings[ei].line; }).length === 0) {
+                        remainingEditor.push(editorHeadings[ei]);
+                    }
+                }
+                for (pi = 0; pi < previewHeadings.length; pi++) {
+                    if (!usedPreview[pi]) {
+                        remainingPreview.push(previewHeadings[pi]);
+                    }
+                }
+                
+                var limit2 = Math.min(remainingEditor.length, remainingPreview.length);
+                for (var ri = 0; ri < limit2; ri++) {
+                    anchors.push({
+                        editorLine: remainingEditor[ri].line,
+                        editorLevel: remainingEditor[ri].level,
+                        previewElement: remainingPreview[ri].element,
+                        previewSignIndex: remainingPreview[ri].signIndex
+                    });
+                }
+                
+                // 按 editorLine 排序保证顺序正确
+                anchors.sort(function(a, b) { return a.editorLine - b.editorLine; });
+                
+                return anchors;
+            } catch(e) {
+                return [];
+            }
+        },
+        
+        /**
+         * ★ v1.17.4: 绑定编辑区与预览区同步滚动（彻底重写）
+         * 
+         * 彻底修复：
+         *   1. **程序化滚动识别**：使用 _syncState.programmaticScroll 标记区分
+         *      用户手动滚动和代码触发的滚动。程序化滚动不触发反向同步。
+         *   2. **预览→编辑方向完全修复**：
+         *      - 使用 _syncState.disablePreviewListener 精确控制，仅在
+         *        editor→preview 动画期间禁用反向同步
+         *      - 不再错误地阻止用户预览区滚动事件
+         *      - 使用委托监听模式，scroll 事件统一走 previewContainer，
+         *        同时在滚动容器的祖先链上监听，确保不遗漏
+         *   3. **预览交互防护**：_syncState.suppressAllSync 标志
+         *      - 图片拖拽缩放、表格编辑等预览操作更新编辑器内容时
+         *        完全禁止双向同步，防止内容更新→预览重建→滚动跳转
+         *   4. **锚点文本验证匹配**：二维（文本+层级）匹配替代纯顺序配对
+         *   5. **代码块过滤**：提取标题时跳过代码块内的 # 开头的行
+         * 
+         * 方向一 — 编辑区 → 预览区：
+         *   1. 获取编辑区可视中心行号
+         *   2. 标题锚点 + 插值定位预览滚动位置
+         *   3. 设置 programmaticScroll 标记后播放缓动动画
+         * 
+         * 方向二 — 预览区 → 编辑区：
+         *   1. 检查 suppressAllSync / disablePreviewListener / applyingDomChanges
+         *   2. 标题锚点定位编辑器行号
+         *   3. 使用 scrollIntoView 滚动编辑器
+         * 
+         * @returns {editormd}
+         */
+        bindSyncScroll : function() {
+            var _this    = this;
+            var settings = this.settings;
+            
+            if (!settings.syncScroll || this._scrollSyncBound) {
+                return this;
+            }
+            
+            var cm      = this.cm;
+            // previewDom = previewContainer 内层 (.editormd-preview-container) — DOM 查询用
+            // scrollEl   = 外层 .editormd-preview — 实际滚动、scrollTop、getBoundingClientRect 用
+            var previewDom = this.previewContainer;
+            var scrollEl   = this.preview && this.preview[0];
+            var editor     = this.editor;
+            
+            // ★ v1.17.8: 初始化/校验 syncState — 增加主控区追踪
+            if (!this._syncState) {
+                this._syncState = {
+                    lastEditorSyncTime: 0,
+                    lastPreviewSyncTime: 0,
+                    programmaticScroll: false,
+                    disablePreviewListener: false,
+                    editorAnimTimer: null,
+                    mouseTarget: null,
+                    suppressAllSync: false
+                };
+            }
+            var state = this._syncState;
+            
+            if (!cm || !previewDom || !previewDom.length || !scrollEl || !editor || !editor.length) {
+                return this;
+            }
+            
+            var cmScrollEl = cm.getScrollerElement();
+            var $cmScroll  = $(cmScrollEl);
+            
+            previewDom.css("overflow", "hidden");
+            
+            var SYNC_DEBOUNCE = 16;
+            
+            // ★★★ v1.17.8: 主控区追踪 — 基于 wheel 事件而非鼠标位置 ★★★
+            // 核心原则：用户操作的那一侧是主控区，另一侧跟随；主控区绝不被动滚动
+            var _masterZone = null;           // "editor" | "preview" | null
+            var _masterZoneClearTimer = null;
+            var MASTER_CLEAR_DELAY = 400;    // wheel 停止后 400ms 清除主控区追踪
+            
+            var _setMasterZone = function(zone) {
+                if (_masterZoneClearTimer) clearTimeout(_masterZoneClearTimer);
+                _masterZone = zone;
+                _masterZoneClearTimer = setTimeout(function() {
+                    _masterZone = null;
+                }, MASTER_CLEAR_DELAY);
+            };
+            
+            // ★★ Wheel 事件追踪 — 谁在用鼠标滚轮滚动，谁就是主控区 ★★
+            $(cmScrollEl).off("wheel.editormd-master").on("wheel.editormd-master", function(e) {
+                if (state.programmaticScroll) return;
+                _setMasterZone("editor");
+            });
+            $(scrollEl).off("wheel.editormd-master").on("wheel.editormd-master", function(e) {
+                if (state.programmaticScroll) return;
+                _setMasterZone("preview");
+            });
+            
+            // ★★ mouseenter/mouseleave — 辅助维护鼠标所在区域（用于没有 wheel 的情况，如点击跳转） ★★
+            editor.off("mouseenter.editormd-sync mouseleave.editormd-sync")
+                .on("mouseenter.editormd-sync", function() {
+                    state.mouseTarget = "editor";
+                    // ★ v1.17.9 fix: 鼠标进入编辑区立即清除反向主控区，防止旧 masterZone 阻断同步
+                    if (_masterZone === "preview") {
+                        if (_masterZoneClearTimer) clearTimeout(_masterZoneClearTimer);
+                        _masterZone = null;
+                    }
+                }).on("mouseleave.editormd-sync", function() {
+                    if (state.mouseTarget === "editor") state.mouseTarget = null;
+                });
+            $(scrollEl).off("mouseenter.editormd-sync mouseleave.editormd-sync")
+                .on("mouseenter.editormd-sync", function() {
+                    state.mouseTarget = "preview";
+                    // ★ v1.17.9 fix: 鼠标进入预览区立即清除反向主控区，防止旧 masterZone 阻断同步
+                    if (_masterZone === "editor") {
+                        if (_masterZoneClearTimer) clearTimeout(_masterZoneClearTimer);
+                        _masterZone = null;
+                    }
+                }).on("mouseleave.editormd-sync", function() {
+                    if (state.mouseTarget === "preview") state.mouseTarget = null;
+                });
+            
+            // ★★ v1.17.9 fix: 编辑器获得焦点时（如点击），清除反向主控区追踪 ★★
+            cm.off("focus.editormd-sync");
+            cm.on("focus.editormd-sync", function() {
+                state.mouseTarget = "editor";
+                if (_masterZone === "preview") {
+                    if (_masterZoneClearTimer) clearTimeout(_masterZoneClearTimer);
+                    _masterZone = null;
+                }
+            });
+            
+            // ★★ v1.17.8: 位置映射 — 基于全部 data-sign 块的精细映射表 ★★
+            var _positionMap = null;       // [{editorLine, previewY}] — previewY 是相对于 scrollEl 内容顶部的偏移
+            var _positionMapCacheKey = null;
+            
+            var _buildPositionMap = function() {
+                try {
+                    // ★ v1.17.9: 两层回退 — data-sign 块 → 全部块级元素 → 简单分段
+                    var blocks = previewDom[0].querySelectorAll('[data-sign]');
+                    if (!blocks || !blocks.length) {
+                        // 回退：查找任意块级元素作为位置锚点
+                        blocks = previewDom[0].querySelectorAll('h1,h2,h3,h4,h5,h6,p,pre,blockquote,ul,ol,table,dl,hr,li');
+                    }
+                    if (!blocks || !blocks.length) {
+                        // 最终回退：至少使用 previewDom 自身作为单个锚点
+                        _positionMap = [];
+                        if (previewDom[0]) {
+                            var totalLinesFallback = cm.lineCount();
+                            if (totalLinesFallback > 1) {
+                                _positionMap = [
+                                    { editorLine: 0, previewY: 0 },
+                                    { editorLine: totalLinesFallback - 1, previewY: scrollEl.scrollHeight || 1000 }
+                                ];
+                            }
+                        }
+                        return;
+                    }
+                    
+                    var totalLines = cm.lineCount();
+                    if (totalLines <= 1) { _positionMap = []; return; }
+                    
+                    // ★ v1.17.8: 先构建标题锚点列表（精确的 editorLine→blockIndex 映射）
+                    var mdSource = cm.getValue();
+                    var lines = mdSource.split('\n');
+                    var headingRegex = /^(#{1,6})\s+(.+?)(?:\s+#+)?\s*$/;
+                    var inCodeBlock = false;
+                    var editorHeadings = [];
+                    for (var i = 0; i < lines.length; i++) {
+                        var line = lines[i];
+                        if (/^\s*```/.test(line)) { inCodeBlock = !inCodeBlock; continue; }
+                        if (inCodeBlock) continue;
+                        var m = line.match(headingRegex);
+                        if (m) {
+                            editorHeadings.push({
+                                line: i,
+                                text: m[2].replace(/\{#[^\}]*\}/g, '').trim()
+                            });
+                        }
+                    }
+                    
+                    // 提取预览DOM中的标题元素
+                    var previewHeadings = [];
+                    for (var b = 0; b < blocks.length; b++) {
+                        if (/^H[1-6]$/.test(blocks[b].tagName)) {
+                            previewHeadings.push({
+                                index: b,
+                                text: (blocks[b].textContent || '').replace(/[\s\u00a0\u200b]+/g, ' ').trim()
+                            });
+                        }
+                    }
+                    
+                    // 配对：文本匹配
+                    var headingMap = []; // [{editorLine, blockIndex}]
+                    var usedPH = {};
+                    for (var ei = 0; ei < editorHeadings.length; ei++) {
+                        for (var pi = 0; pi < previewHeadings.length; pi++) {
+                            if (usedPH[pi]) continue;
+                            if (editorHeadings[ei].text === previewHeadings[pi].text) {
+                                headingMap.push({ editorLine: editorHeadings[ei].line, blockIndex: previewHeadings[pi].index });
+                                usedPH[pi] = true;
+                                break;
+                            }
+                        }
+                    }
+                    headingMap.sort(function(a, b) { return a.editorLine - b.editorLine; });
+                    
+                    // ★ v1.17.8: 构建完整位置映射表 — 标题锚点精确对齐 + 块间比例分配
+                    _positionMap = [];
+                    var scrollElRect = scrollEl.getBoundingClientRect ? scrollEl.getBoundingClientRect() : { top: 0 };
+                    
+                    if (headingMap.length < 2) {
+                        // 标题不够，使用全体块的比例映射
+                        var seRect = scrollEl.getBoundingClientRect();
+                        for (var bi = 0; bi < blocks.length; bi++) {
+                            var bRect = blocks[bi].getBoundingClientRect();
+                            var py = scrollEl.scrollTop + (bRect.top - seRect.top);
+                            var el = Math.round((bi / Math.max(1, blocks.length - 1)) * (totalLines - 1));
+                            _positionMap.push({ editorLine: el, previewY: Math.max(0, py) });
+                        }
+                    } else {
+                        // 有足量标题锚点：标题间按 editorLine 比例分配块
+                        var prevH = headingMap[0];
+                        _positionMap.push({ editorLine: 0, previewY: 0 });
+                        
+                        // 每个标题映射到精确位置
+                        for (var hi = 0; hi < headingMap.length; hi++) {
+                            var bh = headingMap[hi];
+                            try {
+                                var bR = blocks[bh.blockIndex].getBoundingClientRect();
+                                var pY = scrollEl.scrollTop + (bR.top - scrollEl.getBoundingClientRect().top);
+                                _positionMap.push({ editorLine: bh.editorLine, previewY: Math.max(0, pY) });
+                            } catch(e) {}
+                        }
+                        
+                        // 最后一个块
+                        var lastBlock = blocks[blocks.length - 1];
+                        try {
+                            var lbR = lastBlock.getBoundingClientRect();
+                            var lbY = scrollEl.scrollTop + (lbR.bottom - scrollEl.getBoundingClientRect().top);
+                            _positionMap.push({ editorLine: totalLines - 1, previewY: Math.max(0, lbY) });
+                        } catch(e) {
+                            _positionMap.push({ editorLine: totalLines - 1, previewY: scrollEl.scrollHeight });
+                        }
+                    }
+                    
+                    // 去重 + 排序
+                    _positionMap.sort(function(a, b) { return a.editorLine - b.editorLine || a.previewY - b.previewY; });
+                } catch(e) {
+                    _positionMap = [];
+                }
+            };
+            
+            var _getPositionMap = function() {
+                // ★ v1.17.9: 用内容长度+行数作为缓存键，内容变化时更可靠地失效
+                var key = cm.getValue().length + '_' + cm.lineCount();
+                if (_positionMapCacheKey !== key) {
+                    _buildPositionMap();
+                    _positionMapCacheKey = key;
+                }
+                return _positionMap;
+            };
+            
+            var _invalidatePositionMap = function() {
+                _positionMap = null;
+                _positionMapCacheKey = null;
+            };
+    
+            // ================================================================
+            // ★ v1.17.8: 滚动动画 — 使用外层 scrollEl
+            // ================================================================
+            var _animCounter = 0;
+            var _scrollAnimationTo = function(targetScrollTop) {
+                if (Math.abs(scrollEl.scrollTop - targetScrollTop) < 3) return;
+                
+                if (state.editorAnimTimer) {
+                    cancelAnimationFrame(state.editorAnimTimer);
+                    state.editorAnimTimer = null;
+                }
+                
+                var animId = ++_animCounter;
+                state.disablePreviewListener = true;
+                state.programmaticScroll = true;
+                
+                var startTop = scrollEl.scrollTop;
+                var startTime = performance.now();
+                var duration = 200;
+                
+                var animationHandler = function(timestamp) {
+                    if (animId !== _animCounter) return;
+                    var elapsed = timestamp - startTime;
+                    var progress = Math.min(1, elapsed / duration);
+                    var easing = progress < 0.5
+                        ? 4 * progress * progress * progress
+                        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+                    var newTop = startTop + (targetScrollTop - startTop) * easing;
+                    scrollEl.scrollTop = Math.max(0, newTop);
+                    
+                    if (progress < 1) {
+                        state.editorAnimTimer = requestAnimationFrame(animationHandler);
+                    } else {
+                        scrollEl.scrollTop = Math.max(0, targetScrollTop);
+                        state.editorAnimTimer = null;
+                        state.disablePreviewListener = false;
+                        requestAnimationFrame(function() {
+                            requestAnimationFrame(function() {
+                                state.programmaticScroll = false;
+                            });
+                        });
+                    }
+                };
+                state.editorAnimTimer = requestAnimationFrame(animationHandler);
+            };
+            
+            // ★ v1.17.8: 暴露内部方法到 state 对象供外部调用
+            state._invalidateAnchors = _invalidatePositionMap;
+            state._refreshSync = function(centerLine) {
+                try {
+                    _invalidatePositionMap();
+                    if (typeof centerLine === 'number') {
+                        var targetScrollTop = _editorLineToPreviewScroll(centerLine);
+                        if (targetScrollTop !== null) {
+                            _scrollAnimationTo(targetScrollTop);
+                        }
+                    }
+                } catch(e) {}
+            };
+    
+            // ================================================================
+            // ★★★ v1.17.8: 方向一 — 编辑区行号→预览区滚动位置 ★★★
+            // 使用位置映射表（所有 data-sign 块）进行精确定位
+            // ================================================================
+            var _editorLineToPreviewScroll = function(editorLine) {
+                try {
+                    var map = _getPositionMap();
+                    var totalLines = cm.lineCount();
+                    
+                    if (!map || map.length === 0) {
+                        // ★ v1.17.9: 与 _buildPositionMap 保持一致的回退 — 先用 data-sign，再找任意块级元素
+                        var blocks = previewDom[0].querySelectorAll('[data-sign]');
+                        if (!blocks.length) {
+                            blocks = previewDom[0].querySelectorAll('h1,h2,h3,h4,h5,h6,p,pre,blockquote,ul,ol,table,dl,hr,li');
+                        }
+                        if (!blocks.length) return null;
+                        var ratio = Math.max(0, Math.min(1, editorLine / Math.max(1, totalLines - 1)));
+                        var tIdx = Math.round(ratio * (blocks.length - 1));
+                        tIdx = Math.min(blocks.length - 1, Math.max(0, tIdx));
+                        var targetBlock = blocks[tIdx];
+                        var seRect = scrollEl.getBoundingClientRect();
+                        var bRect = targetBlock.getBoundingClientRect();
+                        return Math.max(0, scrollEl.scrollTop + (bRect.top - seRect.top));
+                    }
+                    
+                    var lo = 0, hi = map.length - 1;
+                    while (lo < hi) {
+                        var mid = (lo + hi + 1) >> 1;
+                        if (map[mid].editorLine <= editorLine) {
+                            lo = mid;
+                        } else {
+                            hi = mid - 1;
+                        }
+                    }
+                    
+                    if (lo >= map.length - 1) return map[map.length - 1].previewY;
+                    
+                    var prev = map[lo];
+                    var next = map[lo + 1];
+                    var lineDist = next.editorLine - prev.editorLine;
+                    if (lineDist <= 0) return prev.previewY;
+                    
+                    var t = Math.max(0, Math.min(1, (editorLine - prev.editorLine) / lineDist));
+                    return prev.previewY + (next.previewY - prev.previewY) * t;
+                } catch(e) {
+                    return null;
+                }
+            };
+    
+            // ================================================================
+            // ★★★ v1.17.8: 方向二 — 预览区滚动位置→编辑区行号 ★★★
+            // ================================================================
+            var _previewScrollToEditorLine = function() {
+                try {
+                    var map = _getPositionMap();
+                    var totalLines = cm.lineCount();
+                    if (totalLines <= 0) return null;
+                    
+                    if (!map || map.length === 0) {
+                        // ★ v1.17.9: 与 _buildPositionMap 保持一致的回退 — 先用 data-sign，再找任意块级元素
+                        var blocks = previewDom[0].querySelectorAll('[data-sign]');
+                        if (!blocks.length) {
+                            blocks = previewDom[0].querySelectorAll('h1,h2,h3,h4,h5,h6,p,pre,blockquote,ul,ol,table,dl,hr,li');
+                        }
+                        if (!blocks.length) return null;
+                        
+                        var seRect = scrollEl.getBoundingClientRect();
+                        var vpCenter = (seRect.top + seRect.bottom) / 2;
+                        
+                        var lo = 0, hi = blocks.length - 1, foundIdx = -1;
+                        while (lo <= hi) {
+                            var mid = (lo + hi) >> 1;
+                            var r = blocks[mid].getBoundingClientRect();
+                            if (r.bottom > vpCenter) {
+                                foundIdx = mid;
+                                hi = mid - 1;
+                            } else {
+                                lo = mid + 1;
+                            }
+                        }
+                        if (foundIdx < 0) foundIdx = blocks.length - 1;
+                        
+                        var ratio = blocks.length > 1 ? foundIdx / (blocks.length - 1) : 0;
+                        return Math.round(ratio * (totalLines - 1));
+                    }
+                    
+                    var seRect = scrollEl.getBoundingClientRect();
+                    var viewportCenterY = scrollEl.scrollTop + (seRect.bottom - seRect.top) / 2;
+                    
+                    var lo = 0, hi = map.length - 1;
+                    while (lo < hi) {
+                        var mid = (lo + hi + 1) >> 1;
+                        if (map[mid].previewY <= viewportCenterY) {
+                            lo = mid;
+                        } else {
+                            hi = mid - 1;
+                        }
+                    }
+                    
+                    if (lo >= map.length - 1) return totalLines - 1;
+                    
+                    var prev = map[lo];
+                    var next = map[lo + 1];
+                    var yDist = next.previewY - prev.previewY;
+                    if (yDist <= 0) return prev.editorLine;
+                    
+                    var t = Math.max(0, Math.min(1, (viewportCenterY - prev.previewY) / yDist));
+                    return Math.round(prev.editorLine + (next.editorLine - prev.editorLine) * t);
+                } catch(e) {
+                    return null;
+                }
+            };
+    
+            // ================================================================
+            // ★ v1.17.8: 方向一：编辑区滚动 → 同步预览区
+            //   门控：_masterZone !== "preview" 才允许（用户正在操作预览区时禁止）
+            // ================================================================
+            var _editorSyncToPreview = function() {
+                if (state.suppressAllSync) return;
+                if (state.programmaticScroll) return;
+                if (_this._applyingDomChanges) return;
+                if (_masterZone === "preview") return;
+                if (!_masterZone && state.mouseTarget === "preview") return;
+                
+                var now = Date.now();
+                if (now - state.lastEditorSyncTime < SYNC_DEBOUNCE) return;
+                state.lastEditorSyncTime = now;
+                
+                try {
+                    var cmInfo = cm.getScrollInfo();
+                    var cmMaxScroll = Math.max(0, cmInfo.height - cmInfo.clientHeight);
+                    if (cmMaxScroll <= 0) return;
+                    
+                    var scrollRatio = cmMaxScroll > 0 ? cmInfo.top / cmMaxScroll : 0;
+                    var totalLines = cm.lineCount();
+                    var centerLine = Math.round(scrollRatio * (totalLines - 1));
+                    
+                    var firstVisibleLine = cm.lineAtHeight(cmInfo.top, "local");
+                    var lastVisibleLine = cm.lineAtHeight(cmInfo.top + cmInfo.clientHeight, "local");
+                    var visibleCenter = firstVisibleLine + (lastVisibleLine - firstVisibleLine) / 2;
+                    centerLine = Math.round((centerLine + visibleCenter) / 2);
+                    
+                    var targetScrollTop = _editorLineToPreviewScroll(centerLine);
+                    if (targetScrollTop !== null) {
+                        _scrollAnimationTo(targetScrollTop);
+                    }
+                } catch(e) {}
+            };
+            
+            $cmScroll.off("scroll.editormd-sync").on("scroll.editormd-sync", _editorSyncToPreview);
+            
+            var _editorChangeTimer = null;
+            cm.off("changes.xfsync");
+            cm.on("changes.xfsync", function() {
+                clearTimeout(_editorChangeTimer);
+                _editorChangeTimer = setTimeout(function() {
+                    if (_this._applyingDomChanges) return;
+                    _invalidatePositionMap();
+                    if (!state.suppressAllSync && _masterZone !== "preview") {
+                        _editorSyncToPreview();
+                    }
+                }, 50);
+            });
+            
+            cm.off("cursorActivity.xfsync");
+            cm.on("cursorActivity.xfsync", function() {
+                if (state.suppressAllSync) return;
+                if (_this._applyingDomChanges) return;
+                if (_masterZone === "preview") return;
+                
+                var cursor = cm.getCursor();
+                var cmInfo = cm.getScrollInfo();
+                var cursorTop = cm.charCoords(cursor, "local").top;
+                if (cursorTop < cmInfo.top || cursorTop > cmInfo.top + cmInfo.clientHeight) {
+                    _invalidatePositionMap();
+                    _editorSyncToPreview();
+                }
+            });
+    
+            // ================================================================
+            // ★ v1.17.8: 方向二：预览区滚动 → 同步编辑区
+            //   门控：_masterZone !== "editor" 才允许（编辑区是主控区时禁止）
+            // ================================================================
+            var _previewScrollHandler = function(e) {
+                if (state.suppressAllSync) return;
+                if (state.programmaticScroll) return;
+                if (state.disablePreviewListener) return;
+                if (_this._applyingDomChanges) return;
+                if (_masterZone === "editor") return;
+                if (!_masterZone && state.mouseTarget === "editor") return;
+                
+                var now = Date.now();
+                if (now - state.lastPreviewSyncTime < SYNC_DEBOUNCE) return;
+                state.lastPreviewSyncTime = now;
+                
+                try {
+                    var targetLine = _previewScrollToEditorLine();
+                    if (targetLine === null) return;
+                    
+                    var cmInfo = cm.getScrollInfo();
+                    if (cmInfo.clientHeight <= 0) return;
+                    
+                    var totalLines = cm.lineCount();
+                    targetLine = Math.max(0, Math.min(totalLines - 1, targetLine));
+                    
+                    state.programmaticScroll = true;
+                    var editorMaxScroll = cmInfo.height - cmInfo.clientHeight;
+                    if (editorMaxScroll > 0) {
+                        var lineCoords = cm.charCoords({line: targetLine, ch: 0}, "local");
+                        var targetEditorTop = lineCoords.top - Math.round(cmInfo.clientHeight / 3);
+                        targetEditorTop = Math.max(0, Math.min(editorMaxScroll, targetEditorTop));
+                        cm.scrollTo(0, targetEditorTop);
+                    }
+                    requestAnimationFrame(function() {
+                        requestAnimationFrame(function() {
+                            state.programmaticScroll = false;
+                        });
+                    });
+                } catch(e) {}
+            };
+    
+            $(scrollEl).off("scroll.editormd-sync-v3").on("scroll.editormd-sync-v3", _previewScrollHandler);
+            
+            $(scrollEl).off("wheel.editormd-anim").on("wheel.editormd-anim", function() {
+                if (state.editorAnimTimer) {
+                    cancelAnimationFrame(state.editorAnimTimer);
+                    state.editorAnimTimer = null;
+                }
+                // ★ v1.17.9 fix: 动画中断时重置防回环标志，否则永久死锁
+                state.disablePreviewListener = false;
+                state.programmaticScroll = false;
+                _invalidatePositionMap();
+            });
+            $(cmScrollEl).off("wheel.editormd-anim").on("wheel.editormd-anim", function() {
+                if (state.editorAnimTimer) {
+                    cancelAnimationFrame(state.editorAnimTimer);
+                    state.editorAnimTimer = null;
+                }
+                // ★ v1.17.9 fix: 动画中断时重置防回环标志，否则永久死锁
+                state.disablePreviewListener = false;
+                state.programmaticScroll = false;
+                _invalidatePositionMap();
+            });
+            
+            $(scrollEl).off("mousedown.editormd-sync").on("mousedown.editormd-sync", function(e) {
+                var sw = scrollEl.offsetWidth - scrollEl.clientWidth;
+                if (sw > 0 && e.offsetX > scrollEl.clientWidth) {
+                    if (state.editorAnimTimer) {
+                        cancelAnimationFrame(state.editorAnimTimer);
+                        state.editorAnimTimer = null;
+                    }
+                    // ★ v1.17.9 fix: scrollbar拖拽也必须重置防回环标志
+                    state.disablePreviewListener = false;
+                    state.programmaticScroll = false;
+                }
+                _invalidatePositionMap();
+            });
+    
+            // ================================================================
+            // ★ v1.17.8: TOC 链接点击处理
+            // ================================================================
+            previewDom.off("click.editormd-toc").on("click.editormd-toc", ".markdown-toc-list a[href^='#']", function(e) {
+                var href = $(this).attr("href");
+                if (!href || href === "#") return;
+                var targetId = decodeURIComponent(href.substring(1));
+                var targetEl = null;
+                try {
+                    targetEl = previewDom[0].querySelector('[id="' + CSS.escape(targetId) + '"]');
+                } catch(_) {
+                    targetEl = previewDom[0].querySelector('[id="' + targetId.replace(/"/g, '\\"') + '"]');
+                }
+                if (targetEl && previewDom[0].contains(targetEl)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var seRect = scrollEl.getBoundingClientRect();
+                    var tRect = targetEl.getBoundingClientRect();
+                    var targetScrollTop = scrollEl.scrollTop + (tRect.top - seRect.top) - 30;
+                    targetScrollTop = Math.max(0, targetScrollTop);
+                    _invalidatePositionMap();
+                    _setMasterZone("preview");
+                    state.programmaticScroll = true;
+                    scrollEl.scrollTo({ top: targetScrollTop, behavior: "smooth" });
+                    requestAnimationFrame(function() {
+                        requestAnimationFrame(function() {
+                            state.programmaticScroll = false;
+                        });
+                    });
+                }
+            });
+            
+            // ================================================================
+            // ★ v1.17.8: 脚注引用链接点击处理
+            // ================================================================
+            previewDom.off("click.editormd-footnote").on("click.editormd-footnote", ".editormd-footnote-ref-wrapper a[href^='#editormd-fn-'], .editormd-copybook-footnote a[href^='#editormd-fn-'], .editormd-footnote-backref[href^='#editormd-fnref-']", function(e) {
+                var href = $(this).attr("href");
+                if (!href || href === "#") return;
+                
+                var targetId = decodeURIComponent(href.substring(1));
+                var targetEl = null;
+                try {
+                    targetEl = previewDom[0].querySelector('[id="' + CSS.escape(targetId) + '"]');
+                } catch(_) {
+                    targetEl = previewDom[0].querySelector('[id="' + targetId.replace(/"/g, '\\"') + '"]');
+                }
+                
+                if (targetEl && previewDom[0].contains(targetEl)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    var tRect = targetEl.getBoundingClientRect();
+                    var targetScrollTop = scrollEl.scrollTop + (tRect.top - scrollEl.getBoundingClientRect().top) - 40;
+                    targetScrollTop = Math.max(0, targetScrollTop);
+                    
+                    _setMasterZone("preview");
+                    state.programmaticScroll = true;
+                    scrollEl.scrollTo({ top: targetScrollTop, behavior: "smooth" });
+                    
+                    var $target = $(targetEl);
+                    $target.addClass("editormd-footnote-highlight");
+                    setTimeout(function() {
+                        $target.removeClass("editormd-footnote-highlight");
+                    }, 2000);
+                    
+                    requestAnimationFrame(function() {
+                        requestAnimationFrame(function() {
+                            state.programmaticScroll = false;
+                        });
+                    });
+                }
+            });
+            
+            var _resizeTimer = null;
+            $(window).off("resize.editormd-sync").on("resize.editormd-sync", function() {
+                clearTimeout(_resizeTimer);
+                _resizeTimer = setTimeout(function() {
+                    _invalidatePositionMap();
+                    _editorSyncToPreview();
+                }, 200);
+            });
+    
+            // ================================================================
+            // ★ v1.17.9: 外部接口 — 预览区交互时暂停/恢复同步
+            // ================================================================
+            this.suspendSyncScroll = function() {
+                state.suppressAllSync = true;
+                // 清除所有待处理的同步定时器，防止覆盖手动滚动恢复
+                clearTimeout(_editorChangeTimer);
+                _editorChangeTimer = null;
+                if (_this.__lastSyncTimer) {
+                    clearTimeout(_this.__lastSyncTimer);
+                    _this.__lastSyncTimer = null;
+                }
+                // 取消正在进行的动画
+                if (state.editorAnimTimer) {
+                    cancelAnimationFrame(state.editorAnimTimer);
+                    state.editorAnimTimer = null;
+                    state.disablePreviewListener = false;
+                    state.programmaticScroll = false;
+                }
+            };
+            this.resumeSyncScroll = function() {
+                state.suppressAllSync = false;
+                // ★ v1.17.9: 清除 save() 创建的延迟同步定时器，防止覆盖手动滚动恢复
+                if (_this.__lastSyncTimer) {
+                    clearTimeout(_this.__lastSyncTimer);
+                    _this.__lastSyncTimer = null;
+                }
+                _invalidatePositionMap();
+            };
+    
+            this._scrollSyncBound = true;
+            _invalidatePositionMap();
+            
+            setTimeout(function() {
+                if (state.suppressAllSync) return;
+                if (_this._applyingDomChanges) return;
+                try {
+                    var cmInfo = cm.getScrollInfo();
+                    var cmMaxScroll = Math.max(0, cmInfo.height - cmInfo.clientHeight);
+                    if (cmMaxScroll <= 0) return;
+                    var scrollRatio = cmMaxScroll > 0 ? cmInfo.top / cmMaxScroll : 0;
+                    var totalLines = cm.lineCount();
+                    var centerLine = Math.round(scrollRatio * (totalLines - 1));
+                    var firstVisibleLine = cm.lineAtHeight(cmInfo.top, "local");
+                    var lastVisibleLine = cm.lineAtHeight(cmInfo.top + cmInfo.clientHeight, "local");
+                    centerLine = Math.round((centerLine + firstVisibleLine + (lastVisibleLine - firstVisibleLine) / 2) / 2);
+                    var targetScrollTop = _editorLineToPreviewScroll(centerLine);
+                    if (targetScrollTop !== null) {
+                        _scrollAnimationTo(targetScrollTop);
+                    }
+                } catch(e) {}
+            }, 300);
+            
+            return this;
+        },
+        
+        /**
+         * ★ v1.17.1: 解除同步滚动绑定
+         * Unbind editor-preview sync scrolling
+         * 
+         * @returns {editormd}
+         */
+        unbindSyncScroll : function() {
+            if (!this._scrollSyncBound) return this;
+            
+            try {
+                // 取消动画
+                if (this._syncState && this._syncState.editorAnimTimer) {
+                    cancelAnimationFrame(this._syncState.editorAnimTimer);
+                    this._syncState.editorAnimTimer = null;
+                    this._syncState.disablePreviewListener = false;
+                }
+                // 兼容旧版
+                if (this._scrollAnimation && this._scrollAnimation.timer) {
+                    cancelAnimationFrame(this._scrollAnimation.timer);
+                    this._scrollAnimation.timer = null;
+                }
+                
+                var cmScrollEl = this.cm && this.cm.getScrollerElement();
+                var preview = this.preview && this.preview[0];
+                
+                if (cmScrollEl) {
+                    $(cmScrollEl).off("scroll.editormd-sync wheel.editormd-master wheel.editormd-anim");
+                }
+                if (preview) {
+                    $(preview).off("scroll.editormd-sync-v3 wheel.editormd-master wheel.editormd-anim mousedown.editormd-sync mouseenter.editormd-sync mouseleave.editormd-sync");
+                }
+                if (this.previewContainer) {
+                    this.previewContainer.off("click.editormd-toc click.editormd-footnote");
+                }
+                if (this.editor) {
+                    this.editor.off("mouseenter.editormd-sync mouseleave.editormd-sync");
+                }
+                $(window).off("resize.editormd-sync");
+                if (this.cm) {
+                    this.cm.off("changes.xfsync cursorActivity.xfsync focus.editormd-sync");
+                }
+            } catch(e) {}
+            
+            clearTimeout(this.__syncLeaveTimer);
+            clearTimeout(this.__syncDomLockTimer);
+            clearTimeout(this.__lastSyncTimer);
+            this.__lastSyncTimer = null;
+            this._scrollSyncBound = false;
+            this._syncingScroll = false;
+            this._syncScrollActive = null;
+            this._applyingDomChanges = false;
+            // 重置同步状态
+            if (this._syncState) {
+                this._syncState.suppressAllSync = false;
+                this._syncState.programmaticScroll = false;
+                this._syncState.disablePreviewListener = false;
+                this._syncState.mouseTarget = null;
+                this._syncState.lastEditorSyncTime = 0;
+                this._syncState.lastPreviewSyncTime = 0;
+            }
+            // 清理外部接口
+            this.suspendSyncScroll = null;
+            this.resumeSyncScroll = null;
+            
+            return this;
+        },
+        
+        /**
+         * ★ v1.17.2-FIX: 滚动预览区到指定编辑区行号（标题锚点 + 插值）
+         * 
+         * 参照 cherry-markdown scrollToLineNum(lineNum, linePercent)，
+         * 使用标题锚点映射替代简单比例算法，定位精准。
+         * 
+         * @param {number} lineNum     目标行号（从 0 开始）
+         * @param {number} [linePercent=0] 行内百分比偏移 (0~1)
+         * @returns {editormd}
+         */
+        scrollToLineNum : function(lineNum, linePercent) {
+            linePercent = linePercent || 0;
+            var targetLine = lineNum + linePercent;
+            
+            var previewDom = this.previewContainer;
+            var scrollEl = this.preview ? this.preview[0] : null;
+            if (!previewDom || !previewDom[0] || !scrollEl) return this;
+            var state = this._syncState;
+            
+            try {
+                var totalLines = this.cm ? this.cm.lineCount() : 1;
+                var anchors = this._buildHeadingAnchorMap();
+                var targetScrollTop = null;
+                
+                // ★ 有标题锚点时使用插值定位
+                if (anchors.length > 0) {
+                    var prevAnchor = anchors[0];
+                    var nextAnchor = anchors[anchors.length - 1];
+                    
+                    for (var i = 0; i < anchors.length; i++) {
+                        if (anchors[i].editorLine <= targetLine) prevAnchor = anchors[i];
+                        if (anchors[i].editorLine >= targetLine) {
+                            nextAnchor = anchors[i];
+                            break;
+                        }
+                    }
+                    
+                    var scRect = scrollEl.getBoundingClientRect();
+                    
+                    if (prevAnchor === nextAnchor) {
+                        var pR = prevAnchor.previewElement.getBoundingClientRect();
+                        targetScrollTop = scrollEl.scrollTop + (pR.top - scRect.top);
+                    } else {
+                        var editorDist = nextAnchor.editorLine - prevAnchor.editorLine;
+                        if (editorDist <= 0) editorDist = 1;
+                        var localRatio = (targetLine - prevAnchor.editorLine) / editorDist;
+                        localRatio = Math.max(0, Math.min(1, localRatio));
+                        
+                        var pRect = prevAnchor.previewElement.getBoundingClientRect();
+                        var nRect = nextAnchor.previewElement.getBoundingClientRect();
+                        
+                        var prevScrollPos = scrollEl.scrollTop + (pRect.top - scRect.top);
+                        var nextScrollPos = scrollEl.scrollTop + (nRect.top - scRect.top);
+                        
+                        targetScrollTop = prevScrollPos + (nextScrollPos - prevScrollPos) * localRatio;
+                    }
+                }
+                
+                // ★ 回退：无标题时使用比例映射
+                if (targetScrollTop === null) {
+                    var blocks = previewDom[0].querySelectorAll('[data-sign]');
+                    if (blocks.length) {
+                        var ratio = Math.max(0, Math.min(1, targetLine / Math.max(1, totalLines - 1)));
+                        var tIdx = Math.round(ratio * (blocks.length - 1));
+                        tIdx = Math.min(blocks.length - 1, Math.max(0, tIdx));
+                        var targetBlock = blocks[tIdx];
+                        var containerRect = scrollEl.getBoundingClientRect();
+                        var blockRect = targetBlock.getBoundingClientRect();
+                        targetScrollTop = scrollEl.scrollTop + (blockRect.top - containerRect.top);
+                    }
+                }
+                
+                if (targetScrollTop !== null) {
+                    if (state) state.programmaticScroll = true;
+                    scrollEl.scrollTo({
+                        top: Math.max(0, targetScrollTop),
+                        behavior: "smooth"
+                    });
+                    if (state) {
+                        requestAnimationFrame(function() {
+                            requestAnimationFrame(function() {
+                                state.programmaticScroll = false;
+                            });
+                        });
+                    }
+                }
+            } catch(e) {
+                if (typeof console !== "undefined" && console.warn) {
+                    console.warn("[xfEditor] scrollToLineNum error:", e);
+                }
+            }
             
             return this;
         },
@@ -5612,17 +6207,9 @@
             var cm       = this.cm;
             var settings = this.settings;
             
-            path = settings.pluginPath + path;
-            
-            if (typeof define === "function") 
-            {            
-                if (typeof this[name] === "undefined")
-                {
-                    editormd.notify("插件未找到：" + name + "，请确认已加载此插件", "error");
-                    
-                    return this;
-                }
-                
+            // ★ v1.17.2: 统一插件调用方式，优先直接调用已注册的插件方法
+            // 无论 AMD 或非 AMD 模式，只要 this[name] 是函数就直接调用
+            if (typeof this[name] === "function") {
                 try {
                     this[name](cm);
                 } catch(e) {
@@ -5631,12 +6218,13 @@
                         console.error("[xfEditor] Plugin error:", name, e);
                     }
                 }
-                
                 return this;
             }
             
-            if ($.inArray(path, editormd.loadFiles.plugin) < 0)
-            {
+            // 插件未注册到实例上，尝试动态加载
+            path = settings.pluginPath + path;
+            
+            if (typeof editormd.loadFiles === "object" && $.inArray(path, editormd.loadFiles.plugin) < 0) {
                 editormd.loadPlugin(path, function() {
                     if (typeof _this[name] !== "function") {
                         editormd.notify("插件加载失败：" + name + "，请检查插件路径", "error");
@@ -5653,12 +6241,8 @@
                     }
                 });
             }
-            else
-            {
-                if (typeof editormd.loadPlugins[name] !== "function") {
-                    editormd.notify("插件未就绪：" + name + "，请检查插件文件", "error");
-                    return this;
-                }
+            else if (typeof editormd.loadPlugins === "object" && typeof editormd.loadPlugins[name] === "function") {
+                // 已经加载过的外部插件，直接调用
                 try {
                     editormd.loadPlugins[name].call(this, cm);
                 } catch(e) {
@@ -5667,6 +6251,9 @@
                         console.error("[xfEditor] Plugin error:", name, e);
                     }
                 }
+            }
+            else {
+                editormd.notify("插件未找到：" + name + "，请确认已加载此插件", "error");
             }
             
             return this;
@@ -5889,10 +6476,6 @@
                 clearInterval(this.draftTimer);
                 this.draftTimer = null;
             }
-            if (this._activeSideTimer) {
-                clearTimeout(this._activeSideTimer);
-                this._activeSideTimer = null;
-            }
 
             // 2. 解绑所有文档级事件（editormd 命名空间）
             $(document).off("click.editormd-table");
@@ -5934,17 +6517,6 @@
             try { document.onmouseup = null; } catch(ex) {}
             try { document.onselectstart = null; } catch(ex) {}
             
-            // 解绑同步滚动事件（始终绑定的 scroll 事件和鼠标进入/离开事件）
-            if (this.codeMirror) {
-                this.codeMirror.find(".CodeMirror-scroll").off(".editormd-sync");
-                this.codeMirror.off(".editormd-sync");
-            }
-            if (this.preview) {
-                this.preview.off(".editormd-sync");
-                this.previewContainer.off(".editormd-sync");
-            }
-            
-            
             // 4. 如果处于全屏状态则退出全屏
             if (this.state.fullscreen) {
                 this.fullscreenExit();
@@ -5982,7 +6554,6 @@
             this.state.loaded      = false;
             this.state.preview     = false;
             this.state.fullscreen  = false;
-            this.state.activeSide  = null;
 
             // 9. 清理所有悬浮提示 popup 元素及其 Blob URL
             $("body").children(".editormd-tooltip-popup").each(function() {
@@ -6486,10 +7057,10 @@
             var selection = cm.getSelection();
 
             if (selection === "") {
-                cm.replaceSelection("⁑⁑居中对齐内容⁑⁑");
-                cm.setCursor(cursor.line, cursor.ch + 3);
+                cm.replaceSelection("⁑居中对齐内容⁑");
+                cm.setCursor(cursor.line, cursor.ch + 2);
             } else {
-                cm.replaceSelection("⁑⁑" + selection + "⁑⁑");
+                cm.replaceSelection("⁑" + selection + "⁑");
             }
         },
 
@@ -6499,26 +7070,13 @@
             var selection = cm.getSelection();
 
             if (selection === "") {
-                cm.replaceSelection("⁑⠕右对齐内容⠕⁑");
-                cm.setCursor(cursor.line, cursor.ch + 3);
+                cm.replaceSelection("⠪右对齐内容⠪");
+                cm.setCursor(cursor.line, cursor.ch + 2);
             } else {
-                cm.replaceSelection("⁑⠕" + selection + "⠕⁑");
+                cm.replaceSelection("⠪" + selection + "⠪");
             }
         },
 
-        "align-justify" : function() {
-            var cm        = this.cm;
-            var cursor    = cm.getCursor();
-            var selection = cm.getSelection();
-
-            if (selection === "") {
-                cm.replaceSelection("⁑⁛两端对齐内容⁛⁑");
-                cm.setCursor(cursor.line, cursor.ch + 3);
-            } else {
-                cm.replaceSelection("⁑⁛" + selection + "⁛⁑");
-            }
-        },
-        
         pinyin : function() {
             var cm        = this.cm;
             var cursor    = cm.getCursor();
@@ -6958,7 +7516,7 @@
                         try {
                             editormd.$katex.render(latexText, $el[0], { throwOnError: false, displayMode: isBlock });
                         } catch(e) {
-                            if (window.console) console.error("KaTeX render error:", e);
+                            if (window.console) console.error("[xfEditor] KaTeX render error:", e);
                         }
                     }
                     if (i < $containers.length) {
@@ -7214,7 +7772,6 @@
         "Ctrl-Alt-L"       : "align-left",      // 左对齐
         "Ctrl-Alt-C"       : "align-center",    // 居中对齐
         "Ctrl-Alt-R"       : "align-right",     // 右对齐
-        "Ctrl-Alt-J"       : "align-justify",   // 两端对齐
         
         "Shift-Alt-C"      : function() {
             var cm        = this.cm;
@@ -7319,11 +7876,11 @@
         emailLink     : /(mailto:)?([\w\.\+\-]+)@([\w\-]+)\.([\w\-]{2,})\.?(\w+)?/g,
 
         pageBreak     : /^\[[=]{8,}\]$/,
-        pinyin        : /\{([^|{}]+)\s*\|\s*([^|{}]+)\}/g,
-        unicodeAlignCenter : /⁑⁑([\s\S]*?)⁑⁑/g,
+        // ★ v1.17.7: 支持 {text|pinyin}(!width:NNN) 可选的组级宽度参数
+        pinyin        : /\{([^|{}]+)\s*\|\s*([^|{}]+)\}(?:\s*\(!width:(\d+)\))?/g,
+        unicodeAlignCenter : /⁑([\s\S]*?)⁑/g,
         unicodeAlignLeft   : /⁑⁖([\s\S]*?)⁖⁑/g,
-        unicodeAlignRight  : /⁑⠕([\s\S]*?)⠕⁑/g,
-        unicodeAlignJustify: /⁑⁛([\s\S]*?)⁛⁑/g,
+        unicodeAlignRight  : /⠪([\s\S]*?)⠪/g,
         imageSizeNew    : /!\[([^\]]*)\]\(([^)]+)\)<(\d+),\s*(\d+)>/g,
         tabs            : /\[\[tabs\]\]([\s\S]*?)\[\[\/tabs\]\]/g,
         tabItem       : /\[\[tab:([^\]]+)\]\]([\s\S]*?)\[\[\/tab\]\]/g,
@@ -7497,12 +8054,85 @@
     };
 
     /**
+     * ★ v1.17.1: 为预览区 HTML 注入 data-sign 块签名，用于同步滚动行号映射
+     * 
+     * 参照 cherry-markdown 的设计思路，为每个块级元素添加 data-sign 属性，
+     * 使编辑区行号和预览区块之间可以相互映射，从而实现精准的同步滚动。
+     *
+     * 支持的块级元素：h1-h6, p, pre, blockquote, ul, ol, table,
+     *                  div.editormd-row, div.editormd-columns, div.editormd-tabs
+     *
+     * @param {string}  html       已渲染的 HTML 字符串
+     * @param {number}  totalLines 编辑器总行数 (/n 分隔)
+     * @returns {string} 带有 data-sign 属性的 HTML
+     */
+    editormd.addBlockSignatures = function(html, totalLines) {
+        if (!html || totalLines < 1) return html;
+        
+        var blockIdx = 0;
+        
+        // ★ v1.17.2: 增强块签名注入，覆盖更多块级元素
+        // 支持的标签：h1-h6, p, pre, blockquote, ul, ol, table, dl, hr, 
+        //              div.editormd-*, section, article, header, footer, nav, main, aside
+        //              li (list items for finer granularity)
+        var result = html.replace(/<(h[1-6]|p|pre|blockquote|ul|ol|table|dl|hr|section|article|header|footer|nav|main|aside|li|div\s+[^>]*class="[^"]*editormd-[^"]*")[^>]*>/gi, function(tagMatch) {
+            // 跳过自闭合标签、已包含 data-sign 的标签、以及非块级上下文中的标签
+            if (/\/>$/.test(tagMatch) || /data-sign\s*=/.test(tagMatch)) {
+                return tagMatch;
+            }
+            
+            blockIdx++;
+            // 在标签结束 > 前插入 data-sign 属性
+            var insertPos = tagMatch.length - 1;
+            return tagMatch.substring(0, insertPos) + ' data-sign="block-' + blockIdx + '"' + tagMatch.substring(insertPos);
+        });
+        
+        // 存储块总数用于后续比例计算
+        result = result.replace(/<div class="markdown-body[^"]*"[^>]*>/, function(match) {
+            if (/data-sign-count=/.test(match)) return match;
+            return match.replace('>', ' data-sign-count="' + blockIdx + '">');
+        });
+        
+        return result;
+    };
+
+    /**
+     * ★ v1.17.2: 预处理链接 target 语法
+     * 将 [text](url){target=_blank} 转换为 [text](url "target=_blank")
+     * 使 marked.js 能够将 target 信息传入 link renderer 的 title 参数
+     * 
+     * @param {string} markdown 
+     * @returns {string}
+     */
+    editormd.preprocessLinkTarget = function(markdown) {
+        if (!markdown || typeof markdown !== "string") return markdown || "";
+        
+        // 匹配 [text](url){target=value} 模式
+        // 注意：不匹配在代码块内的内容（```...``` 已由 protectCodeBlocks 保护）
+        return markdown.replace(
+            /\[([^\]]*)\]\(([^)]*)\)\{target=([^}]+)\}/gi,
+            function(match, text, url, target) {
+                // 将 target 放入 title 位置
+                return "[" + text + "](" + url + " \"target=" + target.trim() + "\")";
+            }
+        );
+    };
+
+    /**
      * Preprocess markdown to extract custom block-level syntax (tabs, columns, align)
      * before passing to marked. This prevents conflicts with fenced code blocks.
      */
     editormd.preprocessMarkdownBlocks = function(markdown, options) {
         if (!markdown || typeof markdown !== "string") {
             return { markdown: markdown || "", placeholders: [] };
+        }
+        
+        // ★ v1.17.6: 安全防护 — 确保 $marked 可用
+        if (typeof editormd.$marked !== "function") {
+            if (typeof console !== "undefined" && console.warn) {
+                console.warn("[xfEditor] editormd.$marked is not available — markdown parsing will be skipped");
+            }
+            return { markdown: markdown, placeholders: [] };
         }
         
         var placeholders = [];
@@ -7555,18 +8185,18 @@
              * 规则：开标签是 3 个或更多 ` 或 ~，闭标签必须与开标签相同数量的相同字符
              * 支持代码块内包含任意内容（包括嵌套的 [[tabs]]、[[columns]] 等）
              */
-            // 匹配围栏代码块：开标签(3+个 ` 或 ~), 可选语言名, 内容, 闭标签(同类型且 >= 开标签数量)
-            // 支持 CommonMark 规范：闭合围栏可以多于开启围栏（如 4 个反引号开启、6 个闭合）
-            // 使用回调验证闭合围栏与开启围栏类型相同且数量足够
-            // 使用 lookahead 确保闭合围栏在独立行上（后跟空白和换行或文档结束）
-            text = text.replace(/(`{3,}|~{3,})([^\n]*)\n([\s\S]*?)\n(`{3,}|~{3,})(?=\s*(?:\n|$))/g, function(match, openFence, lang, content, closeFence) {
+            // ★ v1.17.5-FIX3: 围栏必须位于行首（CommonMark 规范要求）
+            // 之前缺少行首锚点，导致文本中 "```(hidden.class#id) ` 语法" 这类
+            // 作为示例展示的围栏语法被误识别为真正的代码块，吞噬后续大段内容
+            // 新正则添加 (^|\n) 前缀，确保围栏开标签和闭标签都必须在行首
+            text = text.replace(/(^|\n)(`{3,}|~{3,})([^\n]*)\n([\s\S]*?)\n(`{3,}|~{3,})(?=\s*(?:\n|$))/g, function(match, prefix, openFence, lang, content, closeFence) {
                 // 闭合围栏必须与开启围栏类型相同，且数量 >= 开启围栏数量
                 if (openFence[0] !== closeFence[0] || closeFence.length < openFence.length) {
                     return match; // 不是有效的闭合围栏，保持原样
                 }
                 var id = "editormd-cb-" + (++cid);
                 codePlaceholders.push({ id: id, html: match });
-                return "<!--" + id + "-->";
+                return prefix + "<!--" + id + "-->";
             });
 
             /**
@@ -7693,7 +8323,24 @@
                 text = text.substring(0, maxProcessLength);
             }
 
+            // ★ v1.17.6: 安全限制 — 最大处理块数量，防止病态输入导致浏览器卡死
+            var maxBlocks = 500;
+            var maxTotalIterations = 50000;
+            var _totalIterations = 0;
+            
             while (i < text.length) {
+                if (blocks.length >= maxBlocks) {
+                    if (typeof console !== "undefined" && console.warn) {
+                        console.warn("[xfEditor] Maximum blocks limit (" + maxBlocks + ") reached, stopping block search");
+                    }
+                    break;
+                }
+                if (_totalIterations++ > maxTotalIterations) {
+                    if (typeof console !== "undefined" && console.warn) {
+                        console.warn("[xfEditor] Maximum iteration limit reached, stopping block search");
+                    }
+                    break;
+                }
                 openRe.lastIndex = i;
                 try {
                     openMatch = openRe.exec(text);
@@ -7823,14 +8470,15 @@
                 var tabHeaders = '<ul class="editormd-tab-nav">';
                 var tabBodies = '<div class="editormd-tab-body">';
                 var tabIndex = 0;
-                var tabRegex = editormd.regexs.tabItem;
+                // ★ v1.17.5-FIX2: 创建独立正则实例，避免与递归调用共享 lastIndex 状态
+                // editormd.regexs.tabItem 是全局共享正则，递归 preprocessMarkdownBlocks
+                // 会修改其 lastIndex，导致外层 while 循环从错误位置重新匹配
+                var tabRegex = new RegExp(editormd.regexs.tabItem.source, 'g');
                 var tabMatch;
                 var hasTabs = false;
                 var tabMarkedOptions = createMarkedOptions(options, true);
 
                 try {
-                    // 重置 regex lastIndex
-                    tabRegex.lastIndex = 0;
                     while ((tabMatch = tabRegex.exec(content)) !== null) {
                         hasTabs = true;
                         var tabTitle = tabMatch[1].trim().replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
@@ -7891,7 +8539,7 @@
                 if (!colBlock || !colBlock.fullMatch) continue;
                 
                 var colMatch = colBlock.fullMatch.match(/\[\[columns:(\d+)\]\]/);
-                var colCount = colMatch ? parseInt(colMatch[1], 10) || 3 : 3;
+                var colCount = colMatch ? (isNaN(parseInt(colMatch[1], 10)) ? 3 : parseInt(colMatch[1], 10)) : 3;
                 
                 // 验证列数范围
                 if (colCount < 1 || colCount > 12) {
@@ -7941,6 +8589,18 @@
                     // 在行内容中查找 col 块（col 可以是 [[col:N]] 或 [[col]]）
                     var colBlocks = findBalancedBlocks(rowContent, /\[\[col(?::(\d+))?\]\]/g, /\[\[\/col\]\]/g);
                     
+                    // ★ v1.17.0: 空 row 警告
+                    if (colBlocks.length === 0) {
+                        if (typeof console !== "undefined" && console.warn) {
+                            console.warn("[xfEditor] Empty row block (no [[col]] found), row will be rendered as empty container.");
+                        }
+                        // 仍然生成空 row 容器，以便用户发现并修正
+                        var emptyRowHtml = '<div class="editormd-row" style="min-height:20px;border:1px dashed #ddd;padding:8px;color:#999;font-size:12px;">⚠ 空行（请添加 [[col]] 或 [[col:N]] 列）</div>';
+                        var emptyRowPlaceholder = addPlaceholder(emptyRowHtml);
+                        markdown = markdown.substring(0, rowBlock.start) + emptyRowPlaceholder + markdown.substring(rowOriginalEnd);
+                        continue;
+                    }
+                    
                     // 计算每个 col 的宽度：有数字的用 N*10%，没数字的平分剩余空间
                     var autoCount = 0;
                     var totalDefined = 0;
@@ -7973,7 +8633,8 @@
                         if (w === -1) {
                             w = autoWidth + (autoRemainder-- > 0 ? 1 : 0);
                         }
-                        w = Math.max(0, Math.min(100, w));
+                        // ★ v1.17.0: 最小宽度 1%，防止 0% 宽度列不可见
+                        w = Math.max(1, Math.min(100, w));
                         
                         var colContentRaw = colBlocks[cj].content;
                         var colContentRestored = restoreCodeBlocks(colContentRaw.trim(), codeProtection.placeholders);
@@ -8006,83 +8667,165 @@
             var html = '<div class="editormd-copybook editormd-copybook-' + type + '">';
             var isMi = (type === 'mi');
             var isPinyin = (type === 'pinyin');
+            
+            // ★ v1.17.6-FIX3: 解析字符和脚注 — 使用全局脚注映射 _copybookFootnoteMap
+            // 生成与全局脚注系统一致的 ID：editormd-fnref-{N} 和 editormd-fn-{N}
+            var parseCharsWithFN = function(text) {
+                var result = [];
+                var j = 0;
+                while (j < text.length) {
+                    var ch = text.charAt(j);
+                    if (ch === '[' && text.substring(j, j + 2) === '[^') {
+                        var closeIdx = text.indexOf(']', j + 2);
+                        if (closeIdx > j) {
+                            var fnRef = text.substring(j + 2, closeIdx);
+                            // 查找全局脚注映射以获取正确索引
+                            var fnIndex = _copybookFootnoteMap[fnRef] || null;
+                            if (result.length > 0) result[result.length - 1].fn = fnIndex;
+                            j = closeIdx + 1;
+                            continue;
+                        }
+                    }
+                    if (ch !== ' ' && ch !== '\t' && ch !== '\r' && ch !== '\n')
+                        result.push({ ch: ch, fn: null });
+                    j++;
+                }
+                return result;
+            };
 
             for (var li = 0; li < lines.length; li++) {
                 var line = lines[li].trim();
                 if (!line) continue;
 
-                // 匹配所有 (内容) 分组
+                // ★ v1.17.7: 支持 {content|pinyin}(!width:NNN) 花括号语法（含可选宽度参数）
+                // 同时兼容原有的 (content|pinyin) 圆括号语法
                 var groups = [];
-                var groupRegex = /\(([^)]*)\)/g;
-                var gm;
-                while ((gm = groupRegex.exec(line)) !== null) {
-                    groups.push(gm[1]);
+                
+                // ★ 先尝试花括号组（带可选 (!width:NNN)）
+                // \{[^{}]*\} 匹配花括号内容，\(!width:(\d+)\) 匹配可选宽度参数
+                var curlyRegex = /\{([^{}]*?)\}(?:\s*\(!width:(\d+)\))?/g;
+                var cm;
+                while ((cm = curlyRegex.exec(line)) !== null) {
+                    groups.push({ 
+                        content: cm[1], 
+                        width: cm[2] ? parseInt(cm[2], 10) : null, 
+                        delim: 'curly' 
+                    });
                 }
+                
+                // 如果没有花括号组，回退到圆括号组（也支持 (!width:NNN)）
+                if (groups.length === 0) {
+                    var parenRegex = /\(([^)]*?)\)(?:\s*\(!width:(\d+)\))?/g;
+                    var pm;
+                    while ((pm = parenRegex.exec(line)) !== null) {
+                        // 过滤掉单独的 (!width:NNN) 参数行
+                        if (pm[1] && !/^!width:\d+$/.test(pm[1].trim())) {
+                            groups.push({ 
+                                content: pm[1], 
+                                width: pm[2] ? parseInt(pm[2], 10) : null, 
+                                delim: 'paren' 
+                            });
+                        }
+                    }
+                }
+                
                 if (groups.length === 0) continue;
 
-                html += '<div class="editormd-copybook-row">';
+                // ★ v1.17.7: 检测是否有任何 group 指定了宽度 — 决定行容器样式
+                var hasAnyWidth = false;
+                for (var gi = 0; gi < groups.length; gi++) {
+                    if (groups[gi].width) { hasAnyWidth = true; break; }
+                }
+
+                // ★ 行容器：有宽度时使用 flex 布局让各组内内容两端对齐
+                var rowStyle = '';
+                var rowClass = 'editormd-copybook-row';
+                if (hasAnyWidth && isPinyin) {
+                    rowClass += ' editormd-copybook-row-wide';
+                }
+                html += '<div class="' + rowClass + '"' + rowStyle + '>';
 
                 for (var gi = 0; gi < groups.length; gi++) {
-                    var groupContent = groups[gi].trim();
+                    var groupContent = groups[gi].content.trim();
                     if (!groupContent) continue;
+                    var groupWidth = groups[gi].width;
 
                     if (isPinyin) {
-                        // 拼音格：汉字|拼音 → 上方四线三格 + 下方米字格
                         var parts = groupContent.split('|');
-                        var chars = (parts[0] || '').split('');
+                        var charObjs = parseCharsWithFN(parts[0] || '');
                         var pinyins = (parts[1] || '').trim().split(/\s+/);
+                        
+                        // ★ v1.17.7: 每个字符独立单元格，拼音在上、汉字在下
+                        // 脚注标记 [^fn] 不产生独立单元格，附加在前一个汉字上
+                        // 支持 (!width:NNN) — 组宽度作用于容器，各单元格按比例分配
 
-                        for (var ci = 0; ci < chars.length; ci++) {
-                            var ch = chars[ci];
-                            var py = pinyins[ci] || '';
-                            html += '<div class="editormd-copybook-cell editormd-copybook-pinyin-cell">';
-                            // 上方拼音四线三格
-                            html += '<div class="editormd-copybook-pinyin-top">';
-                            html += '<svg viewBox="0 0 100 100" preserveAspectRatio="none" class="editormd-copybook-svg">';
-                            html += '<line x1="2" y1="0" x2="98" y2="0" stroke="#2f7d4a" stroke-width="1.2" opacity="0.9"/>';
-                            html += '<line x1="2" y1="30" x2="98" y2="30" stroke="#2f7d4a" stroke-width="1" opacity="0.85"/>';
-                            html += '<line x1="2" y1="63" x2="98" y2="63" stroke="#2f7d4a" stroke-width="1" opacity="0.85"/>';
-                            html += '<line x1="2" y1="100" x2="98" y2="100" stroke="#2f7d4a" stroke-width="1.2" opacity="0.9"/>';
-                            html += '</svg>';
-                            html += '<span class="editormd-copybook-pinyin-text">' + py + '</span>';
-                            html += '</div>';
-                            // 下方米字格汉字
-                            html += '<div class="editormd-copybook-pinyin-bottom">';
-                            html += '<svg viewBox="0 0 100 100" preserveAspectRatio="none" class="editormd-copybook-svg">';
-                            html += '<line x1="1" y1="1" x2="99" y2="99" stroke="#b8823a" stroke-width="0.7" stroke-dasharray="4 3" opacity="0.6"/>';
-                            html += '<line x1="99" y1="1" x2="1" y2="99" stroke="#b8823a" stroke-width="0.7" stroke-dasharray="4 3" opacity="0.6"/>';
-                            html += '<line x1="50" y1="0" x2="50" y2="100" stroke="#c69654" stroke-width="0.7" stroke-dasharray="3 3" opacity="0.6"/>';
-                            html += '<line x1="0" y1="50" x2="100" y2="50" stroke="#c69654" stroke-width="0.7" stroke-dasharray="3 3" opacity="0.6"/>';
-                            html += '<rect x="1" y="1" width="98" height="98" fill="none" stroke="#a57a42" stroke-width="0.5" opacity="0.5"/>';
-                            html += '</svg>';
-                            html += '<span class="editormd-copybook-hanzi-text">' + ch + '</span>';
-                            html += '</div>';
-                            html += '</div>';
+                        var groupCellHtml = '';
+                        for (var ci = 0; ci < charObjs.length; ci++) {
+                            var co = charObjs[ci], ch = co.ch, py = pinyins[ci] || '', fn = co.fn;
+                            groupCellHtml += '<div class="editormd-copybook-cell editormd-copybook-pinyin-cell">';
+                            // ★ 上方拼音区（四线格）
+                            groupCellHtml += '<div class="editormd-copybook-pinyin-top">';
+                            groupCellHtml += '<svg viewBox="0 0 100 100" preserveAspectRatio="none" class="editormd-copybook-svg">';
+                            groupCellHtml += '<line x1="2" y1="0" x2="98" y2="0" stroke="#2f7d4a" stroke-width="1.2" opacity="0.9"/>';
+                            groupCellHtml += '<line x1="2" y1="30" x2="98" y2="30" stroke="#2f7d4a" stroke-width="1" opacity="0.85"/>';
+                            groupCellHtml += '<line x1="2" y1="63" x2="98" y2="63" stroke="#2f7d4a" stroke-width="1" opacity="0.85"/>';
+                            groupCellHtml += '<line x1="2" y1="100" x2="98" y2="100" stroke="#2f7d4a" stroke-width="1.2" opacity="0.9"/>';
+                            groupCellHtml += '</svg>';
+                            groupCellHtml += '<span class="editormd-copybook-pinyin-text">' + py + '</span>';
+                            groupCellHtml += '</div>';
+                            // ★ 下方汉字区（田字格/米字格）
+                            groupCellHtml += '<div class="editormd-copybook-pinyin-bottom">';
+                            groupCellHtml += '<svg viewBox="0 0 100 100" preserveAspectRatio="none" class="editormd-copybook-svg">';
+                            groupCellHtml += '<line x1="1" y1="1" x2="99" y2="99" stroke="#b8823a" stroke-width="0.7" stroke-dasharray="4 3" opacity="0.6"/>';
+                            groupCellHtml += '<line x1="99" y1="1" x2="1" y2="99" stroke="#b8823a" stroke-width="0.7" stroke-dasharray="4 3" opacity="0.6"/>';
+                            groupCellHtml += '<line x1="50" y1="0" x2="50" y2="100" stroke="#c69654" stroke-width="0.7" stroke-dasharray="3 3" opacity="0.6"/>';
+                            groupCellHtml += '<line x1="0" y1="50" x2="100" y2="50" stroke="#c69654" stroke-width="0.7" stroke-dasharray="3 3" opacity="0.6"/>';
+                            groupCellHtml += '<rect x1="1" y1="1" width="98" height="98" fill="none" stroke="#a57a42" stroke-width="0.5" opacity="0.5"/>';
+                            groupCellHtml += '</svg>';
+                            groupCellHtml += '<span class="editormd-copybook-hanzi-text">' + ch + '</span>';
+                            // ★ 脚注：渲染在汉字区底部，不显示在上方拼音区
+                            if (fn) groupCellHtml += '<sup class="editormd-copybook-footnote"><a href="#editormd-fn-' + fn + '" id="editormd-fnref-' + fn + '">[' + fn + ']</a></sup>';
+                            groupCellHtml += '</div>';
+                            groupCellHtml += '</div>';
                         }
+
+                        // ★ v1.17.7: 组级宽度包装 — 当 group 指定了 (!width:NNN)
+                        if (groupWidth) {
+                            groupCellHtml = '<div class="editormd-copybook-group editormd-copybook-group-pinyin" style="width:' + groupWidth + 'px;">' +
+                                groupCellHtml + '</div>';
+                        }
+                        html += groupCellHtml;
                     } else {
-                        // 田字格 / 米字格
-                        var chars = groupContent.split('');
-                        for (var cj = 0; cj < chars.length; cj++) {
-                            var ch2 = chars[cj];
-                            html += '<div class="editormd-copybook-cell editormd-copybook-grid-cell">';
-                            html += '<svg viewBox="0 0 100 100" preserveAspectRatio="none" class="editormd-copybook-svg">';
+                        // tian / mi 字帖
+                        var charObjs2 = parseCharsWithFN(groupContent);
+                        var gridCellHtml = '';
+                        for (var cj = 0; cj < charObjs2.length; cj++) {
+                            var co2 = charObjs2[cj], ch2 = co2.ch, fn2 = co2.fn;
+                            gridCellHtml += '<div class="editormd-copybook-cell editormd-copybook-grid-cell">';
+                            gridCellHtml += '<svg viewBox="0 0 100 100" preserveAspectRatio="none" class="editormd-copybook-svg">';
                             if (isMi) {
-                                // 米字格：横+竖+两条对角线
-                                html += '<line x1="1" y1="1" x2="99" y2="99" stroke="#b8823a" stroke-width="0.8" stroke-dasharray="4 3" opacity="0.65"/>';
-                                html += '<line x1="99" y1="1" x2="1" y2="99" stroke="#b8823a" stroke-width="0.8" stroke-dasharray="4 3" opacity="0.65"/>';
-                                html += '<line x1="50" y1="0" x2="50" y2="100" stroke="#c69654" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.65"/>';
-                                html += '<line x1="0" y1="50" x2="100" y2="50" stroke="#c69654" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.65"/>';
-                                html += '<rect x="1" y="1" width="98" height="98" fill="none" stroke="#a57a42" stroke-width="0.7" opacity="0.55"/>';
+                                gridCellHtml += '<line x1="1" y1="1" x2="99" y2="99" stroke="#b8823a" stroke-width="0.8" stroke-dasharray="4 3" opacity="0.65"/>';
+                                gridCellHtml += '<line x1="99" y1="1" x2="1" y2="99" stroke="#b8823a" stroke-width="0.8" stroke-dasharray="4 3" opacity="0.65"/>';
+                                gridCellHtml += '<line x1="50" y1="0" x2="50" y2="100" stroke="#c69654" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.65"/>';
+                                gridCellHtml += '<line x1="0" y1="50" x2="100" y2="50" stroke="#c69654" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.65"/>';
+                                gridCellHtml += '<rect x1="1" y1="1" width="98" height="98" fill="none" stroke="#a57a42" stroke-width="0.7" opacity="0.55"/>';
                             } else {
-                                // 田字格：横+竖
-                                html += '<line x1="50" y1="0" x2="50" y2="100" stroke="#c2995b" stroke-width="0.85" stroke-dasharray="3 3" opacity="0.75"/>';
-                                html += '<line x1="0" y1="50" x2="100" y2="50" stroke="#c2995b" stroke-width="0.85" stroke-dasharray="3 3" opacity="0.75"/>';
-                                html += '<rect x="1" y="1" width="98" height="98" fill="none" stroke="#b58f53" stroke-width="0.7" opacity="0.55"/>';
+                                gridCellHtml += '<line x1="50" y1="0" x2="50" y2="100" stroke="#c2995b" stroke-width="0.85" stroke-dasharray="3 3" opacity="0.75"/>';
+                                gridCellHtml += '<line x1="0" y1="50" x2="100" y2="50" stroke="#c2995b" stroke-width="0.85" stroke-dasharray="3 3" opacity="0.75"/>';
+                                gridCellHtml += '<rect x1="1" y1="1" width="98" height="98" fill="none" stroke="#b58f53" stroke-width="0.7" opacity="0.55"/>';
                             }
-                            html += '</svg>';
-                            html += '<span class="editormd-copybook-hanzi-text">' + ch2 + '</span>';
-                            html += '</div>';
+                            gridCellHtml += '</svg>';
+                            gridCellHtml += '<span class="editormd-copybook-hanzi-text">' + ch2 + '</span>';
+                            if (fn2) gridCellHtml += '<sup class="editormd-copybook-footnote"><a href="#editormd-fn-' + fn2 + '" id="editormd-fnref-' + fn2 + '">[' + fn2 + ']</a></sup>';
+                            gridCellHtml += '</div>';
                         }
+
+                        // ★ v1.17.7: tian/mi 字帖也支持组级宽度
+                        if (groupWidth) {
+                            gridCellHtml = '<div class="editormd-copybook-group editormd-copybook-group-grid" style="width:' + groupWidth + 'px;">' +
+                                gridCellHtml + '</div>';
+                        }
+                        html += gridCellHtml;
                     }
                 }
                 html += '</div>';
@@ -8124,8 +8867,25 @@
             }
         }
 
+        // ★★★ v1.17.6-FIX2: 提前构建脚注名称→编号映射 ★★★
+        // 在字帖处理之前扫描 [^name]: 定义，使字帖生成的脚注链接 ID 匹配全局系统
+        var _copybookFootnoteMap = {};
+        try {
+            var _earlyFnDefRegex = /^\[\^([^\]]+)\]:/gm;
+            var _earlyFnIndex = 0;
+            var _earlyFnMatch;
+            while ((_earlyFnMatch = _earlyFnDefRegex.exec(markdown)) !== null) {
+                var _earlyFnName = _earlyFnMatch[1].trim().replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]/g, '');
+                if (_earlyFnName && _earlyFnName.length <= 50 && !_copybookFootnoteMap[_earlyFnName]) {
+                    _earlyFnIndex++;
+                    _copybookFootnoteMap[_earlyFnName] = _earlyFnIndex;
+                }
+            }
+        } catch(e) {}
+
         // 处理字帖语法：[[copybookTian]]...[[/copybookTian]]、[[copybookMi]]...[[/copybookMi]]、[[copybookPinyin]]...[[/copybookPinyin]]
         // 各种字帖类型可以彼此嵌套，也可以嵌套在 tabs/columns 内使用
+        // ★ v1.17.6-FIX2: 传递脚注映射使字帖脚注 ID 与全局系统一致
         if (options.copybook !== false) {
             try {
                 processCopybookBlocks(findBalancedBlocks(markdown, editormd.regexs.copybookTian, editormd.regexs.copybookTianEnd), 'tian');
@@ -8515,13 +9275,27 @@
         return { markdown: markdown, placeholders: placeholders };
     };
 
+    /**
+     * ★ v1.17.5-FIX: 多轮替换解决嵌套占位符问题
+     * 当占位符的 HTML 内容中包含其他占位符引用时（如 tabs 嵌套在 grid col 内），
+     * 单次遍历无法恢复所有占位符。改用多轮循环直到无变化或达到安全上限(10轮)。
+     * 使用 forEach 闭包隔离作用域，避免 uglify 变量名碰撞。
+     */
     editormd.restorePlaceholders = function(html, placeholders) {
         if (!html || !placeholders || placeholders.length === 0) return html;
-        for (var i = 0; i < placeholders.length; i++) {
-            var ph = placeholders[i];
-            if (ph && ph.id) {
-                html = html.split("<!--" + ph.id + "-->").join(ph.html || "");
-            }
+        var maxRounds = 10;
+        while (maxRounds-- > 0) {
+            var anyFound = false;
+            placeholders.forEach(function(ph) {
+                if (ph && ph.id) {
+                    var marker = "<!--" + ph.id + "-->";
+                    if (html.indexOf(marker) !== -1) {
+                        html = html.split(marker).join(ph.html || "");
+                        anyFound = true;
+                    }
+                }
+            });
+            if (!anyFound) break;
         }
         return html;
     };
@@ -8605,7 +9379,7 @@
             
             var pinyinReg = editormd.regexs.pinyin;
             
-            text = text.replace(pinyinReg, function($1, $2, $3) {
+            text = text.replace(pinyinReg, function($1, $2, $3, $4) {
                 var baseText = $2.trim();
                 // 保留原始拼音中的空格，不执行 trim
                 // 仅对分组检测使用 trim 后的版本
@@ -8613,6 +9387,8 @@
                 var pyTrimmed = pyTextRaw.trim();
                 // 保存原始拼音中的空格（用 &nbsp; 替代），防止 HTML 折叠空白
                 var pyText = pyTextRaw.replace(/ /g, '&nbsp;');
+                // ★ v1.17.7: 可选的宽度参数 (!width:NNN)
+                var userWidth = $4 ? parseInt($4, 10) : null;
                 
                 // 检测拼音中是否包含空格（表示分组拼音如 "chuáng qián míng yuè guāng"）
                 var pyGroups = pyTrimmed.split(/\s+/).filter(function(g) { return g.length > 0; });
@@ -8628,12 +9404,14 @@
                     for (var j = 0; j < textChars.length; j++) {
                         result += '<ruby class="editormd-pinyin editormd-pinyin-matched"><rb>' + textChars[j] + '</rb><rt>' + pyGroups[j] + '</rt></ruby>';
                     }
+                    // ★ v1.17.7: 指定宽度时用容器包裹并两端对齐
+                    if (userWidth) {
+                        result = '<span class="editormd-pinyin-wrap" style="display:inline-flex;justify-content:space-between;width:' + userWidth + 'px;">' + result + '</span>';
+                    }
                     return result;
                 }
                 
                 // 分组数不匹配或没有空格分隔时，使用标准 ruby 渲染（拼音在上方，文字在下方）
-                // 注意：不使用 display:inline-block 覆盖 rb/rt 的 display:ruby-base/ruby-text，
-                // 否则会破坏 ruby 上下排列的布局（拼音和文字挤在同一行）
                 var rtStyleAttr = '';
                 var rbStyleAttr = '';
                 
@@ -8654,8 +9432,14 @@
                     }
                 }
                 
-                // 使用 <rp> 括号为不支持 ruby 的浏览器提供降级方案
-                return '<ruby class="editormd-pinyin"><rb' + rbStyleAttr + '>' + baseText + '</rb><rp>(</rp><rt' + rtStyleAttr + '>' + pyText + '</rt><rp>)</rp></ruby>';
+                var rubyHtml = '<ruby class="editormd-pinyin"><rb' + rbStyleAttr + '>' + baseText + '</rb><rp>(</rp><rt' + rtStyleAttr + '>' + pyText + '</rt><rp>)</rp></ruby>';
+                
+                // ★ v1.17.7: 指定宽度时用容器包裹
+                if (userWidth) {
+                    rubyHtml = '<span class="editormd-pinyin-wrap" style="display:inline-flex;justify-content:space-between;width:' + userWidth + 'px;">' + rubyHtml + '</span>';
+                }
+                
+                return rubyHtml;
             });
             
             return text;
@@ -8677,9 +9461,6 @@
                 });
                 text = text.replace(editormd.regexs.unicodeAlignRight, function($0, $1) {
                     return '<span class="editormd-text-align editormd-text-align-right" style="display:inline-block;width:100%;text-align:right;">' + $1 + '</span>';
-                });
-                text = text.replace(editormd.regexs.unicodeAlignJustify, function($0, $1) {
-                    return '<span class="editormd-text-align editormd-text-align-justify" style="display:inline-block;width:100%;text-align:justify;">' + $1 + '</span>';
                 });
             }
             
@@ -8799,11 +9580,31 @@
                 return out + "\">" + text.replace(/@/g, "&#64;") + "</a>";
             }
 
-            if (title) {
-                out += " title=\"" + title + "\"";
+            // ★ v1.17.2: 解析 title 中的 target 指令
+            var linkTarget = "_blank";  // 默认新窗口打开
+            var linkRel    = "noopener noreferrer";
+            var linkTitle  = title || "";
+            
+            if (linkTitle) {
+                var targetMatch = linkTitle.match(/^target=(_blank|_self|_parent|_top)$/i);
+                if (targetMatch) {
+                    linkTarget = targetMatch[1].toLowerCase();
+                    linkTitle = ""; // 清空 title，这是 target 指令不是真正的 title
+                    if (linkTarget === "_self") {
+                        linkRel = ""; // 当前页面不需要 noopener
+                    }
+                }
             }
-
-            out += " target=\"_blank\" rel=\"noopener noreferrer\">" + text + "</a>";
+            
+            if (linkTitle) {
+                out += " title=\"" + editormd.escapeAttr(linkTitle) + "\"";
+            }
+            
+            out += " target=\"" + linkTarget + "\"";
+            if (linkRel) {
+                out += " rel=\"" + linkRel + "\"";
+            }
+            out += ">" + text + "</a>";
 
             return out;
         };
@@ -8878,10 +9679,11 @@
             
             text = trim(text);
             
-            // 避免 TOC 中出现 ⁑⠕二级标题右对齐⠕⁑ 这样的原始语法标记
+            // 避免 TOC 中出现 ⁑居中对齐标题⁑ 或 ⠪右对齐标题⠪ 这样的原始语法标记
             var tocText = text
-                .replace(/⁑(⁑|⁖|⠕|⁛)/g, "")   // 移除对齐开始标记（居中⁑⁑、左⁑⁖、右⁑⠕、两端⁑⁛）
-                .replace(/(⁖|⠕|⁛)⁑/g, "")     // 移除对齐结束标记（左⁖⁑、右⠕⁑、两端⁛⁑）
+                .replace(/⁑(⁖)?/g, "")          // 移除对齐开始标记（居中⁑、左⁑⁖）
+                .replace(/⁖⁑/g, "")             // 移除左对齐结束标记
+                .replace(/⠪/g, "")              // 移除右对齐标记
                 .replace(/~~/g, "")             // 移除删除线标记
                 .replace(/<\/?[^>]+>/g, "");    // 移除 HTML 标签（span, em, strong 等）
             tocText = trim(tocText);
@@ -9571,6 +10373,7 @@
                 $tooltip.attr("data-iframepre-code", _rawPreCode);
             }
             
+            // ★ v1.17.0: Tooltip 固定宽高时启用滚动条
             if (tooltipWidth) {
                 $tooltip.css({width: tooltipWidth + "px", "max-width": tooltipWidth + "px"});
                 $tooltip.find("img,iframe,div.editormd-tooltip-html-content,div.editormd-tooltip-text-content").css("max-width", tooltipWidth + "px");
@@ -9578,6 +10381,161 @@
             if (tooltipHeight) {
                 $tooltip.css({height: tooltipHeight + "px", "max-height": tooltipHeight + "px"});
                 $tooltip.find("img,iframe,div.editormd-tooltip-html-content,div.editormd-tooltip-text-content").css("max-height", tooltipHeight + "px");
+            }
+            // ★ v1.17.0: 固定尺寸时自动溢出滚动
+            if (tooltipWidth || tooltipHeight) {
+                var overflowX = tooltipWidth ? "auto" : "hidden";
+                var overflowY = tooltipHeight ? "auto" : "hidden";
+                $tooltip.css({overflowX: overflowX, overflowY: overflowY});
+                // 内容区也设置滚动
+                $tooltip.find(".editormd-tooltip-text-content,.editormd-tooltip-html-content").css({
+                    overflowY: tooltipHeight ? "auto" : "hidden",
+                    overflowX: tooltipWidth ? "auto" : "hidden",
+                    maxWidth: tooltipWidth ? tooltipWidth + "px" : "",
+                    maxHeight: tooltipHeight ? tooltipHeight + "px" : ""
+                });
+            }
+            
+            // ★ v1.17.2: 为 image/iframe/html/html-selector 类型添加最大化和关闭按钮
+            // 注意：text 文本类型不添加按钮（文字悬浮提示无需最大化）
+            var $maxBtn, $closeBtn;
+            var _origCss = {};
+            var _isMaximized = false;
+            
+            if (tooltipType !== "text") {
+                // 最大化按钮 — 使用 □ (最大化) / ❐ (还原) 图标
+                $maxBtn = $('<button class="editormd-tooltip-max-btn" title="最大化">□</button>');
+                // 关闭按钮
+                $closeBtn = $('<button class="editormd-tooltip-close-btn" title="关闭">✕</button>');
+                
+                // 将按钮添加到 tooltip
+                $tooltip.append($maxBtn).append($closeBtn);
+            }
+            
+            // ★ v1.17.2: 最大化/还原功能（image/iframe/html/html-selector 类型，自适应宽高）
+            if ($maxBtn) {
+                $maxBtn.on("click", function(e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    clearTimeout($trigger.data("tooltip-timer"));
+                    
+                    if (!_isMaximized) {
+                    // ============ 进入最大化 ============
+                    // 保存所有原始样式（包括自适应状态）
+                    _origCss = {
+                        width: $tooltip.css("width"),
+                        height: $tooltip.css("height"),
+                        maxWidth: $tooltip.css("max-width"),
+                        maxHeight: $tooltip.css("max-height"),
+                        minWidth: $tooltip.css("min-width"),
+                        minHeight: $tooltip.css("min-height"),
+                        left: $tooltip.css("left"),
+                        top: $tooltip.css("top"),
+                        position: $tooltip.css("position"),
+                        borderRadius: $tooltip.css("border-radius"),
+                        overflowX: $tooltip.css("overflow-x"),
+                        overflowY: $tooltip.css("overflow-y")
+                    };
+                    // 保存内部内容元素的原始样式
+                    _origCss._innerStyles = [];
+                    $tooltip.children("img,iframe,div.editormd-tooltip-html-content,div.editormd-tooltip-text-content,.editormd-tooltip-loading").each(function() {
+                        var $el = $(this);
+                        _origCss._innerStyles.push({
+                            el: this,
+                            width: $el.css("width"),
+                            height: $el.css("height"),
+                            maxWidth: $el.css("max-width"),
+                            maxHeight: $el.css("max-height"),
+                            display: $el.css("display")
+                        });
+                    });
+                    
+                    // 设置为全屏尺寸
+                    $tooltip.css({
+                        width: "96vw",
+                        height: "92vh",
+                        maxWidth: "96vw",
+                        maxHeight: "92vh",
+                        minWidth: "0",
+                        minHeight: "0",
+                        left: "2vw",
+                        top: "3vh",
+                        borderRadius: "4px",
+                        overflowX: "auto",
+                        overflowY: "auto",
+                        position: "fixed"
+                    });
+                    
+                    // 调整内部内容元素尺寸
+                    $tooltip.children("img,iframe,div.editormd-tooltip-html-content,div.editormd-tooltip-text-content,.editormd-tooltip-loading").css({
+                        width: "100%",
+                        height: "calc(100% - 36px)",
+                        maxWidth: "100%",
+                        maxHeight: "calc(100% - 36px)"
+                    });
+                    
+                    $maxBtn.text("❐").attr("title", "还原尺寸");
+                    _isMaximized = true;
+                } else {
+                    // ============ 退出最大化，恢复原始尺寸 ============
+                    // 恢复 tooltip 容器样式
+                    $tooltip.css({
+                        width: _origCss.width || "",
+                        height: _origCss.height || "",
+                        maxWidth: _origCss.maxWidth || "",
+                        maxHeight: _origCss.maxHeight || "",
+                        minWidth: _origCss.minWidth || "",
+                        minHeight: _origCss.minHeight || "",
+                        left: _origCss.left || "",
+                        top: _origCss.top || "",
+                        position: _origCss.position || "",
+                        borderRadius: _origCss.borderRadius || "",
+                        overflowX: _origCss.overflowX || "",
+                        overflowY: _origCss.overflowY || ""
+                    });
+                    
+                    // ★ 恢复内部内容元素的原始样式（包括自适应状态）
+                    if (_origCss._innerStyles) {
+                        for (var si = 0; si < _origCss._innerStyles.length; si++) {
+                            var s = _origCss._innerStyles[si];
+                            if (s.el && s.el.style) {
+                                s.el.style.width = s.width || "";
+                                s.el.style.height = s.height || "";
+                                s.el.style.maxWidth = s.maxWidth || "";
+                                s.el.style.maxHeight = s.maxHeight || "";
+                                s.el.style.display = s.display || "";
+                            }
+                        }
+                    }
+                    
+                    $maxBtn.text("□").attr("title", "最大化");
+                    _isMaximized = false;
+                }
+                
+                // Force reflow
+                $tooltip[0] && $tooltip[0].offsetHeight;
+            });
+            } // end if ($maxBtn)
+            
+            // 关闭功能
+            if ($closeBtn) {
+                $closeBtn.on("click", function(e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    clearTimeout($trigger.data("tooltip-timer"));
+                    $tooltip.removeClass("show");
+                    // 释放 Blob URL
+                    var blobUrl2 = $tooltip.attr("data-blob-url");
+                    if (blobUrl2) {
+                        try { (window.URL || window.webkitURL).revokeObjectURL(blobUrl2); } catch(ex) {}
+                        $tooltip.removeAttr("data-blob-url");
+                    }
+                    setTimeout(function() {
+                        if (!$tooltip.hasClass("show")) {
+                            $tooltip.css({ display: "none" });
+                        }
+                    }, 220);
+                });
             }
             
             $("body").append($tooltip);
@@ -9872,6 +10830,7 @@
 
         // 在 marked 解析之前保护 LaTeX 语法中的反斜杠
         var mdProtected = editormd.protectTeXSyntax(markdownDoc);
+        mdProtected = editormd.preprocessLinkTarget(mdProtected);
         // 在 marked 解析之前预处理自定义块级语法
         var mdPreprocess = editormd.preprocessMarkdownBlocks(mdProtected, rendererOptions);
         var markdownParsed = marked(mdPreprocess.markdown, markedOptions);

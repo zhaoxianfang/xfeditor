@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
+    <link rel="shortcut icon" href="../images/favicon.ico" type="image/x-icon">
     <meta charset="utf-8" />
-    <title>xfEditor v1.16.0 — Examples</title>
+    <title>xfEditor v1.17.8 — Examples</title>
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="../css/editormd.min.css" />
-    <link rel="shortcut icon" href="../images/logos/favicon-32x32.ico" type="image/x-icon" />
     <style>
         :root {
             --color-primary: #2C7EEA;
@@ -270,19 +270,19 @@
         <div class="logo-wrap"><i class="editormd-logo editormd-logo-3x"></i></div>
         <h1>xfEditor Examples</h1>
         <p class="subtitle">更适合教育、教学、网页演示、数据呈现、内容排版的现代化 Markdown 在线编辑器</p>
-        <p class="version">v1.16.0</p>
+        <p class="version">v1.17.8 — 字帖宽度控制 + 拼音增强 + 引擎核心优化</p>
         <div class="stats-bar">
-            <div class="stat-item"><span class="stat-icon">📁</span><span class="stat-num" id="total-count">-</span>Examples</div>
-            <div class="stat-item"><span class="stat-icon">✨</span><span class="stat-num" id="new-count">-</span>v1.16.0 新特性</div>
+            <div class="stat-item"><span class="stat-icon">📁</span><span class="stat-num" id="total-count">-</span>Example Demos</div>
+            <div class="stat-item"><span class="stat-icon">✨</span><span class="stat-num" id="new-count">-</span>v1.17.8 新特性</div>
             <div class="stat-item"><span class="stat-icon">🧩</span><span class="stat-num" id="syntax-count">-</span>扩展语法</div>
             <div class="stat-item"><span class="stat-icon">🛠</span><span class="stat-num" id="custom-count">-</span>自定义扩展</div>
         </div>
         <div class="nav-wrap">
             <a href="#start">快速上手</a>
             <a href="#all-features">全部功能</a>
-            <a href="#v116">v1.16.0</a>
-            <a href="#v113">v1.13.0</a>
-            <a href="#v110">v1.12.0</a>
+            <a href="#v177">v1.17.8</a>
+            <a href="#v176">v1.17.8</a>
+            <a href="#v115">v1.17.8</a>
             <a href="#v170">v1.7.0</a>
             <a href="#markdown">扩展语法</a>
             <a href="#customs">自定义扩展</a>
@@ -300,12 +300,13 @@
 
         <!-- ═══════════════ 快速上手 ═══════════════ -->
         <div class="category-section" data-category="start">
-        <h2 class="category"><span class="cat-title"><span>⚡</span><a name="start"></a>快速上手 Getting Started<span class="cat-count">7</span></span><a href="#top">TOP ↑</a></h2>
+        <h2 class="category"><span class="cat-title"><span>⚡</span><a name="start"></a>快速上手 Getting Started<span class="cat-count">8</span></span><a href="#top">TOP ↑</a></h2>
         <ul class="example-list">
             <li><a href="./simple.html">最简示例 <span>Simple example — 最快上手的入门演示</span></a></li>
             <li><a href="./use-requirejs.html">Require.js 加载 <span>Using Require.js (AMD)</span></a></li>
             <li><a href="./use-seajs.html">Sea.js 加载 <span>Using Sea.js (CMD)</span></a></li>
             <li><a href="./use-zepto.html">Zepto.js 替代 jQuery <span>Using Zepto.js</span></a></li>
+            <li><a href="./jquery-test.html">jQuery 兼容性测试 <span>jQuery 3.7 兼容性验证，基础 API 功能测试</span></a></li>
             <li><a href="./dynamic-create-editormd.html">动态创建编辑器 <span>Dynamic create xfEditor</span></a></li>
             <li><a href="./manually-load-modules.html">手动加载依赖模块 <span>Manually loading dependent modules</span></a></li>
             <li><a href="./form-get-value.html">表单取值与提交 <span>Get/Send Markdown via form POST</span></a></li>
@@ -326,55 +327,71 @@
         </ul>
         </div>
 
-        <!-- ═══════════════ v1.16.0 新特性 ═══════════════ -->
+        <!-- ═══════════════ v1.17.8 全新特性 ═══════════════ -->
+        <div class="category-section" data-category="v177">
+        <h2 class="category">
+            <span class="cat-title"><span>🌟</span><a name="v177"></a>v1.17.8 最新更新 <span class="badge badge-hot">LATEST</span><span class="cat-count">5</span></span>
+            <a href="#top">TOP ↑</a>
+        </h2>
+        <ul class="example-list">
+            <li class="featured"><a href="./copybook.html"><strong>📏 字帖宽度控制</strong> <span>🆕v1.17.8：{文本|拼音}(!width:125) 语法，支持每组独立设置像素宽度，组内两端对齐排版</span></a></li>
+            <li class="featured"><a href="./pinyin.html"><strong>🎨 拼音样式增强</strong> <span>🆕v1.17.8：拼音颜色优化为翠绿色，一一对应模式增强，内嵌脚注样式独立</span></a></li>
+            <li class="featured"><a href="./all-features.html"><strong>🔗 CodeMirror 事件链修复</strong> <span>v1.17.8：修复 cm.off().on() 链式调用 TypeError，引擎稳定性大幅提升</span></a></li>
+            <li class="featured"><a href="./footnote.html"><strong>📌 字帖脚注布局优化</strong> <span>v1.17.8：拼音格内脚注标记仅在汉字格显示，拼音区不再出现干扰</span></a></li>
+            <li class="featured"><a href="./all-features.html"><strong>💅 外观与性能优化</strong> <span>v1.17.8：CSS 全面美化、字号字重微调、拼音匹配算法改进</span></a></li>
+        </ul>
+        </div>
+
+        <!-- ═══════════════ v1.17.8 新特性 ═══════════════ -->
+        <div class="category-section" data-category="v176">
+        <h2 class="category">
+            <span class="cat-title"><span>🔥</span><a name="v176"></a>v1.17.8 重大更新 <span class="badge badge-hot">HOT</span><span class="cat-count">5</span></span>
+            <a href="#top">TOP ↑</a>
+        </h2>
+        <ul class="example-list">
+            <li class="featured"><a href="./all-features.html"><strong>🔗 双向同步滚动修复</strong> <span>🔥v1.17.8：修复编辑区↔预览区双向滚动容器错位Bug，data-sign格式修正，预览点击同步，键盘导航同步，窗口调整自适应</span></a></li>
+            <li class="featured"><a href="./copybook.html"><strong>📝 字帖脚注支持</strong> <span>🆕v1.17.8：字帖语法支持 (处[^fn]处) 脚注标注，古诗文解析关键字可加注释</span></a></li>
+            <li class="featured"><a href="./footnote.html"><strong>📌 脚注全面增强</strong> <span>v1.17.8：脚注支持字帖/拼音格内引用，文末自动汇总</span></a></li>
+            <li class="featured"><a href="./toc.html"><strong>📑 TOC 目录滚动修复</strong> <span>v1.17.8：目录链接滚动使用正确容器，消除错位问题</span></a></li>
+            <li class="featured"><a href="./api-reference.html"><strong>📐 scrollToLineNum 修复</strong> <span>v1.17.8：API 方法滚动容器正确化，double rAF 替代 setTimeout</span></a></li>
+        </ul>
+        </div>
+
+        <!-- ═══════════════ v1.17.8 新特性 ═══════════════ -->
         <div class="category-section" data-category="v115">
         <h2 class="category">
-            <span class="cat-title"><span>✨</span><a name="v115"></a>v1.16.0 新特性 <span class="badge badge-new">NEW</span><span class="cat-count">8</span></span>
+            <span class="cat-title"><span>✨</span><a name="v115"></a>v1.17.8 新特性 <span class="badge badge-new">NEW</span><span class="cat-count">7</span></span>
             <a href="#top">TOP ↑</a>
         </h2>
         <ul class="example-list">
-            <li class="featured"><a href="./all-features.html"><strong>🌟 全部功能完整演示</strong> <span>综合性全功能演示 — 涵盖所有语法和 v1.16.0 新特性</span></a></li>
-            <li class="featured"><a href="./echarts.html"><strong>📊 树图/脑图主题自适应</strong> <span>v1.16.0：树图支持 light/dark 主题自动跟随，不再硬编码深色主题色</span></a></li>
+            <li class="featured"><a href="./all-features.html#syncScroll"><strong>🔗 同步滚动</strong> <span>🆕v1.17.8：编辑区与预览区双向同步滚动，基于比例算法 + 鼠标追踪防死循环</span></a></li>
+            <li class="featured"><a href="./tooltip.html"><strong>🖱 Tooltip 增强</strong> <span>🆕v1.17.8：iframe 弹窗最大化⛶/关闭✕按钮 + 固定尺寸自动滚动条 + iframe:pre 类型 Blob URL 悬浮渲染</span></a></li>
+            <li class="featured"><a href="./echarts.html"><strong>📊 树图/脑图主题自适应</strong> <span>v1.17.8：树图支持 light/dark 主题自动跟随，不再硬编码深色主题色</span></a></li>
             <li class="featured"><a href="./code-attr.html"><strong>🎨 代码块 class/id/hidden 属性</strong> <span>```(.className) / ```(#idName) / ```(hidden) 组合支持</span></a></li>
-            <li class="featured"><a href="./tooltip.html"><strong>🖱 悬浮提示 iframe:pre 类型</strong> <span>配合代码块属性，通过 Blob URL 悬浮渲染 HTML 页面效果</span></a></li>
-            <li class="featured"><a href="./tabs.html"><strong>📑 标签页修复与增强</strong> <span>v1.16.0：修复独立页面标签切换缺失面板激活和 ECharts 重新初始化</span></a></li>
-            <li class="featured"><a href="./columns.html"><strong>📐 多栏布局分隔线修复</strong> <span>v1.16.0：修复独立页面多栏分隔线不渲染的问题</span></a></li>
-            <li class="featured"><a href="./all-features.html#L700"><strong>📏 栅格化布局</strong> <span>v1.16.0：[[row]]/[[col:N]] Bootstrap 风格 10 栏栅格，支持嵌套、自动平分</span></a></li>
-            <li class="featured"><a href="./all-features.html"><strong>🔄 同步滚动强化</strong> <span>v1.16.0：rAF 防抖 + 锁机制 + activeSide 5s 超时，防止递归触发</span></a></li>
+            <li class="featured"><a href="./tabs.html"><strong>📑 标签页修复与增强</strong> <span>v1.17.8：修复独立页面标签切换缺失面板激活和 ECharts 重新初始化</span></a></li>
+            <li class="featured"><a href="./columns.html"><strong>📐 多栏布局分隔线修复</strong> <span>v1.17.8：修复独立页面多栏分隔线不渲染的问题</span></a></li>
+            <li class="featured"><a href="./all-features.html#L700"><strong>📏 栅格化布局完善</strong> <span>v1.17.8：补全 CSS flex 样式、空行警告、最小列宽 1%、0 列修复</span></a></li>
         </ul>
         </div>
 
-        <!-- ═══════════════ v1.14.0 ═══════════════ -->
+        <!-- ═══════════════ v1.17.8 ═══════════════ -->
         <div class="category-section" data-category="v114">
         <h2 class="category">
-            <span class="cat-title"><span>📦</span><a name="v114"></a>v1.14.0 特性</span>
+            <span class="cat-title"><span>📦</span><a name="v114"></a>v1.17.8 修复<span class="cat-count">1</span></span>
             <a href="#top">TOP ↑</a>
         </h2>
         <ul class="example-list">
-            <li class="featured"><a href="./table-fix.html"><strong>📊 表格空单元格修复</strong> <span>v1.14.0 修复：表格最后一列为空时单元格不再丢失，自动补全</span></a></li>
+            <li class="featured"><a href="./table-fix.html"><strong>📊 表格空单元格修复</strong> <span>v1.17.8 修复：表格最后一列为空时单元格不再丢失，自动补全</span></a></li>
         </ul>
         </div>
 
-        <!-- ═══════════════ v1.13.0 新特性 ═══════════════ -->
-        <div class="category-section" data-category="v113">
-        <h2 class="category">
-            <span class="cat-title"><span>✨</span><a name="v113"></a>v1.13.0 新特性 <span class="cat-count">2</span></span>
-            <a href="#top">TOP ↑</a>
-        </h2>
-        <ul class="example-list">
-            <li class="featured"><a href="./all-features.html"><strong>🌟 全部功能完整演示</strong> <span>综合性全功能演示 — 所有语法一站式体验</span></a></li>
-            <li class="featured"><a href="./sync-scrolling.html"><strong>🔄 智能同步滚动（活动侧感知）</strong> <span>v1.13.0 全新功能：自动检测用户操作区域（编辑区/预览区），智能决定同步方向，支持双向/单向/禁用三种模式</span></a></li>
-        </ul>
-        </div>
-
-        <!-- ═══════════════ v1.12.0 特性 ═══════════════ -->
+        <!-- ═══════════════ v1.17.8 特性 ═══════════════ -->
         <div class="category-section" data-category="v110">
         <h2 class="category">
-            <span class="cat-title"><span>📚</span><a name="v110"></a>v1.12.0 特性<span class="cat-count">16</span></span>
+            <span class="cat-title"><span>📚</span><a name="v110"></a>v1.17.8 特性<span class="cat-count">15</span></span>
             <a href="#top">TOP ↑</a>
         </h2>
         <ul class="example-list">
-            <li class="featured"><a href="./all-features.html"><strong>🌟 全部功能完整演示</strong> <span>综合性全功能演示 — 所有语法一站式体验</span></a></li>
             <li class="featured"><a href="./copybook.html"><strong>📝 字帖 Copybook</strong> <span>田字格/米字格/拼音格 — 三种汉字书写字帖</span></a></li>
             <li class="featured"><a href="./formula.html">📐 公式插入面板 <span>11 分类、100+LaTeX公式、Tab切换、一键插入</span></a></li>
             <li class="featured"><a href="./superscript-subscript.html">⬆️ 上标与下标 <span>^上标^ / ^^下标^^ 语法，数学化学专用</span></a></li>
@@ -419,7 +436,7 @@
             <li><a href="./flowchart.html">流程图 Flowchart <span>基于 flowchart.js 的流程图绘制</span></a></li>
             <li><a href="./sequence-diagram.html">时序图 Sequence Diagram <span>基于 js-sequence-diagrams 的时序图</span></a></li>
             <li><a href="./task-lists.html">GFM 任务列表 <span>GitHub Flavored Markdown Task Lists</span></a></li>
-            <li><a href="./@links.html">@链接 <span>@username 提及链接</span></a></li>
+            <li><a href="./at-links.html">@链接 <span>@username 提及链接</span></a></li>
             <li><a href="./toc.html">自动目录 ToC <span>Table of Contents 下拉/内嵌两种模式</span></a></li>
             <li><a href="./html-tags-decode.html">HTML 标签解析 <span>识别和过滤 HTML 标签</span></a></li>
             <li><a href="./page-break.html">分页符 Page Break <span>打印分页标记</span></a></li>
@@ -429,7 +446,7 @@
         <!-- ═══════════════ 自定义与扩展 ═══════════════ -->
         <div class="category-section" data-category="customs">
         <h2 class="category">
-            <span class="cat-title"><span>🔧</span><a name="customs"></a>自定义与扩展 Customs & Extensions<span class="cat-count">19</span></span>
+            <span class="cat-title"><span>🔧</span><a name="customs"></a>自定义与扩展 Customs & Extensions<span class="cat-count">18</span></span>
             <a href="#top">TOP ↑</a>
         </h2>
         <ul class="example-list">
@@ -443,7 +460,6 @@
             <li><a href="./change-mode.html">变身为代码编辑器 <span>Change to code editor mode</span></a></li>
             <li><a href="./readonly.html">只读模式 <span>Read only mode</span></a></li>
             <li><a href="./multi-editormd.html">多个编辑器并存 <span>Multi xfEditor instances</span></a></li>
-            <li><a href="./sync-scrolling.html">同步滚动 <span>双向/单向/禁用同步滚动</span></a></li>
             <li><a href="./delay-renderer-preview.html">延迟渲染 <span>Delay renderer and preview</span></a></li>
             <li><a href="./external-use.html">外部使用工具栏 <span>External use of toolbar handlers</span></a></li>
             <li><a href="./resettings.html">动态重配置 <span>loaded resettings</span></a></li>
@@ -472,7 +488,7 @@
         <!-- ═══════════════ 事件处理 ═══════════════ -->
         <div class="category-section" data-category="events">
         <h2 class="category">
-            <span class="cat-title"><span>📡</span><a name="events"></a>事件处理 Events<span class="cat-count">11</span></span>
+            <span class="cat-title"><span>📡</span><a name="events"></a>事件处理 Events<span class="cat-count">10</span></span>
             <a href="#top">TOP ↑</a>
         </h2>
         <ul class="example-list">
@@ -484,7 +500,6 @@
             <li><a href="./onresize.html">窗口尺寸变化 <span>Onresize event handle</span></a></li>
             <li><a href="./onpreviewing-onpreviewed.html">预览生命周期 <span>Onpreviewing / Onpreviewed</span></a></li>
             <li><a href="./onwatch-onunwatch.html">实时预览开关 <span>Onwatch / Onunwatch</span></a></li>
-            <li><a href="./onscroll-onpreviewscroll.html">事件绑定示例 <span>Events</span></a></li>
             <li><a href="./html-preview-markdown-to-html.html">静态 Markdown→HTML <span>markdownToHTML() 静态渲染 + TOC 容器</span></a></li>
             <li><a href="./html-preview-markdown-to-html-custom-toc-container.html">自定义 ToC 容器 <span>Custom ToC container for preview</span></a></li>
         </ul>
@@ -493,7 +508,7 @@
 
     <div class="footer">
         <p>
-            <a href="./"><img src="../images/logos/xfeditor-64x64.png" alt="xfEditor Logo"/></a>
+            <a href="./"><img src="../images/logo.png" alt="xfEditor Logo"/></a>
         </p>
         <p>Copyright &copy; 2015-2026 <a href="./">xfEditor</a></p>
         <p>Open source online markdown editor. <a href="https://github.com/zhaoxianfang/xfeditor" class="fa fa-github fa-lg" target="_blank"></a></p>
@@ -574,12 +589,12 @@
 
         // ── Count stats ──
         var totalAll  = $allCards.length;
-        var v115Cards = $(".category-section[data-category=v115] .example-list li").length;
+        var v177Cards = $(".category-section[data-category=v177] .example-list li").length;
         var mdCards   = $(".category-section[data-category=markdown] .example-list li").length;
         var custCards = $(".category-section[data-category=customs] .example-list li").length;
 
         $("#total-count").text(totalAll);
-        $("#new-count").text(v115Cards);
+        $("#new-count").text(v177Cards);
         $("#syntax-count").text(mdCards);
         $("#custom-count").text(custCards);
     });

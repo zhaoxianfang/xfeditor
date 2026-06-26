@@ -79,6 +79,7 @@
                                 codeTexts = "\r\n\r\n" + codeTexts;
                             }
 
+                            cm.focus();
                             cm.replaceSelection(codeTexts);
 
                             this.hide().lockScreen(false).hideMask();

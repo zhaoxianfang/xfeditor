@@ -112,6 +112,7 @@
                                 md = '<div class="editormd-video-wrapper" style="text-align:' + align + ';"><video src="' + url + '" controls preload="metadata"' + styleAttr + '>' + alt + '</video></div>';
                             }
 
+                            cm.focus();
                             cm.replaceSelection(md);
 
                             this.hide().lockScreen(false).hideMask();

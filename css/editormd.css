@@ -331,6 +331,7 @@
   display: ruby;
   ruby-align: center;
   line-height: 2.2;
+  margin: 0 1px;
 }
 .editormd-pinyin rb {
   display: ruby-base;
@@ -338,8 +339,40 @@
 .editormd-pinyin rt {
   display: ruby-text;
   font-size: 0.65em;
-  color: #666;
-  line-height: 1;
+  color: #6b8e6b;
+  line-height: 1.1;
+  font-weight: 400;
+  letter-spacing: 0.1px;
+  font-family: "Segoe UI", "Lucida Grande", "Arial", "Noto Sans", sans-serif;
+}
+
+/* ★ v1.17.7: 一一对应拼音 — 每个字独立 ruby */
+.editormd-pinyin-matched {
+  margin: 0;
+}
+.editormd-pinyin-matched rb {
+  min-width: 1.1em;
+  text-align: center;
+}
+.editormd-pinyin-matched rt {
+  font-size: 0.6em;
+  min-width: 1.1em;
+  text-align: center;
+}
+
+/* ★ v1.17.7: 拼音宽度容器 — {text|pinyin}(!width:NNN) 语法 */
+.editormd-pinyin-wrap {
+  display: inline-flex;
+  justify-content: space-between;
+  vertical-align: middle;
+}
+
+/* ★ v1.17.7: 拼音内嵌脚注 — 脚注不显示拼音上标 */
+.editormd-pinyin .editormd-footnote-ref-wrapper {
+  font-size: 0.55em;
+  vertical-align: super;
+  position: relative;
+  top: -0.3em;
 }
 
 /* Text alignment */
@@ -396,106 +429,7 @@
   border-bottom-color: #2C7EEA;
 }
 
-/* ECharts container */
-.editormd-echarts {
-  width: 100% !important;
-  max-width: 100%;
-  margin: 15px 0;
-  border: 1px solid #eee;
-  border-radius: 4px;
-}
-
-/* Tabs in preview */
-.editormd-tabs {
-  margin: 15px 0;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  overflow: hidden;
-  background: #fff;
-}
-
-.editormd-tab-nav {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  border-bottom: 1px solid #ddd;
-  background: #f8f8f8;
-}
-.editormd-tab-nav li {
-  padding: 10px 20px;
-  cursor: pointer;
-  border-right: 1px solid #ddd;
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s;
-  margin: 0;
-}
-.editormd-tab-nav li:hover {
-  background: #eee;
-}
-.editormd-tab-nav li.active {
-  background: #fff;
-  border-bottom-color: #2C7EEA;
-  color: #2C7EEA;
-  font-weight: bold;
-}
-
-.editormd-tab-body {
-  padding: 15px;
-  min-height: 60px;
-}
-
-.editormd-tab-panel {
-  display: none;
-}
-.editormd-tab-panel.active {
-  display: block;
-}
-
-/* Multi-column layout */
-.editormd-columns {
-  margin: 15px 0;
-  padding: 15px;
-  border: 1px dashed #ddd;
-  border-radius: 4px;
-  -webkit-column-gap: 30px;
-  -moz-column-gap: 30px;
-  column-gap: 30px;
-}
-
-/* Grid Layout (Bootstrap-like 10-column system) */
-.editormd-row {
-  display: flex;
-  flex-wrap: wrap;
-  width: 100%;
-  margin: 12px 0;
-  gap: 0;
-  box-sizing: border-box;
-}
-.editormd-col {
-  box-sizing: border-box;
-  padding: 0 8px;
-  min-height: 1px;
-}
-.editormd-col:first-child {
-  padding-left: 0;
-}
-.editormd-col:last-child {
-  padding-right: 0;
-}
-/* Responsive: small screen stacks columns */
-@media (max-width: 768px) {
-  .editormd-row {
-    flex-wrap: wrap;
-  }
-  .editormd-col {
-    width: 100% !important;
-    padding: 0;
-    margin-bottom: 10px;
-  }
-}
-
-/* Tooltip / Popover styles are defined in editormd.preview.scss (line 457+)
+/* ECharts/Tabs/Columns/Row/Col styles are defined in editormd.preview.scss
    and imported via @import "editormd.preview" below.
    Duplicate definitions removed to avoid CSS bloat. */
 .editormd-container {
@@ -1488,6 +1422,36 @@
   background-color: #f6f6f6;
 }
 
+.editormd-row {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 10px 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+.editormd-row:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+.editormd-col {
+  box-sizing: border-box;
+  padding: 8px 12px;
+  min-width: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+.editormd-col + .editormd-col {
+  border-left: 1px solid rgba(0, 0, 0, 0.08);
+}
+.editormd-col > :first-child {
+  margin-top: 0;
+}
+.editormd-col > :last-child {
+  margin-bottom: 0;
+}
+
 .editormd-tab-head {
   list-style: none;
   border-bottom: 1px solid #ddd;
@@ -1560,6 +1524,22 @@
   color: #999;
   padding: 8px;
   border: 1px solid #ddd;
+}
+.editormd-form select {
+  color: #555;
+  padding: 7px 8px;
+  border: 1px solid #ddd;
+  background: #fff;
+  display: inline-block;
+  width: 264px;
+  font-size: 14px;
+  border-radius: 2px;
+  -webkit-appearance: menulist;
+  appearance: menulist;
+}
+.editormd-form select:focus {
+  outline: 0;
+  border-color: #aaa;
 }
 .editormd-form input[type=number] {
   width: 40px;
@@ -5692,6 +5672,44 @@ hr.editormd-page-break {
   font-size: 12px;
   background: #fff;
 }
+.editormd-tooltip-popup .editormd-tooltip-max-btn,
+.editormd-tooltip-popup .editormd-tooltip-close-btn {
+  position: absolute;
+  top: 5px;
+  z-index: 10001;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 3px;
+  font-size: 12px;
+  line-height: 22px;
+  text-align: center;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+  padding: 0;
+  color: #666;
+  background: rgba(255, 255, 255, 0.85);
+}
+.editormd-tooltip-popup .editormd-tooltip-max-btn:hover,
+.editormd-tooltip-popup .editormd-tooltip-close-btn:hover {
+  opacity: 1;
+}
+.editormd-tooltip-popup .editormd-tooltip-close-btn {
+  right: 5px;
+}
+.editormd-tooltip-popup .editormd-tooltip-close-btn:hover {
+  background: #e74c3c;
+  color: #fff;
+}
+.editormd-tooltip-popup .editormd-tooltip-max-btn {
+  right: 30px;
+  font-size: 14px;
+}
+.editormd-tooltip-popup .editormd-tooltip-max-btn:hover {
+  background: #3498db;
+  color: #fff;
+}
 
 .editormd-tooltip-arrow {
   position: absolute;
@@ -5800,6 +5818,185 @@ hr.editormd-page-break {
   padding: 40px;
 }
 
+/* ========== Preview Components: Pinyin, Text Align, Tabs, Columns ========== */
+/* Pinyin ruby annotation */
+.editormd-pinyin {
+  display: ruby;
+  ruby-align: center;
+  line-height: 2.2;
+  margin: 0 1px;
+}
+.editormd-pinyin rb {
+  display: ruby-base;
+}
+.editormd-pinyin rt {
+  display: ruby-text;
+  font-size: 0.65em;
+  color: #6b8e6b;
+  line-height: 1.1;
+  font-weight: 400;
+  letter-spacing: 0.1px;
+  font-family: "Segoe UI", "Lucida Grande", "Arial", "Noto Sans", sans-serif;
+}
+
+/* ★ v1.17.7: 一一对应拼音 — 每个字独立 ruby */
+.editormd-pinyin-matched {
+  margin: 0;
+}
+.editormd-pinyin-matched rb {
+  min-width: 1.1em;
+  text-align: center;
+}
+.editormd-pinyin-matched rt {
+  font-size: 0.6em;
+  min-width: 1.1em;
+  text-align: center;
+}
+
+/* Text alignment */
+.editormd-text-align {
+  display: block;
+  margin: 0.5em 0;
+}
+.editormd-text-align-left {
+  text-align: left !important;
+}
+.editormd-text-align-center {
+  text-align: center !important;
+}
+.editormd-text-align-right {
+  text-align: right !important;
+}
+
+/* Image resize in preview */
+.editormd-img-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.editormd-img-resizable {
+  cursor: pointer;
+}
+
+.editormd-img-resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  background: #2C7EEA;
+  cursor: se-resize;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.editormd-img-wrapper:hover .editormd-img-resize-handle {
+  opacity: 1;
+}
+
+.editormd-img-wrapper:hover .editormd-img-resizable {
+  outline: 2px solid #2C7EEA;
+}
+
+/* ECharts container */
+.editormd-echarts {
+  width: 100% !important;
+  max-width: 100%;
+  margin: 15px 0;
+  border: 1px solid #eee;
+  border-radius: 4px;
+}
+
+/* Tabs in preview */
+.editormd-tabs {
+  margin: 15px 0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.editormd-tab-nav {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  border-bottom: 1px solid #ddd;
+  background: #f8f8f8;
+}
+.editormd-tab-nav li {
+  padding: 10px 20px;
+  cursor: pointer;
+  border-right: 1px solid #ddd;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  margin: 0;
+}
+.editormd-tab-nav li:hover {
+  background: #eee;
+}
+.editormd-tab-nav li.active {
+  background: #fff;
+  border-bottom-color: #2C7EEA;
+  color: #2C7EEA;
+  font-weight: bold;
+}
+
+.editormd-tab-body {
+  padding: 15px;
+  min-height: 60px;
+}
+
+.editormd-tab-panel {
+  display: none;
+}
+.editormd-tab-panel.active {
+  display: block;
+}
+
+/* Multi-column layout */
+.editormd-columns {
+  margin: 15px 0;
+  padding: 15px;
+  border: 1px dashed #ddd;
+  border-radius: 4px;
+  -webkit-column-gap: 30px;
+  -moz-column-gap: 30px;
+  column-gap: 30px;
+}
+
+/* Grid Layout (Bootstrap-like 10-column system) */
+.editormd-row {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  margin: 12px 0;
+  gap: 0;
+  box-sizing: border-box;
+}
+
+.editormd-col {
+  box-sizing: border-box;
+  padding: 0 8px;
+  min-height: 1px;
+}
+.editormd-col:first-child {
+  padding-left: 0;
+}
+.editormd-col:last-child {
+  padding-right: 0;
+}
+
+@media (max-width: 768px) {
+  .editormd-row {
+    flex-wrap: wrap;
+  }
+  .editormd-col {
+    width: 100% !important;
+    padding: 0;
+    margin-bottom: 10px;
+  }
+}
 /* ========== 字帖样式 (Copybook) ========== */
 .editormd-copybook {
   display: block;
@@ -5912,6 +6109,52 @@ hr.editormd-page-break {
   border-top: none;
   margin-top: 2px;
 }
+/* ★ v1.17.7: 字帖组级宽度容器 — 支持 {text|pinyin}(!width:NNN) 语法 */
+.editormd-copybook-group {
+  display: inline-flex;
+  flex-shrink: 0;
+  justify-content: space-between;
+  gap: 3px;
+  vertical-align: middle;
+}
+.editormd-copybook-group-pinyin {
+  /* 拼音格组容器：两端对齐排列 */
+}
+.editormd-copybook-group-grid {
+  /* 田字格/米字格组容器 */
+}
+.editormd-copybook-row-wide {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ★ v1.17.7: 字帖脚注 — 在汉字格右上角显示，不在拼音区显示 */
+.editormd-copybook-footnote {
+  position: absolute;
+  top: 1px;
+  right: 2px;
+  z-index: 5;
+  font-size: 10px;
+  line-height: 1;
+}
+.editormd-copybook-footnote a {
+  color: #2C7EEA;
+  text-decoration: none;
+  font-weight: 600;
+}
+.editormd-copybook-footnote a:hover {
+  color: #1a5dc4;
+  text-decoration: underline;
+}
+
+/* ★ v1.17.7: 拼音格内脚注 — 汉字格右上角显示，拼音区不受影响 */
+.editormd-copybook-pinyin-cell .editormd-copybook-footnote {
+  top: 0;
+  right: 1px;
+  font-size: 9px;
+}
+
 .editormd-copybook-pinyin-bottom .editormd-copybook-svg {
   position: absolute;
   top: 0;
@@ -6346,6 +6589,127 @@ hr.editormd-page-break {
 .editormd-preview-theme-dark .flowchart text {
   fill: #5879B4;
 }
+.editormd-preview-theme-dark {
+  /* Tabs */
+}
+.editormd-preview-theme-dark .editormd-tabs {
+  background: #2a2a2a;
+  border-color: #444;
+}
+.editormd-preview-theme-dark .editormd-tab-nav {
+  background: #222;
+  border-bottom-color: #444;
+}
+.editormd-preview-theme-dark .editormd-tab-nav li {
+  border-right-color: #444;
+  color: #aaa;
+}
+.editormd-preview-theme-dark .editormd-tab-nav li:hover {
+  background: #333;
+}
+.editormd-preview-theme-dark .editormd-tab-nav li.active {
+  background: #2a2a2a;
+  border-bottom-color: #58a6ff;
+  color: #58a6ff;
+}
+.editormd-preview-theme-dark {
+  /* Columns */
+}
+.editormd-preview-theme-dark .editormd-columns {
+  border-color: #444;
+}
+.editormd-preview-theme-dark {
+  /* Grid (row/col) */
+}
+.editormd-preview-theme-dark .editormd-row {
+  background: transparent;
+}
+.editormd-preview-theme-dark {
+  /* ECharts */
+}
+.editormd-preview-theme-dark .editormd-echarts {
+  border-color: #444;
+  background: #1a1a1a;
+}
+.editormd-preview-theme-dark {
+  /* Pinyin */
+}
+.editormd-preview-theme-dark .editormd-pinyin rt {
+  color: #999;
+}
+.editormd-preview-theme-dark {
+  /* Tooltip text */
+}
+.editormd-preview-theme-dark .editormd-tooltip-popup.editormd-tooltip-text {
+  background: #2a2a2a;
+}
+.editormd-preview-theme-dark {
+  /* Badges */
+}
+.editormd-preview-theme-dark .badge {
+  color: #ccc;
+  background: #333;
+}
+.editormd-preview-theme-dark .badge-new {
+  color: #6ee7b7;
+  background: #064e3b;
+}
+.editormd-preview-theme-dark {
+  /* Attachment */
+}
+.editormd-preview-theme-dark .editormd-file-list {
+  background: #222;
+  border-color: #444;
+}
+.editormd-preview-theme-dark .editormd-attachment-link {
+  color: #58a6ff;
+  background: #2a2a2a;
+  border-color: #444;
+}
+.editormd-preview-theme-dark .editormd-attachment-link:hover {
+  color: #fff;
+  background: #58a6ff;
+  border-color: #58a6ff;
+}
+.editormd-preview-theme-dark {
+  /* Copybook */
+}
+.editormd-preview-theme-dark .editormd-copybook {
+  background: #2a2218;
+}
+.editormd-preview-theme-dark .editormd-copybook-grid-cell {
+  background: #2d2618;
+  border-color: #5a4a2e;
+}
+.editormd-preview-theme-dark .editormd-copybook-row {
+  background: transparent;
+}
+.editormd-preview-theme-dark .editormd-copybook-pinyin-top {
+  background: #2a2518;
+}
+.editormd-preview-theme-dark .editormd-copybook-pinyin-bottom {
+  background: #2d2618;
+  border-color: #5a4a2e;
+}
+.editormd-preview-theme-dark .editormd-copybook-hanzi-text {
+  color: #c4b998;
+}
+.editormd-preview-theme-dark .editormd-copybook-pinyin-text {
+  color: #7aa87a;
+}
+.editormd-preview-theme-dark .editormd-copybook-footnote a {
+  color: #6ea8fe;
+}
+.editormd-preview-theme-dark .editormd-copybook-footnote a:hover {
+  color: #93c5fd;
+}
+.editormd-preview-theme-dark {
+  /* Page Block */
+}
+.editormd-preview-theme-dark .editormd-page-block {
+  background: #242424;
+  border-color: #444;
+}
 
 @media screen {
   .editormd-preview-theme-dark .str {
@@ -6583,3 +6947,5 @@ hr.editormd-page-break {
 .editormd-theme-dark .CodeMirror {
   border-right: 1px solid rgba(0, 0, 0, 0.1);
 }
+
+/*# sourceMappingURL=editormd.css.map */

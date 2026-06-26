@@ -81,6 +81,7 @@
                             }
                             linkStr += ")";
 
+                            cm.focus();
                             cm.replaceSelection(linkStr);
 
                             if (selection === "") {

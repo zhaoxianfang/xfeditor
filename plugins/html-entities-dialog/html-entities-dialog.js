@@ -69,6 +69,7 @@
 					},
 					buttons    : {
 						enter  : [lang.buttons.enter, function() {							
+							cm.focus();
 							cm.replaceSelection(selecteds.join(" "));
 							this.hide().lockScreen(false).hideMask();
 							

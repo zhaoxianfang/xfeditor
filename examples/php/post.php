@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Editor.md 表单提交接收页（PHP 8 版本）
+ * xfEditor 表单提交接收页（PHP 8 版本）
  *
  * ## 功能说明
  *
@@ -21,7 +21,7 @@
  *
  * HTML 页面，展示提交的 Markdown 和 HTML 内容（经过 HTML 实体转义保护）。
  *
- * @package   Editor.md
+ * @package   xfEditor
  * @version   2.0.0
  */
 
@@ -37,7 +37,7 @@ header('X-Content-Type-Options: nosniff');
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>提交内容展示 — Editor.md v1.12.0</title>
+    <title>提交内容展示 — xfEditor v1.12.0</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -125,7 +125,7 @@ header('X-Content-Type-Options: nosniff');
     </style>
 </head>
 <body>
-    <h1>📄 Editor.md v1.12.0 — 提交内容展示</h1>
+    <h1>📄 xfEditor v1.12.0 — 提交内容展示</h1>
     <div class="actions">
         <a href="javascript:history.back();">← 返回编辑器</a>
     </div>

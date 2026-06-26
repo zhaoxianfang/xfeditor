@@ -43,6 +43,24 @@
         display: inline-block;
         width: 264px;
     }
+
+    select {
+        color: #555;
+        padding: 7px 8px;
+        border: 1px solid $borderColor;
+        background: #fff;
+        display: inline-block;
+        width: 264px;
+        font-size: 14px;
+        -webkit-appearance: menulist;
+        appearance: menulist;
+        @include border-radius(2px);
+
+        &:focus {
+            outline: 0;
+            border-color: #aaa;
+        }
+    }
     
     .fa-btns {
         display: inline-block;

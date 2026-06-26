@@ -151,6 +151,7 @@
 								}
 							}
 
+							cm.focus();
 							cm.replaceSelection(table);
 
                             this.hide().lockScreen(false).hideMask();

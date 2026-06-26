@@ -1,18 +1,17 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+    <link rel="shortcut icon" href="../images/favicon.ico" type="image/x-icon">
     <meta charset="utf-8" />
     <title>字帖演示 - xfEditor Copybook Demo</title>
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="../css/editormd.min.css" />
-    <link rel="stylesheet" href="../css/editormd.preview.min.css" />
-    <link rel="shortcut icon" href="../images/logos/favicon-32x32.ico" type="image/x-icon" />
 </head>
 <body>
     <div id="layout">
         <header>
             <h1>字帖 Copybook 演示</h1>
-            <p>田字格 · 米字格 · 拼音格（四线三格） — 工具栏一键插入</p>
+            <p>田字格 · 米字格 · 拼音格（四线三格）— 支持花括号语法、宽度参数、脚注嵌入 🆕v1.17.8</p>
         </header>
         <div class="btns">
             <button id="get-btn">获取 HTML</button>
@@ -89,6 +88,24 @@
 
 ---
 
+### 拼音格 — 宽度参数与脚注 🆕v1.17.8
+
+> 🆕 使用 `(!width:NNN)` 设置行宽 + `{...}` 花括号语法，配合脚注系统：
+
+[[copybookPinyin]]
+{春眠不觉[^jue]晓|chūn mián bù jué xiǎo}(!width:125)
+{处处闻[^wen]啼鸟|chù chù wén tí niǎo}(!width:125)
+{夜来风雨声|yè lái fēng yǔ shēng}(!width:125)
+{花落知多少|huā luò zhī duō shǎo}(!width:125)
+[[/copybookPinyin]]
+
+[^jue]: 觉：醒来，感知到外界的声音和光线
+[^wen]: 闻：听到，听见声音
+
+---
+
+---
+
 ## 语法说明
 
 ### 田字格 / 米字格语法
@@ -121,6 +138,55 @@
 - `()` 内用 `|` 分隔汉字和拼音
 - `|` 左边是汉字，右边是对应的拼音（空格分隔）
 - 上方显示中式四线三格拼音，下方显示米字格汉字
+
+### 🆕 v1.17.8: 脚注标注语法
+
+可以为字帖中的汉字添加脚注标记，例如古诗文解析时在关键字后标注释义：
+
+```markdown
+[[copybookTian]]
+(春眠不[^jue]觉晓)(处处闻[^wen]啼鸟)
+[[/copybookTian]]
+```
+
+- `[^脚注名]` 紧跟在要标注的汉字后面
+- 在字帖格中会在该字右上角显示脚注编号链接
+- 页面底部使用标准脚注语法定义：
+  ```markdown
+  [^jue]: 觉：醒来，感知到
+  [^wen]: 闻：听到，听见
+  ```
+
+**拼音格脚注示例：**
+
+```markdown
+[[copybookPinyin]]
+(春眠不[^jue]觉晓|chūn mián bù jué xiǎo)(处处闻[^wen]啼鸟|chù chù wén tí niǎo)
+[[/copybookPinyin]]
+```
+
+> 💡 脚注标记 `[^xxx]` 放在要标注的汉字**之后**，会在该汉字格子的右上角显示数字编号。脚注 ID 与 markdown 全局脚注系统一致，**点击脚注编号可平滑滚动到文档底部脚注解释**，点击后脚注解释区域会高亮闪烁。
+
+```markdown
+[^jue]: 觉：醒来，感知到
+[^wen]: 闻：听到，听见
+```
+
+**拼音格宽度参数示例（古诗文对齐）：**
+
+> 🆕 使用 `(!width:NNN)` 设置每一行拼音格的展示宽度，配合 `{...}` 花括号语法，实现古诗文每行等宽对齐。
+
+```markdown
+[[copybookPinyin]]
+{春眠不觉[^jue]晓|chūn mián bù jué xiǎo}(!width:125)
+{处处闻[^wen]啼鸟|chù chù wén tí niǎo}(!width:125)
+{夜来风雨声|yè lái fēng yǔ shēng}(!width:125)
+{花落知[^hua]多少|huā luò zhī duō shǎo}(!width:125)
+[[/copybookPinyin]]
+```
+
+> 💡 `(!width:125)` 参数设置行内所有拼音格在 125px 宽度下进行**两端对齐**，每个汉字独占一格，拼音在其正上方。
+> 可同时使用 `(...)` 圆括号和 `{...}` 花括号语法（二者等效），花括号语法推荐与宽度参数一起使用以避免括号嵌套歧义。
 </textarea>
         </div>
     </div>

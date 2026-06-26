@@ -104,10 +104,12 @@
 
                             if (link === "" || link === "http://")
                             {
+                                cm.focus();
                                 cm.replaceSelection("![" + alt + "](" + url + altAttr + ")" + sizeStr);
                             }
                             else
                             {
+                                cm.focus();
                                 cm.replaceSelection("[![" + alt + "](" + url + altAttr + ")]" + "(" + link + altAttr + ")" + sizeStr);
                             }
 

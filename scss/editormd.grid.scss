@@ -34,3 +34,39 @@
         }
     }
 }
+
+// ★ v1.17.0: 栅格化布局样式（[[row]]/[[col]] 语法）
+// 10 栏栅格系统，类似 Bootstrap 栅格
+#{$prefix}row {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 10px 0;
+    width: 100%;
+    box-sizing: border-box;
+    
+    &:after {
+        content: "";
+        display: table;
+        clear: both;
+    }
+}
+
+#{$prefix}col {
+    box-sizing: border-box;
+    padding: 8px 12px;
+    min-width: 0;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    
+    + #{$prefix}col {
+        border-left: 1px solid rgba(0, 0, 0, 0.08);
+    }
+    
+    > :first-child {
+        margin-top: 0;
+    }
+    
+    > :last-child {
+        margin-bottom: 0;
+    }
+}

@@ -1,6 +1,6 @@
-# Editor.md
+# xfEditor
 
-![](../images/logos/xfeditor-180x180.png)
+![](../images/logo.png)
 
 **GitHub Stars** | **Forks** | **Tag** | **Release** | **Issues** | **Bower**
 

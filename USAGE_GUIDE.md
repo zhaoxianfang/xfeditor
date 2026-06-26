@@ -1,6 +1,6 @@
 # xfEditor 使用指南
 
-> xfEditor v1.16.0 完整使用手册
+> xfEditor v1.17.8 完整使用手册
 
 ---
 
@@ -81,9 +81,9 @@ editormd.markdownToHTML("preview-container", {
 | 选项 | 默认值 | 说明 |
 |------|--------|------|
 | `watch` | `true` | 实时预览 |
-| `syncScrolling` | `true` | 同步滚动：`true`（双向）/ `false`（禁用）/ `"single"`（仅编辑区→预览区） |
-| `delay` | `300` | 解析延迟 (ms) |
+| `delay` | `80` | 解析延迟 (ms)，v1.16 起从 300ms 降至 80ms |
 | `previewCodeHighlight` | `true` | 预览区代码高亮 |
+| `syncScroll` | `true` | 编辑区与预览区双向精准同步滚动 🆕v1.17.5（标题锚点文本验证配对+程序化滚动识别+预览交互防护+门控体系） |
 
 ### 扩展语法
 
@@ -385,7 +385,7 @@ console.log("嵌套代码");
 - `{page}` - 当前页码
 - `{total}` - 总页数
 
-### 6. 拼音标注 (`pinyin: true`)
+### 7. 拼音标注 (`pinyin: true`)
 
 ```markdown
 {你 | nǐ} {好 | hǎo}
@@ -398,22 +398,20 @@ console.log("嵌套代码");
 - 多字词语用空格分隔拼音
 - 参照 [拼音参照表](examples/pinyin-reference.html) 获取完整声母韵母列表
 
-### 6. 行内对齐 (`textAlign: true`)
+### 8. 行内对齐 (`textAlign: true`)
 
 ```markdown
-⁑⁑居中对齐⁑⁑
+⁑居中对齐⁑
 ⁑⁖左对齐⁖⁑
-⁑⠕右对齐对齐⠕⁑
-⁑⁛两端对齐⁛⁑
+⠪右对齐⠪
 ```
 
 **键盘快捷键**：
 - `Ctrl+Alt+L` - 左对齐
 - `Ctrl+Alt+C` - 居中对齐
 - `Ctrl+Alt+R` - 右对齐
-- `Ctrl+Alt+J` - 两端对齐
 
-### 8. 悬浮提示 (`tooltip: true`)
+### 9. 悬浮提示 (`tooltip: true`)
 
 **新版统一语法**（v1.14.0）：
 
@@ -453,13 +451,13 @@ console.log("嵌套代码");
 
 **基础用法**（自动宽高）：
 ```markdown
-[查看Logo](tooltip:image:../images/logos/xfeditor-180x180.png)
+[查看Logo](tooltip:image:../images/logo.png)
 ```
 
 **设置固定宽高**（图片拉伸/缩放）：
 ```markdown
-[Logo 50x40](tooltip:image:../images/logos/xfeditor-180x180.png)<50,40>
-[Logo 100x80](tooltip:image:../images/logos/xfeditor-180x180.png)<100,80>
+[Logo 50x40](tooltip:image:../images/logo.png)<50,40>
+[Logo 100x80](tooltip:image:../images/logo.png)<100,80>
 ```
 
 **使用引号包围URL**（推荐）：
@@ -488,6 +486,12 @@ console.log("嵌套代码");
 ```markdown
 [外部页面](tooltip:iframe:"https://example.com")<200,150>
 ```
+
+**iframe 控制按钮** 🆕v1.17.0：
+- iframe 类型 Tooltip 弹窗右上角自动显示「最大化」⛶ 和「关闭」✕ 按钮
+- **最大化**：将弹窗切换为全屏模式（96vw × 92vh），再次点击恢复原始尺寸
+- **关闭**：立即关闭 Tooltip 弹窗，无需等待延迟
+- 按钮在 hover 时显示完整颜色（最大化蓝色，关闭红色），半透明常驻显示
 
 ---
 
@@ -518,7 +522,7 @@ console.log("嵌套代码");
         <h4>🎯 产品特性</h4>
         <p>这是通过CSS选择器引用的HTML内容</p>
         <ul>
-            <li>实时预览与同步滚动</li>
+            <li>实时预览</li>
             <li>30+ 语言代码高亮</li>
             <li>ECharts 图表嵌入</li>
         </ul>
@@ -622,30 +626,61 @@ function hello() {
 [查看详情](tooltip:html:"#detail-content")<160,80>
 ```
 
-### 9. 字帖 (`copybook: true`)
+### 10. 字帖 (`copybook: true`)
 
-**田字格**：
+字帖系统支持**田字格**、**米字格**、**拼音格**三种格型。v1.17.8 新增花括号语法、宽度参数和脚注支持。
+
+**田字格**（支持 `[^name]` 脚注）：
 ```markdown
 [[copybookTian]]
 (汉字1)(汉字2)(汉字3)
+(春眠不觉晓)(处处闻啼鸟)
 [[/copybookTian]]
 ```
 
-**米字格**：
+**米字格**（支持 `[^name]` 脚注）：
 ```markdown
 [[copybookMi]]
 (汉字1)(汉字2)(汉字3)
+(床前明月光)(疑是地上霜)
 [[/copybookMi]]
 ```
 
-**拼音格**：
+**拼音格 — 圆括号语法（兼容旧版）**：
 ```markdown
 [[copybookPinyin]]
 (汉字1|拼音1)(汉字2|拼音2)
+(春眠不觉晓|chūn mián bù jué xiǎo)(处处闻啼鸟|chù chù wén tí niǎo)
 [[/copybookPinyin]]
 ```
 
-### 9. 上标与下标
+**拼音格 — 花括号语法 + 宽度参数** 🆕v1.17.8：
+推荐用于古诗文等场景，配合 `(!width:NNN)` 设置每行等宽两端对齐：
+```markdown
+[[copybookPinyin]]
+{春眠不觉晓|chūn mián bù jué xiǎo}(!width:125)
+{处处闻啼鸟|chù chù wén tí niǎo}(!width:125)
+{夜来风雨声|yè lái fēng yǔ shēng}(!width:125)
+{花落知多少|huā luò zhī duō shǎo}(!width:125)
+[[/copybookPinyin]]
+```
+> `(!width:NNN)` 为可选参数，设置行内拼音格宽度（px），内容两端对齐。
+
+**字帖内嵌脚注** 🆕v1.17.8：
+字帖和拼音格内可使用 `[^name]` 脚注标记。拼音格中脚注上方不显示拼音，
+每个汉字上方对应自己的拼音，实现一对一展示：
+```markdown
+[[copybookPinyin]]
+{春眠不觉[^jue]晓|chūn mián bù jué xiǎo}(!width:125)
+{处处闻啼[^niao]鸟|chù chù wén tí niǎo}(!width:125)
+[[/copybookPinyin]]
+
+[^jue]: 觉：醒来、睡醒
+[^niao]: 鸟：鸣禽
+```
+> 点击脚注标记可平滑滚动到文末脚注区并高亮目标。
+
+### 11. 上标与下标
 
 **上标** `^内容^`（右上角标）：
 ```markdown
@@ -677,7 +712,7 @@ C^^6^^H^^12^^O^^6^^ + 6O^^2^^ → 6CO^^2^^ + 6H^^2^^O
 
 > 处理顺序：先匹配组合上下标（`<<>>`），再匹配下标（双 `^^`），最后匹配上标（单 `^`），避免冲突。文本长度限制各 100 字符。
 
-### 10. 字体大小 (`!字号 文本!`)
+### 12. 字体大小 (`!字号 文本!`)
 
 使用 `!数字 文本!` 语法控制文字显示大小，字号范围 **8-200px**：
 
@@ -691,7 +726,7 @@ C^^6^^H^^12^^O^^6^^ + 6O^^2^^ → 6CO^^2^^ + 6H^^2^^O
 
 > 超出范围的字号会被忽略。可以与 `**粗体**` 等 Markdown 内联语法组合使用。
 
-### 11. 脚注功能
+### 13. 脚注功能
 
 **脚注引用** `[^脚注名称]` 和 **脚注定义** `[^脚注名称]: 内容`：
 
@@ -713,13 +748,12 @@ C^^6^^H^^12^^O^^6^^ + 6O^^2^^ → 6CO^^2^^ + 6H^^2^^O
 项目特色[^f1]包括实时预览[^f2]和图表渲染[^f3]。
 
 [^f1]: 所见即所得编辑体验。
-[^f2]: 编辑区和预览区双向同步滚动。
-[^f3]: 支持 ECharts 多种图表类型。
+[^f2]: 支持 ECharts 多种图表类型。
 ```
 
 > 脚注定义可以写在文档的任何位置，所有脚注内容会按定义顺序在文档末尾统一显示。点击脚注引用可跳转到对应定义，点击 `↩` 可返回引用位置。
 
-### 12. 图片尺寸编辑 (`imageResize: true`)
+### 14. 图片尺寸编辑 (`imageResize: true`)
 
 ```markdown
 ![图片](url)<300,200>
@@ -730,7 +764,7 @@ C^^6^^H^^12^^O^^6^^ + 6O^^2^^ → 6CO^^2^^ + 6H^^2^^O
 - 支持 Shift 等比缩放
 - ⭐v1.12 修复：精准追踪图片出现次数，拖拽第 N 个实例不会错误修改第一个
 
-### 13. 视频和文件列表
+### 15. 视频和文件列表
 
 **视频列表**：
 ```markdown
@@ -783,7 +817,6 @@ https://example.com/file2.docx | 文件名2
 | `Ctrl+Alt+L` | 左对齐 |
 | `Ctrl+Alt+C` | 居中对齐 |
 | `Ctrl+Alt+R` | 右对齐 |
-| `Ctrl+Alt+J` | 两端对齐 |
 
 ### 其他
 
@@ -861,6 +894,27 @@ editor.initColumns();          // 初始化 Columns
 editor.initPages();            // 初始化纸张页面
 ```
 
+**同步滚动** 🆕v1.17.5：
+```javascript
+// 配置项（默认启用）
+var editor = editormd("id", { syncScroll: true });
+
+// 绑定/解绑同步滚动
+editor.bindSyncScroll();       // 绑定同步滚动
+editor.unbindSyncScroll();     // 解绑同步滚动
+
+// 编程式滚动到指定行号（标题锚点精准定位 + smooth 动画）
+editor.scrollToLineNum(42);         // 滚动预览区到第 42 行
+editor.scrollToLineNum(42, 0.5);   // 滚动预览区到第 42 行中间位置
+
+// ★ v1.17.5: 预览交互保护（图片缩放/表格编辑时暂停同步）
+editor.suspendSyncScroll();   // 暂停同步滚动
+// ... 预览区交互操作 ...
+editor.resumeSyncScroll();    // 恢复同步滚动
+```
+
+> **v1.17.5 引擎原理**：解析 markdown 源码标题行号 + 预览 DOM 标题元素 → 文本+层级智能配对 → `editorLine ↔ previewElement` 锚点表 → 锚点间线性插值精准定位。门控体系（suppressAllSync → programmaticScroll → disablePreviewListener）确保各方向互不干扰。程序化滚动识别防止反馈循环。祖先链滚动监听不遗漏任何事件。
+
 **工具栏**：
 ```javascript
 editor.showToolbar();          // 显示工具栏
@@ -924,56 +978,7 @@ editor.on("onfullscreen", function() {
 - `onimagechange` - 图片尺寸变化
 - `onkeydown` / `onkeyup` - 键盘事件
 - `onpaste` / `ondrop` - 粘贴/拖放
-- `onscroll` - 编辑区同步滚动时触发
-- `onpreviewscroll` - 预览区同步滚动时触发
-- `onactivesidechange` - 活动侧切换时触发（参数："left" / "right" / null）
 
----
-
-## 🔄 同步滚动详解（v1.13.0+）
-
-### 基本用法
-编辑器默认开启双向同步滚动（`syncScrolling: true`），用户无需任何配置：
-```javascript
-editormd("editor", {
-    syncScrolling: true,    // 默认值，双向同步
-    // 或 syncScrolling: "single"，仅编辑区→预览区同步
-    // 或 syncScrolling: false，禁用同步滚动
-});
-```
-
-### 活动侧感知
-编辑器自动检测用户操作侧并智能同步：
-
-| 操作位置 | 检测的操作 | 同步方向 |
-|----------|-----------|----------|
-| **编辑区** | 输入、粘贴、键盘事件、鼠标按下、获得焦点、光标移动、滚动 | 编辑区 → 预览区 |
-| **预览区** | 滚动、表格编辑、图片缩放、Tabs 切换、TOC 点击 | 预览区 → 编辑区 |
-
-```javascript
-// 监听活动侧切换
-editormd("editor", {
-    onactivesidechange: function(side) {
-        console.log("活动侧切换:", side); // "left" / "right" / null
-    },
-    onscroll: function(event) {
-        console.log("编辑区滚动同步到预览区");
-    },
-    onpreviewscroll: function(event) {
-        console.log("预览区滚动同步到编辑区");
-    }
-});
-
-// 运行时获取当前活动侧
-console.log(editor.state.activeSide); // "left" / "right" / null
-```
-
-### 精确定位
-- **编辑区→预览区**：使用 `data-source-line` 行属性映射精确定位，确保预览区显示编辑区对应内容
-- **预览区→编辑区**：反向查找可视区域最近的 `data-source-line` 元素，定位到对应源行
-- **Fallback**：当行映射不可用时，自动降级为百分比滚动
-
----
 
 ## 💡 最佳实践
 
@@ -1155,5 +1160,5 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 
 ---
 
-**最后更新**: 2026-06-10
-**版本**: v1.12.0
+**最后更新**: 2026-06-24
+**版本**: v1.17.5
