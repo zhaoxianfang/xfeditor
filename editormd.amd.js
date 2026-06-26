@@ -135,7 +135,7 @@
     };
     
     editormd.title        = editormd.$name = "xfEditor";
-    editormd.version      = "1.16.0";
+    editormd.version      = "1.17.9";
     editormd.homePage     = "https://github.com/zhaoxianfang/xfeditor";
     editormd.classPrefix  = "editormd-";
     
@@ -256,7 +256,8 @@
         width                : "100%",
         height               : "100%",
         path                 : "./lib/",       // 依赖模块文件目录
-        pluginPath           : "",         delay                : 80,             // Markdown 解析延迟，单位：毫秒
+        pluginPath           : "../plugins/", // 插件目录路径（相对于示例 HTML 页面）
+        delay                : 80,             // Markdown 解析延迟，单位：毫秒
         	autoLoadModules      : true,           // 是否自动加载依赖模块文件
         	watch                : true,
         	placeholder          : "写点什么吧~",
@@ -4525,7 +4526,7 @@
             html += '<head>\n';
             html += '  <meta charset="' + opts.charset + '">\n';
             html += '  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n';
-            html += '  <meta name="generator" content="xfEditor v1.17.5">\n';
+            html += '  <meta name="generator" content="xfEditor v1.17.9">\n';
             
             if (opts.description) {
                 html += '  <meta name="description" content="' + editormd.escapeAttr(opts.description) + '">\n';
@@ -4629,6 +4630,8 @@
             var c=[];
             c.push('.editormd-supsub{display:inline-block;vertical-align:text-bottom;font-size:50%;line-height:1.05;text-align:left;}.editormd-supsub sup,.editormd-supsub sub{display:block;position:relative;line-height:1.05;font-size:1em;}.editormd-supsub sup{bottom:0.1em;}.editormd-supsub sub{top:0.12em;}');
             c.push('.editormd-pinyin{display:ruby;ruby-align:center;line-height:2.2;}.editormd-pinyin rb{display:ruby-base;}.editormd-pinyin rt{display:ruby-text;font-size:0.65em;color:#666;line-height:1;}.editormd-pinyin rp{display:none;}');
+            // ★ v1.17.9: 拼音中嵌入脚注标记 — 脚注上方显示 4 个 &nbsp; 空白占位，保证垂直对齐
+            c.push('.editormd-pinyin-footnote.editormd-pinyin{line-height:2.2;display:ruby;ruby-align:center;}.editormd-pinyin-footnote rt{font-size:0.65em;line-height:1;color:transparent;user-select:none;}.editormd-pinyin-footnote.editormd-pinyin rb{display:ruby-base;font-size:75%;vertical-align:super;line-height:1.2;}');
             c.push('.editormd-tooltip-trigger{border-bottom:1px dashed #2C7EEA;color:#2C7EEA;cursor:help;position:relative;display:inline;}.editormd-tooltip-trigger:focus{outline:2px solid #2C7EEA;outline-offset:2px;border-radius:2px;}');
             c.push('.editormd-tooltip-popup{position:fixed;z-index:99999;background:#fff;color:#333;padding:0;margin:0;border-radius:8px;font-size:13px;line-height:1.5;max-width:320px;word-wrap:break-word;display:none;opacity:0;transition:opacity 0.2s;pointer-events:auto;box-shadow:0 4px 20px rgba(0,0,0,0.2);}.editormd-tooltip-popup.show{opacity:1;}');
             c.push('.editormd-tooltip-popup.editormd-tooltip-text{background:#1e1e1e;color:#d4d4d4;}.editormd-tooltip-text-content{white-space:pre-wrap;background:#1e1e1e;color:#d4d4d4;padding:10px 16px;border-radius:8px;display:inline-block;}');
@@ -6264,6 +6267,218 @@
         },
         
         /**
+         * ★ v1.17.6: 内联链接对话框，不依赖插件异步加载
+         * Inline link dialog - supports [text](url){target=_blank} syntax
+         */
+        linkDialog : function() {
+            var _this       = this;
+            var cm          = this.cm;
+            var editor      = this.editor;
+            var settings    = this.settings;
+            var selection   = cm.getSelection();
+            var lang        = this.lang;
+            var linkLang    = lang.dialog.link;
+            var classPrefix = this.classPrefix;
+            var dialogName  = classPrefix + "link-dialog", dialog;
+
+            cm.focus();
+
+            if (editor.find("." + dialogName).length > 0)
+            {
+                dialog = editor.find("." + dialogName);
+                dialog.find("[data-url]").val("http://");
+                dialog.find("[data-title]").val(selection);
+                dialog.find("[data-target]").val("");
+
+                this.dialogShowMask(dialog);
+                this.dialogLockScreen();
+                dialog.show();
+            }
+            else
+            {
+                var dialogHTML = "<div class=\"" + classPrefix + "form\">" + 
+                                        "<label>" + linkLang.url + "</label>" + 
+                                        "<input type=\"text\" value=\"http://\" data-url />" +
+                                        "<br/>" + 
+                                        "<label>" + linkLang.urlTitle + "</label>" + 
+                                        "<input type=\"text\" value=\"" + selection + "\" data-title />" + 
+                                        "<br/>" +
+                                        "<label>" + (linkLang.target || "跳转方式") + "</label>" +
+                                        "<select data-target>" +
+                                            "<option value=\"\">" + (linkLang.targetDefault || "默认(当前页面)") + "</option>" +
+                                            "<option value=\"_blank\">" + (linkLang.targetBlank || "新页面打开") + "</option>" +
+                                            "<option value=\"_self\">" + (linkLang.targetSelf || "当前页面打开") + "</option>" +
+                                            "<option value=\"_parent\">" + (linkLang.targetParent || "父窗口打开") + "</option>" +
+                                            "<option value=\"_top\">" + (linkLang.targetTop || "顶层窗口打开") + "</option>" +
+                                        "</select>" +
+                                        "<br/>" +
+                                    "</div>";
+
+                // 保存光标位置用于后续插入
+                var cursor = cm.getCursor();
+
+                dialog = this.createDialog({
+                    title      : linkLang.title,
+                    width      : 380,
+                    height     : 300,
+                    content    : dialogHTML,
+                    mask       : settings.dialogShowMask,
+                    drag       : settings.dialogDraggable,
+                    lockScreen : settings.dialogLockScreen,
+                    maskStyle  : {
+                        opacity         : settings.dialogMaskOpacity,
+                        backgroundColor : settings.dialogMaskBgColor
+                    },
+                    buttons    : {
+                        enter  : [lang.buttons.enter, function() {
+                            var url    = this.find("[data-url]").val();
+                            var title  = this.find("[data-title]").val();
+                            var target = this.find("[data-target]").val();
+
+                            if (url === "http://" || url === "")
+                            {
+                                editormd.notify(linkLang.urlEmpty, "warning");
+                                return false;
+                            }
+                            
+                            // ★ v1.17.6: 构建带 target 的链接标记
+                            var str;
+                            if (target) {
+                                // 使用扩展语法: [text](url){target=_blank}
+                                str = "[" + (title || url) + "](" + url + "){target=" + target + "}";
+                            } else {
+                                if (title) {
+                                    str = "[" + title + "](" + url + " \"" + title + "\")";
+                                } else {
+                                    str = "[" + url + "](" + url + ")";
+                                }
+                            }
+
+                            // ★ v1.17.6-FIX4: 使用 _this.cm 获取最新 CodeMirror 引用
+                            var editCm = _this.cm;
+                            if (editCm && typeof editCm.replaceSelection === "function") {
+                                editCm.focus();
+                                editCm.replaceSelection(str);
+                            }
+
+                            this.hide().lockScreen(false).hideMask();
+                            return false;
+                        }],
+
+                        cancel : [lang.buttons.cancel, function() {
+                            this.hide().lockScreen(false).hideMask();
+                            return false;
+                        }]
+                    }
+                });
+            }
+        },
+        
+        /**
+         * ★ v1.17.6: 内联引用链接对话框
+         * Inline reference link dialog
+         */
+        referenceLinkDialog : function() {
+            var _this       = this;
+            var cm          = this.cm;
+            var lang        = this.lang;
+            var editor      = this.editor;
+            var settings    = this.settings;
+            var cursor      = cm.getCursor();
+            var selection   = cm.getSelection();
+            var dialogLang  = lang.dialog.referenceLink;
+            var classPrefix = this.classPrefix;
+            var dialogName  = classPrefix + "reference-link-dialog", dialog;
+            var ReLinkId    = (this._reLinkIdCounter || 0) + 1;
+            this._reLinkIdCounter = ReLinkId;
+
+            cm.focus();
+
+            if (editor.find("." + dialogName).length < 1)
+            {
+                var dialogHTML = "<div class=\"" + classPrefix + "form\">" +
+                                        "<label>" + dialogLang.name + "</label>" +
+                                        "<input type=\"text\" value=\"[" + ReLinkId + "]\" data-name />" +
+                                        "<br/>" +
+                                        "<label>" + dialogLang.urlId + "</label>" +
+                                        "<input type=\"text\" data-url-id />" +
+                                        "<br/>" +
+                                        "<label>" + dialogLang.url + "</label>" +
+                                        "<input type=\"text\" value=\"http://\" data-url />" +
+                                        "<br/>" +
+                                        "<label>" + dialogLang.urlTitle + "</label>" +
+                                        "<input type=\"text\" value=\"" + selection + "\" data-title />" +
+                                        "<br/>" +
+                                    "</div>";
+
+                dialog = this.createDialog({
+                    name       : dialogName,
+                    title      : dialogLang.title,
+                    width      : 380,
+                    height     : 296,
+                    content    : dialogHTML,
+                    mask       : settings.dialogShowMask,
+                    drag       : settings.dialogDraggable,
+                    lockScreen : settings.dialogLockScreen,
+                    maskStyle  : {
+                        opacity         : settings.dialogMaskOpacity,
+                        backgroundColor : settings.dialogMaskBgColor
+                    },
+                    buttons : {
+                        enter  : [lang.buttons.enter, function() {
+                            var name  = this.find("[data-name]").val();
+                            var url   = this.find("[data-url]").val();
+                            var rid   = this.find("[data-url-id]").val();
+                            var title = this.find("[data-title]").val();
+
+                            if (url === "http://" || url === "")
+                            {
+                                editormd.notify(dialogLang.urlEmpty, "warning");
+                                return false;
+                            }
+
+                            var linkText = title || name.replace(/^\[(.*)\]$/, "$1") || url;
+                            var linkStr = "[" + linkText + "](" + url;
+                            if (title && title !== linkText) {
+                                linkStr += ' "' + title + '"';
+                            }
+                            linkStr += ")";
+
+                            // ★ v1.17.6-FIX4: 使用 _this.cm 获取最新 CodeMirror 引用
+                            var editCm = _this.cm;
+                            if (editCm && typeof editCm.replaceSelection === "function") {
+                                editCm.focus();
+                                editCm.replaceSelection(linkStr);
+                            }
+
+                            if (selection === "") {
+                                var curCm = _this.cm;
+                                if (curCm) curCm.setCursor(cursor.line, cursor.ch + linkStr.length);
+                            }
+
+                            this.hide().lockScreen(false).hideMask();
+                            return false;
+                        }],
+                        cancel : [lang.buttons.cancel, function() {
+                            this.hide().lockScreen(false).hideMask();
+                            return false;
+                        }]
+                    }
+                });
+            }
+
+            dialog = editor.find("." + dialogName);
+            dialog.find("[data-name]").val("[" + ReLinkId + "]");
+            dialog.find("[data-url-id]").val("");
+            dialog.find("[data-url]").val("http://");
+            dialog.find("[data-title]").val(selection);
+
+            this.dialogShowMask(dialog);
+            this.dialogLockScreen();
+            dialog.show();
+        },
+        
+        /**
          * 加载并执行插件
          * Load and execute the plugin
          * 
@@ -6294,6 +6509,11 @@
             
             // 插件未注册到实例上，尝试动态加载
             path = settings.pluginPath + path;
+            
+            // ★ v1.17.6: 确保 pluginPath 以 / 结尾，避免路径拼接错误
+            if (!/\.js$/.test(path)) {
+                path += ".js";
+            }
             
             if (typeof editormd.loadFiles === "object" && $.inArray(path, editormd.loadFiles.plugin) < 0) {
                 editormd.loadPlugin(path, function() {
@@ -8178,15 +8398,49 @@
     editormd.preprocessLinkTarget = function(markdown) {
         if (!markdown || typeof markdown !== "string") return markdown || "";
         
-        // 匹配 [text](url){target=value} 模式
-        // 注意：不匹配在代码块内的内容（```...``` 已由 protectCodeBlocks 保护）
-        return markdown.replace(
-            /\[([^\]]*)\]\(([^)]*)\)\{target=([^}]+)\}/gi,
-            function(match, text, url, target) {
-                // 将 target 放入 title 位置
-                return "[" + text + "](" + url + " \"target=" + target.trim() + "\")";
+        // ★ v1.17.6-FIX1: 先保护代码块，防止代码块内的 [text](url){target=_blank} 被误转换
+        // 因为 preprocessLinkTarget 在 protectCodeBlocks 之前运行，必须自行保护代码区域
+        var codePlaceholders = [];
+        var cid = 0;
+        
+        // 1) 保护围栏代码块（```...``` 或 ~~~...~~~），要求行首开始
+        //    使用 \2 反向引用确保开闭围栏类型相同
+        markdown = markdown.replace(
+            /(^|\n)((`{3,}|~{3,}))[^\n]*\n([\s\S]*?)\n\2(?=\s*(?:\n|$))/g,
+            function(match) {
+                var id = "editormd-ltp-" + (++cid);
+                codePlaceholders.push({ id: id, html: match });
+                return "\n<!--" + id + "-->\n";
             }
         );
+        
+        // 2) 保护行内代码 `code`（不跨行）
+        markdown = markdown.replace(/`([^`\n]+)`/g, function(match) {
+            var id = "editormd-ltp-" + (++cid);
+            codePlaceholders.push({ id: id, html: match });
+            return "<!--" + id + "-->";
+        });
+        
+        // 3) 处理链接 target 语法 [text](url){target=value}
+        //    ★ 使用 (?<!!) 负向后瞻排除图片语法 ![alt](url){target=...}
+        //    使用非贪婪匹配 + 边界检测，避免跨行误匹配
+        markdown = markdown.replace(
+            /(?<!!)\[([^\]]*?)\]\(([^)\n]*?)\)\{target=([^}\n]+)\}/gi,
+            function(match, text, url, target) {
+                // 将 target 放入 title 位置（标准 Markdown 语法）
+                return "[" + text + "](" + url.trim() + " \"target=" + target.trim() + "\")";
+            }
+        );
+        
+        // 4) 恢复代码块
+        for (var i = 0; i < codePlaceholders.length; i++) {
+            var cp = codePlaceholders[i];
+            if (cp && cp.id) {
+                markdown = markdown.split("<!--" + cp.id + "-->").join(cp.html || "");
+            }
+        }
+        
+        return markdown;
     };
 
     /**
@@ -9240,8 +9494,12 @@
                             codeBlocks.push(m);
                             return '<!--fncode-' + (codeBlocks.length - 1) + '-->';
                         });
-                        fnContent = fnContent.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-                        fnContent = fnContent.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+                        // ★ v1.17.6-FIX2: 支持嵌套粗体/斜体
+                        // 处理顺序：***bold+italic*** → **bold** → *italic*
+                        // 使用非贪婪 .+? 替代 [^*]+，支持 **bold *italic* text** 嵌套
+                        fnContent = fnContent.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+                        fnContent = fnContent.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+                        fnContent = fnContent.replace(/\*(.+?)\*/g, '<em>$1</em>');
                         // 还原 <code> 块
                         for (var ci = 0; ci < codeBlocks.length; ci++) {
                             fnContent = fnContent.split('<!--fncode-' + ci + '-->').join(codeBlocks[ci]);
@@ -9300,10 +9558,13 @@
         }
 
         // 处理字体大小语法：!数字 文本! → <span style="font-size:数字px">文本</span>
+        // ★ v1.17.6-FIX3: 修复 guard 条件 — 原 /\^\[/ 检测图片语法永远不触发(match 以 ! 开头)，
+        //     改用检测 match 是否以 !数字形式开头；图片语法 ![alt] 的 [ 不是数字，不会被误匹配
         try {
             markdown = markdown.replace(editormd.regexs.fontSize, function(match, size, text) {
-                // 防止误匹配图片语法 ![alt](url) 中的 !
-                if (typeof match === "string" && /^\[/.test(match)) return match;
+                // 防止误匹配：图片语法 ![alt](url) 中 '!' 后跟 '[' 而非数字，正则本身不会匹配
+                // 但额外保护：如果 size 无法解析为有效数字则原样返回
+                if (!size || !/^\d+$/.test(size)) return match;
 
                 var fontSize = parseInt(size, 10);
                 if (isNaN(fontSize) || fontSize < 8 || fontSize > 200) {
@@ -9449,11 +9710,12 @@
             }
             
             var pinyinReg = editormd.regexs.pinyin;
+            // ★ v1.17.9: 脚注引用 HTML 匹配正则（在 pinyin 处理前已被 marked 渲染）
+            var fnRefRegex = /<sup class="editormd-footnote-ref-wrapper">[\s\S]*?<\/sup>/g;
             
             text = text.replace(pinyinReg, function($1, $2, $3, $4) {
                 var baseText = $2.trim();
                 // 保留原始拼音中的空格，不执行 trim
-                // 仅对分组检测使用 trim 后的版本
                 var pyTextRaw = $3;
                 var pyTrimmed = pyTextRaw.trim();
                 // 保存原始拼音中的空格（用 &nbsp; 替代），防止 HTML 折叠空白
@@ -9463,8 +9725,73 @@
                 
                 // 检测拼音中是否包含空格（表示分组拼音如 "chuáng qián míng yuè guāng"）
                 var pyGroups = pyTrimmed.split(/\s+/).filter(function(g) { return g.length > 0; });
+                
+                // ★ v1.17.9: 检测 baseText 是否包含脚注 HTML（被 marked 渲染后的 footnotes）
+                var hasFootnotes = fnRefRegex.test(baseText);
+                fnRefRegex.lastIndex = 0;
+                
+                if (hasFootnotes && pyGroups.length > 1) {
+                    // ★ v1.17.9: 脚注嵌入模式 — 将 baseText 拆分为 tokens（文字字符 + 脚注HTML块）
+                    var tokens = [];
+                    var lastIdx = 0, fnMatch;
+                    while ((fnMatch = fnRefRegex.exec(baseText)) !== null) {
+                        // 脚注前的文字字符
+                        var preText = baseText.substring(lastIdx, fnMatch.index);
+                        for (var ti = 0; ti < preText.length; ti++) {
+                            var ch = preText.charAt(ti);
+                            if (ch !== ' ') tokens.push({ type: 'char', content: ch });
+                        }
+                        // 脚注HTML块
+                        tokens.push({ type: 'fn', content: fnMatch[0] });
+                        lastIdx = fnRefRegex.lastIndex;
+                    }
+                    // 最后一个脚注后的剩余字符
+                    var tailText = baseText.substring(lastIdx);
+                    for (var tj = 0; tj < tailText.length; tj++) {
+                        var tc = tailText.charAt(tj);
+                        if (tc !== ' ') tokens.push({ type: 'char', content: tc });
+                    }
+                    
+                    // 只统计 char 类型的 token 用于拼音匹配
+                    var charCnt = 0;
+                    for (var a = 0; a < tokens.length; a++) {
+                        if (tokens[a].type === 'char') charCnt++;
+                    }
+                    
+                    // 拼音分组数匹配纯文字字符数 → 一一对应渲染
+                    if (charCnt === pyGroups.length) {
+                        var result = '', pyIdx = 0;
+                        for (var b = 0; b < tokens.length; b++) {
+                            var tok = tokens[b];
+                            if (tok.type === 'char') {
+                                result += '<ruby class="editormd-pinyin editormd-pinyin-matched"><rb>' + tok.content + '</rb><rt>' + pyGroups[pyIdx] + '</rt></ruby>';
+                                pyIdx++;
+                            } else {
+                                // ★ v1.17.9: 脚注块：显示脚注标记，上方用 4 个 &nbsp; 空白占位保证对齐
+                                result += '<ruby class="editormd-pinyin editormd-pinyin-footnote"><rb>' + tok.content + '</rb><rt>&nbsp;&nbsp;&nbsp;&nbsp;</rt></ruby>';
+                            }
+                        }
+                        if (userWidth) {
+                            result = '<span class="editormd-pinyin-wrap" style="display:inline-flex;justify-content:space-between;width:' + userWidth + 'px;">' + result + '</span>';
+                        }
+                        return result;
+                    }
+                    
+                    // 分组数不匹配 → 降级为整体 ruby 渲染（脚注嵌入在 rb 中）
+                    var cleanBase = baseText.replace(fnRefRegex, '').replace(/\s/g, '');
+                    var textWidth = cleanBase.length;
+                    var pyWidth = pyTrimmed.replace(/\s/g, '').length * 0.65;
+                    var maxWidth = Math.max(textWidth, pyWidth) + 'em';
+                    var rtStyleAttr = ' style="min-width:' + maxWidth + ';text-align:justify;text-align-last:justify;"';
+                    var rubyHtml = '<ruby class="editormd-pinyin"><rb>' + baseText + '</rb><rp>(</rp><rt' + rtStyleAttr + '>' + pyText + '</rt><rp>)</rp></ruby>';
+                    if (userWidth) {
+                        rubyHtml = '<span class="editormd-pinyin-wrap" style="display:inline-flex;justify-content:space-between;width:' + userWidth + 'px;">' + rubyHtml + '</span>';
+                    }
+                    return rubyHtml;
+                }
+                
+                // ★ 非脚注模式：原有逻辑
                 var textChars = [];
-                // 将文字拆分为可见字符数组
                 for (var i = 0; i < baseText.length; i++) {
                     textChars.push(baseText.charAt(i));
                 }
@@ -9488,24 +9815,21 @@
                 
                 // 当文字与拼音长度差异较大时，给较短的元素设置 text-align:justify 以视觉对齐
                 var textWidth = baseText.length;
-                var pyWidth   = pyTrimmed.replace(/\s/g, '').length * 0.65;
-                var maxWidth  = Math.max(textWidth, pyWidth) + 'em';
+                var pyWidthNoFn = pyTrimmed.replace(/\s/g, '').length * 0.65;
+                var maxWidthNoFn = Math.max(textWidth, pyWidthNoFn) + 'em';
                 
                 if (pyGroups.length > 1 && pyGroups.length !== textChars.length) {
-                    // 拼音分组数与文字数不匹配：两端对齐显示
-                    rtStyleAttr = ' style="min-width:' + maxWidth + ';text-align:justify;text-align-last:justify;"';
-                } else if ((pyGroups.length === 1 || pyGroups.length !== textChars.length) && Math.abs(textWidth - pyWidth) > 1.5) {
-                    // 单组拼音与文字长度不匹配时，对较短的一方进行两端对齐
-                    if (textWidth > pyWidth) {
-                        rbStyleAttr = ' style="min-width:' + maxWidth + ';text-align:justify;text-align-last:justify;"';
+                    rtStyleAttr = ' style="min-width:' + maxWidthNoFn + ';text-align:justify;text-align-last:justify;"';
+                } else if ((pyGroups.length === 1 || pyGroups.length !== textChars.length) && Math.abs(textWidth - pyWidthNoFn) > 1.5) {
+                    if (textWidth > pyWidthNoFn) {
+                        rbStyleAttr = ' style="min-width:' + maxWidthNoFn + ';text-align:justify;text-align-last:justify;"';
                     } else {
-                        rtStyleAttr = ' style="min-width:' + maxWidth + ';text-align:justify;text-align-last:justify;"';
+                        rtStyleAttr = ' style="min-width:' + maxWidthNoFn + ';text-align:justify;text-align-last:justify;"';
                     }
                 }
                 
                 var rubyHtml = '<ruby class="editormd-pinyin"><rb' + rbStyleAttr + '>' + baseText + '</rb><rp>(</rp><rt' + rtStyleAttr + '>' + pyText + '</rt><rp>)</rp></ruby>';
                 
-                // ★ v1.17.7: 指定宽度时用容器包裹
                 if (userWidth) {
                     rubyHtml = '<span class="editormd-pinyin-wrap" style="display:inline-flex;justify-content:space-between;width:' + userWidth + 'px;">' + rubyHtml + '</span>';
                 }
@@ -11635,8 +11959,10 @@
         {
             var footer = dialog.footer = dialog.find("." + classPrefix + "dialog-footer");
 
-            for (var key in options.buttons)
-            {
+            // ★ v1.17.6-FIX4: 使用 Object.keys().forEach() 替代 for...in 循环
+            //    for...in + var btn 存在经典闭包陷阱：所有事件处理器闭包共享同一个 btn 变量，
+            //    循环结束后 btn 始终指向最后一个按钮，导致"确定"按钮实际执行"取消"的回调
+            Object.keys(options.buttons).forEach(function(key) {
                 var btn = options.buttons[key];
                 var btnClassName = classPrefix + key + "-btn";
 
@@ -11647,7 +11973,7 @@
                     e.stopPropagation();
                     btn[1](e);
                 });
-            }
+            });
         }
 
         if (options.title !== "" && options.drag)

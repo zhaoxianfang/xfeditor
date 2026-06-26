@@ -151,8 +151,12 @@
 								}
 							}
 
-							cm.focus();
-							cm.replaceSelection(table);
+							// ★ fix: 通过 editor instance 获取 cm，避免闭包捕获过期引用
+							var editorCm = _this.cm;
+							if (editorCm && typeof editorCm.replaceSelection === "function") {
+								editorCm.focus();
+								editorCm.replaceSelection(table);
+							}
 
                             this.hide().lockScreen(false).hideMask();
 

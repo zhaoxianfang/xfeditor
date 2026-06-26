@@ -112,8 +112,12 @@
                                 md = '<div class="editormd-video-wrapper" style="text-align:' + align + ';"><video src="' + url + '" controls preload="metadata"' + styleAttr + '>' + alt + '</video></div>';
                             }
 
-                            cm.focus();
-                            cm.replaceSelection(md);
+                            // ★ fix: 通过 editor instance 获取 cm，避免闭包捕获过期引用
+                            var editorCm = _this.cm;
+                            if (editorCm && typeof editorCm.replaceSelection === "function") {
+                                editorCm.focus();
+                                editorCm.replaceSelection(md);
+                            }
 
                             this.hide().lockScreen(false).hideMask();
                             this.remove();

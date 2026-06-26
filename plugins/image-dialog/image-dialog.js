@@ -102,19 +102,22 @@
                                 sizeStr = "<" + sizeParts[0] + "," + sizeParts[1] + ">";
                             }
 
-                            if (link === "" || link === "http://")
-                            {
-                                cm.focus();
-                                cm.replaceSelection("![" + alt + "](" + url + altAttr + ")" + sizeStr);
-                            }
-                            else
-                            {
-                                cm.focus();
-                                cm.replaceSelection("[![" + alt + "](" + url + altAttr + ")]" + "(" + link + altAttr + ")" + sizeStr);
-                            }
+                            // ★ fix: 通过 editor instance 获取 cm，避免闭包捕获过期引用
+                            var editorCm = _this.cm;
+                            if (editorCm && typeof editorCm.replaceSelection === "function") {
+                                editorCm.focus();
+                                if (link === "" || link === "http://")
+                                {
+                                    editorCm.replaceSelection("![" + alt + "](" + url + altAttr + ")" + sizeStr);
+                                }
+                                else
+                                {
+                                    editorCm.replaceSelection("[![" + alt + "](" + url + altAttr + ")]" + "(" + link + altAttr + ")" + sizeStr);
+                                }
 
-                            if (alt === "") {
-                                cm.setCursor(cursor.line, cursor.ch + 2);
+                                if (alt === "") {
+                                    editorCm.setCursor(cursor.line, cursor.ch + 2);
+                                }
                             }
 
                             this.hide().lockScreen(false).hideMask();

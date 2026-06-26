@@ -81,8 +81,12 @@
                             }
 
                             var altText = (alt !== "") ? alt : url.substring(url.lastIndexOf("/") + 1);
-                            cm.focus();
-                            cm.replaceSelection("[" + altText + "](" + url + ")");
+                            // ★ fix: 通过 editor instance 获取 cm，避免闭包捕获过期引用
+                            var editorCm = _this.cm;
+                            if (editorCm && typeof editorCm.replaceSelection === "function") {
+                                editorCm.focus();
+                                editorCm.replaceSelection("[" + altText + "](" + url + ")");
+                            }
 
                             this.hide().lockScreen(false).hideMask();
                             this.remove();

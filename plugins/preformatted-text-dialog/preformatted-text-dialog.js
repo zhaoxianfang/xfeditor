@@ -79,8 +79,12 @@
                                 codeTexts = "\r\n\r\n" + codeTexts;
                             }
 
-                            cm.focus();
-                            cm.replaceSelection(codeTexts);
+                            // ★ fix: 通过 editor instance 获取 cm
+                            var editorCm = _this.cm;
+                            if (editorCm && typeof editorCm.replaceSelection === "function") {
+                                editorCm.focus();
+                                editorCm.replaceSelection(codeTexts);
+                            }
 
                             this.hide().lockScreen(false).hideMask();
 

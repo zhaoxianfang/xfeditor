@@ -51,7 +51,7 @@
                                         "<input type=\"text\" value=\"" + selection + "\" data-title />" + 
                                         "<br/>" +
                                         "<label>" + (linkLang.target || "跳转方式") + "</label>" +
-                                        "<select data-target style=\"width:100%;\">" +
+                                        "<select data-target>" +
                                             "<option value=\"\">" + (linkLang.targetDefault || "默认(当前页面)") + "</option>" +
                                             "<option value=\"_blank\">" + (linkLang.targetBlank || "新页面打开") + "</option>" +
                                             "<option value=\"_self\">" + (linkLang.targetSelf || "当前页面打开") + "</option>" +
@@ -85,7 +85,7 @@
                                 return false;
                             }
                             
-                            // ★ v1.3.0: 构建带 target 的链接标记
+                            // ★ v1.17.6: 构建带 target 的链接标记
                             var str;
                             if (target) {
                                 // 使用扩展语法: [text](url){target=_blank}
@@ -98,8 +98,12 @@
                                 }
                             }
 
-                            cm.focus();
-                            cm.replaceSelection(str);
+                            // ★ fix: 通过 editor instance 获取 cm，避免闭包捕获过期引用
+                            var editorCm = _this.cm;
+                            if (editorCm && typeof editorCm.replaceSelection === "function") {
+                                editorCm.focus();
+                                editorCm.replaceSelection(str);
+                            }
 
                             this.hide().lockScreen(false).hideMask();
 

@@ -5,6 +5,228 @@
 
 ---
 
+## v1.17.9 — 第四轮：拼音脚注嵌入 + 全面优化 + 冗余清理
+
+### 🆕 拼音中嵌入脚注支持（新功能）
+
+**功能描述**：
+拼音语法 `{汉字 | pin yin}` 现在支持在内嵌脚注引用标记 `[^脚注名]`，例如：
+```
+{疑[^yi]是地上[^shang]霜 | yí shì dì shàng shuāng}
+```
+
+**渲染逻辑**：
+1. 脚注标记被标记系统处理后，拼音处理程序检测到脚注 HTML（`<sup class="editormd-footnote-ref-wrapper">`）
+2. 将文本 token 化为"汉字字符"和"脚注 HTML 块"
+3. 拼音分组仅匹配汉字字符数量
+4. 汉字字符 → `<ruby><rb>汉字</rb><rt>pinyin</rt></ruby>`
+5. 脚注标记 → `<ruby class="editormd-pinyin editormd-pinyin-footnote"><rb>脚注HTML</rb><rt style="visibility:hidden">&nbsp;</rt></ruby>`
+6. 脚注上方显示空白拼音占位 (`visibility:hidden`)，保证每个元素上方都有对应位置
+
+**CSS 样式**：新增 `.editormd-pinyin-footnote` 类，脚注 rb 使用 `font-size:75%` + `bottom:0.5em` 定位为上标样式。
+
+### 🔧 链接弹窗跳转方式对齐修复
+
+**问题**：链接弹窗中"跳转方式"下拉框使用了内联 `style="width:100%;"`，导致与其他输入框（`width:264px`）不对齐。
+
+**修复**：移除 `style="width:100%;"` 内联样式，使用 CSS 默认的 `select { width: 264px; }` 统一样式。
+
+**影响文件**：`src/editormd.js` + `plugins/link-dialog/link-dialog.js`
+
+### 📑 示例首页（examples/index.html）合并重复段
+
+**问题**：`index.html` 中原有 5 个分散的 v1.17.8 分类区段（最新更新、重大更新、新特性、修复、特性），多个条目重复指向 `all-features.html`，内容分散且难以查阅。
+
+**合并后**：统一为单一 `v1.17.9 全新功能` 区段，移除所有指向 `all-features.html` 的重复条目，精选 17 个独特功能演示项。
+
+### 🗑️ 冗余文件清理
+
+- 删除 `src/editormd.js.bak`（564KB 备份文件）
+
+---
+
+## v1.17.6 — 第三轮：createDialog 闭包陷阱修复（关键Bug — 所有弹窗失效）
+
+### 🔴 createDialog 按钮事件闭包陷阱修复（严重Bug）
+
+**问题根因**：
+`editormd.createDialog` 中使用 `for...in` + `var btn` 循环绑定按钮事件处理器，但 `var` 是函数作用域而非块作用域，所有事件处理器的闭包共享同一个 `btn` 变量。循环结束后，`btn` 始终指向**最后一个按钮**（通常是"取消"）。
+
+**影响范围**：所有通过 `createDialog` 创建的弹窗全部受影响，包括但不限于：
+- 链接对话框（link-dialog）
+- 引用链接对话框（reference-link-dialog）
+- 图片对话框（image-dialog）
+- 视频对话框（video-dialog）
+- 文件对话框（file-dialog）
+- 代码块对话框（code-block-dialog）
+- 预格式化文本对话框（preformatted-text-dialog）
+- 表格对话框（table-dialog）
+- 帮助对话框（help-dialog）
+- 跳转行对话框（goto-line-dialog）
+- HTML实体对话框（html-entities-dialog）
+
+**故障表现**：点击"确定"按钮后，弹窗关闭但内容**不写入编辑区**（因为实际执行的是"取消"按钮的回调）。
+
+**修复方案**：
+1. 将 `for (var key in options.buttons)` 改为 `Object.keys(options.buttons).forEach(function(key) {...})`，每个回调独立捕获各自 `btn` 变量
+2. `linkDialog` 和 `referenceLinkDialog` 按钮回调改用 `_this.cm` 而非闭包 `cm`，避免异步加载场景下引用过期
+
+```javascript
+// 修复前（有 Bug）
+for (var key in options.buttons) {
+    var btn = options.buttons[key];  // 函数作用域，所有闭包共享
+    btn[1] = btn[1].bind(dialog);
+    footer.children("." + btnClassName).on("click", function(e) {
+        btn[1](e);  // 循环结束后 btn 始终是最后一个按钮
+    });
+}
+
+// 修复后
+Object.keys(options.buttons).forEach(function(key) {
+    var btn = options.buttons[key];  // 函数作用域，每个 forEach 回调独立
+    btn[1] = btn[1].bind(dialog);
+    footer.children("." + btnClassName).on("click", function(e) {
+        btn[1](e);  // 正确绑定各自的 btn
+    });
+});
+```
+
+---
+
+## v1.17.6 — 第二轮深度修复：代码块保护 + 嵌套语法 + 图片保护 + 构建系统完善
+
+### 🔴 preprocessLinkTarget 代码块保护修复（关键Bug）
+
+**问题根因**：
+`preprocessLinkTarget` 在渲染管线中位于 `protectCodeBlocks` **之前**执行（`protectTeXSyntax → preprocessLinkTarget → preprocessMarkdownBlocks`），导致代码块内的 `[text](url){target=_blank}` 语法被错误转换。例如：
+
+````
+```markdown
+语法示例: [新窗口打开](http://demo.com){target=_blank}
+```
+````
+
+上述代码块内的链接会被错误地修改为 `[新窗口打开](http://demo.com "target=_blank")`。
+
+**修复方案**：
+在 `preprocessLinkTarget` 内部添加代码块保护机制：
+1. 在处理 link target 之前先保护围栏代码块（```/~~~）为占位符
+2. 保护行内代码（`` ` ``）为占位符
+3. 处理完 link target 语法后再恢复所有代码块
+
+### 🔴 preprocessLinkTarget 图片语法误匹配修复
+
+**问题根因**：
+正则 `[([^\]]*?)\]...` 会匹配 `![alt](url){target=_blank}` 模式，将图片语法错误地转换为链接格式。
+
+**修复方案**：
+添加 `(?<!!)` 负向后瞻断言，排除 `![` 前缀的图片语法。
+
+### 🟡 脚注内粗体/斜体嵌套语法修复
+
+**问题根因**：
+脚注渲染中的粗体/斜体正则 `\*\*([^*]+)\*\*` 使用 `[^*]+`（不含星号），不支持 `**bold *italic* text**` 这样的嵌套语法。遇到嵌套时匹配会提前终止。
+
+**修复方案**：
+改用非贪婪 `.+?` 匹配，并增加 `***bold+italic***` 处理：
+```
+\*\*\*(.+?)\*\*\*  → <strong><em>$1</em></strong>   (先处理三重星号)
+\*\*(.+?)\*\*      → <strong>$1</strong>             (再处理粗体)
+\*(.+?)\*           → <em>$1</em>                     (最后处理斜体)
+```
+
+### 🟡 fontSize 正则 guard 条件修复
+
+**问题根因**：
+`fontSize` 正则的 guard 条件 `if (typeof match === "string" && /^\[/.test(match))` 永远为假（match 以 `!` 开头，不是 `[`），属于死代码。
+
+**修复方案**：
+改为 `if (!size || !/^\d+$/.test(size)) return match;` — 验证 size 是否为有效数字。
+
+### 🟢 构建系统更新
+
+| 文件 | 大小 | 状态 |
+|------|------|------|
+| `editormd.js` | ~567K | ✅ 已更新 |
+| `editormd.min.js` | ~504K | ✅ 已压缩 |
+| `editormd.amd.js` | ~570K | ✅ 已更新 |
+| `editormd.amd.min.js` | ~506K | ✅ 已压缩 |
+| `css/editormd.min.css` | ~115K | ✅ 已压缩 |
+| `css/editormd.preview.min.css` | ~68K | ✅ 已压缩 |
+| `css/editormd.logo.min.css` | ~1.5K | ✅ 已压缩 |
+
+### 📝 示例文件更新
+
+- `examples/simple.html`：版本更新至 v1.17.6，添加 `pluginPath` 配置
+
+---
+
+## v1.17.6 — 第一轮：全面工具栏弹窗修复 + 嵌套语法增强 + 路径系统完善
+
+### 🔴 链接对话框（linkDialog）全面修复
+
+**问题根因**：
+1. **`pluginPath` 默认为空字符串**：所有依赖插件动态加载的对话框（链接、图片、视频、表格、代码块等）因路径拼接错误（`"" + "link-dialog/link-dialog"`）导致加载 404，点击工具栏按钮无任何响应
+2. **`this` 上下文污染**：通过 `createDialog` 创建的按钮回调中 `this` 被 `.bind(dialog)` 绑定到对话框 DOM 元素，但 `cm` 变量通过闭包捕获，虽然理论上可行，但异步加载场景下闭包引用可能过期
+
+**修复方案**：
+1. **默认 `pluginPath` 改为 `"../plugins/"`**：确保插件能从正确的路径动态加载（示例页面从 `examples/` 目录加载时路径正确）
+2. **内联 `linkDialog` 到 `src/editormd.js`**：链接对话框作为最常用功能之一，不再依赖异步插件加载，确保点击后立即弹出
+3. **内联 `referenceLinkDialog`**：同样内联到主源文件
+4. **所有插件弹窗按钮处理器修复**：所有 8 个插件对话框（link、reference-link、image、table、video、code-block、file、preformatted-text）的按钮回调改为使用 `_this.cm` 获取 CodeMirror 实例，添加类型检查和防御性代码
+
+### 🔴 所有插件弹窗按钮上下文修复
+
+**修复的插件文件**（共 8 个）：
+| 文件 | 修复描述 |
+|------|----------|
+| `plugins/link-dialog/link-dialog.js` | 按钮回调使用 `_this.cm` 替代闭包 `cm` |
+| `plugins/reference-link-dialog/reference-link-dialog.js` | 同上 |
+| `plugins/image-dialog/image-dialog.js` | 同上 |
+| `plugins/table-dialog/table-dialog.js` | 同上 |
+| `plugins/video-dialog/video-dialog.js` | 同上 |
+| `plugins/code-block-dialog/code-block-dialog.js` | 同上 |
+| `plugins/file-dialog/file-dialog.js` | 同上 |
+| `plugins/preformatted-text-dialog/preformatted-text-dialog.js` | 同上 |
+
+### 🟡 链接 Target 语法增强
+
+- **`preprocessLinkTarget` 正则优化**：添加换行边界限制（`[^)\n]*?`），防止跨行误匹配
+- **链接对话框中已支持**：新页面 `_blank`、当前页 `_self`、父窗口 `_parent`、顶层 `_top`
+- **语法格式**：`[文本](url){target=_blank}` → 渲染为 `target="_blank"`
+- **默认行为**：所有外部链接默认 `target="_blank"` 新窗口打开
+
+### 🟡 `executePlugin` 路径增强
+
+- 自动追加 `.js` 扩展名（当路径不以 `.js` 结尾时）
+- 三级回退：实例方法 → 动态加载 → 缓存方法
+
+### 🟢 CSS 压缩更新
+
+- `css/editormd.min.css` 重新压缩
+- `css/editormd.preview.min.css` 重新压缩
+- `css/editormd.logo.min.css` 重新压缩
+
+### 📝 文档与示例更新
+
+- `examples/all-features.html`：添加 `pluginPath` 配置、链接 target 语法演示
+- `README.md`：版本说明更新
+- `FIX_SUMMARY.md`：本文件新增 v1.17.6 条目
+
+### 构建产物
+
+| 文件 | 大小 | 状态 |
+|------|------|------|
+| `editormd.js` | ~578K | ✅ 已更新 |
+| `editormd.min.js` | ~221K | ✅ 已压缩 |
+| `editormd.amd.js` | ~582K | ✅ 已更新 |
+| `editormd.amd.min.js` | ~222K | ✅ 已压缩 |
+| `css/editormd.min.css` | ~117K | ✅ 已压缩 |
+| `css/editormd.preview.min.css` | ~69K | ✅ 已压缩 |
+| `css/editormd.logo.min.css` | ~1.5K | ✅ 已压缩 |
+
+---
+
 ## v1.17.8 — 同步滚动彻底重写 + 暗色主题完善 + 主控区保护
 
 ### 🔴 同步滚动彻底重写

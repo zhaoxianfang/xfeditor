@@ -119,11 +119,15 @@
 
                             langName = (langName === "other") ? "" : langName;
 
-                            cm.focus();
-                            cm.replaceSelection(["```" + langName, codeTexts, "```"].join("\n"));
+                            // ★ fix: 通过 editor instance 获取 cm
+                            var editorCm = _this.cm;
+                            if (editorCm && typeof editorCm.replaceSelection === "function") {
+                                editorCm.focus();
+                                editorCm.replaceSelection(["```" + langName, codeTexts, "```"].join("\n"));
 
-                            if (langName === "") {
-                                cm.setCursor(cursor.line, cursor.ch + 3);
+                                if (langName === "") {
+                                    editorCm.setCursor(cursor.line, cursor.ch + 3);
+                                }
                             }
 
                             this.hide().lockScreen(false).hideMask();

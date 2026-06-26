@@ -1,6 +1,6 @@
 # xfEditor 使用指南
 
-> xfEditor v1.17.8 完整使用手册
+> xfEditor v1.17.9 完整使用手册
 
 ---
 
@@ -36,7 +36,8 @@
         var editor = editormd("editor", {
             width: "100%",
             height: 600,
-            path: "lib/"
+            path: "lib/",
+            pluginPath: "plugins/"  // ★ 工具栏弹窗功能必需
         });
     </script>
 </body>
@@ -70,7 +71,8 @@ editormd.markdownToHTML("preview-container", {
 |------|--------|------|
 | `width` | `"100%"` | 编辑器宽度 |
 | `height` | `"100%"` | 编辑器高度 |
-| `path` | `"lib/"` | 依赖库路径 |
+| `path` | `"lib/"` | 依赖库路径（CodeMirror、marked 等） |
+| `pluginPath` | `"../plugins/"` | ★ 插件路径，工具栏弹窗（图片、视频、表格等）依赖此路径加载 |
 | `theme` | `""` | 编辑器整体主题 |
 | `editorTheme` | `"default"` | CodeMirror 编辑区主题 |
 | `previewTheme` | `""` | 预览区主题 |
@@ -396,7 +398,17 @@ console.log("嵌套代码");
 **拼音输入技巧**：
 - 使用带声调符号的字母：ā á ǎ à
 - 多字词语用空格分隔拼音
+- 每个汉字上方精确对应一个拼音音节
 - 参照 [拼音参照表](examples/pinyin-reference.html) 获取完整声母韵母列表
+
+**🆕 v1.17.9：拼音中嵌入脚注**：
+```markdown
+{疑[^yi]是地上[^shang]霜 | yí shì dì shàng shuāng}。
+
+[^yi]: 疑：怀疑
+[^shang]: 上：方位词，上面、上方
+```
+> 脚注标记上方显示空白拼音占位，保证每个字上方都有对应位置，视觉对齐一致。
 
 ### 8. 行内对齐 (`textAlign: true`)
 

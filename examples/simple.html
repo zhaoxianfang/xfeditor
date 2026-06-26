@@ -2,7 +2,7 @@
 <html lang="zh">
     <head>
         <meta charset="utf-8" />
-        <title>xfEditor v1.12.0 — Simple example</title>
+        <title>xfEditor v1.17.9 — Simple example</title>
         <link rel="stylesheet" href="css/style.css" />
         <link rel="stylesheet" href="../css/editormd.min.css" />
         <link rel="shortcut icon" href="../images/logos/favicon-32x32.ico" type="image/x-icon" />
@@ -10,13 +10,13 @@
     <body>
         <div id="layout">
             <header>
-                <h1>Simple example — xfEditor v1.12.0</h1>
+                <h1>Simple example — xfEditor v1.17.9</h1>
             </header>
             <form  method="post" id="formTest">
 
             
             <div id="test-editormd">
-                <textarea style="display:none;"># xfEditor v1.12.0
+                <textarea style="display:none;"># xfEditor v1.17.9
 
 ## 快速入门
 
@@ -54,9 +54,10 @@ function* fibonacci(n) {
 
             $(function() {
                 testEditor = editormd("test-editormd", {
-                    width   : "90%",
-                    height  : 640,
-                    path    : "../lib/"
+                    width       : "90%",
+                    height      : 640,
+                    path        : "../lib/",
+                    pluginPath  : "../plugins/"   // ★ 插件路径，工具栏弹窗功能必需
                 });
                 
                 /*

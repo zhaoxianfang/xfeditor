@@ -4,11 +4,11 @@
 
 </p>
 
-# xfEditor 编辑器 v1.17.8
+# xfEditor 编辑器 v1.17.6
 
 > **xfEditor 是一款更适合教育、教学、网页演示、数据呈现、内容排版的现代化 Markdown 开源在线编辑器。** 基于 [pandao/editor.md](https://github.com/pandao/editor.md) 深度改进，在原有基础上进行了系统性优化、Bug 修复和新功能拓展。
 
-**xfEditor** 是一款开源可嵌入的 Markdown 在线编辑器组件，基于 CodeMirror、jQuery 和 marked 构建。v1.17.8 修复 bindSyncScroll 初始化空值崩溃、花括号拼音语法 + 宽度参数两端对齐、字帖/拼音格脚注完美支持（一对一拼音、平滑跳转高亮），全面更新 all-features.html 演示页和文档。
+**xfEditor** 是一款开源可嵌入的 Markdown 在线编辑器组件，基于 CodeMirror、jQuery 和 marked 构建。**v1.17.9 核心更新：拼音脚注嵌入**（拼音语法支持内嵌脚注 `[^name]` 标记，脚注上方空拼音占位保证对齐）、`createDialog` 闭包陷阱修复（所有弹窗"确定"按钮恢复可用）。v1.17.8 新增：字帖宽度控制、拼音一一对应增强、同步滚动修复、脚注完善。
 
 ---
 

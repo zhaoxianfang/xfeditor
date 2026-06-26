@@ -81,8 +81,12 @@
                             }
                             linkStr += ")";
 
-                            cm.focus();
-                            cm.replaceSelection(linkStr);
+                            // ★ fix: 通过 editor instance 获取 cm，避免闭包捕获过期引用
+                            var editorCm = _this.cm;
+                            if (editorCm && typeof editorCm.replaceSelection === "function") {
+                                editorCm.focus();
+                                editorCm.replaceSelection(linkStr);
+                            }
 
                             if (selection === "") {
                                 cm.setCursor(cursor.line, cursor.ch + linkStr.length);
