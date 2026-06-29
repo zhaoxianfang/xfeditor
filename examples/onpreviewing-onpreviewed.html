@@ -5,9 +5,9 @@
         <meta charset="utf-8" />
         <title>Onpreviewing / Onpreviewed - xfEditor examples</title>
         <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" />
+        <link rel="stylesheet" href="../css/xf_editor.min.css" />
         <style>
-            .editormd-preview-active {width: 80%;margin: 0 auto;}
+            .xfEditor-preview-active {width: 80%;margin: 0 auto;}
         </style>
     </head>
     <body>
@@ -16,14 +16,14 @@
                 <h1>Onpreviewing / Onpreviewed event handle</h1>
                 <p>Plaese press F12, open the develop tools.</p>     
             </header>
-            <div id="test-editormd">                
+            <div id="test-xfEditor">                
                 <textarea style="display:none;">#### Settings
 
 ```javascript
 {
     onpreviewing : function() {
         // console.log("onpreviewing =>", this, this.id, this.settings);
-        // on previewing you can custom css .editormd-preview-active
+        // on previewing you can custom css .xfEditor-preview-active
     },
 
     onpreviewed : function() {
@@ -35,10 +35,10 @@
             </div>
         </div>        
         <script src="js/jquery.min.js"></script>
-        <script src="../editormd.min.js"></script>
+        <script src="../xf_editor.min.js"></script>
         <script type="text/javascript">
             $(function() {
-                var testEditor = editormd("test-editormd", {
+                var testEditor = xfEditor("test-xfEditor", {
                     width  : "90%",
                     height : 720,
                     path   : '../lib/',

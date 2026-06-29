@@ -1,5 +1,5 @@
 /*!
- * Goto line dialog plugin for Editor.md
+ * Goto line dialog plugin for xf_editor
  *
  * @file        goto-line-dialog.js
  * @author zhaoxianfang
@@ -76,7 +76,7 @@
 			if (editor.find("." + dialogName).length < 1) 
 			{			
 				var dialogContent = [
-					"<div class=\"editormd-form\" style=\"padding: 10px 0;\">",
+					"<div class=\"xfEditor-form\" style=\"padding: 10px 0;\">",
 					"<p style=\"margin: 0;\">" + dialogLang.label + " 1-" + lineCount +"&nbsp;&nbsp;&nbsp;<input type=\"number\" class=\"number-input\" style=\"width: 60px;\" value=\"1\" max=\"" + lineCount + "\" min=\"1\" data-line-number /></p>",
 					"</div>"
 				].join("\n");
@@ -99,7 +99,7 @@
 							var line   = parseInt(this.find("[data-line-number]").val());
 
 							if (line < 1 || line > lineCount) {
-								editormd.notify(dialogLang.error, "warning");
+								xfEditor.notify(dialogLang.error, "warning");
 
 								return false;
 							}
@@ -138,20 +138,20 @@
     {
 		if (define.amd) { // for Require.js
 
-			define(["editormd"], function(editormd) {
-                factory(editormd);
+			define(["xfEditor"], function(xfEditor) {
+                factory(xfEditor);
             });
 
 		} else { // for Sea.js
 			define(function(require) {
-                var editormd = require("./../../editormd");
-                factory(editormd);
+                var xfEditor = require("./../../xfEditor");
+                factory(xfEditor);
             });
 		}
 	} 
 	else
 	{
-        factory(window.editormd);
+        factory(window.xfEditor);
 	}
 
 })();

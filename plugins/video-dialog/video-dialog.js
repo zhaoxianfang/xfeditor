@@ -1,8 +1,8 @@
 /**!
- * Video upload dialog plugin for Editor.md
+ * Video upload dialog plugin for xf_editor
  *
  * @file        video-dialog.js
- * @author      Editor.md
+ * @author      xf_editor
  * @version     1.7.0
  * @updateTime  2026-06-03
  * {@link       https://github.com/zhaoxianfang/xfeditor}
@@ -88,7 +88,7 @@
 
                             if (url === "")
                             {
-                                editormd.notify(videoLang.videoURLEmpty, "warning");
+                                xfEditor.notify(videoLang.videoURLEmpty, "warning");
                                 return false;
                             }
 
@@ -109,7 +109,7 @@
                                 if (w) style += "width:" + w + "px;";
                                 if (h) style += "height:" + h + "px;";
                                 var styleAttr = style ? ' style="' + style + '"' : "";
-                                md = '<div class="editormd-video-wrapper" style="text-align:' + align + ';"><video src="' + url + '" controls preload="metadata"' + styleAttr + '>' + alt + '</video></div>';
+                                md = '<div class="xfEditor-video-wrapper" style="text-align:' + align + ';"><video src="' + url + '" controls preload="metadata"' + styleAttr + '>' + alt + '</video></div>';
                             }
 
                             // ★ fix: 通过 editor instance 获取 cm，避免闭包捕获过期引用
@@ -145,13 +145,13 @@
 
                         if (fileName === "")
                         {
-                            editormd.notify(videoLang.uploadFileEmpty, "warning");
+                            xfEditor.notify(videoLang.uploadFileEmpty, "warning");
                             return false;
                         }
 
                         if (!isVideo.test(fileName))
                         {
-                            editormd.notify(videoLang.formatNotAllowed + settings.videoFormats.join(", "), "warning");
+                            xfEditor.notify(videoLang.formatNotAllowed + settings.videoFormats.join(", "), "warning");
                             return false;
                         }
 
@@ -169,7 +169,7 @@
                                 try {
                                     json = (typeof JSON.parse !== "undefined") ? JSON.parse(json) : eval("(" + json + ")");
                                 } catch(err) {
-                                    editormd.notify(videoLang.uploadError + " " + (json || ""), "error", 5000);
+                                    xfEditor.notify(videoLang.uploadError + " " + (json || ""), "error", 5000);
                                     return false;
                                 }
 
@@ -179,7 +179,7 @@
                                 }
                                 else
                                 {
-                                    editormd.notify(json.message || videoLang.uploadError, "error", 5000);
+                                    xfEditor.notify(json.message || videoLang.uploadError, "error", 5000);
                                 }
 
                                 return false;
@@ -212,20 +212,20 @@
     {
         if (define.amd) { // for Require.js
 
-            define(["editormd"], function(editormd) {
-                factory(editormd);
+            define(["xfEditor"], function(xfEditor) {
+                factory(xfEditor);
             });
 
         } else { // for Sea.js
             define(function(require) {
-                var editormd = require("./../../editormd");
-                factory(editormd);
+                var xfEditor = require("./../../xfEditor");
+                factory(xfEditor);
             });
         }
     }
     else
     {
-        factory(window.editormd);
+        factory(window.xfEditor);
     }
 
 })();

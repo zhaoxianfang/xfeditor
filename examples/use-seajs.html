@@ -5,7 +5,7 @@
         <meta charset="utf-8" />
         <title>Using sea.js - xfEditor examples</title>
         <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" /> 
+        <link rel="stylesheet" href="../css/xf_editor.min.css" /> 
         <style>
             header p code {
                 padding: 3px;
@@ -45,7 +45,7 @@
                 <button id="toc-menu-btn">ToC Dropdown menu</button>
                 <button id="toc-default-btn">ToC default</button>
             </div>
-            <div id="test-editormd"></div>
+            <div id="test-xfEditor"></div>
         </div>   
         <!-- Flowchart & Sequence Diagram based on Raphael.js, and must load Raphael.js of Sea.js before. -->
         <script src="../lib/raphael.min.js"></script>
@@ -55,15 +55,15 @@
                 base  : "./",
                 alias : {
                     jquery   : "js/jquery.min",
-                    editormd : "../editormd"
+                    xf_editor : "../xf_editor"
                 }
             });
                 
-            //seajs.use("./js/seajs-main"); //使用main.js时 editormd 路径要改为 "../../editormd"
+            //seajs.use("./js/seajs-main"); //使用main.js时 xf_editor 路径要改为 "../../xf_editor"
             
             var deps = [
                 "jquery", 
-                "editormd", 
+                "xf_editor", 
                 "../languages/en", 
                 "../plugins/link-dialog/link-dialog",
                 "../plugins/reference-link-dialog/reference-link-dialog",
@@ -76,11 +76,11 @@
                 "../plugins/preformatted-text-dialog/preformatted-text-dialog"
             ];
 			
-            seajs.use(deps, function($, editormd) {
+            seajs.use(deps, function($, xfEditor) {
                 var testEditor;
                 
-                $.get("./test.md", function(md){
-                    testEditor = editormd("test-editormd", {
+                $.get("md/full.md", function(md){
+                    testEditor = xfEditor("test-xfEditor", {
                         width: "90%",
                         height: 640,
                         path : '../lib/',

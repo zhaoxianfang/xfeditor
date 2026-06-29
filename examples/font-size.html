@@ -5,7 +5,7 @@
         <meta charset="utf-8" />
         <title>字体大小 - xfEditor v1.17.8</title>
         <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" />
+        <link rel="stylesheet" href="../css/xf_editor.min.css" />
         <style>
             .intro { width: 90%; margin: 15px auto; padding: 15px 20px; background: #f5f7fa; border-left: 4px solid #2196F3; border-radius: 4px; font-size: 14px; line-height: 1.8; color: #555; }
             .intro h2 { margin: 0 0 8px; font-size: 16px; color: #333; }
@@ -25,7 +25,7 @@
                 <p>超出范围的值会被忽略，文本保持原样。可与 Markdown 内联语法（粗体、斜体等）组合使用。</p>
             </div>
 
-            <div id="test-editormd">
+            <div id="test-xfEditor">
                 <textarea style="display:none;"># 字体大小示例
 
 ## 一、基础字号演示
@@ -104,7 +104,7 @@
 
 ### 行内代码 + 字号
 
-!16 使用 `editormd.init()` 初始化编辑器!
+!16 使用 `xfEditor.init()` 初始化编辑器!
 
 ### 混合使用
 
@@ -134,10 +134,10 @@
         </div>
 
         <script src="js/jquery.min.js"></script>
-        <script src="../editormd.min.js"></script>
+        <script src="../xf_editor.min.js"></script>
         <script type="text/javascript">
             $(function() {
-                editormd("test-editormd", {
+                xfEditor("test-xfEditor", {
                     width: "90%",
                     height: 640,
                     path: "../lib/",

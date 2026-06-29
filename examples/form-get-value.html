@@ -5,7 +5,7 @@
         <meta charset="utf-8" />
         <title>Form get textarea value - xfEditor examples</title>
         <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" />
+        <link rel="stylesheet" href="../css/xf_editor.min.css" />
     </head>
     <body>
         <div id="layout">
@@ -14,25 +14,25 @@
                 <p>Form get textarea value.</p>     
             </header>
             <form method="post" action="./php/post.php">
-                <div id="test-editormd">
+                <div id="test-xfEditor">
                     <!-- Custom textarea name attribute <textarea style="display:none;" name="test-textarea-name"> -->
                     <textarea style="display:none;">#### Get value
 
 每个 xfEditor 的 ID 元素下都有一个保存 Markdown 源码的 Textarea，你也可以通过设置开启另一个保存 HTML 源码的 Textarea，可以按需要获取相应的值，如下：
 
 ```html
-&lt;div class="editormd" id="$id"&gt;
-    &lt;textarea class="editormd-markdown-textarea" name="$id-markdown-doc"&gt;&lt;/textarea&gt;
+&lt;div class="xf_editor" id="$id"&gt;
+    &lt;textarea class="xf_editor-markdown-textarea" name="$id-markdown-doc"&gt;&lt;/textarea&gt;
 
     &lt;!-- html textarea 需要开启配置项 saveHTMLToTextarea == true --&gt;
-    &lt;textarea class="editormd-html-textarea" name="$id-html-code"&gt;&lt;/textarea&gt;
+    &lt;textarea class="xf_editor-html-textarea" name="$id-html-code"&gt;&lt;/textarea&gt;
 &lt;/div&gt;
 ```
 
 #### Example
 
 ```javascript
-var testEditor = editormd("test-editormd", {
+var testEditor = xfEditor("test-xfEditor", {
     width  : "90%",
     height : 640,
     path   : "../lib/",
@@ -46,7 +46,7 @@ testEditor.getPreviewedHTML();  // 获取预览窗口里的 HTML，在开启 wat
 
 #### Backend get form value
 
-假设编辑器 ID 为 `test-editormd`，以 PHP 为例：
+假设编辑器 ID 为 `test-xfEditor`，以 PHP 为例：
 
 ```php
 <?php
@@ -54,9 +54,9 @@ testEditor.getPreviewedHTML();  // 获取预览窗口里的 HTML，在开启 wat
 
     if (isset($_POST['submit'])) {
         echo "<pre>";
-        echo htmlspecialchars($_POST["test-editormd-markdown-doc"]);
+        echo htmlspecialchars($_POST["test-xf_editor-markdown-doc"]);
         echo "<br/><br/>";
-        echo htmlspecialchars($_POST["test-editormd-html-code"]);
+        echo htmlspecialchars($_POST["test-xf_editor-html-code"]);
         echo "</pre>";
     }
 ?>
@@ -70,11 +70,11 @@ testEditor.getPreviewedHTML();  // 获取预览窗口里的 HTML，在开启 wat
             </form>
         </div>        
         <script src="js/jquery.min.js"></script>
-        <script src="../editormd.min.js"></script>   
+        <script src="../xf_editor.min.js"></script>   
         <script type="text/javascript">
             $(function() {
-                $.get("./test.md", function(md) {
-                    var testEditor = editormd("test-editormd", {
+                $.get("md/full.md", function(md) {
+                    var testEditor = xfEditor("test-xfEditor", {
                         width  : "90%",
                         height : 640,
                         path   : "../lib/",

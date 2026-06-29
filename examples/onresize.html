@@ -5,7 +5,7 @@
         <meta charset="utf-8" />
         <title>Onresize - xfEditor examples</title>
         <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" />
+        <link rel="stylesheet" href="../css/xf_editor.min.css" />
     </head>
     <body>
         <div id="layout">
@@ -13,7 +13,7 @@
                 <h1>Onresize event handle</h1>
                 <p>Plaese press F12, open the develop tools.</p>     
             </header>
-            <div id="test-editormd">                
+            <div id="test-xfEditor">                
                 <textarea style="display:none;">#### Settings
 
 ```javascript
@@ -26,20 +26,20 @@
 
     state.loaded
            > bind onresize event
-               > window.onresize, editormd watch/unwatch/fullscreen/fullscreenExit/toolbar show|hide
+               > window.onresize, xfEditor watch/unwatch/fullscreen/fullscreenExit/toolbar show|hide
                    > trigger onresize event handle</textarea>
             </div>
         </div>
         <script src="js/jquery.min.js"></script>
-        <script src="../editormd.min.js"></script>
+        <script src="../xf_editor.min.js"></script>
         <script type="text/javascript">
             $(function() {
-                var testEditor = editormd("test-editormd", {
+                var testEditor = xfEditor("test-xfEditor", {
                     width  : "90%",
                     height : 720,
                     path   : '../lib/',
                     onresize : function() {
-                        this.setMarkdown("state.loaded > bind onresize > window.onresize, editormd watch/unwatch/fullscreen/fullscreenExit/toolbar show|hide " + (new Date).getTime());
+                        this.setMarkdown("state.loaded > bind onresize > window.onresize, xfEditor watch/unwatch/fullscreen/fullscreenExit/toolbar show|hide " + (new Date).getTime());
                         console.log("onresize =>", this, this.id, this.settings);
                     }
                 });

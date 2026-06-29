@@ -5,21 +5,21 @@
         <meta charset="utf-8" />
         <title>Define extention plugins for xfEditor - xfEditor examples</title>
         <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" />
+        <link rel="stylesheet" href="../css/xf_editor.min.css" />
     </head>
     <body>
         <div id="layout">
             <header>
                 <h1>Define extention plugins for xfEditor</h1> 
             </header>
-            <div id="test-editormd">                
+            <div id="test-xfEditor">                
                 <textarea style="display:none;">[TOC]
 
 ### Define plugin
 
 #### Plugin directory
 
-    editor.md/
+    editor/
         plugins/
             plugin-name/
                 ....
@@ -63,20 +63,20 @@
     {
 		if (define.amd) { // for Require.js
 
-			define(["editormd"], function(editormd) {
-                factory(editormd);
+			define(["xf_editor"]), function(xfEditor) {
+                factory(xfEditor);
             });
 
 		} else { // for Sea.js
 			define(function(require) {
-                var editormd = require("./../../editormd");
-                factory(editormd);
+                var xfEditor = require("./../../xf_editor");
+                factory(xfEditor);
             });
 		}
 	} 
 	else
 	{
-        factory(window.editormd);
+        factory(window.xfEditor);
 	}
 
 })();
@@ -87,9 +87,9 @@
 ```html
 &lt;script src="../plugins/you-plugin-name/you-plugin-name.js"&gt;&lt;/script&gt;
 &lt;script&gt;
-    editormd.customMethod();
+    xfEditor.customMethod();
 
-    var testEditor = editormd("test-editormd", {
+    var testEditor = xfEditor("test-xfEditor", {
         path   : '../lib/',
         onload : function() {
             this.youPluginName();
@@ -108,30 +108,30 @@
             </div>
         </div>        
         <script src="js/jquery.min.js"></script>
-        <script src="../editormd.min.js"></script>
+        <script src="../xf_editor.min.js"></script>
         <script type="text/javascript">
             var testEditor;
             
-            editormd.fn.customMethod = function() {
+            xfEditor.fn.customMethod = function() {
                 console.log("customMethod", this);
             };
             
-            editormd.fn.pluginA = function() {
+            xfEditor.fn.pluginA = function() {
                 console.log("pluginA", this);
             };
             
             $(function() {
-                editormd.methodOne = function(){
-                    console.log("editormd.methodOne");
+                xfEditor.methodOne = function(){
+                    console.log("xfEditor.methodOne");
                 };
                 
-                editormd.loadPlugin("../plugins/test-plugin/test-plugin", function(){
-                    editormd.testPlugin();
+                xfEditor.loadPlugin("../plugins/test-plugin/test-plugin", function(){
+                    xfEditor.testPlugin();
                 });
                 
-                editormd.loadPlugin("../plugins/image-dialog/image-dialog", function(){
+                xfEditor.loadPlugin("../plugins/image-dialog/image-dialog", function(){
                 
-                    testEditor = editormd("test-editormd", {
+                    testEditor = xfEditor("test-xfEditor", {
                         width  : "90%",
                         height : 720,
                         path   : '../lib/',
@@ -144,7 +144,7 @@
                     }); // execute plugin
                 });
                 
-                editormd.methodOne();
+                xfEditor.methodOne();
             });
         </script>
     </body>

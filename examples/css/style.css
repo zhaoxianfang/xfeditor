@@ -1,5 +1,5 @@
 /**
- * Editor.md Examples - Common Styles
+ * xfEditor Examples - Common Styles
  * Modern, clean design for all example pages
  */
 
@@ -140,8 +140,8 @@ body {
 }
 
 /* --- Editormd Container --- */
-.editormd,
-.editormd-html-preview {
+.xf_editor,
+.xf_editor-html-preview {
     width: 90%;
     max-width: 960px;
     margin: 0 auto 40px;

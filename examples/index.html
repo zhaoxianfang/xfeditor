@@ -3,9 +3,9 @@
 <head>
     <link rel="shortcut icon" href="../images/favicon.ico" type="image/x-icon">
     <meta charset="utf-8" />
-    <title>xfEditor v1.17.9 — Examples</title>
+    <title>xfEditor v1.17.10 — Examples</title>
     <link rel="stylesheet" href="css/style.css" />
-    <link rel="stylesheet" href="../css/editormd.min.css" />
+    <link rel="stylesheet" href="../css/xf_editor.min.css" />
     <style>
         :root {
             --color-primary: #2C7EEA;
@@ -111,15 +111,19 @@
             box-shadow: var(--shadow-sm); transition: all var(--transition);
             outline: none;
         }
+        .search-box input::placeholder { color: #adb5bd; opacity: 1; }
+        .search-box .search-hint-key {
+            position: absolute; right: 14px; top: 50%;
+            transform: translateY(-50%); font-size: 11px; color: #c4cad3;
+            background: #f0f1f3; border: 1px solid #e2e4e8; border-radius: 4px;
+            padding: 2px 7px; font-family: monospace; pointer-events: none;
+        }
         .search-box input:focus {
             border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(44,126,234,0.12);
         }
         .search-box::before {
             content: '🔍'; position: absolute; left: 14px; top: 50%;
             transform: translateY(-50%); font-size: 14px; opacity: 0.5; pointer-events: none;
-        }
-        .search-box {
-            position: sticky; top: 12px; z-index: 100;
         }
         .search-result-hint {
             text-align: center; font-size: 13px; color: var(--color-text-secondary);
@@ -267,20 +271,20 @@
 <div id="layout">
     <!-- ═══════════════ HEADER ═══════════════ -->
     <div id="header">
-        <div class="logo-wrap"><i class="editormd-logo editormd-logo-3x"></i></div>
+        <div class="logo-wrap"><i class="xf_editor-logo xf_editor-logo-3x"></i></div>
         <h1>xfEditor Examples</h1>
         <p class="subtitle">更适合教育、教学、网页演示、数据呈现、内容排版的现代化 Markdown 在线编辑器</p>
-        <p class="version">v1.17.9 — 拼音脚注嵌入 + 全面引擎优化 + 弹窗/语法修复</p>
+        <p class="version">v1.17.10 — 拼音脚注嵌入 + 全面引擎优化 + 弹窗/语法修复</p>
         <div class="stats-bar">
             <div class="stat-item"><span class="stat-icon">📁</span><span class="stat-num" id="total-count">-</span>Example Demos</div>
-            <div class="stat-item"><span class="stat-icon">✨</span><span class="stat-num" id="new-count">-</span>v1.17.9 新特性</div>
+            <div class="stat-item"><span class="stat-icon">✨</span><span class="stat-num" id="new-count">-</span>v1.17.10 新特性</div>
             <div class="stat-item"><span class="stat-icon">🧩</span><span class="stat-num" id="syntax-count">-</span>扩展语法</div>
             <div class="stat-item"><span class="stat-icon">🛠</span><span class="stat-num" id="custom-count">-</span>自定义扩展</div>
         </div>
         <div class="nav-wrap">
             <a href="#start">快速上手</a>
             <a href="#all-features">全部功能</a>
-            <a href="#v179">v1.17.9</a>
+            <a href="#v179">v1.17.10</a>
             <a href="#v170">v1.7.0</a>
             <a href="#markdown">扩展语法</a>
             <a href="#customs">自定义扩展</a>
@@ -292,7 +296,8 @@
     <div class="content-wrap">
         <!-- ═══════════════ Search ═══════════════ -->
         <div class="search-box">
-            <input type="text" id="search-input" placeholder="搜索示例…（按名称或描述筛选）" autocomplete="off" />
+            <input type="text" id="search-input" placeholder="搜索示例…（按名称或描述筛选，快捷键 /）" autocomplete="off" />
+            <span class="search-hint-key">/</span>
         </div>
         <p class="search-result-hint" id="search-hint"></p>
 
@@ -305,7 +310,7 @@
             <li><a href="./use-seajs.html">Sea.js 加载 <span>Using Sea.js (CMD)</span></a></li>
             <li><a href="./use-zepto.html">Zepto.js 替代 jQuery <span>Using Zepto.js</span></a></li>
             <li><a href="./jquery-test.html">jQuery 兼容性测试 <span>jQuery 3.7 兼容性验证，基础 API 功能测试</span></a></li>
-            <li><a href="./dynamic-create-editormd.html">动态创建编辑器 <span>Dynamic create xfEditor</span></a></li>
+            <li><a href="./dynamic-create-xfEditor.html">动态创建编辑器 <span>Dynamic create xfEditor</span></a></li>
             <li><a href="./manually-load-modules.html">手动加载依赖模块 <span>Manually loading dependent modules</span></a></li>
             <li><a href="./form-get-value.html">表单取值与提交 <span>Get/Send Markdown via form POST</span></a></li>
         </ul>
@@ -325,10 +330,10 @@
         </ul>
         </div>
 
-        <!-- ═══════════════ v1.17.9 全新功能 ═══════════════ -->
+        <!-- ═══════════════ v1.17.10 全新功能 ═══════════════ -->
         <div class="category-section" data-category="v179">
         <h2 class="category">
-            <span class="cat-title"><span>🌟</span><a name="v179"></a>v1.17.9 全新功能 <span class="badge badge-hot">LATEST</span><span class="cat-count">17</span></span>
+            <span class="cat-title"><span>🌟</span><a name="v179"></a>v1.17.10 全新功能 <span class="badge badge-hot">LATEST</span><span class="cat-count">17</span></span>
             <a href="#top">TOP ↑</a>
         </h2>
         <ul class="example-list">
@@ -401,7 +406,7 @@
             <li><a href="./auto-height.html">自动高度 <span>Auto height adjust</span></a></li>
             <li><a href="./change-mode.html">变身为代码编辑器 <span>Change to code editor mode</span></a></li>
             <li><a href="./readonly.html">只读模式 <span>Read only mode</span></a></li>
-            <li><a href="./multi-editormd.html">多个编辑器并存 <span>Multi xfEditor instances</span></a></li>
+            <li><a href="./multi-xfEditor.html">多个编辑器并存 <span>Multi xfEditor instances</span></a></li>
             <li><a href="./delay-renderer-preview.html">延迟渲染 <span>Delay renderer and preview</span></a></li>
             <li><a href="./external-use.html">外部使用工具栏 <span>External use of toolbar handlers</span></a></li>
             <li><a href="./resettings.html">动态重配置 <span>loaded resettings</span></a></li>
@@ -448,12 +453,12 @@
         </div>
     </div>
 
-    <div class="footer">
+        <div class="footer">
         <p>
-            <a href="./"><img src="../images/logo.png" alt="xfEditor Logo"/></a>
+            <a href="./"><img src="../images/logo.png" alt="xfEditor Logo" width="64" height="64"/></a>
         </p>
         <p>Copyright &copy; 2015-2026 <a href="./">xfEditor</a></p>
-        <p>Open source online markdown editor. <a href="https://github.com/zhaoxianfang/xfeditor" class="fa fa-github fa-lg" target="_blank"></a></p>
+        <p>开源 Markdown 在线编辑器 · <a href="https://github.com/zhaoxianfang/xfeditor" target="_blank">GitHub</a></p>
         <p><a href="https://github.com/zhaoxianfang/xfeditor/blob/master/LICENSE" target="_blank">MIT License</a></p>
     </div>
 </div>
@@ -495,8 +500,17 @@
             }
         });
 
-        // ── Search filter ──
+        // ── Keyboard shortcut: / to focus search ──
         var $searchInput = $("#search-input");
+        $(document).on("keydown", function(e) {
+            if (e.key === "/" && document.activeElement !== $searchInput[0] &&
+                !$(e.target).is("input, textarea, [contenteditable]")) {
+                e.preventDefault();
+                $searchInput.focus().select();
+            }
+        });
+
+        // ── Search filter ──
         var $hint        = $("#search-hint");
         var $allCards    = $(".example-list li");
 

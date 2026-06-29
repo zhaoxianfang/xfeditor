@@ -5,10 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>拼音参照表 - xfEditor</title>
-    <link rel="stylesheet" href="../css/editormd.css" />
-    <link rel="stylesheet" href="../css/editormd.preview.css" />
+    <link rel="stylesheet" href="../css/xf_editor.min.css" />
+    <link rel="stylesheet" href="../css/xf_editor.preview.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
-    <script src="../editormd.js"></script>
+    <script src="../xf_editor.js"></script>
     <style>
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -436,7 +436,7 @@ $(function() {
     createToneGrid();
     
     // 初始化编辑器
-    var editor = editormd("editor-container", {
+    var editor = xfEditor("editor-container", {
         width: "100%",
         height: 400,
         path: "../lib/",
@@ -448,7 +448,6 @@ $(function() {
         codeFold: true,
         searchReplace: true,
         htmlDecode: "style,script,iframe|on*",
-        emoji: true,
         taskList: true,
         tocm: true,
         tocContainer: "",

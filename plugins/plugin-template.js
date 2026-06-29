@@ -65,7 +65,7 @@
 
 		exports.fn.htmlEntities = function() {
 			/*
-			var _this       = this; // this == the current instance object of Editor.md
+			var _this       = this; // this == the current instance object of xf_editor
 			var lang        = _this.lang;
 			var settings    = _this.settings;
 			var editor      = this.editor;
@@ -92,20 +92,20 @@
     {
 		if (define.amd) { // for Require.js
 
-			define(["editormd"], function(editormd) {
-                factory(editormd);
+			define(["xfEditor"], function(xfEditor) {
+                factory(xfEditor);
             });
 
 		} else { // for Sea.js
 			define(function(require) {
-                var editormd = require("./../../editormd");
-                factory(editormd);
+                var xfEditor = require("./../../xfEditor");
+                factory(xfEditor);
             });
 		}
 	} 
 	else
 	{
-        factory(window.editormd);
+        factory(window.xfEditor);
 	}
 
 })();

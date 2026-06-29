@@ -5,7 +5,7 @@
         <meta charset="utf-8" />
         <title>识别和解析 HTML 标签 - xfEditor examples</title>
         <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" />
+        <link rel="stylesheet" href="../css/xf_editor.min.css" />
     </head>
     <body>
         <div id="layout">
@@ -21,7 +21,7 @@
                 <button class="filter-btn" exp="style,script,iframe|on*">Filter style,script,iframe|on*</button>
                 <button class="filter-btn" exp="style,script,iframe|onclick,title,onmouseover,onmouseout,style">Filter style,script,iframe|onclick,title,onmouseover,onmouseout,style</button>
             </div>
-            <div id="test-editormd">
+            <div id="test-xfEditor">
                 <textarea style="display:none;">#### 开启识别和解析 HTML 标签
 
 配置项：
@@ -94,12 +94,12 @@ alert("script");
         </div>
 
         <script src="js/jquery.min.js"></script>
-        <script src="../editormd.min.js"></script>
+        <script src="../xf_editor.min.js"></script>
         <script type="text/javascript">
             var testEditor;
             
             $(function() {
-                testEditor = editormd("test-editormd", {
+                testEditor = xfEditor("test-xfEditor", {
                     width: "90%",
                     height: 720,
                     path : '../lib/',

@@ -1,5 +1,5 @@
 /*!
- * Preformatted text dialog plugin for Editor.md
+ * Preformatted text dialog plugin for xf_editor
  *
  * @file        preformatted-text-dialog.js
  * @author zhaoxianfang
@@ -62,7 +62,7 @@
 
                             if (codeTexts === "")
                             {
-                                editormd.notify(dialogLang.emptyAlert, "warning");
+                                xfEditor.notify(dialogLang.emptyAlert, "warning");
                                 return false;
                             }
 
@@ -158,20 +158,20 @@
     {
 		if (define.amd) { // for Require.js
 
-			define(["editormd"], function(editormd) {
-                factory(editormd);
+			define(["xfEditor"], function(xfEditor) {
+                factory(xfEditor);
             });
 
 		} else { // for Sea.js
 			define(function(require) {
-                var editormd = require("./../../editormd");
-                factory(editormd);
+                var xfEditor = require("./../../xfEditor");
+                factory(xfEditor);
             });
 		}
 	} 
 	else
 	{
-        factory(window.editormd);
+        factory(window.xfEditor);
 	}
 
 })();

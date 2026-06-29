@@ -4,7 +4,7 @@
         <meta charset="utf-8" />
         <title>Chnage mode - xfEditor examples</title>
         <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" />
+        <link rel="stylesheet" href="../css/xf_editor.min.css" />
         <style>
             #codes textarea {display: none;}
         </style>
@@ -33,23 +33,23 @@
         &lt;meta charset="utf-8" /&gt;
         &lt;title&gt;Chnage mode - xfEditor examples&lt;/title&gt;
         &lt;link rel="stylesheet" href="css/style.css" /&gt;
-        &lt;link rel="stylesheet" href="../css/editormd.min.css" /&gt;
-        &lt;link rel="shortcut icon" href="../images/logos/favicon-32x32.ico" type="image/x-icon" /&gt;
+        &lt;link rel="stylesheet" href="../css/xf_editor.min.css" /&gt;
+        &lt;link rel="shortcut icon" href="../images/favicon.ico" type="image/x-icon" /&gt;
     &lt;/head&gt;
     &lt;body&gt;
         &lt;div id="layout"&gt;
             &lt;header&gt;
                 &lt;h1&gt;Chnage mode&lt;/h1&gt;
             &lt;/header&gt;
-            &lt;div id="test-editormd"&gt;
+            &lt;div id="test-xfEditor"&gt;
                 &lt;textarea style="display:none;"&gt;&lt;/textarea&gt;
             &lt;/div&gt;
         &lt;/div&gt;
         &lt;script src="js/jquery.min.js"&gt;&lt;/script&gt;
-        &lt;script src="../editormd.min.js"&gt;&lt;/script&gt;
+        &lt;script src="../xf_editor.min.js"&gt;&lt;/script&gt;
         &lt;script type="text/javascript"&gt;
             $(function() {
-                var testEditor = editormd("test-editormd", {
+                var testEditor = xfEditor("test-xfEditor", {
                     width            : "90%",
                     height           : 720,
                     watch            : false,
@@ -67,7 +67,7 @@
     &lt;/body&gt;
 &lt;/html&gt;</textarea>
 <textarea id="javascript-code">$(function() {
-    var testEditor = editormd("test-editormd", {
+    var testEditor = xfEditor("test-xfEditor", {
         width            : "90%",
         height           : 720,
         watch            : false,
@@ -413,12 +413,12 @@ if __name__ == '__main__':
     ul {
         list-style: none;
     }</textarea></div>
-            <div id="test-editormd">
+            <div id="test-xfEditor">
                 <textarea style="display:none;"></textarea>
             </div>
         </div>
         <script src="js/jquery.min.js"></script>
-        <script src="../editormd.min.js"></script>
+        <script src="../xf_editor.min.js"></script>
         <script type="text/javascript">
             var testEditor;
             
@@ -427,7 +427,7 @@ if __name__ == '__main__':
             }
             
             $(function() {
-                testEditor = editormd("test-editormd", {
+                testEditor = xfEditor("test-xfEditor", {
                     width            : "90%",
                     height           : 720,
                     watch            : false,
@@ -452,7 +452,7 @@ if __name__ == '__main__':
                 var select = $("#themes");
                 
                 // 合并编辑器整体主题和 CodeMirror 编辑区主题到下拉框
-                var allThemes = editormd.themes.concat(editormd.editorThemes);
+                var allThemes = xfEditor.themes.concat(xfEditor.editorThemes);
                 // 去重
                 var uniqueThemes = [];
                 for (var t = 0; t < allThemes.length; t++) {
@@ -480,12 +480,12 @@ if __name__ == '__main__':
                     localStorage.theme = theme;
                     
                     // 如果是编辑器整体主题（default/dark），设置整体主题
-                    if ($.inArray(theme, editormd.themes) !== -1) {
+                    if ($.inArray(theme, xfEditor.themes) !== -1) {
                         testEditor.setTheme(theme);
                         // setTheme 内部会自动为 "dark" 设置 "monokai" CodeMirror 主题
                     }
                     // 如果是 CodeMirror 编辑区主题
-                    if ($.inArray(theme, editormd.editorThemes) !== -1) {
+                    if ($.inArray(theme, xfEditor.editorThemes) !== -1) {
                         testEditor.setEditorTheme(theme);
                     }
                 });   

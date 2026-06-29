@@ -5,7 +5,7 @@
         <meta charset="utf-8" />
         <title>Expanded xfEditor - xfEditor examples</title>
         <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" />
+        <link rel="stylesheet" href="../css/xf_editor.min.css" />
     </head>
     <body>
         <div id="layout">
@@ -13,7 +13,7 @@
                 <h1>Expanded xfEditor</h1>
                 <p>Expanded of member methods and properties</p>
             </header>
-            <div id="test-editormd">                
+            <div id="test-xfEditor">                
                 <textarea style="display:none;">### Expanded xfEditor
 
 ```javascript
@@ -53,21 +53,21 @@ function EditormdExtend() {
     testEditor.methodB();
     this.methodC();
     this.methodE();
-    editormd.methodOne();
+    xfEditor.methodOne();
 
     console.log(this, this.propertyA);
 }
 
-editormd.fn.customMethod = function(){
+xfEditor.fn.customMethod = function(){
     console.log("customMethod", this);
 };
 
 $(function() {
-    editormd.methodOne = function(){
-        console.log("editormd.methodOne");
+    xfEditor.methodOne = function(){
+        console.log("xfEditor.methodOne");
     };
 
-    testEditor = editormd("test-editormd", {
+    testEditor = xfEditor("test-xfEditor", {
         width  : "90%",
         height : 720,
         path   : '../lib/',
@@ -77,14 +77,14 @@ $(function() {
         }
     });
 
-    editormd.methodOne();
+    xfEditor.methodOne();
 });
 ```
 </textarea>
             </div>
         </div>        
         <script src="js/jquery.min.js"></script>
-        <script src="../editormd.min.js"></script>
+        <script src="../xf_editor.min.js"></script>
         <script type="text/javascript">
             var testEditor;
             
@@ -122,21 +122,21 @@ $(function() {
                 testEditor.methodB();
                 this.methodC();
                 this.methodE();
-                editormd.methodOne();
+                xfEditor.methodOne();
 
                 console.log(this, this.propertyA);
             }
             
-            editormd.fn.customMethod = function() {
+            xfEditor.fn.customMethod = function() {
                 console.log("customMethod", this);
             };
             
             $(function() {
-                editormd.methodOne = function() {
-                    console.log("editormd.methodOne");
+                xfEditor.methodOne = function() {
+                    console.log("xfEditor.methodOne");
                 };
                 
-                testEditor = editormd("test-editormd", {
+                testEditor = xfEditor("test-xfEditor", {
                     width  : "90%",
                     height : 720,
                     path   : '../lib/',
@@ -146,7 +146,7 @@ $(function() {
                     }
                 });
                 
-                editormd.methodOne();
+                xfEditor.methodOne();
             });
         </script>
     </body>

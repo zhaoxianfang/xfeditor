@@ -5,7 +5,7 @@
         <meta charset="utf-8" />
         <title>Resettings - xfEditor examples</title>
         <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" />        
+        <link rel="stylesheet" href="../css/xf_editor.min.css" />        
     </head>
     <body>
         <div id="layout">
@@ -26,7 +26,7 @@
                 <button id="show-toolbar-btn">Show toolbar</button>
                 <button id="close-toolbar-btn">Hide toolbar</button>
             </div>
-            <div id="test-editormd">
+            <div id="test-xfEditor">
                 <textarea style="display:none;">#### Resetting examples
 
 ```javascript
@@ -50,14 +50,14 @@ this.config("onresize", function() {
 ```</textarea></div>
         </div>
         <script src="js/jquery.min.js"></script>
-        <script src="../editormd.min.js"></script>   
+        <script src="../xf_editor.min.js"></script>   
         <script type="text/javascript">
             var testEditor;
             
             $(function() {
                 
-                $.get("test.md", function(md) {
-                    testEditor = editormd("test-editormd", {
+                $.get("md/full.md", function(md) {
+                    testEditor = xfEditor("test-xfEditor", {
                         width                : "90%",
                         height               : 740,
                         path                 : "../lib/",

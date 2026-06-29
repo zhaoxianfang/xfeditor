@@ -5,7 +5,7 @@
         <meta charset="utf-8" />
         <title>Goto line - xfEditor examples</title>
         <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" />   
+        <link rel="stylesheet" href="../css/xf_editor.min.css" />   
     </head>
     <body>
         <div id="layout">
@@ -21,17 +21,17 @@
                 <button id="goto-first-line-btn">Goto first line</button>
                 <button id="goto-last-line-btn">Goto last line</button>
             </div>
-            <div id="test-editormd"></div>
+            <div id="test-xfEditor"></div>
         </div>
         <script src="js/jquery.min.js"></script>
-        <script src="../editormd.min.js"></script>
+        <script src="../xf_editor.min.js"></script>
         <script type="text/javascript">
             var testEditor;
             
             $(function() {
                 
-                $.get("test.md", function(md){
-                    testEditor = editormd("test-editormd", {
+                $.get("md/full.md", function(md){
+                    testEditor = xfEditor("test-xfEditor", {
                         width           : "90%",
                         height          : 740,
                         path            : "../lib/",

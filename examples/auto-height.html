@@ -5,7 +5,7 @@
         <meta charset="utf-8" />
         <title>Auto height - xfEditor examples</title>
         <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" />
+        <link rel="stylesheet" href="../css/xf_editor.min.css" />
     </head>
     <body>
         <div id="layout">
@@ -15,11 +15,11 @@
             <div class="btns">
                 <button id="append-btn">Append markdown</button>
             </div>
-            <div id="test-editormd">
+            <div id="test-xfEditor">
                 <textarea style="display:none;">### Settings
 
 ```javascript
-var testEditor = editormd("test-editormd", {
+var testEditor = xfEditor("test-xfEditor", {
     autoHeight : true
 });
 ```
@@ -27,12 +27,12 @@ var testEditor = editormd("test-editormd", {
             </div>
         </div>
         <script src="js/jquery.min.js"></script>
-        <script src="../editormd.min.js"></script>
+        <script src="../xf_editor.min.js"></script>
         <script type="text/javascript">
 			var testEditor;
 
             $(function() {
-                testEditor = editormd("test-editormd", {
+                testEditor = xfEditor("test-xfEditor", {
                     width           : "90%",
                     autoHeight      : true,
                     path            : "../lib/",
@@ -45,7 +45,7 @@ var testEditor = editormd("test-editormd", {
                 });
                 
                 $("#append-btn").click(function(){
-                    $.get("./test.md", function(md){
+                    $.get("md/full.md", function(md){
                         testEditor.appendMarkdown(md);
                     });
                 });

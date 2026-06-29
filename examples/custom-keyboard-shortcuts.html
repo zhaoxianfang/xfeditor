@@ -5,14 +5,14 @@
         <meta charset="utf-8" />
         <title>Custom keyboard shortcuts - xfEditor examples</title>
         <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" />
+        <link rel="stylesheet" href="../css/xf_editor.min.css" />
     </head>
     <body>
         <div id="layout">
             <header>
                 <h1>Custom keyboard shortcuts</h1>
             </header>
-            <div id="test-editormd">
+            <div id="test-xfEditor">
                 <textarea style="display:none;">#### Default
 
 > If xfEditor code editor is on focus, you can use keyboard shortcuts.
@@ -21,7 +21,7 @@
 #### Example
 
 ```javascript
-var testEditor = editormd("test-editormd", {
+var testEditor = xfEditor("test-xfEditor", {
     width: "90%",
     height: 720,
     path : '../lib/',
@@ -57,14 +57,14 @@ var testEditor = editormd("test-editormd", {
             </div>
         </div>
         <script src="js/jquery.min.js"></script>
-        <script src="../editormd.min.js"></script>
+        <script src="../xf_editor.min.js"></script>
         <script type="text/javascript">
 			var testEditor;
 
             $(function() {   
                 var widgets = [];
                 
-                testEditor = editormd("test-editormd", {
+                testEditor = xfEditor("test-xfEditor", {
                     width: "90%",
                     height: 720,
                     path : '../lib/',

@@ -5,7 +5,7 @@
         <meta charset="utf-8" />
         <title>Using Zepto.js - xfEditor examples</title>
         <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" />
+        <link rel="stylesheet" href="../css/xf_editor.min.css" />
     </head>
     <body>
         <div id="layout">
@@ -33,21 +33,21 @@
                 <button id="toc-default-btn">ToC default</button>
             </div>
             <form action="./php/post.php" method="post">
-                <div class="editormd" id="test-editormd">                
+                <div class="xf_editor" id="test-xfEditor">                
                     <textarea>### Hello world!</textarea>
                 </div>
                 <br/><input type="submit" name="submit" value="Submit" class="btn" style="margin-left: 5%;" />
             </form>
         </div>        
         <script src="js/zepto.min.js"></script>
-        <script src="../editormd.min.js"></script>   
+        <script src="../xf_editor.min.js"></script>   
         <script type="text/javascript">
 			var testEditor;
 			var jQuery = Zepto;  // 为了避免修改 flowChart.js 和 sequence-diagram.js 的源码，所以想支持 flowChart / sequenceDiagram 就得加上这一句
 
             $(function() {
-                $.get("./test.md", function(md){
-					testEditor = editormd("test-editormd", {
+                $.get("md/full.md", function(md){
+					testEditor = xfEditor("test-xfEditor", {
 						width  : "90%",
 						height : 720,
 						path   : '../lib/',

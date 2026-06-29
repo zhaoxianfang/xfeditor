@@ -1,0 +1,923 @@
+@charset "UTF-8";
+
+/* ========================================
+   Modern Dialog Base Styles
+   弹窗基础美化样式
+   ======================================== */
+
+#{$prefix}dialog {
+    color: $color;
+    position: fixed;
+    z-index: 99999;
+    display: none;
+    @include border-radius(8px);
+    -webkit-box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1);
+       -moz-box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1);
+    background: #fff;
+    font-size: 14px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    overflow: hidden;
+    border: none;
+    @include transition(opacity 200ms ease, transform 200ms ease);
+}
+
+#{$prefix}dialog-header {
+    padding: 14px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-bottom: none;
+    @include transition(background 300ms ease-out);
+
+    &:hover {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+}
+
+#{$prefix}dialog-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    display: flex;
+    align-items: center;
+
+    &:before {
+        content: "✦";
+        margin-right: 8px;
+        font-size: 12px;
+        opacity: 0.7;
+    }
+}
+            
+#{$prefix}dialog-close {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    font-size: 24px;
+    color: rgba(255, 255, 255, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    @include transition(all 150ms ease);
+    cursor: pointer;
+    text-decoration: none;
+
+    &:hover {
+        color: #fff;
+        transform: scale(1.15);
+    }
+
+    &:active {
+        transform: scale(0.9);
+    }
+}
+
+#{$prefix}dialog-container {
+    position: relative;
+    padding: 4px 10px;
+    line-height: 1.5;
+    overflow-y: auto;
+    max-height: 70vh;
+
+    h1 {
+        font-size: 22px;
+        margin-bottom: 12px;
+        font-weight: 600;
+        color: #1f2937;
+
+        .fa {
+            color: #667eea;
+            padding-right: 6px;
+        }
+
+        small {
+            padding-left: 6px;
+            font-weight: normal;
+            font-size: 12px;
+            color: #999;
+        }
+    }
+
+    h2 {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 16px 0 10px;
+        color: #374151;
+
+        &:first-child {
+            margin-top: 0;
+        }
+    }
+    
+    select {
+        color: #374151;
+        padding: 6px 12px;
+        border: 1px solid #d1d5db;
+        @include border-radius(6px);
+        background: #fff;
+        font-size: 13px;
+        outline: none;
+        @include transition(border-color 200ms ease, box-shadow 200ms ease);
+
+        &:focus {
+            border-color: #667eea;
+            @include box-shadow(0 0 0 3px rgba(102, 126, 234, 0.15));
+        }
+    }
+
+    p {
+        margin: 0 0 10px;
+        color: #4b5563;
+        line-height: 1.6;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    label {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #374151;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="url"],
+    textarea {
+        width: 100%;
+        padding: 9px 12px;
+        border: 1px solid #d1d5db;
+        @include border-radius(6px);
+        font-size: 13px;
+        color: #374151;
+        background: #fff;
+        outline: none;
+        @include transition(border-color 200ms ease, box-shadow 200ms ease);
+        @include box-sizing(border-box);
+
+        &:focus {
+            border-color: #667eea;
+            @include box-shadow(0 0 0 3px rgba(102, 126, 234, 0.12));
+        }
+
+        &::placeholder {
+            color: #9ca3af;
+        }
+    }
+
+    textarea {
+        resize: vertical;
+        min-height: 80px;
+        font-family: "SF Mono", Monaco, Consolas, "Liberation Mono", monospace;
+        line-height: 1.5;
+    }
+
+    .xf_editor-form-group {
+        margin-bottom: 16px;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+}
+            
+#{$prefix}dialog-footer {
+    padding: 4px 14px;
+    background: #f8f9fa;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    align-items: center;
+}
+
+#{$prefix}dialog-info {
+    width: 420px;
+    max-width: 90vw;
+
+    #{$prefix}dialog-header {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    }
+
+    #{$prefix}dialog-title:before {
+        content: "ℹ";
+        font-size: 14px;
+    }
+    
+    h1 {
+        font-weight: normal;
+    }
+
+    #{$prefix}dialog-container {
+        padding: 20px 24px 24px;
+    }
+
+    #{$prefix}dialog-close {
+        top: 10px;
+        right: 10px;
+    } 
+    
+    p > a, .hover-link:hover {   
+        color: #3b82f6;
+    }
+    
+    .hover-link {
+        color: #4b5563;
+    }
+    
+    a {
+        color: #3b82f6;
+        text-decoration: none;
+        @include transition(color 150ms ease);
+
+        .fa-external-link {
+            display: none;
+        }
+
+        &:hover {    
+            color: #1d4ed8;
+            
+            .fa-external-link {
+                display: inline-block;
+            }
+        }
+    }
+}
+
+#{$prefix}mask,
+#{$prefix}container-mask,
+#{$prefix}dialog-mask {
+    display: none;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+#{$prefix}mask,
+#{$prefix}dialog-mask-bg {
+    background: #fff;
+    opacity: 0.5;
+    filter: alpha(opacity=50);
+}
+
+#{$prefix}mask {
+    position: fixed;
+    background: #000;
+    @include opacity(0.2); 
+    z-index: 99998;  
+}
+
+#{$prefix}container-mask, 
+#{$prefix}dialog-mask-con {
+    background: url(../images/loading.gif) no-repeat center center;
+    @include background-size(32px 32px);
+}
+
+#{$prefix}container-mask {
+    z-index: 20;  
+    display: block;
+    background-color: #fff;    
+}
+
+@media only screen and (-webkit-min-device-pixel-ratio: 2), only screen and (min-device-pixel-ratio: 2) {
+    #{$prefix}container-mask, 
+    #{$prefix}dialog-mask-con {
+        background-image: url(../images/loading@2x.gif);
+    }
+}
+
+@media only screen and (-webkit-min-device-pixel-ratio: 3), only screen and (min-device-pixel-ratio: 3) {
+    #{$prefix}container-mask,
+    #{$prefix}dialog-mask-con {
+        background-image: url(../images/loading@3x.gif);
+    }
+}
+
+#{$prefix}code-block-dialog, 
+#{$prefix}preformatted-text-dialog {
+    textarea {
+        width: 100%;
+        height: 400px;
+        margin-bottom: 6px;
+        overflow: auto;
+        border: 1px solid #eee;
+        background: #fff;
+        padding: 15px;
+        resize: none;
+    }
+}
+
+#{$prefix}code-toolbar {
+    color: #999;
+    font-size: 14px;
+    margin: -5px 0 10px;
+}
+
+/* ========================================
+   Formula (KaTeX) Dialog Styles
+   公式插入弹窗美化样式
+   ======================================== */
+
+#{$prefix}formula-dialog {
+    width: 900px;
+    max-width: 95vw;
+
+    #{$prefix}dialog-container {
+        padding: 0;
+        max-height: none;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        height: 530px; // 600 - header(~50) - some margin
+    }
+
+    #{$prefix}dialog-header {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    }
+
+    #{$prefix}dialog-title:before {
+        content: "∑";
+        font-size: 16px;
+        font-weight: bold;
+    }
+}
+
+// Tab 导航栏
+#{$prefix}formula-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 8px 12px 0;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e5e7eb;
+    gap: 2px;
+    flex-shrink: 0;
+    -webkit-overflow-scrolling: touch;
+
+    &::-webkit-scrollbar {
+        height: 4px;
+    }
+    &::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 2px;
+    }
+}
+
+#{$prefix}formula-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #6b7280;
+    cursor: pointer;
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    white-space: nowrap;
+    @include transition(all 180ms ease);
+    user-select: none;
+
+    .fa {
+        font-size: 13px;
+        opacity: 0.7;
+    }
+
+    &:hover {
+        color: #6366f1;
+        background: rgba(99, 102, 241, 0.06);
+    }
+
+    &.active {
+        color: #6366f1;
+        background: #fff;
+        border-color: #e5e7eb;
+        font-weight: 600;
+        box-shadow: 0 -1px 0 #6366f1;
+
+        .fa {
+            opacity: 1;
+        }
+    }
+}
+
+// 内容区域（可滚动）
+#{$prefix}formula-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 14px;
+    background: #fff;
+
+    &::-webkit-scrollbar {
+        width: 6px;
+    }
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 3px;
+    }
+}
+
+// 分类面板
+#{$prefix}formula-category-panel {
+    display: none;
+
+    &[style*="display:block"],
+    &.active {
+        display: block;
+    }
+}
+
+// 公式网格布局
+#{$prefix}formula-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+    gap: 8px;
+}
+
+// 单个公式项（卡片）
+#{$prefix}formula-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 8px 8px;
+    background: #fafbfc;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    cursor: pointer;
+    @include transition(all 180ms ease);
+    min-height: 70px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    user-select: none;
+
+    &:hover {
+        background: #fff;
+        border-color: #6366f1;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 14px rgba(99, 102, 241, 0.15);
+
+        #{$prefix}formula-name {
+            color: #6366f1;
+        }
+    }
+
+    &:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 6px rgba(99, 102, 241, 0.1);
+    }
+
+    // 块级公式（矩阵等）占双倍宽度
+    &[data-block="1"] {
+        grid-column: span 2;
+
+        #{$prefix}formula-katex-container {
+            font-size: 0.9em;
+        }
+    }
+}
+
+// KaTeX 公式预览容器
+#{$prefix}formula-katex-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    padding: 4px 6px;
+    font-size: 1.05em;
+    color: #374151;
+    line-height: 1.6;
+    word-break: break-all;
+
+    .katex {
+        font-size: 1.1em;
+    }
+
+    .katex-display {
+        margin: 0.3em 0;
+    }
+}
+
+// 公式名称标签
+#{$prefix}formula-name {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid #f3f4f6;
+    font-size: 11px;
+    color: #6b7280;
+    width: 100%;
+    text-align: center;
+    line-height: 1.3;
+    @include transition(color 180ms ease);
+}
+
+// 底部栏
+#{$prefix}formula-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: #f8f9fa;
+    border-top: 1px solid #e5e7eb;
+    gap: 12px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+// 模式切换（行内/块级 radio）
+#{$prefix}formula-mode-toggle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+#{$prefix}formula-radio {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #6b7280;
+    cursor: pointer;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: #fff;
+    @include transition(all 150ms ease);
+    user-select: none;
+
+    input[type="radio"] {
+        margin: 0;
+        accent-color: #6366f1;
+        width: 14px;
+        height: 14px;
+    }
+
+    &:hover {
+        border-color: #6366f1;
+        color: #6366f1;
+    }
+
+    &:has(input:checked) {
+        background: rgba(99, 102, 241, 0.08);
+        border-color: #6366f1;
+        color: #6366f1;
+        font-weight: 600;
+    }
+}
+
+// 自定义公式输入
+#{$prefix}formula-custom {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+#{$prefix}formula-custom-input {
+    flex: 1;
+    min-width: 140px;
+    padding: 7px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: "SF Mono", Monaco, Consolas, monospace;
+    color: #374151;
+    background: #fff;
+    outline: none;
+    @include transition(all 200ms ease);
+    @include box-sizing(border-box);
+
+    &::placeholder {
+        color: #9ca3af;
+    }
+
+    &:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+}
+
+#{$prefix}formula-custom-btn {
+    padding: 7px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+    @include transition(all 180ms ease);
+
+    &:hover {
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+        transform: translateY(-1px);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+}
+
+/* ========================================
+   Draft Recovery Dialog Styles
+   草稿恢复弹窗美化样式
+   ======================================== */
+
+#{$prefix}draft-dialog {
+    width: 520px;
+    max-width: 90vw;
+    @include border-radius(8px);
+    @include box-shadow(0 8px 32px rgba(0, 0, 0, 0.15));
+    border: none;
+    overflow: hidden;
+    background: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+    #{$prefix}dialog-header {
+        padding: 16px 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-bottom: none;
+        
+        &:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    }
+
+    #{$prefix}dialog-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        
+        &:before {
+            content: "📝";
+            margin-right: 8px;
+            font-size: 18px;
+        }
+    }
+
+    #{$prefix}dialog-close {
+        top: 16px;
+        right: 16px;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        @include transition(all 200ms ease);
+
+        &:hover {
+            color: #fff;
+        }
+    }
+
+    #{$prefix}dialog-content {
+        padding: 0;
+        max-height: 400px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #{$prefix}dialog-footer {
+        padding: 16px 20px;
+        background: #f8f9fa;
+        border-top: 1px solid #e9ecef;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+}
+
+#{$prefix}draft-tip {
+    margin: 0;
+    padding: 16px 20px;
+    background: #e3f2fd;
+    border-left: 4px solid #2196F3;
+    color: #1565c0;
+    font-size: 13px;
+    line-height: 1.5;
+    
+    &:before {
+        content: "💡 ";
+    }
+}
+
+#{$prefix}draft-list {
+    max-height: 280px;
+    overflow-y: auto;
+    padding: 12px;
+    background: #fafafa;
+
+    &::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        @include border-radius(3px);
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        @include border-radius(3px);
+
+        &:hover {
+            background: #a1a1a1;
+        }
+    }
+}
+
+#{$prefix}draft-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    @include border-radius(8px);
+    cursor: pointer;
+    @include transition(all 200ms ease);
+    position: relative;
+    overflow: hidden;
+
+    &:last-child {
+        margin-bottom: 0;
+    }
+
+    &:before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+        opacity: 0;
+        @include transition(opacity 200ms ease);
+    }
+
+    &:hover {
+        border-color: #667eea;
+        @include box-shadow(0 4px 12px rgba(102, 126, 234, 0.15));
+        transform: translateY(-1px);
+
+        &:before {
+            opacity: 1;
+        }
+
+        #{$prefix}draft-time {
+            color: #667eea;
+        }
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+}
+
+#{$prefix}draft-time {
+    font-size: 12px;
+    font-weight: 600;
+    color: #666;
+    background: #f5f5f5;
+    padding: 4px 10px;
+    @include border-radius(12px);
+    margin-right: 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    @include transition(color 200ms ease);
+    
+    &:before {
+        content: "🕐";
+        margin-right: 4px;
+    }
+}
+
+#{$prefix}draft-preview {
+    font-size: 13px;
+    color: #555;
+    line-height: 1.5;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
+}
+
+#{$prefix}draft-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: #999;
+    
+    &:before {
+        content: "📭";
+        display: block;
+        font-size: 48px;
+        margin-bottom: 12px;
+        opacity: 0.5;
+    }
+}
+
+#{$prefix}draft-loading {
+    text-align: center;
+    padding: 40px 20px;
+    color: #666;
+    
+    &:after {
+        content: "";
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #667eea;
+        border-top-color: transparent;
+        @include border-radius(50%);
+        margin-left: 8px;
+        animation: draft-spin 1s linear infinite;
+    }
+}
+
+@keyframes draft-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Draft Dialog Buttons */
+#{$prefix}draft-clear {
+    background: #fff;
+    color: #dc3545;
+    border: 1px solid #dc3545;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    @include border-radius(6px);
+    cursor: pointer;
+    @include transition(all 200ms ease);
+
+    &:hover {
+        background: #dc3545;
+        color: #fff;
+        @include box-shadow(0 2px 8px rgba(220, 53, 69, 0.3));
+    }
+
+    &:before {
+        content: "🗑️ ";
+    }
+}
+
+#{$prefix}draft-cancel {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border: none;
+    padding: 8px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    @include border-radius(6px);
+    cursor: pointer;
+    @include transition(all 200ms ease);
+
+    &:hover {
+        @include box-shadow(0 4px 12px rgba(102, 126, 234, 0.4));
+        transform: translateY(-1px);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+}
+
+/* Draft badge indicator */
+#{$prefix}draft-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #ff4757;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    @include border-radius(9px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(255, 71, 87, 0.3);
+}

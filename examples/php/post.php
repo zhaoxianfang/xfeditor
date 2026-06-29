@@ -14,8 +14,8 @@
  * | 参数名                     | 类型   | 必填 | 说明                                                    |
  * |----------------------------|--------|------|---------------------------------------------------------|
  * | submit                     | string | 否   | 表单提交标识，存在即表示表单已提交                          |
- * | test-editormd-markdown-doc | string | 否   | 编辑器的 Markdown 源码。textarea name 由编辑器的 name 属性决定 |
- * | test-editormd-html-code    | string | 否   | 编辑器生成的 HTML 代码（需启用 saveHTMLToTextarea 配置）     |
+ * | test-xfeditor-markdown-doc | string | 否   | 编辑器的 Markdown 源码。textarea name 由编辑器的 name 属性决定 |
+ * | test-xfeditor-html-code    | string | 否   | 编辑器生成的 HTML 代码（需启用 saveHTMLToTextarea 配置）     |
  *
  * ## 响应格式
  *
@@ -140,8 +140,8 @@ if (!isset($_POST['submit'])) {
 }
 
 // Markdown 源码
-$markdownDoc = isset($_POST['test-editormd-markdown-doc'])
-    ? (string)$_POST['test-editormd-markdown-doc']
+$markdownDoc = isset($_POST['test-xfeditor-markdown-doc'])
+    ? (string)$_POST['test-xfeditor-markdown-doc']
     : '';
 
 if ($markdownDoc !== '') {
@@ -157,8 +157,8 @@ if ($markdownDoc !== '') {
 }
 
 // HTML 代码
-$htmlCode = isset($_POST['test-editormd-html-code'])
-    ? (string)$_POST['test-editormd-html-code']
+$htmlCode = isset($_POST['test-xfeditor-html-code'])
+    ? (string)$_POST['test-xfeditor-html-code']
     : '';
 
 if ($htmlCode !== '') {
@@ -172,7 +172,7 @@ if ($htmlCode !== '') {
 
 // 展示所有 POST 字段（调试用）
 if (isset($_GET['debug'])) {
-    $postKeys = array_diff_key($_POST, ['test-editormd-markdown-doc' => '', 'test-editormd-html-code' => '', 'submit' => '']);
+    $postKeys = array_diff_key($_POST, ['test-xfeditor-markdown-doc' => '', 'test-xfeditor-html-code' => '', 'submit' => '']);
     if (count($postKeys) > 0) {
         echo '<div class="section">';
         echo '<h2>🔍 其他 POST 参数</h2>';

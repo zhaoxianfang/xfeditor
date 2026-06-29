@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh">
+    <head>
+    <link rel="shortcut icon" href="../images/favicon.ico" type="image/x-icon">
+        <meta charset="utf-8" />
+        <title>Multi xfEditor - xfEditor examples</title>
+        <link rel="stylesheet" href="css/style.css" />
+        <link rel="stylesheet" href="../css/xf_editor.min.css" />
+        <style>            
+            h3 {
+                width : 90%;
+                margin: 0 auto 15px;
+            }
+            
+            .xfEditor {
+                margin: 20px auto;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="layout">
+            <header>
+                <h1>Multi xfEditor</h1>
+                <p>多个 xfEditor 并存</p>
+                <br/>
+            </header>
+            <h3>xfEditor A</h3>
+            <div id="test-xfEditor"></div>
+            <h3>xfEditor B</h3>
+            <div id="test-xfEditor2"></div>
+            <h3>xfEditor C</h3>
+            <div id="test-xfEditor3"></div>
+        </div>
+        
+        <script src="js/jquery.min.js"></script> 
+        <script src="../xf_editor.min.js"></script> 
+        <script type="text/javascript">
+            var testEditormd, testEditormd2;
+            
+            $(function() {                        
+                testEditormd = xfEditor("test-xfEditor", {
+                    width: "90%",
+                    height: 480,
+                    markdown : "#### xfEditor A",
+                    path : '../lib/'
+                });
+
+                testEditormd2 = xfEditor("test-xfEditor2", {
+                    width: "90%",
+                    height: 480,
+                    markdown : "#### xfEditor B",
+                    path : '../lib/'
+                });
+
+                testEditormd3 = xfEditor("test-xfEditor3", {
+                    width: "90%",
+                    height: 480,
+                    markdown : "#### xfEditor C",
+                    path : '../lib/'
+                });
+            });
+        </script>
+    </body>
+</html>

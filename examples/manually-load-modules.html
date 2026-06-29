@@ -12,7 +12,7 @@
                 <h1>手动加载模式 Manually load modules</h1>
                 <p>在这种模式下，可以同步使用 xfEditor 实例的成员方法。</p>            
             </header>
-            <div id="test-editormd">                
+            <div id="test-xfEditor">                
                 <textarea style="display:none;">#### Manually load modules exmaple
 
 ```html
@@ -42,11 +42,11 @@
 &lt;link rel="stylesheet" href="../lib/katex/katex.min.css" /&gt;
 &lt;script src="../lib/katex/katex.min.js"&gt;&lt;/script&gt;
 
-&lt;link rel="stylesheet" href="../css/editormd.min.css" /&gt;
-&lt;script src="../editormd.min.js"&gt;&lt;/script&gt;
+&lt;link rel="stylesheet" href="../css/xf_editor.min.css" /&gt;
+&lt;script src="../xf_editor.min.js"&gt;&lt;/script&gt;
 &lt;script type="text/javascript"&gt;
 	$(function() {
-		var testEditor = editormd("test-editormd", {
+		var testEditor = xfEditor("test-xfEditor", {
 			width  : "90%",
 			height : 720,
 			autoLoadModules : false  // Manually load modules
@@ -90,11 +90,11 @@ $$E = mc^2$$
         <link rel="stylesheet" href="../lib/katex/katex.min.css" />
         <script src="../lib/katex/katex.min.js"></script>
         
-        <link rel="stylesheet" href="../css/editormd.min.css" />
-        <script src="../editormd.min.js"></script>
+        <link rel="stylesheet" href="../css/xf_editor.min.css" />
+        <script src="../xf_editor.min.js"></script>
         <script type="text/javascript">
             $(function() {
-                var testEditor = editormd("test-editormd", {
+                var testEditor = xfEditor("test-xfEditor", {
                     width           : "90%",
                     height          : 720,
                     path            : "../lib/",

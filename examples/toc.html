@@ -5,7 +5,7 @@
         <meta charset="utf-8" />
         <title>TOC - xfEditor examples</title>
         <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" />
+        <link rel="stylesheet" href="../css/xf_editor.min.css" />
         <style>            
             #custom-toc-container {
                 border: 1px solid #ddd;
@@ -31,8 +31,8 @@
                 <button id="default-btn">Default</button>
                 <button id="tocm-btn">Enable [TOCM]</button>
             </div>
-            <div class="markdown-body editormd-preview-container" id="custom-toc-container">#custom-toc-container</div>
-            <div id="test-editormd">                
+            <div class="markdown-body xf_editor-preview-container" id="custom-toc-container">#custom-toc-container</div>
+            <div id="test-xfEditor">                
                 <textarea style="display:none;"># 支撑起整个互联网时代的 7 款开源软件
 
 [TOCM]
@@ -140,12 +140,12 @@ WebKit 是一个开源的浏览器引擎，与之相应的引擎有 Gecko（Mozi
         </div>
         
         <script src="js/jquery.min.js"></script>
-        <script src="../editormd.min.js"></script>   
+        <script src="../xf_editor.min.js"></script>   
         <script type="text/javascript">            
             var testEditor;
                 
             $(function() {
-                testEditor = editormd("test-editormd", {
+                testEditor = xfEditor("test-xfEditor", {
                     width         : "90%",
                     height        : 720,
                     path          : "../lib/",

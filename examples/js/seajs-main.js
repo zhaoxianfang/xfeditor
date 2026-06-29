@@ -1,13 +1,13 @@
 define(function(require){
 	var $ = require("jquery");
-	var editormd = require("editormd");
+	var xfEditor = require("xf_editor");
     
     require("../../src/js/languages/en"); // 加载英语语言包
     
-    console.log($, editormd);
+    console.log($, xfEditor);
                 
-    $.get("./test.md", function(md){
-        testEditor = editormd("test-editormd", {
+    $.get("md/full.md", function(md){
+        testEditor = xfEditor("test-xfEditor", {
             width: "90%",
             height: 640,
             path : '../lib/',
@@ -42,12 +42,12 @@ define(function(require){
 
     $("#get-md-btn").bind('click', function(){
         console.log(testEditor.getMarkdown());
-        editormd.notify("Markdown 内容已输出到控制台（F12 查看）", "success", 3000);
+        xfEditor.notify("Markdown 内容已输出到控制台（F12 查看）", "success", 3000);
     });
 
     $("#get-html-btn").bind('click', function() {
         console.log(testEditor.getHTML());
-        editormd.notify("HTML 内容已输出到控制台（F12 查看）", "success", 3000);
+        xfEditor.notify("HTML 内容已输出到控制台（F12 查看）", "success", 3000);
     });                
 
     $("#watch-btn").bind('click', function() {

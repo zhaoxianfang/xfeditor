@@ -5,7 +5,7 @@
         <meta charset="utf-8" />
         <title>自定义工具栏 - xfEditor examples</title>
         <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" />
+        <link rel="stylesheet" href="../css/xf_editor.min.css" />
     </head>
     <body>
         <div id="layout">
@@ -13,17 +13,17 @@
                 <h1>自定义工具栏</h1> 
                 <p>Custom toolbar (icons handler)</p>   
             </header>
-            <div id="test-editormd">
+            <div id="test-xfEditor">
                 <textarea style="display:none;">### Custom toolbar
 
 ```javascript
 $(function() {
-    var testEditor = editormd("test-editormd", {
+    var testEditor = xfEditor("test-xfEditor", {
         width: "90%",
         height: 640,
         path : '../lib/',
         toolbarIcons : function() {
-            // Or return editormd.toolbarModes[name]; // full, simple, mini
+            // Or return xfEditor.toolbarModes[name]; // full, simple, mini
             // Using "||" set icons align right.
             return ["undo", "redo", "|", "bold", "hr", "|", "preview", "watch", "|", "fullscreen", "info", "testIcon", "testIcon2", "file", "faicon", "||", "watch", "fullscreen", "preview", "testIcon"]
         },
@@ -61,7 +61,7 @@ $(function() {
                     cm.setCursor(cursor.line, cursor.ch + 1);
                 }
 
-                // this == 当前editormd实例
+                // this == 当前xfEditor实例
                 console.log("testIcon =>", this, cm, icon, cursor, selection);
             },
 
@@ -95,22 +95,22 @@ $(function() {
         </div>
         
         <script src="js/jquery.min.js"></script>
-        <script src="../editormd.min.js"></script> 
+        <script src="../xf_editor.min.js"></script> 
         <!-- 多语言和自定义工具栏的整合测试 -->
         <script src="../languages/en.js"></script>   
         <script type="text/javascript">
             $(function() {
-                var testEditor = editormd("test-editormd", {
+                var testEditor = xfEditor("test-xfEditor", {
                     width: "90%",
                     height: 640,
                     path : '../lib/',
                     watch : false,
                     toolbarIcons : function() {
-                        // Or return editormd.toolbarModes[name]; // full, simple, mini
+                        // Or return xfEditor.toolbarModes[name]; // full, simple, mini
                         // Using "||" set icons align right.
                         return ["undo", "redo", "|", "bold", "hr", "|", "preview", "watch", "|", "fullscreen", "info", "testIcon", "testIcon2", "file", "faicon", "||", "watch", "fullscreen", "preview", "testIcon", "file"]
                     },
-                    // toolbarIcons : "full", // You can also use editormd.toolbarModes[name] default list, values: full, simple, mini.
+                    // toolbarIcons : "full", // You can also use xfEditor.toolbarModes[name] default list, values: full, simple, mini.
                     toolbarIconsClass : {
                         testIcon : "fa-gears"  // 指定一个FontAawsome的图标类
                     },
@@ -145,7 +145,7 @@ $(function() {
                                 cm.setCursor(cursor.line, cursor.ch + 1);
                             }
                             
-                            // this == 当前editormd实例
+                            // this == 当前xfEditor实例
                             console.log("testIcon =>", this, cm, icon, cursor, selection);
                         },
                         

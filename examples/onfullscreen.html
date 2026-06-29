@@ -5,7 +5,7 @@
         <meta charset="utf-8" />
         <title>Onfullscreen & onfullscreenExit - xfEditor examples</title>
         <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" />
+        <link rel="stylesheet" href="../css/xf_editor.min.css" />
     </head>
     <body>
         <div id="layout">
@@ -13,7 +13,7 @@
                 <h1>Onfullscreen & onfullscreenExit event</h1>   
                 <p>Plaese press F12, open the develop tools.</p>     
             </header>
-            <div id="test-editormd">                
+            <div id="test-xfEditor">                
                 <textarea style="display:none;">#### Setting
 
 ```javascript
@@ -33,10 +33,10 @@
             </div>
         </div>        
         <script src="js/jquery.min.js"></script>
-        <script src="../editormd.min.js"></script>   
+        <script src="../xf_editor.min.js"></script>   
         <script type="text/javascript">
             $(function() {
-                var editor = editormd("test-editormd", {
+                var editor = xfEditor("test-xfEditor", {
                     width  : "90%",
                     height : 720,
                     path   : '../lib/',

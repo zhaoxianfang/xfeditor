@@ -4,8 +4,8 @@
         <meta charset="utf-8" />
         <title>文本对齐 - xfEditor v1.12.0</title>
         <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" />
-        <link rel="shortcut icon" href="../images/logos/favicon-32x32.ico" type="image/x-icon" />
+        <link rel="stylesheet" href="../css/xf_editor.min.css" />
+        <link rel="shortcut icon" href="../images/favicon.ico" type="image/x-icon" />
         <style>
             .intro { width: 90%; margin: 15px auto; padding: 15px 20px; background: #f5f7fa; border-left: 4px solid #2196F3; border-radius: 4px; font-size: 14px; line-height: 1.8; color: #555; }
             .intro h2 { margin: 0 0 8px; font-size: 16px; color: #333; }
@@ -20,17 +20,15 @@
             </header>
 
             <div class="intro">
-                <h2>Unicode 行内对齐（v1.7.0 推荐）</h2>
+                <h2>Unicode 行内对齐（唯一支持的对齐方式）</h2>
                 <p>点击工具栏对齐按钮即可直接插入 Unicode 行内对齐标记，无需换行：</p>
                 <p><code>⁑内容⁑</code> 表示居中对齐</p>
                 <p><code>⁑⁖内容⁖⁑</code> 表示左对齐</p>
                 <p><code>⠪内容⠪</code> 表示右对齐</p>
                 <p>Unicode 对齐标记适用于标题、段落、列表项等任意行内场景。</p>
-                <hr style="margin: 12px 0; border: none; border-top: 1px solid #ddd;">
-                <p>块级对齐标签支持多段落、大段落内容，内部可使用任意 Markdown 语法。</p>
             </div>
 
-            <div id="test-editormd">
+            <div id="test-xfEditor">
                 <textarea style="display:none;"># 文本对齐示例
 
 ## Unicode 行内对齐（推荐）
@@ -62,45 +60,30 @@
 
 ### 混合排版
 
-[[align:left]]
-左侧信息：作者 Pandao
-[[/align]]
+⁑⁖左侧信息：作者 Pandao⁖⁑
+⁑居中标题：欢迎使用 xfEditor⁑
+⠪右侧信息：MIT 许可证⠪
 
-[[align:center]]
-居中标题：欢迎使用 xfEditor
-[[/align]]
+### 多段落对齐
 
-[[align:right]]
-右侧信息：MIT 许可证
-[[/align]]
-
-### 多段落大段落对齐
-
-[[align:center]]
-### 居中标题
-
-这是第一个段落。块级对齐标签支持多段落内容，包括标题、列表、引用等任意 Markdown 语法。
-
+⁑### 居中标题
+这是第一个段落。
 - 支持列表
 - 支持嵌套
-
-> 支持引用块
-[[/align]]
+> 支持引用块⁑
 
 ### 对齐与表情符号
 
-[[align:center]]
-感谢使用 xfEditor
-[[/align]]
+⁑感谢使用 xfEditor⁑
 </textarea>
             </div>
         </div>
 
         <script src="js/jquery.min.js"></script>
-        <script src="../editormd.min.js"></script>
+        <script src="../xf_editor.min.js"></script>
         <script type="text/javascript">
             $(function() {
-                editormd("test-editormd", {
+                xfEditor("test-xfEditor", {
                     width: "90%",
                     height: 640,
                     path: "../lib/",

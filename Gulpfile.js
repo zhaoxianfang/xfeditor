@@ -61,19 +61,19 @@ var scssTask = function(fileName, path) {
 };
 
 gulp.task("scss", function() { 
-	return scssTask("editormd");
+	return scssTask("xf_editor");
 }); 
 
 gulp.task("scss2", function() { 
-	return scssTask("editormd.preview");
+	return scssTask("xf_editor.preview");
 }); 
 
 gulp.task("scss3", function() {
-	return scssTask("editormd.logo");
+	return scssTask("xf_editor.logo");
 }); 
 
 gulp.task("js", function() { 
-  return gulp.src("./src/editormd.js")
+  return gulp.src("./src/xf_editor.js")
             .pipe(jshint("./.jshintrc"))
             .pipe(jshint.reporter("default"))
             .pipe(header(headerComment, {pkg : pkg, fileName : function(file) { 
@@ -89,7 +89,7 @@ gulp.task("js", function() {
                 return name[1].replace(/[\\\/]?/, "");
             }}))
             .pipe(gulp.dest("./"))
-            .pipe(notify({ message: "editormd.js task complete" }));
+            .pipe(notify({ message: "xFEditor.js task complete" }));
 }); 
 
 gulp.task("amd", function() {
@@ -171,7 +171,7 @@ gulp.task("amd", function() {
         "   }"
     ].join("\r\n");
     
-    gulp.src("src/editormd.js")
+    gulp.src("src/xf_editor.js")
         .pipe(rename({ suffix: ".amd" }))
         .pipe(gulp.dest('./'))
         .pipe(header(headerComment, {pkg : pkg, fileName : function(file) { 
@@ -307,13 +307,13 @@ gulp.task("cm-addon", function() {
 }); 
 /*
 gulp.task("jsdoc", function(){
-    return gulp.src(["./src/editormd.js", "README.md"])
+    return gulp.src(["./src/xFEditor.js", "README.md"])
                .pipe(jsdoc.parser())
                .pipe(jsdoc.generator("./docs/html"));
 });
 
 gulp.task("jsdoc2md", function() {
-    return gulp.src("src/js/editormd.js")
+    return gulp.src("src/js/xFEditor.js")
             .pipe(jsdoc2md())
             .on("error", function(err){
                 gutil.log(gutil.colors.red("jsdoc2md failed"), err.message);
@@ -325,10 +325,10 @@ gulp.task("jsdoc2md", function() {
 });
 */
 gulp.task("watch", function() {
-	gulp.watch("scss/editormd.scss", ["scss"]);
-	gulp.watch("scss/editormd.preview.scss", ["scss", "scss2"]);
-	gulp.watch("scss/editormd.logo.scss", ["scss", "scss3"]);
-	gulp.watch("src/editormd.js", ["js", "amd"]);
+	gulp.watch("scss/xf_editor.scss", ["scss"]);
+	gulp.watch("scss/xf_editor.preview.scss", ["scss", "scss2"]);
+	gulp.watch("scss/xf_editor.logo.scss", ["scss", "scss3"]);
+	gulp.watch("src/xf_editor.js", ["js", "amd"]);
 });
 
 gulp.task("default", function() {

@@ -1,5 +1,5 @@
 /*!
- * Table dialog plugin for Editor.md
+ * Table dialog plugin for xf_editor
  *
  * @file        table-dialog.js
  * @author zhaoxianfang
@@ -80,7 +80,7 @@
 			var dialogLang  = lang.dialog.table;
 			
 			var dialogContent = [
-				"<div class=\"editormd-form\" style=\"padding: 13px 0;\">",
+				"<div class=\"xfEditor-form\" style=\"padding: 13px 0;\">",
 				"<label>" + dialogLang.cellsLabel + "</label>",
 				dialogLang.rows + " <input type=\"number\" value=\"3\" class=\"number-input\" style=\"width:40px;\" max=\"100\" min=\"2\" data-rows />&nbsp;&nbsp;",
 				dialogLang.cols + " <input type=\"number\" value=\"2\" class=\"number-input\" style=\"width:40px;\" max=\"100\" min=\"1\" data-cols /><br/>",
@@ -183,8 +183,8 @@
 				for (var i = 0, len = icons.length; i < len; i++) 
 				{
 					var checked = (i === 0) ? " checked=\"checked\"" : "";
-					var btn = "<a href=\"javascript:;\"><label for=\"editormd-table-dialog-radio"+i+"\" title=\"" + _lang[i] + "\">";
-					btn += "<input type=\"radio\" name=\"table-align\" id=\"editormd-table-dialog-radio"+i+"\" value=\"" + values[i] + "\"" +checked + " />&nbsp;";
+					var btn = "<a href=\"javascript:;\"><label for=\"xfEditor-table-dialog-radio"+i+"\" title=\"" + _lang[i] + "\">";
+					btn += "<input type=\"radio\" name=\"table-align\" id=\"xfEditor-table-dialog-radio"+i+"\" value=\"" + values[i] + "\"" +checked + " />&nbsp;";
 					btn += "<i class=\"fa fa-" + icons[i] + "\"></i>";
 					btn += "</label></a>";
 
@@ -200,7 +200,7 @@
 			var line = cm.getLine(cursor.line);
 			
 			if (!/^\|/.test(line)) {
-				editormd.notify("请将光标放在表格行内", "warning");
+				xfEditor.notify("请将光标放在表格行内", "warning");
 				return;
 			}
 			
@@ -247,7 +247,7 @@
 			var line = cm.getLine(cursor.line);
 			
 			if (!/^\|/.test(line)) {
-				editormd.notify("请将光标放在表格行内", "warning");
+				xfEditor.notify("请将光标放在表格行内", "warning");
 				return;
 			}
 			
@@ -293,20 +293,20 @@
     {
 		if (define.amd) { // for Require.js
 
-			define(["editormd"], function(editormd) {
-                factory(editormd);
+			define(["xfEditor"], function(xfEditor) {
+                factory(xfEditor);
             });
 
 		} else { // for Sea.js
 			define(function(require) {
-                var editormd = require("./../../editormd");
-                factory(editormd);
+                var xfEditor = require("./../../xfEditor");
+                factory(xfEditor);
             });
 		}
 	} 
 	else
 	{
-        factory(window.editormd);
+        factory(window.xfEditor);
 	}
 
 })();

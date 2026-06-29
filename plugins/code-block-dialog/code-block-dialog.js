@@ -1,5 +1,5 @@
 /*!
- * Code block dialog plugin for Editor.md
+ * Code block dialog plugin for xf_editor
  *
  * @file        code-block-dialog.js
  * @author zhaoxianfang
@@ -107,13 +107,13 @@
 
                             if (langName === "")
                             {
-                                editormd.notify(lang.dialog.codeBlock.unselectedLanguageAlert, "warning");
+                                xfEditor.notify(lang.dialog.codeBlock.unselectedLanguageAlert, "warning");
                                 return false;
                             }
 
                             if (codeTexts === "")
                             {
-                                editormd.notify(lang.dialog.codeBlock.codeEmptyAlert, "warning");
+                                xfEditor.notify(lang.dialog.codeBlock.codeEmptyAlert, "warning");
                                 return false;
                             }
 
@@ -223,20 +223,20 @@
     {
 		if (define.amd) { // for Require.js
 
-			define(["editormd"], function(editormd) {
-                factory(editormd);
+			define(["xfEditor"], function(xfEditor) {
+                factory(xfEditor);
             });
 
 		} else { // for Sea.js
 			define(function(require) {
-                var editormd = require("./../../editormd");
-                factory(editormd);
+                var xfEditor = require("./../../xfEditor");
+                factory(xfEditor);
             });
 		}
 	} 
 	else
 	{
-        factory(window.editormd);
+        factory(window.xfEditor);
 	}
 
 })();

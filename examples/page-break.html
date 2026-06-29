@@ -5,7 +5,7 @@
         <meta charset="utf-8" />
         <title>Page break - xfEditor examples</title>
         <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" />
+        <link rel="stylesheet" href="../css/xf_editor.min.css" />
     </head>
     <body>
         <div id="layout">
@@ -17,7 +17,7 @@
                 <button id="disabled-btn">Disabled</button>
                 <button id="enabled-btn">Enabled</button>
             </div>
-            <div id="test-editormd">
+            <div id="test-xfEditor">
                 <textarea style="display:none;">#### Syntax
 
     [At least 8 equals]
@@ -38,7 +38,7 @@
 
 #### xfEditor directory
 
-    editor.md/
+    editor/
             lib/
             css/
             scss/
@@ -48,7 +48,7 @@
             plugins/
             examples/
             languages/
-            editormd.js
+            xf_editor.js
             ...
 
 > page end
@@ -56,12 +56,12 @@
             </div>
         </div>
         <script src="js/jquery.min.js"></script>
-        <script src="../editormd.min.js"></script>
+        <script src="../xf_editor.min.js"></script>
         <script type="text/javascript">
 			var testEditor;
 
             $(function() {
-                testEditor = editormd("test-editormd", {
+                testEditor = xfEditor("test-xfEditor", {
                     width   : "90%",
                     height  : 720,
                     path    : "../lib/"
@@ -70,7 +70,7 @@
                 $("#print-btn").click(function(){
                     var html = testEditor.preview.html();
                     
-                    document.write('<link rel="stylesheet" href="css/style.css" /><link rel="stylesheet" href="../css/editormd.min.css" />' + html);
+                    document.write('<link rel="stylesheet" href="css/style.css" /><link rel="stylesheet" href="../css/xf_editor.min.css" />' + html);
                     window.print();
                 });
                 

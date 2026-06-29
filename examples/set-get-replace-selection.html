@@ -5,7 +5,7 @@
         <meta charset="utf-8" />
         <title>插入字符 / 设置和获取光标位置 / 设置、获取和替换选中的文本 - xfEditor examples</title>
         <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" />
+        <link rel="stylesheet" href="../css/xf_editor.min.css" />
     </head>
     <body>
         <div id="layout">
@@ -22,14 +22,14 @@
                     <button id="btn6">在光标处插入 "????"</button>                    
                 </div>
             </header>
-            <div id="test-editormd">  
+            <div id="test-xfEditor">  
                 <textarea style="display:none;">### Examples
 
 ```javascript
 var testEditormd;
 
 $(function() {
-    testEditormd = editormd("test-editormd", {
+    testEditormd = xfEditor("test-xfEditor", {
         width: "90%",
         height: 640,
         path : '../lib/'
@@ -64,12 +64,12 @@ $("#btn6").click(function(){
             </div>
         </div>
         <script src="js/jquery.min.js"></script>
-        <script src="../editormd.min.js"></script>   
+        <script src="../xf_editor.min.js"></script>   
         <script type="text/javascript">
 			var testEditormd;
 
             $(function() {
-                testEditormd = editormd("test-editormd", {
+                testEditormd = xfEditor("test-xfEditor", {
                     width: "90%",
                     height: 640,
                     path : '../lib/'

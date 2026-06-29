@@ -5,7 +5,7 @@
         <meta charset="utf-8" />
         <title>HTML Preview (markdown to html) - xfEditor examples</title>
         <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.preview.min.css" />
+        <link rel="stylesheet" href="../css/xf_editor.preview.min.css" />
         <style>
             * { box-sizing: border-box; }
             body {
@@ -351,10 +351,10 @@
             </div>
             <div class="main-area">
                 <div class="content-col">
-                    <div id="test-editormd-view">
-                       <textarea style="display:none;" name="test-editormd-markdown-doc">###Hello world!</textarea>               
+                    <div id="test-xf_editor-view">
+                       <textarea style="display:none;" name="test-xf_editor-markdown-doc">###Hello world!</textarea>               
                     </div>
-                    <div id="test-editormd-view2">
+                    <div id="test-xf_editor-view2">
                         <textarea id="append-test" style="display:none;">
 
 ###科学公式 TeX(KaTeX)
@@ -415,7 +415,7 @@ alert("script");
                         <h1>📑 Table of Contents</h1>
                         <button class="toc-toggle" onclick="toggleTOC()" title="收起目录">✕</button>
                     </div>
-                    <div class="markdown-body editormd-preview-container" id="custom-toc-container">#custom-toc-container</div>
+                    <div class="markdown-body xf_editor-preview-container" id="custom-toc-container">#custom-toc-container</div>
                     <a class="toc-back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">回到顶部</a>
                 </div>
             </div>
@@ -429,10 +429,10 @@ alert("script");
         <script src="../lib/sequence-diagram.min.js"></script>
         <script src="../lib/flowchart.min.js"></script>
         <script src="../lib/jquery.flowchart.min.js"></script>
-        <script src="../editormd.min.js"></script>
+        <script src="../xf_editor.min.js"></script>
         <script type="text/javascript">
             // 设置全局资源路径，确保从 examples/ 子目录也能正确加载 KaTeX、流程图等资源
-            editormd.defaults.path = "../lib/";
+            xfEditor.defaults.path = "../lib/";
         </script>
         <script type="text/javascript">
             // ── TOC 目录 显示/隐藏 ──
@@ -504,9 +504,9 @@ alert("script");
             $(function() {
                 var testEditormdView, testEditormdView2;
                 
-                $.get("test.md", function(markdown) {
+                $.get("md/full.md", function(markdown) {
                     
-				    testEditormdView = editormd.markdownToHTML("test-editormd-view", {
+				    testEditormdView = xfEditor.markdownToHTML("test-xf_editor-view", {
                         markdown        : markdown ,//+ "\r\n" + $("#append-test").text(),
                         //htmlDecode      : true,       // 开启 HTML 标签解析，为了安全性，默认不开启
                         htmlDecode      : "style,script,iframe",  // you can filter tags decode
@@ -544,7 +544,7 @@ alert("script");
                     setTimeout(initScrollSpy, 300);
                 });
                     
-                testEditormdView2 = editormd.markdownToHTML("test-editormd-view2", {
+                testEditormdView2 = xfEditor.markdownToHTML("test-xf_editor-view2", {
                     htmlDecode      : "style,script,iframe",  // you can filter tags decode
 
                     taskList        : true,

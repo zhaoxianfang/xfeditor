@@ -5,7 +5,7 @@
         <meta charset="utf-8" />
         <title>图片跨域上传示例 - xfEditor examples</title>
         <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" />
+        <link rel="stylesheet" href="../css/xf_editor.min.css" />
     </head>
     <body>
         <div id="layout" style="height: 2000px;background: #f6f6f6;">
@@ -13,14 +13,14 @@
                 <h1>图片跨域上传示例</h1>
                 <p>Image cross-domain upload example.</p>
             </header>
-            <div id="test-editormd">
+            <div id="test-xfEditor">
                 <textarea style="display:none;">#### Settings
 
 ```javascript
 {
     imageUpload       : true,
     imageFormats      : ["jpg", "jpeg", "gif", "png", "bmp", "webp"],
-    imageUploadURL    : "http://xxxxxxx/editor.md/examples/php/cross-domain-upload.php?test=dfdf",
+    imageUploadURL    : "http://xxxxxxx/editor/examples/php/cross-domain-upload.php?test=dfdf",
     crossDomainUpload : true,
     uploadCallbackURL : "http://xxxxxx/upload_callback.html?test=dfdf"
 }
@@ -79,19 +79,19 @@ exit;
             </div>
         </div>        
         <script src="js/jquery.min.js"></script>
-        <script src="../editormd.min.js"></script>
+        <script src="../xf_editor.min.js"></script>
         <script type="text/javascript">
             $(function() {
-                var testEditor = editormd("test-editormd", {
+                var testEditor = xfEditor("test-xfEditor", {
                     width             : "90%",
                     height            : 640,
                     markdown          : "",
                     path              : '../lib/',
                     imageUpload       : true,
                     imageFormats      : ["jpg", "jpeg", "gif", "png", "bmp", "webp"],
-                    imageUploadURL    : "http://www.ipandao.com/editor.md/examples/php/cross-domain-upload.php?test=dfdf",
+                    imageUploadURL    : "http://www.ipandao.com/editor/examples/php/cross-domain-upload.php?test=dfdf",
                     crossDomainUpload : true,
-                    uploadCallbackURL : "http://localhost/editor.md/examples/php/upload_callback.html?test=dfdf"
+                    uploadCallbackURL : "http://localhost/editor/examples/php/upload_callback.html?test=dfdf"
                     
                     /*
                      跨域时，上传的图片服务器后台只需要返回一个跳转 URL 并跳转到原页面同域下的 callback 页面，结构如下：

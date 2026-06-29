@@ -1,5 +1,5 @@
 /*!
- * Link dialog plugin for Editor.md
+ * Link dialog plugin for xf_editor
  *
  * @file        link-dialog.js
  * @author zhaoxianfang
@@ -81,7 +81,7 @@
 
                             if (url === "http://" || url === "")
                             {
-                                editormd.notify(linkLang.urlEmpty, "warning");
+                                xfEditor.notify(linkLang.urlEmpty, "warning");
                                 return false;
                             }
                             
@@ -131,20 +131,20 @@
     {
 		if (define.amd) { // for Require.js
 
-			define(["editormd"], function(editormd) {
-                factory(editormd);
+			define(["xfEditor"], function(xfEditor) {
+                factory(xfEditor);
             });
 
 		} else { // for Sea.js
 			define(function(require) {
-                var editormd = require("./../../editormd");
-                factory(editormd);
+                var xfEditor = require("./../../xfEditor");
+                factory(xfEditor);
             });
 		}
 	} 
 	else
 	{
-        factory(window.editormd);
+        factory(window.xfEditor);
 	}
 
 })();

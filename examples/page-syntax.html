@@ -5,10 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>[[page:AN]] 纸张页面语法示例 — xfEditor v1.17.8</title>
-    <link rel="stylesheet" href="../css/editormd.css" />
-    <link rel="stylesheet" href="../css/editormd.preview.css" />
+    <link rel="stylesheet" href="../css/xf_editor.min.css" />
+    <link rel="stylesheet" href="../css/xf_editor.preview.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
-    <script src="../editormd.js"></script>
+    <script src="../xf_editor.js"></script>
     <style>
         body { background: #f0f2f5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif; margin: 0; padding: 20px; }
         .demo-header { text-align: center; padding: 30px 20px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; margin: -20px -20px 20px; }
@@ -276,7 +276,7 @@
 
     <h4>🔧 配置方式</h4>
 ```javascript
-var editor = editormd("editor-container", {
+var editor = xfEditor("editor-container", {
     path: "../lib/",
     pageBlock: true,      // 启用纸张页面语法（默认开启）
     pageBreak: true,      // 启用分页符语法（默认开启）
@@ -295,7 +295,7 @@ var editor = editormd("editor-container", {
 
 <script type="text/javascript">
     $(function() {
-        var editor = editormd("editor-container", {
+        var editor = xfEditor("editor-container", {
             width: "100%",
             height: 800,
             path: "../lib/",
@@ -313,7 +313,6 @@ var editor = editormd("editor-container", {
             codeFold: true,
             searchReplace: true,
             htmlDecode: "style,script,iframe|on*",
-            emoji: true,
             tocm: true,
             tocContainer: "",
             tocDropdown: false,

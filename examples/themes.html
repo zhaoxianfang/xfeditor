@@ -5,30 +5,30 @@
         <meta charset="utf-8" />
         <title>Themes - xfEditor examples</title>
         <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" />
+        <link rel="stylesheet" href="../css/xf_editor.min.css" />
         <style>
             /* Custom xfEditor theme css example */
             /*
-            .editormd-theme-dark {
+            .xfEditor-theme-dark {
                 border-color: #1a1a17;
                 
             }
             
-            .editormd-theme-dark .editormd-toolbar {
+            .xfEditor-theme-dark .xfEditor-toolbar {
                 background: #1A1A17;
                 border-color: #1a1a17;
             }
             
-            .editormd-theme-dark .editormd-menu > li > a {
+            .xfEditor-theme-dark .xfEditor-menu > li > a {
                 color: #777;
                 border-color: #1a1a17;
             }
             
-            .editormd-theme-dark .editormd-menu > li.divider {
+            .xfEditor-theme-dark .xfEditor-menu > li.divider {
                 border-right: 1px solid #111;
             }
             
-            .editormd-theme-dark .editormd-menu > li > a:hover, .editormd-menu > li > a.active {
+            .xfEditor-theme-dark .xfEditor-menu > li > a:hover, .xfEditor-menu > li > a.active {
                 border-color: #333;
                 background: #333;
             }*/
@@ -39,7 +39,7 @@
             <header>
                 <h1>Themes</h1>
                 <p>
-                    <select id="editormd-theme-select">
+                    <select id="xf_editor-theme-select">
                         <option selected="selected" value="">select xfEditor themes</option>
                     </select>
                     <select id="editor-area-theme-select">
@@ -50,7 +50,7 @@
                     </select>
                 </p>
             </header>
-            <div id="test-editormd">
+            <div id="test-xfEditor">
                 <textarea style="display:none;">[TOC]
 
 ### Themes
@@ -62,15 +62,15 @@ configs:
 ```javascript
 {
     // xfEditor theme, default or dark, change at v1.5.0
-    // You can also custom css class .editormd-theme-xxxx
+    // You can also custom css class .xfEditor-theme-xxxx
     theme : "default | dark",
 
     // Preview container theme, added v1.5.0
-    // You can also custom css class .editormd-preview-theme-xxxx
+    // You can also custom css class .xfEditor-preview-theme-xxxx
     previewTheme : "default | dark",
 
     // Added @v1.5.0 & after version this is CodeMirror (editor area) theme
-    editorTheme : editormd.editorThemes['theme-name']
+    editorTheme : xfEditor.editorThemes['theme-name']
 }
 ```
 
@@ -137,7 +137,7 @@ editor.setPreviewTheme('theme-name');
             </div>
         </div>
         <script src="js/jquery.min.js"></script>
-        <script src="../editormd.min.js"></script>
+        <script src="../xf_editor.min.js"></script>
         <script type="text/javascript">
 			var testEditor;
             
@@ -172,16 +172,16 @@ editor.setPreviewTheme('theme-name');
             }
 
             $(function() {                
-                testEditor = editormd("test-editormd", {
+                testEditor = xfEditor("test-xfEditor", {
                     width        : "90%",
                     height       : 720,
                     
                     // xfEditor theme, default or dark, change at v1.5.0
-                    // You can also custom css class .editormd-preview-theme-xxxx
+                    // You can also custom css class .xfEditor-preview-theme-xxxx
                     theme        : (localStorage.theme) ? localStorage.theme : "dark",
                     
                     // Preview container theme, added v1.5.0
-                    // You can also custom css class .editormd-preview-theme-xxxx
+                    // You can also custom css class .xfEditor-preview-theme-xxxx
                     previewTheme : (localStorage.previewTheme) ? localStorage.previewTheme : "dark", 
                     
                     // Added @v1.5.0 & after version is CodeMirror (editor area) theme
@@ -189,16 +189,16 @@ editor.setPreviewTheme('theme-name');
                     path         : '../lib/'
                 });
                 
-                themeSelect("editormd-theme-select", editormd.themes, "theme", function($this, theme) {
+                themeSelect("xf_editor-theme-select", xfEditor.themes, "theme", function($this, theme) {
                     testEditor.setTheme(theme);
                 });
                 
-                themeSelect("editor-area-theme-select", editormd.editorThemes, "editorTheme", function($this, theme) {
+                themeSelect("editor-area-theme-select", xfEditor.editorThemes, "editorTheme", function($this, theme) {
                     testEditor.setCodeMirrorTheme(theme); 
                     // or testEditor.setEditorTheme(theme);
                 });
                 
-                themeSelect("preview-area-theme-select", editormd.previewThemes, "previewTheme", function($this, theme) {
+                themeSelect("preview-area-theme-select", xfEditor.previewThemes, "previewTheme", function($this, theme) {
                     testEditor.setPreviewTheme(theme);
                 });          
             });

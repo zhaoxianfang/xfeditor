@@ -1,6 +1,6 @@
 # xfEditor 使用指南
 
-> xfEditor v1.17.9 完整使用手册
+> xfEditor v1.17.10 完整使用手册
 
 ---
 
@@ -24,16 +24,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <link rel="stylesheet" href="css/editormd.min.css" />
+    <link rel="stylesheet" href="css/xf_editor.min.css" />
 </head>
 <body>
     <div id="editor">
         <textarea style="display:none;"># Hello xfEditor</textarea>
     </div>
     <script src="js/jquery.min.js"></script>
-    <script src="editormd.min.js"></script>
+    <script src="xf_editor.min.js"></script>
     <script type="text/javascript">
-        var editor = editormd("editor", {
+        var editor = xfEditor("editor", {
             width: "100%",
             height: 600,
             path: "lib/",
@@ -47,7 +47,7 @@
 ### 纯预览模式
 
 ```javascript
-editormd.markdownToHTML("preview-container", {
+xfEditor.markdownToHTML("preview-container", {
     markdown: "# Hello World",
     htmlDecode: "style,script,iframe",
     toc: true,
@@ -57,9 +57,28 @@ editormd.markdownToHTML("preview-container", {
     columns: true,
     tooltip: true,
     copybook: true,
-    pageBlock: true
+    pageBlock: true,
+    video: true,
+    file: true
 });
 ```
+
+### 🚀 预览打包文件（推荐）
+
+v1.17.10 新增 `xf_editor.preview.min.js` 打包文件，合并了预览模式所有依赖：
+
+```html
+<!-- 方式一：推荐 — 单个打包文件（1 个 HTTP 请求） -->
+<script src="xf_editor.preview.min.js"></script>
+
+<!-- 方式二：兼容旧模式 — 分别引入（10 个 HTTP 请求） -->
+<script src="js/jquery.min.js"></script>
+<script src="lib/marked.min.js"></script>
+...
+<script src="xf_editor.min.js"></script>
+```
+
+**打包文件包含：** jQuery + marked + prettify + raphael + underscore + sequence-diagram + flowchart + jquery.flowchart + echarts + xfEditor
 
 ---
 
@@ -85,7 +104,7 @@ editormd.markdownToHTML("preview-container", {
 | `watch` | `true` | 实时预览 |
 | `delay` | `80` | 解析延迟 (ms)，v1.16 起从 300ms 降至 80ms |
 | `previewCodeHighlight` | `true` | 预览区代码高亮 |
-| `syncScroll` | `true` | 编辑区与预览区双向精准同步滚动 🆕v1.17.5（标题锚点文本验证配对+程序化滚动识别+预览交互防护+门控体系） |
+| `syncScroll` | `true` | 编辑区与预览区双向精准同步滚动 🆕v1.17.10（标题锚点文本验证配对+程序化滚动识别+预览交互防护+门控体系） |
 
 ### 扩展语法
 
@@ -108,6 +127,8 @@ editormd.markdownToHTML("preview-container", {
 | `tooltip` | `true` | 悬浮提示 |
 | `copybook` | `true` | 字帖 |
 | `pageBlock` | `true` | 纸张页面 |
+| `video` | `true` | 视频列表 [[video]] |
+| `file` | `true` | 文件列表 [[file]] |
 | `previewOnly` | `false` | 纯预览模式（禁用编辑功能） |
 
 ---
@@ -401,7 +422,7 @@ console.log("嵌套代码");
 - 每个汉字上方精确对应一个拼音音节
 - 参照 [拼音参照表](examples/pinyin-reference.html) 获取完整声母韵母列表
 
-**🆕 v1.17.9：拼音中嵌入脚注**：
+**🆕 v1.17.10：拼音中嵌入脚注**：
 ```markdown
 {疑[^yi]是地上[^shang]霜 | yí shì dì shàng shuāng}。
 
@@ -906,10 +927,10 @@ editor.initColumns();          // 初始化 Columns
 editor.initPages();            // 初始化纸张页面
 ```
 
-**同步滚动** 🆕v1.17.5：
+**同步滚动** 🆕v1.17.10：
 ```javascript
 // 配置项（默认启用）
-var editor = editormd("id", { syncScroll: true });
+var editor = xfEditor("id", { syncScroll: true });
 
 // 绑定/解绑同步滚动
 editor.bindSyncScroll();       // 绑定同步滚动
@@ -919,13 +940,13 @@ editor.unbindSyncScroll();     // 解绑同步滚动
 editor.scrollToLineNum(42);         // 滚动预览区到第 42 行
 editor.scrollToLineNum(42, 0.5);   // 滚动预览区到第 42 行中间位置
 
-// ★ v1.17.5: 预览交互保护（图片缩放/表格编辑时暂停同步）
+// ★ v1.17.10: 预览交互保护（图片缩放/表格编辑时暂停同步）
 editor.suspendSyncScroll();   // 暂停同步滚动
 // ... 预览区交互操作 ...
 editor.resumeSyncScroll();    // 恢复同步滚动
 ```
 
-> **v1.17.5 引擎原理**：解析 markdown 源码标题行号 + 预览 DOM 标题元素 → 文本+层级智能配对 → `editorLine ↔ previewElement` 锚点表 → 锚点间线性插值精准定位。门控体系（suppressAllSync → programmaticScroll → disablePreviewListener）确保各方向互不干扰。程序化滚动识别防止反馈循环。祖先链滚动监听不遗漏任何事件。
+> **v1.17.10 引擎原理**：解析 markdown 源码标题行号 + 预览 DOM 标题元素 → 文本+层级智能配对 → `editorLine ↔ previewElement` 锚点表 → 锚点间线性插值精准定位。门控体系（suppressAllSync → programmaticScroll → disablePreviewListener）确保各方向互不干扰。程序化滚动识别防止反馈循环。祖先链滚动监听不遗漏任何事件。
 
 **工具栏**：
 ```javascript
@@ -961,10 +982,10 @@ editor.clearDraft();           // 清除草稿
 ### 静态方法
 
 ```javascript
-editormd.markdownToHTML(id, options); // 渲染 Markdown 为 HTML
-editormd.$;                          // jQuery/Zepto 对象
-editormd.marked;                     // marked 解析器
-editormd.defaults;                   // 全局默认配置
+xfEditor.markdownToHTML(id, options); // 渲染 Markdown 为 HTML
+xfEditor.$;                          // jQuery/Zepto 对象
+xfEditor.marked;                     // marked 解析器
+xfEditor.defaults;                   // 全局默认配置
 ```
 
 ### 事件系统
@@ -1047,7 +1068,7 @@ htmlDecode: "style,script,iframe|on*"
 **CSS 打印样式**：
 ```css
 @media print {
-    .editormd-page-block {
+    .xf_editor-page-block {
         page-break-after: always;
     }
 }
@@ -1060,7 +1081,7 @@ htmlDecode: "style,script,iframe|on*"
 ### Q: 如何禁用实时预览？
 
 ```javascript
-editormd("editor", {
+xfEditor("editor", {
     watch: false,
     previewOnly: true
 });
@@ -1069,7 +1090,7 @@ editormd("editor", {
 ### Q: 如何自定义工具栏？
 
 ```javascript
-editormd("editor", {
+xfEditor("editor", {
     toolbarIcons: function() {
         return [
             "undo", "redo", "|",
@@ -1100,7 +1121,7 @@ editor.addKeyMap({
 var html = editor.getPreviewedHTML();
 
 // 方法2：保存到 textarea
-editormd("editor", {
+xfEditor("editor", {
     saveHTMLToTextarea: true
 });
 var html = editor.getTextareaSavedHTML();
@@ -1109,7 +1130,7 @@ var html = editor.getTextareaSavedHTML();
 ### Q: 如何处理图片上传？
 
 ```javascript
-editormd("editor", {
+xfEditor("editor", {
     imageUpload: true,
     imageFormats: ["jpg", "jpeg", "gif", "png", "bmp", "webp"],
     imageUploadURL: "/upload",
@@ -1172,5 +1193,5 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 
 ---
 
-**最后更新**: 2026-06-24
-**版本**: v1.17.5
+**最后更新**: 2026-06-29
+**版本**: v1.17.10

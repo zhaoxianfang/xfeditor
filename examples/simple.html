@@ -4,8 +4,8 @@
         <meta charset="utf-8" />
         <title>xfEditor v1.17.9 — Simple example</title>
         <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" />
-        <link rel="shortcut icon" href="../images/logos/favicon-32x32.ico" type="image/x-icon" />
+        <link rel="stylesheet" href="../css/xf_editor.min.css" />
+        <link rel="shortcut icon" href="../images/favicon.ico" type="image/x-icon" />
     </head>
     <body>
         <div id="layout">
@@ -15,55 +15,46 @@
             <form  method="post" id="formTest">
 
             
-            <div id="test-editormd">
-                <textarea style="display:none;"># xfEditor v1.17.9
-
-## 快速入门
-
-xfEditor 是一款功能强大的开源 Markdown 在线编辑器，支持：
-
-- **实时预览** — 编辑与预览实时同步
-- **扩展语法** — KaTeX 公式、ECharts 图表、Tabs 标签页、多列排版
-- **表格编辑** — 预览区点击表格单元格即可插入/删除行列
-- **图片缩放** — 拖拽预览区图片边角调整尺寸
-- **TOC 目录** — 自动生成文章目录导航
-- **安全防护** — XSS 过滤、HTML 标签解析控制
-
-## 代码示例
-
-```javascript
-// 斐波那契数列生成器
-function* fibonacci(n) {
-    let [a, b] = [0, 1];
-    for (let i = 0; i < n; i++) {
-        yield a;
-        [a, b] = [b, a + b];
-    }
-}
-```
-
-> 提示：这是一个最简配置示例，仅启用了基础功能。要使用扩展功能（公式、图表、标签页等），请在初始化配置中添加对应选项。
-</textarea>
+            <div id="test-xfEditor">
+                <textarea style="display:none;"></textarea>
             </div>
             </form>
         </div>
         <script src="js/jquery.min.js"></script>
-        <script src="../editormd.min.js"></script>
+        <script src="../xf_editor.min.js"></script>
         <script type="text/javascript">
 			var testEditor;
 
             $(function() {
-                testEditor = editormd("test-editormd", {
-                    width       : "90%",
-                    height      : 640,
-                    path        : "../lib/",
-                    pluginPath  : "../plugins/"   // ★ 插件路径，工具栏弹窗功能必需
+                // 从 md/simple.md 加载演示内容
+                $.get("md/simple.md", function(markdown) {
+                    testEditor = xfEditor("test-xfEditor", {
+                        width       : "90%",
+                        height      : 640,
+                        path        : "../lib/",
+                        pluginPath  : "../plugins/",   // ★ 插件路径，工具栏弹窗功能必需
+                        markdown    : markdown,         // 从外部 .md 文件加载内容
+                        // 启用扩展功能以获得更好的演示效果
+                        toc         : true,
+                        taskList    : true,
+                        tex         : true,
+                        htmlDecode  : true
+                    });
+                }).fail(function() {
+                    // 降级方案：使用内联内容
+                    testEditor = xfEditor("test-xfEditor", {
+                        width       : "90%",
+                        height      : 640,
+                        path        : "../lib/",
+                        pluginPath  : "../plugins/",
+                        markdown    : "# xfEditor v1.17.9\n\n## 快速入门\n\nxfEditor 是一款功能强大的开源 Markdown 在线编辑器。\n\n- **实时预览** — 编辑与预览实时同步\n- **扩展语法** — KaTeX 公式、ECharts 图表、Tabs 标签页\n\n> 提示：这是一个最简配置示例。要使用扩展功能，请在初始化配置中添加对应选项。"
+                    });
                 });
                 
                 /*
                 // or
-                testEditor = editormd({
-                    id      : "test-editormd",
+                testEditor = xfEditor({
+                    id      : "test-xfEditor",
                     width   : "90%",
                     height  : 640,
                     path    : "../lib/"

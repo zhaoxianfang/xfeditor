@@ -7,7 +7,7 @@
         <link rel="stylesheet" href="css/style.css" />
         <link rel="stylesheet" href="../lib/codemirror/codemirror.min.css" /> 
         <!-- <link rel="stylesheet" href="../lib/codemirror/addon/fold/foldgutter.css" /> -->
-        <link rel="stylesheet" href="../css/editormd.min.css" />
+        <link rel="stylesheet" href="../css/xf_editor.min.css" />
     </head>
     <body>
         <div id="layout">
@@ -34,7 +34,7 @@
                 <button id="toc-menu-btn">ToC Dropdown menu</button>
                 <button id="toc-default-btn">ToC default</button>
             </div>
-            <div id="test-editormd"></div>
+            <div id="test-xfEditor"></div>
         </div>   
         <script src="js/require.min.js"></script>
         <script type="text/javascript">            
@@ -50,13 +50,13 @@
                     jqueryflowchart : "jquery.flowchart.min", 
                     sequenceDiagram : "sequence-diagram.min",
                     katex           : "../lib/katex/katex.min",
-                    editormd        : "../editormd.amd" // Using xfEditor amd version for Require.js
+                    xf_editor       : "../xf_editor.amd" // Using xfEditor amd version for Require.js
                 },
                 waitSeconds: 30
             });
             
             var deps = [
-                "editormd", 
+                "xf_editor", 
                 "../languages/en", 
                 "../plugins/link-dialog/link-dialog",
                 "../plugins/reference-link-dialog/reference-link-dialog",
@@ -72,14 +72,14 @@
             
             var testEditor;
                 
-            require(deps, function(editormd) {
+            require(deps, function(xfEditor) {
                 
                 // if enable codeFold
                 // or <link rel="stylesheet" href="../lib/codemirror/addon/fold/foldgutter.css" />
-                editormd.loadCSS("../lib/codemirror/addon/fold/foldgutter");
+                xfEditor.loadCSS("../lib/codemirror/addon/fold/foldgutter");
                 
-                $.get('test.md', function(md) {
-                    testEditor = editormd("test-editormd", {
+                $.get('md/full.md', function(md) {
+                    testEditor = xfEditor("test-xfEditor", {
                         width: "90%",
                         height: 640,
                         path : '../lib/',

@@ -166,7 +166,7 @@
         };
         
         exports.defaults.lang = lang;
-        // 同时注册到语言包注册表，使 editormd.getLang("zh-cn") 可获取
+        // 同时注册到语言包注册表，使 xfEditor.getLang("zh-cn") 可获取
         exports.langs = exports.langs || {};
         exports.langs[lang.name] = lang;
     };
@@ -179,19 +179,19 @@
     else if (typeof define === "function")  // AMD/CMD/Sea.js
     {
         if (define.amd) { // for Require.js
-            define(["editormd"], function(editormd) {
-                factory(editormd);
+            define(["xfEditor"], function(xfEditor) {
+                factory(xfEditor);
             });
         } else { // for Sea.js
             define(function(require) {
-                var editormd = require("../editormd");
-                factory(editormd);
+                var xfEditor = require("../xfEditor");
+                factory(xfEditor);
             });
         }
     } 
     else
     {
-        factory(window.editormd);
+        factory(window.xfEditor);
     }
     
 })();

@@ -1,6 +1,6 @@
 ## xfEditor 使用帮助
 
-开源在线 Markdown 编辑器 v1.12.0，基于 [Editor.md](https://github.com/zhaoxianfang/xfeditor) 深度改进，支持标准 Markdown 及丰富的扩展语法。
+开源在线 Markdown 编辑器 v1.17.9，基于 [xfEditor](https://github.com/zhaoxianfang/xfeditor) 深度改进，支持标准 Markdown 及丰富的扩展语法。
 
 ---
 
@@ -349,4 +349,4 @@
 
 ---
 
-*xfEditor — 开源在线 Markdown 编辑器 | 基于 Editor.md 改编 | MIT 许可证*
+*xfEditor — 开源在线 Markdown 编辑器 | 基于开源项目改编 | MIT 许可证*

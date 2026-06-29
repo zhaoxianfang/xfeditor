@@ -5,7 +5,7 @@
         <meta charset="utf-8" />
         <title>On / Off (bind/unbind) event handle - xfEditor examples</title>
         <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" />
+        <link rel="stylesheet" href="../css/xf_editor.min.css" />
     </head>
     <body>
         <div id="layout">
@@ -13,7 +13,7 @@
                 <h1>On / Off (bind/unbind) event handle</h1>
                 <p>Plaese press F12, open the develop tools.</p>     
             </header>
-            <div id="test-editormd">                
+            <div id="test-xfEditor">                
                 <textarea style="display:none;">#### Example
 ```javascript
 {
@@ -40,13 +40,13 @@ editor.off("resize");
             </div>
         </div>        
         <script src="js/jquery.min.js"></script>
-        <script src="../editormd.min.js"></script>
+        <script src="../xf_editor.min.js"></script>
         <script type="text/javascript">
             var testEditor;
             
             $(function() {
-                $.get("./test.md", function(md){
-                    testEditor = editormd("test-editormd", {
+                $.get("md/full.md", function(md){
+                    testEditor = xfEditor("test-xfEditor", {
                         width    : "90%",
                         height   : 720,
                         appendMarkdown : md,

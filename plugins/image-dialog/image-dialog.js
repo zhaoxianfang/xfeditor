@@ -1,5 +1,5 @@
 /*!
- * Image (upload) dialog plugin for Editor.md
+ * Image (upload) dialog plugin for xf_editor
  *
  * @file        image-dialog.js
  * @author zhaoxianfang
@@ -43,7 +43,7 @@
 
                 if (settings.crossDomainUpload)
                 {
-                    action += "&callback=" + settings.uploadCallbackURL + "&dialog_id=editormd-image-dialog-" + guid;
+                    action += "&callback=" + settings.uploadCallbackURL + "&dialog_id=xfEditor-image-dialog-" + guid;
                 }
 
                 var dialogContent = ( (settings.imageUpload) ? "<form action=\"" + action +"\" target=\"" + iframeName + "\" method=\"post\" enctype=\"multipart/form-data\" class=\"" + classPrefix + "form\">" : "<div class=\"" + classPrefix + "form\">" ) +
@@ -91,7 +91,7 @@
 
                             if (url === "")
                             {
-                                editormd.notify(imageLang.imageURLEmpty, "warning");
+                                xfEditor.notify(imageLang.imageURLEmpty, "warning");
                                 return false;
                             }
 
@@ -170,14 +170,14 @@
 
                         if (fileName === "")
                         {
-                            editormd.notify(imageLang.uploadFileEmpty, "warning");
+                            xfEditor.notify(imageLang.uploadFileEmpty, "warning");
 
                             return false;
                         }
 
                         if (!isImage.test(fileName))
                         {
-                            editormd.notify(imageLang.formatNotAllowed + settings.imageFormats.join(", "), "warning");
+                            xfEditor.notify(imageLang.formatNotAllowed + settings.imageFormats.join(", "), "warning");
 
                             return false;
                         }
@@ -198,7 +198,7 @@
                                 try {
                                     json = (typeof JSON.parse !== "undefined") ? JSON.parse(json) : eval("(" + json + ")");
                                 } catch(err) {
-                                    editormd.notify("上传响应解析失败，请检查服务器返回格式。", "error", 5000);
+                                    xfEditor.notify("上传响应解析失败，请检查服务器返回格式。", "error", 5000);
                                     return false;
                                 }
 
@@ -210,7 +210,7 @@
                                   }
                                   else
                                   {
-                                      editormd.notify(json.message || "上传失败，未知错误。", "error", 5000);
+                                      xfEditor.notify(json.message || "上传失败，未知错误。", "error", 5000);
                                   }
                                 }
 
@@ -245,20 +245,20 @@
     {
 		if (define.amd) { // for Require.js
 
-			define(["editormd"], function(editormd) {
-                factory(editormd);
+			define(["xfEditor"], function(xfEditor) {
+                factory(xfEditor);
             });
 
 		} else { // for Sea.js
 			define(function(require) {
-                var editormd = require("./../../editormd");
-                factory(editormd);
+                var xfEditor = require("./../../xfEditor");
+                factory(xfEditor);
             });
 		}
 	}
 	else
 	{
-        factory(window.editormd);
+        factory(window.xfEditor);
 	}
 
 })();

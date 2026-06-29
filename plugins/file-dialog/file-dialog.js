@@ -1,8 +1,8 @@
 /*!
- * File upload dialog plugin for Editor.md
+ * File upload dialog plugin for xf_editor
  *
  * @file        file-dialog.js
- * @author      Editor.md
+ * @author      xf_editor
  * @version     1.7.0
  * @updateTime  2026-06-03
  * {@link       https://github.com/zhaoxianfang/xfeditor}
@@ -76,7 +76,7 @@
 
                             if (url === "")
                             {
-                                editormd.notify(fileLang.fileURLEmpty, "warning");
+                                xfEditor.notify(fileLang.fileURLEmpty, "warning");
                                 return false;
                             }
 
@@ -114,13 +114,13 @@
 
                         if (fileName === "")
                         {
-                            editormd.notify(fileLang.uploadFileEmpty, "warning");
+                            xfEditor.notify(fileLang.uploadFileEmpty, "warning");
                             return false;
                         }
 
                         if (!isAllowed.test(fileName))
                         {
-                            editormd.notify(fileLang.formatNotAllowed + settings.fileFormats.join(", "), "warning");
+                            xfEditor.notify(fileLang.formatNotAllowed + settings.fileFormats.join(", "), "warning");
                             return false;
                         }
 
@@ -138,7 +138,7 @@
                                 try {
                                     json = (typeof JSON.parse !== "undefined") ? JSON.parse(json) : eval("(" + json + ")");
                                 } catch (err) {
-                                    editormd.notify(fileLang.uploadError + " " + (json || ""), "error", 5000);
+                                    xfEditor.notify(fileLang.uploadError + " " + (json || ""), "error", 5000);
                                     return false;
                                 }
 
@@ -149,7 +149,7 @@
                                 }
                                 else
                                 {
-                                    editormd.notify(json.message || fileLang.uploadError, "error", 5000);
+                                    xfEditor.notify(json.message || fileLang.uploadError, "error", 5000);
                                 }
 
                                 return false;
@@ -182,20 +182,20 @@
     {
         if (define.amd) { // for Require.js
 
-            define(["editormd"], function(editormd) {
-                factory(editormd);
+            define(["xfEditor"], function(xfEditor) {
+                factory(xfEditor);
             });
 
         } else { // for Sea.js
             define(function(require) {
-                var editormd = require("./../../editormd");
-                factory(editormd);
+                var xfEditor = require("./../../xfEditor");
+                factory(xfEditor);
             });
         }
     }
     else
     {
-        factory(window.editormd);
+        factory(window.xfEditor);
     }
 
 })();

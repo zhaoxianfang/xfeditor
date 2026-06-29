@@ -2,274 +2,1589 @@
 <html lang="zh">
 <head>
     <meta charset="utf-8" />
-    <title>API 接口文档 - xfEditor v1.12.1</title>
+    <title>API 接口文档 - xfEditor v1.17.10</title>
     <link rel="stylesheet" href="css/style.css" />
-    <link rel="stylesheet" href="../css/editormd.min.css" />
-    <link rel="shortcut icon" href="../images/logos/favicon-32x32.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="../css/xf_editor.min.css" />
+    <link rel="shortcut icon" href="../images/favicon.ico" type="image/x-icon" />
     <style>
         #layout { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        .api-nav { position: fixed; left: 20px; top: 100px; width: 220px; background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 10px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); max-height: 80vh; overflow-y: auto; }
-        .api-nav a { display: block; padding: 6px 16px; color: #555; font-size: 13px; text-decoration: none; border-left: 3px solid transparent; }
-        .api-nav a:hover { background: #f5f7fa; color: #2196F3; border-left-color: #2196F3; }
-        .api-nav .nav-title { padding: 8px 16px; font-weight: bold; font-size: 14px; color: #333; border-bottom: 1px solid #eee; margin-bottom: 6px; }
-        .api-content { margin-left: 260px; padding: 20px; background: #fff; border-radius: 4px; }
-        .api-section { margin-bottom: 40px; }
+        .api-nav { position: fixed; left: 20px; top: 100px; width: 230px; background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 10px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); max-height: 80vh; overflow-y: auto; z-index: 100; }
+        .api-nav a { display: block; padding: 6px 16px; color: #555; font-size: 13px; text-decoration: none; border-left: 3px solid transparent; transition: all 0.15s; }
+        .api-nav a:hover, .api-nav a.active { background: #e3f2fd; color: #1976D2; border-left-color: #2196F3; }
+        .api-nav .nav-title { padding: 10px 16px; font-weight: bold; font-size: 14px; color: #333; border-bottom: 1px solid #eee; margin-bottom: 6px; }
+        .api-nav .nav-sub { padding-left: 24px; font-size: 12px; }
+        .api-content { margin-left: 270px; padding: 20px; background: #fff; border-radius: 4px; }
+        .api-section { margin-bottom: 40px; scroll-margin-top: 20px; }
         .api-section h2 { font-size: 22px; color: #333; border-bottom: 2px solid #2196F3; padding-bottom: 8px; margin-bottom: 20px; }
-        .api-section h3 { font-size: 16px; color: #444; margin: 24px 0 12px; padding-left: 10px; border-left: 4px solid #2196F3; }
+        .api-section h3 { font-size: 16px; color: #444; margin: 28px 0 12px; padding-left: 10px; border-left: 4px solid #2196F3; }
         .api-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 16px; }
-        .api-table th { background: #f5f7fa; text-align: left; padding: 10px 12px; border: 1px solid #e0e0e0; font-weight: 600; }
+        .api-table th { background: #f5f7fa; text-align: left; padding: 10px 12px; border: 1px solid #e0e0e0; font-weight: 600; color: #333; }
         .api-table td { padding: 10px 12px; border: 1px solid #e0e0e0; vertical-align: top; }
-        .api-table td:first-child { font-family: Consolas, Monaco, monospace; color: #c7254e; white-space: nowrap; }
+        .api-table td:first-child { font-family: Consolas, Monaco, monospace; color: #c7254e; white-space: nowrap; font-weight: 500; }
         .api-table .type { color: #2196F3; font-size: 12px; }
-        .api-table .default { color: #888; font-size: 12px; }
-        pre { background: #f8f8f8; padding: 14px; border-radius: 4px; overflow-x: auto; font-size: 13px; line-height: 1.6; border: 1px solid #e0e0e0; }
+        .api-table .default { color: #e65100; font-size: 12px; font-weight: 500; }
+        .api-table .values { color: #2e7d32; font-size: 12px; }
+        pre { background: #1e1e1e; color: #d4d4d4; padding: 16px 20px; border-radius: 6px; overflow-x: auto; font-size: 13px; line-height: 1.7; border: none; }
+        pre .cmt { color: #6a9955; }
+        pre .key { color: #9cdcfe; }
+        pre .str { color: #ce9178; }
+        pre .num { color: #b5cea8; }
+        pre .fn { color: #dcdcaa; }
         code { background: #e8e8e8; padding: 2px 6px; border-radius: 3px; font-family: Consolas, Monaco, monospace; font-size: 12px; color: #c7254e; }
         .notice { background: #e3f2fd; border-left: 4px solid #2196F3; padding: 12px 16px; margin: 16px 0; border-radius: 0 4px 4px 0; font-size: 13px; }
+        .warn { background: #fff3e0; border-left: 4px solid #ff9800; padding: 12px 16px; margin: 16px 0; border-radius: 0 4px 4px 0; font-size: 13px; }
+        .tag { display: inline-block; padding: 1px 6px; font-size: 11px; border-radius: 3px; margin: 0 2px; vertical-align: middle; }
+        .tag-new { background: #4CAF50; color: #fff; }
+        .tag-ver { background: #2196F3; color: #fff; }
         @media (max-width: 960px) { .api-nav { display: none; } .api-content { margin-left: 0; } }
     </style>
 </head>
 <body>
     <div id="layout">
         <header>
-            <h1>xfEditor v1.12.1 API 接口文档</h1>
-            <p>完整配置项、实例方法、事件回调与上传接口说明</p>
+            <h1>xfEditor v1.17.10 API 接口文档</h1>
+            <p>完整配置项、实例方法、事件回调、静态方法、上传接口与扩展语法说明</p>
         </header>
-
-        <div class="api-nav">
-            <div class="nav-title">目录导航</div>
-            <a href="#init">初始化</a>
-            <a href="#config">配置项</a>
+        <nav class="api-nav" id="apiNav">
+            <div class="nav-title">📖 目录导航</div>
+            <a href="#quick-start">快速开始</a>
+            <a href="#config">配置项总览</a>
+            <a href="#config-base" class="nav-sub">基础配置</a>
+            <a href="#config-theme" class="nav-sub">主题配置</a>
+            <a href="#config-dialog" class="nav-sub">对话框配置</a>
+            <a href="#config-editor" class="nav-sub">编辑器配置</a>
+            <a href="#config-toolbar" class="nav-sub">工具栏配置</a>
+            <a href="#config-feature" class="nav-sub">功能开关</a>
+            <a href="#config-upload" class="nav-sub">上传配置</a>
+            <a href="#config-draft" class="nav-sub">草稿保存配置</a>
+            <a href="#config-event" class="nav-sub">事件回调</a>
+            <a href="#config-lang" class="nav-sub">多语言配置</a>
             <a href="#instance-methods">实例方法</a>
-            <a href="#events">事件回调</a>
+            <a href="#events">事件回调详解</a>
             <a href="#static-methods">静态方法</a>
             <a href="#image-upload">图片上传接口</a>
             <a href="#file-upload">文件上传接口</a>
-            <a href="#syntax">扩展语法</a>
-        </div>
-
+            <a href="#video-upload">视频上传接口</a>
+            <a href="#syntax">扩展语法速查</a>
+            <a href="#full-example">完整配置示例</a>
+        </nav>
         <div class="api-content">
 
-            <div class="api-section" id="init">
-                <h2>初始化</h2>
-                <h3>基本用法</h3>
-                <pre>var editor = editormd("editor-id", {
-    width: "100%",
-    height: 640,
-    path: "./lib/"
+<!-- SECTION: quick-start -->
+<div class="api-section" id="quick-start">
+    <h2>快速开始</h2>
+    <h3>基本初始化</h3>
+    <pre><span class="cmt">// 最简初始化（仅 3 个必填参数）</span>
+<span class="key">var</span> editor = xfEditor(<span class="str">"editor-id"</span>, {
+    width  : <span class="str">"100%"</span>,    <span class="cmt">// 宽度，默认 "100%"</span>
+    height : <span class="num">640</span>,       <span class="cmt">// 高度，默认 "100%"</span>
+    path   : <span class="str">"./lib/"</span>   <span class="cmt">// 依赖模块目录，默认 "./lib/"</span>
 });</pre>
-                <p>第一个参数为容器 ID，第二个参数为配置对象，返回编辑器实例。</p>
-            </div>
+    <p>第一个参数为容器 ID（该容器的直接子元素为 <code>&lt;textarea&gt;</code>），第二个参数为配置对象，返回编辑器实例。</p>
+    <h3>HTML 结构要求</h3>
+    <pre><span class="cmt">&lt;!-- 容器 ID 必须与 xfEditor() 第一个参数一致 --&gt;</span>
+&lt;<span class="key">div</span> id=<span class="str">"editor-id"</span>&gt;
+    &lt;<span class="key">textarea</span>&gt;初始 Markdown 内容（可选）&lt;/<span class="key">textarea</span>&gt;
+&lt;/<span class="key">div</span>&gt;
 
-            <div class="api-section" id="config">
-                <h2>配置项</h2>
+<span class="cmt">&lt;!-- 引入依赖（位置建议在 &lt;/body&gt; 之前） --&gt;</span>
+&lt;<span class="key">link</span> rel=<span class="str">"stylesheet"</span> href=<span class="str">"css/xf_editor.min.css"</span> /&gt;
+&lt;<span class="key">script</span> src=<span class="str">"js/jquery.min.js"</span>&gt;&lt;/<span class="key">script</span>&gt;
+&lt;<span class="key">script</span> src=<span class="str">"xf_editor.min.js"</span>&gt;&lt;/<span class="key">script</span>&gt;</pre>
+</div>
 
-                <h3>基础配置</h3>
-                <table class="api-table">
-                    <tr><th>名称</th><th>类型</th><th>默认值</th><th>说明</th></tr>
-                    <tr><td>mode</td><td class="type">String</td><td class="default">"gfm"</td><td>编辑器模式：gfm 或 markdown</td></tr>
-                    <tr><td>width</td><td class="type">String/Number</td><td class="default">"100%"</td><td>编辑器宽度</td></tr>
-                    <tr><td>height</td><td class="type">String/Number</td><td class="default">"100%"</td><td>编辑器高度</td></tr>
-                    <tr><td>path</td><td class="type">String</td><td class="default">"./lib/"</td><td>依赖模块目录</td></tr>
-                    <tr><td>pluginPath</td><td class="type">String</td><td class="default">""</td><td>插件目录</td></tr>
-                    <tr><td>delay</td><td class="type">Number</td><td class="default">300</td><td>预览刷新延迟（ms）</td></tr>
-                    <tr><td>watch</td><td class="type">Boolean</td><td class="default">true</td><td>开启实时预览</td></tr>
-                    <tr><td>placeholder</td><td class="type">String</td><td class="default">"Enjoy Markdown!"</td><td>占位提示</td></tr>
-                </table>
 
-                <h3>图片上传配置</h3>
-                <table class="api-table">
-                    <tr><th>名称</th><th>类型</th><th>默认值</th><th>说明</th></tr>
-                    <tr><td>imageUpload</td><td class="type">Boolean</td><td class="default">false</td><td>启用图片上传</td></tr>
-                    <tr><td>imageFormats</td><td class="type">Array</td><td class="default">["jpg","jpeg","gif","png","bmp","webp"]</td><td>允许的图片格式</td></tr>
-                    <tr><td>imageUploadURL</td><td class="type">String</td><td class="default">""</td><td>上传接口地址</td></tr>
-                    <tr><td>crossDomainUpload</td><td class="type">Boolean</td><td class="default">false</td><td>跨域上传</td></tr>
-                    <tr><td>uploadCallbackURL</td><td class="type">String</td><td class="default">""</td><td>跨域回调页</td></tr>
-                    <tr><td>imageResize</td><td class="type">Boolean</td><td class="default">true</td><td>图片尺寸调整</td></tr>
-                </table>
+<!-- SECTION: config -->
+<div class="api-section" id="config">
+    <h2>配置项总览</h2>
+    <p>以下为 xfEditor v1.17.10 支持的全部配置参数，按功能分组展示。每个参数均注明<strong>默认值</strong>、<strong>类型</strong>和<strong>所有可选值及区别</strong>。</p>
+</div>
 
-                <h3>文件上传配置（v1.7.0 新增）</h3>
-                <table class="api-table">
-                    <tr><th>名称</th><th>类型</th><th>默认值</th><th>说明</th></tr>
-                    <tr><td>fileUpload</td><td class="type">Boolean</td><td class="default">false</td><td>启用文件上传</td></tr>
-                    <tr><td>fileFormats</td><td class="type">Array</td><td class="default">["doc","docx","pdf","txt","zip","rar","xls","xlsx","ppt","pptx","mp4","mp3"]</td><td>允许的文件格式</td></tr>
-                    <tr><td>fileUploadURL</td><td class="type">String</td><td class="default">""</td><td>文件上传接口地址</td></tr>
-                </table>
+<!-- SECTION: config-base -->
+<div class="api-section" id="config-base">
+    <h3>基础配置</h3>
+    <table class="api-table">
+        <tr><th style="width:18%">名称</th><th style="width:10%">类型</th><th style="width:12%">默认值</th><th style="width:15%">可选值</th><th>说明</th></tr>
+        <tr><td>mode</td><td class="type">String</td><td class="default">"gfm"</td><td class="values">"gfm" | "markdown" | "text/x-markdown"</td><td>解析模式。<b>"gfm"</b>=GitHub风格(推荐)；<b>"markdown"</b>=标准MD；<b>"text/x-markdown"</b>=CM原生</td></tr>
+        <tr><td>width</td><td class="type">String/Number</td><td class="default">"100%"</td><td class="values">"100%" | "800px" | 800</td><td>编辑器宽度。支持百分比字符串、像素字符串或纯数字</td></tr>
+        <tr><td>height</td><td class="type">String/Number</td><td class="default">"100%"</td><td class="values">"100%" | "640px" | 640</td><td>编辑器高度，格式同 width</td></tr>
+        <tr><td>path</td><td class="type">String</td><td class="default">"./lib/"</td><td class="values">相对/绝对路径</td><td>依赖模块目录。需包含 codemirror、marked.js、katex 等</td></tr>
+        <tr><td>pluginPath</td><td class="type">String</td><td class="default">"../plugins/"</td><td class="values">相对/绝对路径</td><td>插件目录。为空时自动回退为 path + "../plugins/"</td></tr>
+        <tr><td>markdown</td><td class="type">String</td><td class="default">""</td><td class="values">Markdown 文本</td><td>初始源内容。优先级高于 textarea 默认值</td></tr>
+        <tr><td>appendMarkdown</td><td class="type">String</td><td class="default">""</td><td class="values">Markdown 文本</td><td>追加内容。初始化时若 textarea 有值则在其后追加</td></tr>
+        <tr><td>name</td><td class="type">String</td><td class="default">""</td><td class="values">任意字符串</td><td>表单 name 属性。未设置自动用 id+"-markdown-doc"</td></tr>
+        <tr><td>value</td><td class="type">String</td><td class="default">""</td><td class="values">任意字符串</td><td>CM初始值（mode 非 gfm/markdown 时使用）</td></tr>
+        <tr><td>delay</td><td class="type">Number</td><td class="default">80</td><td class="values">整数(毫秒)</td><td>解析防抖延迟。建议 80~300</td></tr>
+        <tr><td>autoLoadModules</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true | false</td><td>自动加载依赖模块</td></tr>
+        <tr><td>placeholder</td><td class="type">String</td><td class="default">"写点什么吧~"</td><td class="values">任意字符串</td><td>空白时占位提示</td></tr>
+        <tr><td>readOnly</td><td class="type">Boolean</td><td class="default">false</td><td class="values">true | false</td><td>只读模式</td></tr>
+        <tr><td>fontSize</td><td class="type">String</td><td class="default">"13px"</td><td class="values">"12px"/"14px"…</td><td>编辑器字体大小</td></tr>
+        <tr><td>saveHTMLToTextarea</td><td class="type">Boolean</td><td class="default">false</td><td class="values">true | false</td><td>保存HTML到隐藏textarea(表单提交)</td></tr>
+        <tr><td>disabledKeyMaps</td><td class="type">Array</td><td class="default">[]</td><td class="values">["Ctrl-S","F11"…]</td><td>禁用快捷键列表</td></tr>
+    </table>
+</div>
 
-                <h3>功能开关</h3>
-                <table class="api-table">
-                    <tr><th>名称</th><th>类型</th><th>默认值</th><th>说明</th></tr>
-                    <tr><td>toc</td><td class="type">Boolean</td><td class="default">true</td><td>目录</td></tr>
-                    <tr><td>htmlDecode</td><td class="type">Boolean/String</td><td class="default">false</td><td>HTML 标签解析</td></tr>
+<!-- SECTION: config-theme -->
+<div class="api-section" id="config-theme">
+    <h3>主题配置</h3>
+    <table class="api-table">
+        <tr><th style="width:18%">名称</th><th style="width:10%">类型</th><th style="width:12%">默认值</th><th style="width:15%">可选值</th><th>说明</th></tr>
+        <tr><td>theme</td><td class="type">String</td><td class="default">""</td><td class="values">"" | "default" | "dark"</td><td>编辑器主题。"dark"=暗色模式</td></tr>
+        <tr><td>editorTheme</td><td class="type">String</td><td class="default">"default"</td><td class="values">codemirror/theme/ 35+种</td><td>编辑区CM主题。推荐暗色: monokai,cobalt,ambiance</td></tr>
+        <tr><td>previewTheme</td><td class="type">String</td><td class="default">""</td><td class="values">"" | "default" | "dark"</td><td>预览区主题</td></tr>
+    </table>
+</div>
 
-                    <tr><td>tex</td><td class="type">Boolean</td><td class="default">false</td><td>TeX / KaTeX 公式</td></tr>
-                    <tr><td>flowChart</td><td class="type">Boolean</td><td class="default">false</td><td>流程图</td></tr>
-                    <tr><td>sequenceDiagram</td><td class="type">Boolean</td><td class="default">false</td><td>时序图</td></tr>
-                    <tr><td>pinyin</td><td class="type">Boolean</td><td class="default">false</td><td>拼音标注 {文本|拼音}</td></tr>
-                    <tr><td>textAlign</td><td class="type">Boolean</td><td class="default">true</td><td>文本对齐</td></tr>
-                    <tr><td>tableEdit</td><td class="type">Boolean</td><td class="default">true</td><td>表格编辑</td></tr>
-                    <tr><td>echarts</td><td class="type">Boolean</td><td class="default">false</td><td>ECharts 图表</td></tr>
-                    <tr><td>tabs</td><td class="type">Boolean</td><td class="default">true</td><td>Tabs 标签页</td></tr>
-                    <tr><td>columns</td><td class="type">Boolean</td><td class="default">true</td><td>多栏排版</td></tr>
-                    <tr><td>tooltip</td><td class="type">Boolean</td><td class="default">true</td><td>悬浮提示</td></tr>
-                    <tr><td>draftAutoSave</td><td class="type">Boolean</td><td class="default">false</td><td>浏览器草稿自动保存</td></tr>
-                    <tr><td>draftInterval</td><td class="type">Number</td><td class="default">30</td><td>草稿保存间隔（秒）</td></tr>
-                    <tr><td>draftMaxDays</td><td class="type">Number</td><td class="default">30</td><td>草稿最长保留天数，超期自动清理</td></tr>
-                </table>
+<!-- SECTION: config-dialog -->
+<div class="api-section" id="config-dialog">
+    <h3>对话框配置</h3>
+    <table class="api-table">
+        <tr><th style="width:18%">名称</th><th style="width:10%">类型</th><th style="width:12%">默认值</th><th style="width:15%">可选值</th><th>说明</th></tr>
+        <tr><td>dialogLockScreen</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true | false</td><td>弹窗锁屏阻止背景交互</td></tr>
+        <tr><td>dialogShowMask</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true | false</td><td>显示遮罩层</td></tr>
+        <tr><td>dialogDraggable</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true | false</td><td>对话框可拖拽</td></tr>
+        <tr><td>dialogMaskBgColor</td><td class="type">String</td><td class="default">"#fff"</td><td class="values">CSS颜色值</td><td>遮罩背景色。暗色主题建议 "#000"</td></tr>
+        <tr><td>dialogMaskOpacity</td><td class="type">Number</td><td class="default">0.1</td><td class="values">0.0~1.0</td><td>遮罩透明度</td></tr>
+    </table>
+</div>
 
-                <h3>工具栏配置</h3>
-                <table class="api-table">
-                    <tr><th>名称</th><th>类型</th><th>默认值</th><th>说明</th></tr>
-                    <tr><td>toolbar</td><td class="type">Boolean</td><td class="default">true</td><td>显示工具栏</td></tr>
-                    <tr><td>toolbarAutoFixed</td><td class="type">Boolean</td><td class="default">true</td><td>滚动固定工具栏</td></tr>
-                    <tr><td>toolbarIcons</td><td class="type">String/Array</td><td class="default">"full"</td><td>图标模式：full / simple / mini</td></tr>
-                    <tr><td>toolbarHandlers</td><td class="type">Object</td><td class="default">{}</td><td>自定义处理器</td></tr>
-                    <tr><td>toolbarCustomIcons</td><td class="type">Object</td><td class="default">{}</td><td>自定义图标 HTML</td></tr>
-                </table>
-            </div>
+<!-- SECTION: config-editor -->
+<div class="api-section" id="config-editor">
+    <h3>编辑器 CodeMirror 配置</h3>
+    <table class="api-table">
+        <tr><th style="width:18%">名称</th><th style="width:10%">类型</th><th style="width:12%">默认值</th><th style="width:15%">可选值</th><th>说明</th></tr>
+        <tr><td>autoFocus</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true | false</td><td>初始化自动聚焦</td></tr>
+        <tr><td>autoHeight</td><td class="type">Boolean</td><td class="default">false</td><td class="values">true | false</td><td>自适应高度(覆盖height)</td></tr>
+        <tr><td>codeFold</td><td class="type">Boolean</td><td class="default">false</td><td class="values">true | false</td><td>代码折叠(Ctrl+Q)</td></tr>
+        <tr><td>gotoLine</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true | false</td><td>跳转行(Ctrl+G)</td></tr>
+        <tr><td>lineNumbers</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true | false</td><td>显示行号</td></tr>
+        <tr><td>lineWrapping</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true | false</td><td>自动换行(false=滚动条)</td></tr>
+        <tr><td>autoCloseBrackets</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true | false</td><td>括号自动闭合</td></tr>
+        <tr><td>autoCloseTags</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true | false</td><td>HTML标签自动闭合</td></tr>
+        <tr><td>tabSize</td><td class="type">Number</td><td class="default">4</td><td class="values">2|4|8…</td><td>Tab空格数</td></tr>
+        <tr><td>indentUnit</td><td class="type">Number</td><td class="default">4</td><td class="values">2|4|8…</td><td>缩进单位</td></tr>
+        <tr><td>indentWithTabs</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>true=Tab缩进 false=空格</td></tr>
+        <tr><td>showTrailingSpace</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>行尾空格高亮</td></tr>
+        <tr><td>matchBrackets</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>括号匹配高亮</td></tr>
+        <tr><td>styleSelectedText</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>选中文本样式</td></tr>
+        <tr><td>matchWordHighlight</td><td class="type">Boolean/String</td><td class="default">true</td><td class="values">true|false|"onselected"</td><td>单词匹配。true=始终；"onselected"=选中时；false=关</td></tr>
+        <tr><td>styleActiveLine</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>当前行高亮</td></tr>
+        <tr><td>searchReplace</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>搜索替换(Ctrl+F/Shift+F)</td></tr>
+    </table>
+</div>
 
-            <div class="api-section" id="instance-methods">
-                <h2>实例方法</h2>
-                <table class="api-table">
-                    <tr><th>方法</th><th>返回值</th><th>说明</th></tr>
-                    <tr><td>getValue()</td><td>String</td><td>获取 Markdown 源码</td></tr>
-                    <tr><td>setValue(val)</td><td>editormd</td><td>设置 Markdown 源码</td></tr>
-                    <tr><td>getHTML()</td><td>String</td><td>获取解析后的 HTML</td></tr>
-                    <tr><td>getPreviewedHTML()</td><td>String</td><td>获取预览区 HTML</td></tr>
-                    <tr><td>watch()</td><td>editormd</td><td>开启实时预览</td></tr>
-                    <tr><td>unwatch()</td><td>editormd</td><td>关闭实时预览</td></tr>
-                    <tr><td>previewing()</td><td>editormd</td><td>进入全预览模式</td></tr>
-                    <tr><td>previewed()</td><td>editormd</td><td>退出全预览模式</td></tr>
-                    <tr><td>fullscreen()</td><td>editormd</td><td>进入全屏</td></tr>
-                    <tr><td>fullscreenExit()</td><td>editormd</td><td>退出全屏</td></tr>
-                    <tr><td>width(w)</td><td>editormd</td><td>设置宽度</td></tr>
-                    <tr><td>height(h)</td><td>editormd</td><td>设置高度</td></tr>
-                    <tr><td>resize(w, h)</td><td>editormd</td><td>调整尺寸</td></tr>
-                    <tr><td>save()</td><td>editormd</td><td>解析并保存</td></tr>
-                    <tr><td>focus()</td><td>editormd</td><td>聚焦编辑器</td></tr>
-                    <tr><td>setCursor(line, ch)</td><td>editormd</td><td>设置光标位置</td></tr>
-                    <tr><td>getCursor()</td><td>Object</td><td>获取光标位置</td></tr>
-                    <tr><td>getSelection()</td><td>String</td><td>获取选中文本</td></tr>
-                    <tr><td>replaceSelection(text)</td><td>editormd</td><td>替换选中文本</td></tr>
-                    <tr><td>insertValue(text)</td><td>editormd</td><td>插入文本</td></tr>
-                    <tr><td>clear()</td><td>editormd</td><td>清空内容</td></tr>
-                    <tr><td>gotoLine(line)</td><td>editormd</td><td>跳转到行</td></tr>
-                    <tr><td>showToolbar()</td><td>editormd</td><td>显示工具栏</td></tr>
-                    <tr><td>hideToolbar()</td><td>editormd</td><td>隐藏工具栏</td></tr>
-                    <tr><td>executePlugin(name, path)</td><td>editormd</td><td>执行插件</td></tr>
-                    <tr><td>saveDraft()</td><td>editormd</td><td>手动保存草稿</td></tr>
-                    <tr><td>clearDraft()</td><td>editormd</td><td>清除草稿</td></tr>
-                    <tr><td>showDraftRecovery()</td><td>editormd</td><td>显示草稿恢复</td></tr>
-                </table>
-            </div>
+<!-- SECTION: config-toolbar -->
+<div class="api-section" id="config-toolbar">
+    <h3>工具栏配置</h3>
+    <table class="api-table">
+        <tr><th style="width:20%">名称</th><th style="width:10%">类型</th><th style="width:12%">默认值</th><th style="width:18%">可选值</th><th>说明</th></tr>
+        <tr><td>toolbar</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>显示工具栏</td></tr>
+        <tr><td>toolbarAutoFixed</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>滚动时工具栏固定顶部</td></tr>
+        <tr><td>toolbarIcons</td><td class="type">String/Array</td><td class="default">"full"</td><td class="values">"full"|"simple"|"mini"|数组</td><td><b>"full"</b>=55+按钮；<b>"simple"</b>=~20按钮；<b>"mini"</b>=6按钮；数组=自定义</td></tr>
+        <tr><td>toolbarDropdown</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>下拉分组(true)或平铺(false)</td></tr>
+        <tr><td>toolbarTitles</td><td class="type">Object</td><td class="default">{}</td><td class="values">{bold:"Bold"…}</td><td>自定义hover提示</td></tr>
+        <tr><td>toolbarHandlers</td><td class="type">Object</td><td class="default">{}</td><td class="values">{bold:fn…}</td><td>自定义按钮处理函数</td></tr>
+        <tr><td>toolbarCustomIcons</td><td class="type">Object</td><td class="default">{}</td><td class="values">{bold:"<a>…"}</td><td>自定义按钮HTML</td></tr>
+        <tr><td>toolbarIconsClass</td><td class="type">Object</td><td class="default">{}</td><td class="values">{bold:"fa-bold"…}</td><td>自定义按钮CSS class</td></tr>
+        <tr><td>toolbarIconTexts</td><td class="type">Object</td><td class="default">{}</td><td class="values">{bold:"B"…}</td><td>自定义按钮文本</td></tr>
+    </table>
+    <h4>📋 工具栏按钮完整清单（62个）</h4>
+    <p style="margin-bottom:12px;">以下为 <code>toolbarIcons: "full"</code> 模式包含的所有按钮，按功能分组排列。每个按钮名称均可用于 <code>toolbarIcons</code> 自定义数组。</p>
+    <table class="api-table" style="font-size:12px;">
+        <tr><th style="width:5%">#</th><th style="width:16%">名称</th><th style="width:12%">图标</th><th style="width:18%">中文描述</th><th>功能说明</th></tr>
+        <!-- 编辑操作 -->
+        <tr style="background:#f0f4ff;"><td colspan="5"><strong>📝 编辑操作</strong></td></tr>
+        <tr><td>1</td><td>undo</td><td><i class="fa fa-undo"></i> fa-undo</td><td>撤销</td><td>撤销上一步操作（Ctrl+Z）</td></tr>
+        <tr><td>2</td><td>redo</td><td><i class="fa fa-repeat"></i> fa-repeat</td><td>重做</td><td>重做被撤销的操作（Ctrl+Y）</td></tr>
+        <!-- 文本格式 -->
+        <tr style="background:#f0f4ff;"><td colspan="5"><strong>✏️ 文本格式</strong></td></tr>
+        <tr><td>3</td><td>bold</td><td><i class="fa fa-bold"></i> fa-bold</td><td>粗体</td><td>添加/移除粗体标记 **文本**</td></tr>
+        <tr><td>4</td><td>del</td><td><i class="fa fa-strikethrough"></i> fa-strikethrough</td><td>删除线</td><td>添加/移除删除线 ~~文本~~</td></tr>
+        <tr><td>5</td><td>italic</td><td><i class="fa fa-italic"></i> fa-italic</td><td>斜体</td><td>添加/移除斜体标记 *文本*</td></tr>
+        <tr><td>6</td><td>quote</td><td><i class="fa fa-quote-left"></i> fa-quote-left</td><td>引用</td><td>添加/移除引用标记 > </td></tr>
+        <tr><td>7</td><td>ucwords</td><td>自定义</td><td>单词首字母大写</td><td>将每个单词首字母转为大写</td></tr>
+        <tr><td>8</td><td>uppercase</td><td><i class="fa fa-font"></i> fa-font</td><td>转大写</td><td>将选中文本全部转为大写</td></tr>
+        <tr><td>9</td><td>lowercase</td><td>自定义</td><td>转小写</td><td>将选中文本全部转为小写</td></tr>
+        <!-- 标题 -->
+        <tr style="background:#f0f4ff;"><td colspan="5"><strong>📌 标题（h1~h6）</strong></td></tr>
+        <tr><td>10</td><td>h1</td><td>自定义</td><td>标题1</td><td>插入 # 一级标题</td></tr>
+        <tr><td>11</td><td>h2</td><td>自定义</td><td>标题2</td><td>插入 ## 二级标题</td></tr>
+        <tr><td>12</td><td>h3</td><td>自定义</td><td>标题3</td><td>插入 ### 三级标题</td></tr>
+        <tr><td>13</td><td>h4</td><td>自定义</td><td>标题4</td><td>插入 #### 四级标题</td></tr>
+        <tr><td>14</td><td>h5</td><td>自定义</td><td>标题5</td><td>插入 ##### 五级标题</td></tr>
+        <tr><td>15</td><td>h6</td><td>自定义</td><td>标题6</td><td>插入 ###### 六级标题</td></tr>
+        <!-- 列表与分割线 -->
+        <tr style="background:#f0f4ff;"><td colspan="5"><strong>📋 列表与分割线</strong></td></tr>
+        <tr><td>16</td><td>list-ul</td><td><i class="fa fa-list-ul"></i> fa-list-ul</td><td>无序列表</td><td>插入 - 无序列表项</td></tr>
+        <tr><td>17</td><td>list-ol</td><td><i class="fa fa-list-ol"></i> fa-list-ol</td><td>有序列表</td><td>插入 1. 有序列表项</td></tr>
+        <tr><td>18</td><td>hr</td><td><i class="fa fa-minus"></i> fa-minus</td><td>横线</td><td>插入分割线 ---</td></tr>
+        <!-- 链接与媒体 -->
+        <tr style="background:#f0f4ff;"><td colspan="5"><strong>🔗 链接与媒体</strong></td></tr>
+        <tr><td>19</td><td>link</td><td><i class="fa fa-link"></i> fa-link</td><td>链接</td><td>插入 [文本](url) 超链接</td></tr>
+        <tr><td>20</td><td>reference-link</td><td><i class="fa fa-anchor"></i> fa-anchor</td><td>引用链接</td><td>插入引用式链接 [文本][id]</td></tr>
+        <tr><td>21</td><td>image</td><td><i class="fa fa-picture-o"></i> fa-picture-o</td><td>图片</td><td>插入 ![alt](url) 图片（支持上传）</td></tr>
+        <tr><td>22</td><td>video</td><td><i class="fa fa-video-camera"></i> fa-video-camera</td><td>视频</td><td>插入 video 标签或上传视频</td></tr>
+        <tr><td>23</td><td>file</td><td><i class="fa fa-paperclip"></i> fa-paperclip</td><td>文件</td><td>上传并插入附件链接</td></tr>
+        <!-- 插入（下拉组） -->
+        <tr style="background:#f0f4ff;"><td colspan="5"><strong>➕ 插入（insert 下拉组）</strong></td></tr>
+        <tr><td>24</td><td>code</td><td><i class="fa fa-code"></i> fa-code</td><td>行内代码</td><td>插入 `code` 行内代码</td></tr>
+        <tr><td>25</td><td>preformatted-text</td><td><i class="fa fa-file-code-o"></i> fa-file-code-o</td><td>预格式文本</td><td>插入缩进样式代码块（4空格/1Tab）</td></tr>
+        <tr><td>26</td><td>code-block</td><td><i class="fa fa-file-code-o"></i> fa-file-code-o</td><td>代码块</td><td>插入围栏代码块 ``` 语法</td></tr>
+        <tr><td>27</td><td>table</td><td><i class="fa fa-table"></i> fa-table</td><td>表格</td><td>插入 Markdown 表格模板</td></tr>
+        <tr><td>28</td><td>datetime</td><td><i class="fa fa-clock-o"></i> fa-clock-o</td><td>日期时间</td><td>插入当前日期时间字符串</td></tr>
+        <tr><td>29</td><td>html-entities</td><td><i class="fa fa-copyright"></i> fa-copyright</td><td>HTML实体字符</td><td>打开特殊字符选择面板</td></tr>
+        <tr><td>30</td><td>pagebreak</td><td><i class="fa fa-newspaper-o"></i> fa-newspaper-o</td><td>分页符</td><td>插入分页符 [========]</td></tr>
+        <tr><td>31</td><td>grid</td><td><i class="fa fa-th"></i> fa-th</td><td>栅格化</td><td>插入 [[row]][[col:N]] 布局语法</td></tr>
+        <tr><td>32</td><td>insert-flowchart</td><td>—</td><td>插入流程图</td><td>插入 flowchart 代码块模板</td></tr>
+        <tr><td>33</td><td>insert-sequence</td><td>—</td><td>插入时序图</td><td>插入 sequenceDiagram 代码块模板</td></tr>
+        <!-- 页面尺寸（下拉组） -->
+        <tr style="background:#f0f4ff;"><td colspan="5"><strong>📄 页面尺寸（page 下拉组）</strong></td></tr>
+        <tr><td>34</td><td>page-a3</td><td><i class="fa fa-file-o"></i> fa-file-o</td><td>插入A3页面</td><td>插入 [[page:A3]]...[[/page]] 语法</td></tr>
+        <tr><td>35</td><td>page-a4</td><td><i class="fa fa-file-text-o"></i> fa-file-text-o</td><td>插入A4页面</td><td>插入 [[page:A4]]...[[/page]] 语法</td></tr>
+        <tr><td>36</td><td>page-a5</td><td><i class="fa fa-file-o"></i> fa-file-o</td><td>插入A5页面</td><td>插入 [[page:A5]]...[[/page]] 语法</td></tr>
+        <!-- 对齐（下拉组） -->
+        <tr style="background:#f0f4ff;"><td colspan="5"><strong>↔️ 文本对齐（align 下拉组）</strong></td></tr>
+        <tr><td>37</td><td>align-left</td><td><i class="fa fa-align-left"></i> fa-align-left</td><td>左对齐</td><td>设置段落左对齐</td></tr>
+        <tr><td>38</td><td>align-center</td><td><i class="fa fa-align-center"></i> fa-align-center</td><td>居中对齐</td><td>设置段落居中对齐</td></tr>
+        <tr><td>39</td><td>align-right</td><td><i class="fa fa-align-right"></i> fa-align-right</td><td>右对齐</td><td>设置段落右对齐</td></tr>
+        <!-- 扩展语法 -->
+        <tr style="background:#f0f4ff;"><td colspan="5"><strong>🔧 扩展语法</strong></td></tr>
+        <tr><td>40</td><td>pinyin</td><td><i class="fa fa-language"></i> fa-language</td><td>拼音标注</td><td>插入 {汉字|拼音} 拼音语法</td></tr>
+        <tr><td>41</td><td>tabs</td><td><i class="fa fa-folder-o"></i> fa-folder-o</td><td>标签页</td><td>插入 [[tabs]][[tab:标题]] 标签页语法</td></tr>
+        <tr><td>42</td><td>columns</td><td><i class="fa fa-newspaper-o"></i> fa-newspaper-o</td><td>多栏排版</td><td>插入 [[columns:N]] 多栏布局语法</td></tr>
+        <tr><td>43</td><td>tooltip</td><td><i class="fa fa-comment-o"></i> fa-comment-o</td><td>悬浮提示</td><td>插入 [文本](tooltip:提示) 语法</td></tr>
+        <tr><td>44</td><td>formula</td><td>自定义</td><td>公式</td><td>插入 LaTeX 公式 $$...$$ 或 $...$</td></tr>
+        <tr><td>45</td><td>color</td><td><i class="fa fa-font"></i> fa-font</td><td>文字颜色</td><td>设置选中文字的前景颜色</td></tr>
+        <tr><td>46</td><td>bg-color</td><td><i class="fa fa-paint-brush"></i> fa-paint-brush</td><td>背景颜色</td><td>设置选中文字的背景颜色</td></tr>
+        <!-- 图表（下拉组） -->
+        <tr style="background:#f0f4ff;"><td colspan="5"><strong>📊 图表（chart 下拉组）</strong></td></tr>
+        <tr><td>47</td><td>echarts-tree</td><td><i class="fa fa-tree"></i> fa-tree</td><td>树图/脑图</td><td>插入 ECharts 树图 JSON 模板</td></tr>
+        <tr><td>48</td><td>echarts-bar</td><td><i class="fa fa-bar-chart"></i> fa-bar-chart</td><td>柱状图</td><td>插入 ECharts 柱状图 JSON 模板</td></tr>
+        <tr><td>49</td><td>echarts-line</td><td><i class="fa fa-line-chart"></i> fa-line-chart</td><td>折线图</td><td>插入 ECharts 折线图 JSON 模板</td></tr>
+        <tr><td>50</td><td>echarts-pie</td><td><i class="fa fa-pie-chart"></i> fa-pie-chart</td><td>饼图</td><td>插入 ECharts 饼图 JSON 模板</td></tr>
+        <tr><td>51</td><td>echarts-radar</td><td><i class="fa fa-bullseye"></i> fa-bullseye</td><td>雷达图</td><td>插入 ECharts 雷达图 JSON 模板</td></tr>
+        <tr><td>52</td><td>echarts-funnel</td><td><i class="fa fa-filter"></i> fa-filter</td><td>漏斗图</td><td>插入 ECharts 漏斗图 JSON 模板</td></tr>
+        <!-- 字帖（下拉组） -->
+        <tr style="background:#f0f4ff;"><td colspan="5"><strong>✍️ 字帖（copybook 下拉组）</strong></td></tr>
+        <tr><td>53</td><td>copybook-tian</td><td>自定义 田</td><td>田字格</td><td>插入 [[copybookTian]] 田字格字帖</td></tr>
+        <tr><td>54</td><td>copybook-mi</td><td>自定义 米</td><td>米字格</td><td>插入 [[copybookMi]] 米字格字帖</td></tr>
+        <tr><td>55</td><td>copybook-pinyin</td><td>自定义 拼</td><td>拼音格</td><td>插入 [[copybookPinyin]] 拼音格字帖</td></tr>
+        <!-- 视图与工具 -->
+        <tr style="background:#f0f4ff;"><td colspan="5"><strong>👁️ 视图与工具</strong></td></tr>
+        <tr><td>56</td><td>goto-line</td><td><i class="fa fa-terminal"></i> fa-terminal</td><td>跳转到行</td><td>打开跳转行号对话框</td></tr>
+        <tr><td>57</td><td>watch</td><td><i class="fa fa-eye-slash"></i> fa-eye-slash</td><td>关闭实时预览</td><td>切换实时预览开关（开/关眼球图标）</td></tr>
+        <tr><td>58</td><td>preview</td><td><i class="fa fa-desktop"></i> fa-desktop</td><td>全窗口预览</td><td>全窗口预览HTML（Shift+ESC还原）</td></tr>
+        <tr><td>59</td><td>fullscreen</td><td><i class="fa fa-arrows-alt"></i> fa-arrows-alt</td><td>全屏</td><td>浏览器全屏模式（ESC还原）</td></tr>
+        <tr><td>60</td><td>clear</td><td><i class="fa fa-eraser"></i> fa-eraser</td><td>清空</td><td>清空编辑器全部内容</td></tr>
+        <tr><td>61</td><td>search</td><td><i class="fa fa-search"></i> fa-search</td><td>搜索</td><td>打开搜索替换对话框</td></tr>
+        <tr><td>62</td><td>help</td><td><i class="fa fa-question-circle"></i> fa-question-circle</td><td>使用帮助</td><td>打开帮助对话框</td></tr>
+        <tr><td>63</td><td>info</td><td><i class="fa fa-info-circle"></i> fa-info-circle</td><td>关于</td><td>显示 xfEditor 版本信息</td></tr>
+    </table>
 
-            <div class="api-section" id="events">
-                <h2>事件回调</h2>
-                <table class="api-table">
-                    <tr><th>事件</th><th>说明</th></tr>
-                    <tr><td>onload()</td><td>加载完成</td></tr>
-                    <tr><td>onresize()</td><td>尺寸变化</td></tr>
-                    <tr><td>onchange()</td><td>内容变化</td></tr>
-                    <tr><td>onwatch()</td><td>开启预览</td></tr>
-                    <tr><td>onunwatch()</td><td>关闭预览</td></tr>
-                    <tr><td>onpreviewing()</td><td>进入全预览</td></tr>
-                    <tr><td>onpreviewed()</td><td>退出全预览</td></tr>
-                    <tr><td>onfullscreen()</td><td>进入全屏</td></tr>
-                    <tr><td>onfullscreenExit()</td><td>退出全屏</td></tr>
-                    
-                    <tr><td>onbeforesave()</td><td>保存前</td></tr>
-                    <tr><td>onaftersave()</td><td>保存后</td></tr>
-                    <tr><td>oninsert()</td><td>插入内容</td></tr>
-                    <tr><td>ontablechange()</td><td>表格变化</td></tr>
-                    <tr><td>onimagechange()</td><td>图片尺寸变化</td></tr>
-                    <tr><td>onkeydown()</td><td>键盘按下</td></tr>
-                    <tr><td>onkeyup()</td><td>键盘松开</td></tr>
-                    <tr><td>onmouseup()</td><td>鼠标松开</td></tr>
-                    <tr><td>onmousedown()</td><td>鼠标按下</td></tr>
-                    <tr><td>onpaste()</td><td>粘贴</td></tr>
-                    <tr><td>ondrop()</td><td>拖拽放下</td></tr>
-                    <tr><td>oncopy()</td><td>复制</td></tr>
-                    <tr><td>oncut()</td><td>剪切</td></tr>
-                    <tr><td>onfocus()</td><td>获得焦点</td></tr>
-                    <tr><td>onblur()</td><td>失去焦点</td></tr>
-                    <tr><td>oncursoractivity()</td><td>光标活动</td></tr>
-                </table>
-            </div>
+    <h4>工具栏模式详细对照表</h4>
+    <table class="api-table">
+        <tr><th style="width:10%">模式</th><th style="width:5%">按钮数</th><th>包含的按钮（按顺序）</th></tr>
+        <tr>
+            <td><b>full</b></td><td>~56</td>
+            <td style="font-size:12px">
+                <b>行1:</b> undo, redo | bold, del, italic, quote, ucwords, uppercase, lowercase | <b>h1▾</b>(h1~h6) | list-ul, list-ol, hr | link, reference-link, image, video, file | <b>insert▾</b>(code, preformatted-text, code-block, table, datetime, html-entities, pagebreak, grid, insert-flowchart, insert-sequence) | <b>page▾</b>(page-a3, page-a4, page-a5) | <b>align▾</b>(align-left, align-center, align-right) | pinyin | <b>chart▾</b>(echarts-tree, echarts-bar, echarts-line, echarts-pie, echarts-radar, echarts-funnel) | <b>copybook▾</b>(copybook-tian, copybook-mi, copybook-pinyin) | tabs, columns, tooltip, formula | color, bg-color | goto-line, watch, preview, fullscreen, clear, search | help, info
+            </td>
+        </tr>
+        <tr>
+            <td><b>simple</b></td><td>~18</td>
+            <td>undo, redo | bold, del, italic, quote, uppercase, lowercase | <b>h1▾</b>(h1~h6) | list-ul, list-ol, hr | watch, preview, fullscreen | help, info</td>
+        </tr>
+        <tr>
+            <td><b>mini</b></td><td>7</td>
+            <td>undo, redo | watch, preview | help, info</td>
+        </tr>
+    </table>
 
-            <div class="api-section" id="static-methods">
-                <h2>静态方法</h2>
-                <table class="api-table">
-                    <tr><th>方法</th><th>说明</th></tr>
-                    <tr><td>editormd.markdownToHTML(id, options)</td><td>Markdown 转 HTML</td></tr>
-                    <tr><td>editormd.markdownToCRenderer(toc, container, dropdown, startLevel)</td><td>生成目录</td></tr>
-                    <tr><td>editormd.filterHTMLTags(html, filters)</td><td>过滤 HTML 标签</td></tr>
-                    <tr><td>editormd.loadScript(path, callback)</td><td>动态加载 JS</td></tr>
-                    <tr><td>editormd.loadCSS(path, callback)</td><td>动态加载 CSS</td></tr>
-                    <tr><td>editormd.loadKaTeX(callback)</td><td>加载 KaTeX</td></tr>
-                    <tr><td>editormd.lockScreen(lock)</td><td>全局锁屏</td></tr>
-                </table>
-            </div>
+    <h4>工具栏 Object 类型参数详细说明</h4>
 
-            <div class="api-section" id="image-upload">
-                <h2>图片上传接口</h2>
-                <h3>请求方式</h3>
-                <p><code>POST</code> 表单提交，<code>enctype="multipart/form-data"</code></p>
-                <h3>请求参数</h3>
-                <table class="api-table">
-                    <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
-                    <tr><td>editormd-image-file</td><td class="type">File</td><td>是</td><td>图片文件</td></tr>
-                    <tr><td>guid</td><td class="type">String</td><td>否</td><td>唯一标识</td></tr>
-                </table>
-                <h3>成功返回</h3>
-                <pre>{"success":1,"message":"上传成功！","url":"https://example.com/uploads/image.png"}</pre>
-                <h3>失败返回</h3>
-                <pre>{"success":0,"message":"错误提示信息"}</pre>
+    <div class="notice"><strong>toolbarTitles（Object 类型）</strong> — 自定义按钮的 hover 提示文本。Key 为按钮名称，Value 为提示字符串。默认值 <code>{}</code>（使用语言包中的默认文本）。</div>
+    <pre><span class="cmt">// 示例：自定义部分按钮的提示文本</span>
+toolbarTitles: {
+    bold    : <span class="str">"加粗 (Ctrl+B)"</span>,
+    image   : <span class="str">"上传图片"</span>,
+    preview : <span class="str">"预览切换"</span>
+}</pre>
 
-                <h3>跨域上传</h3>
-                <p>跨域时服务器返回 <code>302</code> 跳转到 callback 页面，URL 参数包含：</p>
-                <pre>?success=1&message=xxx&url=https://example.com/img.png&dialog_id=xxx&temp=xxx</pre>
-            </div>
+    <div class="notice"><strong>toolbarHandlers（Object 类型）</strong> — 自定义按钮的点击处理函数。Key 为按钮名称，Value 为 Function。默认值 <code>{}</code>。函数中的 <code>this</code> 指向编辑器实例。</div>
+    <pre><span class="cmt">// 示例：给 bold 按钮添加自定义逻辑</span>
+toolbarHandlers: {
+    bold: <span class="key">function</span>() {
+        <span class="cmt">// this = 编辑器实例</span>
+        <span class="key">var</span> cm = <span class="fn">this</span>.cm;
+        <span class="key">var</span> cursor = cm.getCursor();
+        <span class="key">var</span> selection = cm.getSelection();
+        cm.replaceSelection(<span class="str">"**"</span> + selection + <span class="str">"**"</span>);
+        <span class="fn">this</span>.save(); <span class="cmt">// 手动触发保存/刷新</span>
+    }
+}</pre>
 
-            <div class="api-section" id="file-upload">
-                <h2>文件上传接口（v1.7.0 新增）</h2>
-                <h3>请求方式</h3>
-                <p><code>POST</code> 表单提交，<code>enctype="multipart/form-data"</code></p>
-                <h3>请求参数</h3>
-                <table class="api-table">
-                    <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
-                    <tr><td>editormd-file-file</td><td class="type">File</td><td>是</td><td>文件</td></tr>
-                    <tr><td>guid</td><td class="type">String</td><td>否</td><td>唯一标识</td></tr>
-                </table>
-                <h3>成功返回</h3>
-                <pre>{"success":1,"message":"上传成功！","url":"https://example.com/uploads/file.pdf","name":"file.pdf"}</pre>
-                <p>服务端必须返回 <code>success</code>、<code>url</code> 和 <code>name</code> 字段，其中 <code>name</code> 会自动回填到文件名称输入框。</p>
-                <h3>失败返回</h3>
-                <pre>{"success":0,"message":"错误提示信息"}</pre>
-            </div>
+    <div class="notice"><strong>toolbarCustomIcons（Object 类型）</strong> — 自定义按钮的完整 HTML 结构。Key 为按钮名称，Value 为 HTML 字符串。默认值内置了 <b>lowercase</b>、<b>ucwords</b>、<b>formula</b> 三个按钮的自定义 HTML。</div>
+    <pre><span class="cmt">// 示例：完全自定义一个按钮的 HTML</span>
+toolbarCustomIcons: {
+    myButton: <span class="str">'&lt;a href="javascript:;" title="我的按钮"&gt;&lt;i class="fa fa-star"&gt;&lt;/i&gt;&lt;/a&gt;'</span>
+}</pre>
 
-            <div class="api-section" id="syntax">
-                <h2>扩展语法速查</h2>
-                <table class="api-table">
-                    <tr><th>语法</th><th>说明</th></tr>
-                    <tr><td>{文本|拼音}</td><td>拼音标注</td></tr>
-                    <tr><td>[[tabs]]...[[/tabs]]</td><td>Tabs 标签页</td></tr>
-                    <tr><td>[[tab:标题]]...[[/tab]]</td><td>单个标签</td></tr>
-                    <tr><td>[[columns:N]]...[[/columns]]</td><td>N 栏排版</td></tr>
-                    <tr><td>[[align:center]]...[[/align]]</td><td>块级居中对齐</td></tr>
-                    <tr><td>[[align:left]]...[[/align]]</td><td>块级左对齐</td></tr>
-                    <tr><td>[[align:right]]...[[/align]]</td><td>块级右对齐</td></tr>
-                    <tr><td>⁑内容⁑</td><td>行内居中对齐（Unicode）</td></tr>
-                    <tr><td>⁑⁖内容⁖⁑</td><td>行内左对齐（Unicode）</td></tr>
-                    <tr><td>⠪内容⠪</td><td>行内右对齐（Unicode）</td></tr>
-                    <tr><td>![alt](url)&lt;W,H&gt;</td><td>自定义图片尺寸</td></tr>
-                    <tr><td>[文本](tooltip:text:内容)</td><td>文本悬浮提示</td></tr>
-                    <tr><td>[文本](tooltip:image:URL)</td><td>图片悬浮提示</td></tr>
-                    <tr><td>[文本](tooltip:iframe:URL)</td><td>iframe 悬浮提示</td></tr>
-                    <tr><td>[文本](tooltip:html:选择器)</td><td>HTML 元素悬浮提示</td></tr>
-                    <tr><td>```echarts ... ```</td><td>ECharts 图表</td></tr>
-                </table>
-            </div>
+    <div class="notice"><strong>toolbarIconsClass（Object 类型）</strong> — 自定义按钮的 CSS 类名。Key 为按钮名称，Value 为 CSS 类名字符串。默认值内置了 55+ 按钮的 Font Awesome 图标类名映射。</div>
+    <pre><span class="cmt">// 示例：将 bold 按钮图标改为自定义图标</span>
+toolbarIconsClass: {
+    bold  : <span class="str">"my-custom-bold-icon"</span>,
+    image : <span class="str">"fa fa-cloud-upload"</span>
+}</pre>
 
-        </div>
+    <div class="notice"><strong>toolbarIconTexts（Object 类型）</strong> — 自定义按钮的显示文本（替换图标）。Key 为按钮名称，Value 为文本字符串。默认值 <code>{}</code>。</div>
+    <pre><span class="cmt">// 示例：用文字替代图标显示</span>
+toolbarIconTexts: {
+    bold  : <span class="str">"B"</span>,
+    image : <span class="str">"图"</span>
+}</pre>
+
+    <h4>自定义工具栏数组示例</h4>
+    <pre><span class="cmt">// toolbarIcons 支持直接传入自定义数组，精确控制按钮和顺序</span>
+toolbarIcons: [
+    <span class="str">"undo"</span>, <span class="str">"redo"</span>, <span class="str">"|"</span>,
+    <span class="str">"bold"</span>, <span class="str">"italic"</span>, <span class="str">"|"</span>,
+    { <span class="str">"h1"</span> : [<span class="str">"h1"</span>, <span class="str">"h2"</span>, <span class="str">"h3"</span>] }, <span class="cmt">// 下拉分组</span>
+    <span class="str">"|"</span>,
+    <span class="str">"image"</span>, <span class="str">"link"</span>, <span class="str">"|"</span>,
+    <span class="str">"watch"</span>, <span class="str">"preview"</span>, <span class="str">"fullscreen"</span>
+]</pre>
+
+    <div class="warn"><strong>注意：</strong>toolbarIcons 也可以传入一个 <code>Function</code>，该函数应返回工具栏图标数组。这样可以根据运行时状态动态生成工具栏。</div>
+</div>
+
+<!-- SECTION: config-feature -->
+<div class="api-section" id="config-feature">
+    <h3>功能开关</h3>
+    <table class="api-table">
+        <tr><th style="width:20%">名称</th><th style="width:10%">类型</th><th style="width:10%">默认值</th><th style="width:15%">可选值</th><th>说明</th></tr>
+        <tr><td>watch</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>初始化后立即开启实时预览</td></tr>
+        <tr><td>htmlDecode</td><td class="type">Boolean/String</td><td class="default">false</td><td class="values">false|true|"tag1,tag2"</td><td>HTML解析。false=不解析；true=全解析；字符串=仅允许指定标签(XSS始终过滤)</td></tr>
+        <tr><td>toc</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>[TOC]/[TOCM]目录</td></tr>
+        <tr><td>tocm</td><td class="type">Boolean</td><td class="default">false</td><td class="values">true|false</td><td>[TOCM]渲染为下拉菜单</td></tr>
+        <tr><td>tocDropdown</td><td class="type">Boolean</td><td class="default">false</td><td class="values">true|false</td><td>目录默认下拉。true=省空间；false=内嵌+滚动高亮</td></tr>
+        <tr><td>tocTitle</td><td class="type">String</td><td class="default">""</td><td class="values">"目录"/"TOC"…</td><td>自定义目录标题</td></tr>
+        <tr><td>tocContainer</td><td class="type">String</td><td class="default">""</td><td class="values">"#sidebar"…</td><td>自定义目录容器选择器</td></tr>
+        <tr><td>tocStartLevel</td><td class="type">Number</td><td class="default">1</td><td class="values">1~6</td><td>起始标题层级。2=从H2开始</td></tr>
+        <tr><td>taskList</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>GFM任务列表 -[ ]/-[x]</td></tr>
+        <tr><td>tex</td><td class="type">Boolean</td><td class="default">false</td><td class="values">true|false</td><td>KaTeX公式 $...$ / $...$</td></tr>
+        <tr><td>flowChart</td><td class="type">Boolean</td><td class="default">false</td><td class="values">true|false</td><td>流程图 ```flow</td></tr>
+        <tr><td>sequenceDiagram</td><td class="type">Boolean</td><td class="default">false</td><td class="values">true|false</td><td>时序图 ```seq</td></tr>
+        <tr><td>pinyin</td><td class="type">Boolean</td><td class="default">false</td><td class="values">true|false</td><td>拼音标注 {文本|拼音}</td></tr>
+        <tr><td>textAlign</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>文本对齐</td></tr>
+        <tr><td>tableEdit</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>预览区表格行列编辑</td></tr>
+        <tr><td>imageResize</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>预览区图片尺寸拖拽调整</td></tr>
+        <tr><td>echarts</td><td class="type">Boolean</td><td class="default">false</td><td class="values">true|false</td><td>ECharts图表 ```echarts {JSON}。bar/line/pie/radar/funnel/tree</td></tr>
+        <tr><td>tabs</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>[[tabs]]标签页组件</td></tr>
+        <tr><td>columns</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>[[columns:N]]多栏排版 N=1-12</td></tr>
+        <tr><td>grid</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>[[row]][[col:N]]栅格布局(10栏)</td></tr>
+        <tr><td>pageBlock</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>[[page:A4]]纸张页面</td></tr>
+        <tr><td>pageBreak</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>[========]分页符</td></tr>
+        <tr><td>tooltip</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>悬浮提示。5种:text|image|iframe|html|iframe:pre</td></tr>
+        <tr><td>atLink</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>@username链接</td></tr>
+        <tr><td>emailLink</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>邮件自动链接</td></tr>
+        <tr><td>copybook</td><td class="type">Boolean</td><td class="default">false</td><td class="values">true|false</td><td>字帖。田字格/米字格/拼音格</td></tr>
+        <tr><td>previewCodeHighlight</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>预览区代码高亮</td></tr>
+        <tr><td>syncScroll</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>同步滚动(v1.17.10重写引擎)</td></tr>
+        <tr><td>previewOnly</td><td class="type">Boolean</td><td class="default">false</td><td class="values">true|false</td><td>纯预览模式(禁用交互)</td></tr>
+    </table>
+
+    <h4>htmlDecode 参数详解 <span class="tag tag-new">安全关键</span></h4>
+    <div class="warn"><strong>htmlDecode 是安全敏感参数，控制 Markdown 中内嵌 HTML 的解析行为：</strong></div>
+    <table class="api-table">
+        <tr><th style="width:10%">值</th><th style="width:15%">行为</th><th>说明与示例</th></tr>
+        <tr>
+            <td><b>false</b></td><td>不解析 HTML</td>
+            <td><b>默认值、最安全。</b>所有 HTML 标签原样显示，&lt;script&gt;、&lt;iframe&gt; 等危险标签不会被渲染。<br>
+            <code>htmlDecode: false</code> → 输入 <code>&lt;b&gt;加粗&lt;/b&gt;</code> 显示为 <code>&amp;lt;b&amp;gt;加粗&amp;lt;/b&amp;gt;</code>（纯文本）</td>
+        </tr>
+        <tr>
+            <td><b>true</b></td><td>解析全部 HTML</td>
+            <td>允许所有 HTML 标签渲染。<b>注意：</b>即使设为 true，XSS 攻击标签（如 &lt;script&gt;）仍会被自动过滤。<br>
+            <code>htmlDecode: true</code> → 输入 <code>&lt;b&gt;加粗&lt;/b&gt;</code> 显示为 <b>加粗</b></td>
+        </tr>
+        <tr>
+            <td><b>"tag1,tag2"</b></td><td>白名单模式</td>
+            <td>仅允许指定标签被解析，其他标签全部转义。这是推荐的平衡方案。<br>
+            <code>htmlDecode: "b,i,u,span,div,p,br,img,table,style"</code> → 只解析这些标签</td>
+        </tr>
+    </table>
+    <pre><span class="cmt">// 推荐配置：仅允许安全标签 + 内联样式</span>
+htmlDecode: <span class="str">"b,i,u,span,div,p,br,img,style"</span>
+
+<span class="cmt">// 严格模式：仅允许纯文本标签</span>
+htmlDecode: <span class="str">"b,i,u,em,strong,del"</span>
+
+<span class="cmt">// 开启表格布局能力</span>
+htmlDecode: <span class="str">"div,span,table,tr,td,th,p,br,b,i,style"</span></pre>
+
+    <h4>Array 类型参数展开说明</h4>
+    <table class="api-table">
+        <tr><th style="width:18%">参数名</th><th style="width:10%">类型</th><th style="width:12%">默认值</th><th>元素说明</th></tr>
+        <tr>
+            <td>disabledKeyMaps</td><td class="type">Array</td><td class="default">[]</td>
+            <td>禁用的快捷键列表。每项为字符串，如 <code>"Ctrl-S"</code>、<code>"F11"</code>。常用禁用项：<code>["Ctrl-S", "F11", "Esc"]</code></td>
+        </tr>
+        <tr>
+            <td>imageFormats</td><td class="type">Array</td><td class="default">["jpg","jpeg","gif","png","bmp","webp"]</td>
+            <td>允许的图片扩展名（不含点号）。<br>增加 SVG 支持：<code>["jpg","jpeg","gif","png","bmp","webp","svg"]</code></td>
+        </tr>
+        <tr>
+            <td>fileFormats</td><td class="type">Array</td><td class="default">["doc","docx","pdf","txt","zip","rar","xls","xlsx","ppt","pptx","mp4","mp3"]</td>
+            <td>允许的文件扩展名。所有文件上传均受此限制</td>
+        </tr>
+        <tr>
+            <td>videoFormats</td><td class="type">Array</td><td class="default">["mp4","webm","ogv","mov"]</td>
+            <td>允许的视频扩展名。上传和嵌入均受此限制</td>
+        </tr>
+        <tr>
+            <td>toolbarIcons（数组模式）</td><td class="type">Array</td><td class="default">(使用"full"预设)</td>
+            <td>自定义工具栏按钮数组。分隔符用 <code>"|"</code>，下拉分组用 <code>{"组名":["按钮1","按钮2"]}</code> 对象</td>
+        </tr>
+    </table>
+</div>
+
+<!-- SECTION: config-upload -->
+<div class="api-section" id="config-upload">
+    <h3>图片 / 文件 / 视频上传配置</h3>
+    <table class="api-table">
+        <tr><th style="width:20%">名称</th><th style="width:10%">类型</th><th style="width:12%">默认值</th><th style="width:15%">可选值</th><th>说明</th></tr>
+        <tr><td colspan="5" style="background:#e8f5e9; font-weight:bold;">📷 图片上传</td></tr>
+        <tr><td>imageUpload</td><td class="type">Boolean</td><td class="default">false</td><td class="values">true | false</td><td>启用图片上传。POST 字段名 xf_editor-image-file</td></tr>
+        <tr><td>imageUploadURL</td><td class="type">String</td><td class="default">""</td><td class="values">URL 地址</td><td>图片上传接口地址。POST, multipart/form-data</td></tr>
+        <tr><td>imageFormats</td><td class="type">Array</td><td class="default">["jpg","jpeg","gif","png","bmp","webp"]</td><td class="values">字符串数组</td><td>允许的图片格式（扩展名，不含点号）</td></tr>
+        <tr><td>crossDomainUpload</td><td class="type">Boolean</td><td class="default">false</td><td class="values">true | false</td><td>启用跨域上传（通过隐藏 iframe 提交）</td></tr>
+        <tr><td>uploadCallbackURL</td><td class="type">String</td><td class="default">""</td><td class="values">URL 地址</td><td>跨域上传回调页面地址</td></tr>
+        <tr><td colspan="5" style="background:#fff3e0; font-weight:bold;">📎 文件上传 <span class="tag tag-ver">v1.7.0</span></td></tr>
+        <tr><td>fileUpload</td><td class="type">Boolean</td><td class="default">false</td><td class="values">true | false</td><td>启用文件上传。POST 字段名 xf_editor-file-file</td></tr>
+        <tr><td>fileUploadURL</td><td class="type">String</td><td class="default">""</td><td class="values">URL 地址</td><td>文件上传接口地址</td></tr>
+        <tr><td>fileFormats</td><td class="type">Array</td><td class="default">["doc","docx","pdf","txt","zip","rar","xls","xlsx","ppt","pptx","mp4","mp3"]</td><td class="values">字符串数组</td><td>允许的文件格式（扩展名）</td></tr>
+        <tr><td colspan="5" style="background:#fce4ec; font-weight:bold;">🎬 视频上传 <span class="tag tag-ver">v1.7.0</span></td></tr>
+        <tr><td>videoUpload</td><td class="type">Boolean</td><td class="default">false</td><td class="values">true | false</td><td>启用视频上传</td></tr>
+        <tr><td>videoUploadURL</td><td class="type">String</td><td class="default">""</td><td class="values">URL 地址</td><td>视频上传接口地址</td></tr>
+        <tr><td>videoFormats</td><td class="type">Array</td><td class="default">["mp4","webm","ogv","mov"]</td><td class="values">字符串数组</td><td>允许的视频格式（扩展名）</td></tr>
+    </table>
+</div>
+
+<div class="api-section" id="config-draft">
+    <h3>草稿保存配置 <span class="tag tag-ver">v1.7.0</span></h3>
+    <table class="api-table">
+        <tr><th style="width:20%">名称</th><th style="width:10%">类型</th><th style="width:12%">默认值</th><th style="width:15%">可选值</th><th>说明</th></tr>
+        <tr><td>draftAutoSave</td><td class="type">Boolean</td><td class="default">false</td><td class="values">true | false</td><td>启用 localStorage 草稿自动保存。刷新后可恢复</td></tr>
+        <tr><td>draftInterval</td><td class="type">Number</td><td class="default">30</td><td class="values">正整数（秒）</td><td>草稿自动保存间隔。建议 10~120 秒</td></tr>
+        <tr><td>draftMaxDays</td><td class="type">Number</td><td class="default">30</td><td class="values">正整数（天）</td><td>草稿最长保留天数，超期自动清理</td></tr>
+    </table>
+</div>
+
+<div class="api-section" id="config-event">
+    <h3>全部事件回调（作为配置项声明）</h3>
+    <table class="api-table">
+        <tr><th style="width:18%">名称</th><th style="width:8%">类型</th><th style="width:10%">默认值</th><th style="width:14%">触发时机</th><th style="width:26%">功能与用途</th><th style="width:8%">参数</th></tr>
+        <tr><td>onload</td><td class="type">Function</td><td class="default">function(){}</td><td>编辑器 DOM 渲染完成后</td><td>DOM 就绪后可安全操作 UI、获取内容、修改配置</td><td>无</td></tr>
+        <tr><td>onEditorLoad</td><td class="type">Function</td><td class="default">function(){}</td><td>CodeMirror 初始化完成（最早触发）</td><td>CM 实例就绪，快捷键和事件监听器已绑定</td><td>无</td></tr>
+        <tr><td>onPageLoad</td><td class="type">Function</td><td class="default">function(){}</td><td>网页 window.onload 触发</td><td>用于外部资源（图片/iframe/CSS）全部加载后的初始化</td><td>无</td></tr>
+        <tr><td>onAllAsyncLoad</td><td class="type">Function</td><td class="default">function(){}</td><td>异步依赖加载完成（KaTeX/FlowChart/Seq/ECharts）</td><td>此后可安全调用 initECharts()、katexRender() 等图表渲染</td><td>无</td></tr>
+        <tr><td>onPageAllLoad</td><td class="type">Function</td><td class="default">function(){}</td><td>网页全部异步加载完成（最晚触发）</td><td>多实例/外部组件全部就绪后的最终回调，适合发送就绪统计</td><td>无</td></tr>
+        <tr><td>onresize</td><td class="type">Function</td><td class="default">function(){}</td><td>编辑器尺寸变化</td><td>浏览器窗口缩放、resize()/width()/height() 调用后触发的布局调整</td><td>(w, h) — 像素数值</td></tr>
+        <tr><td>onchange</td><td class="type">Function</td><td class="default">function(){}</td><td>编辑器内容变化（含防抖延迟 delay ms）</td><td>每次输入/粘贴/删除触发，适合字数统计、自动保存、实时校验</td><td>无</td></tr>
+        <tr><td>onwatch</td><td class="type">Function</td><td class="default">null</td><td>开启实时预览</td><td>用户点击"眼睛"按钮或调用 watch()。可发送分析事件（默认 null，不设置不回调）</td><td>无</td></tr>
+        <tr><td>onunwatch</td><td class="type">Function</td><td class="default">null</td><td>关闭实时预览</td><td>用户关闭实时预览时触发。适合切换编辑/阅读模式、调整 UI 布局</td><td>无</td></tr>
+        <tr><td>onpreviewing</td><td class="type">Function</td><td class="default">function(){}</td><td>进入全窗口预览模式</td><td>调用 previewing() 或工具栏按钮，进入全窗口预览（Shift+ESC 退出）</td><td>无</td></tr>
+        <tr><td>onpreviewed</td><td class="type">Function</td><td class="default">function(){}</td><td>退出全窗口预览模式</td><td>按 Shift+ESC 或调用 previewed() 退出后恢复编辑器布局</td><td>无</td></tr>
+        <tr><td>onfullscreen</td><td class="type">Function</td><td class="default">function(){}</td><td>进入全屏（F11 或 fullscreen()）</td><td>浏览器全屏 API 激活后触发。可在此锁定方向、调整工具栏样式、启用全屏专属 UI</td><td>无</td></tr>
+        <tr><td>onfullscreenExit</td><td class="type">Function</td><td class="default">function(){}</td><td>退出全屏（ESC 或 fullscreenExit()）</td><td>浏览器退出全屏后触发。需恢复非全屏状态下的布局、字体、工具栏等 UI 配置</td><td>无</td></tr>
+        <tr><td>onbeforesave</td><td class="type">Function</td><td class="default">function(){}</td><td>保存操作前（save() 调用时，渲染之前）</td><td>用于数据校验、内容预处理、防止空内容提交等</td><td>无</td></tr>
+        <tr><td>onaftersave</td><td class="type">Function</td><td class="default">function(){}</td><td>保存操作后（Markdown 解析、预览渲染完成之后）</td><td>获取最新 HTML、同步到后端 API、更新字数统计等</td><td>无</td></tr>
+        <tr><td>oninsert</td><td class="type">Function</td><td class="default">function(){}</td><td>插入内容时（insertValue() 或工具栏按钮）</td><td>每次插入内容触发，适合记录插入操作日志、限制插入频率</td><td>无</td></tr>
+        <tr><td>ontablechange</td><td class="type">Function</td><td class="default">function(){}</td><td>预览区表格编辑操作后</td><td>增删行列后自动同步到 Markdown 源码。适合统计表格操作、自动重新编号</td><td>(action, row, col)</td></tr>
+        <tr><td>onimagechange</td><td class="type">Function</td><td class="default">function(){}</td><td>图片尺寸调整后</td><td>拖拽或精确输入尺寸后自动更新 Markdown 图片语法。可记录图片变更日志</td><td>(src, w, h)</td></tr>
+        <tr><td>onkeydown</td><td class="type">Function</td><td class="default">function(){}</td><td>编辑区键盘按下</td><td>CodeMirror keydown 事件代理。可拦截特定按键、实现自定义快捷键</td><td>(event) — KeyboardEvent</td></tr>
+        <tr><td>onkeyup</td><td class="type">Function</td><td class="default">function(){}</td><td>编辑区键盘弹起</td><td>CodeMirror keyup 事件代理。适合在按键完成后做字数统计、语法检查</td><td>(event) — KeyboardEvent</td></tr>
+        <tr><td>onmouseup</td><td class="type">Function</td><td class="default">function(){}</td><td>编辑区鼠标弹起</td><td>用于选区完成后的处理，如获取选中文本、弹出格式工具栏</td><td>(event) — MouseEvent</td></tr>
+        <tr><td>onmousedown</td><td class="type">Function</td><td class="default">function(){}</td><td>编辑区鼠标按下</td><td>可用于记录点击位置、阻止默认右键菜单、自定义上下文菜单</td><td>(event) — MouseEvent</td></tr>
+        <tr><td>onpaste</td><td class="type">Function</td><td class="default">function(){}</td><td>粘贴（Ctrl+V / Cmd+V）</td><td>可拦截粘贴内容做预处理（如图片转 Base64、Markdown 格式清洗）</td><td>(event) — ClipboardEvent</td></tr>
+        <tr><td>ondrop</td><td class="type">Function</td><td class="default">function(){}</td><td>拖拽文件/文本到编辑区</td><td>可从 event.dataTransfer.files 获取拖入的文件实现拖拽上传</td><td>(event) — DragEvent</td></tr>
+        <tr><td>oncopy</td><td class="type">Function</td><td class="default">function(){}</td><td>复制（Ctrl+C / Cmd+C）</td><td>可用于修改复制内容、添加版权声明、记录复制次数</td><td>(event) — ClipboardEvent</td></tr>
+        <tr><td>oncut</td><td class="type">Function</td><td class="default">function(){}</td><td>剪切（Ctrl+X / Cmd+X）</td><td>可用于记录剪切操作、限制剪切内容类型</td><td>(event) — ClipboardEvent</td></tr>
+        <tr><td>onfocus</td><td class="type">Function</td><td class="default">function(){}</td><td>编辑器获得焦点</td><td>可切换到编辑模式、高亮编辑器边框、显示快捷提示</td><td>(cm) — CodeMirror实例</td></tr>
+        <tr><td>onblur</td><td class="type">Function</td><td class="default">function(){}</td><td>编辑器失去焦点</td><td>离开编辑区时自动保存草稿、触发后端同步、移除高亮</td><td>(cm) — CodeMirror实例</td></tr>
+        <tr><td>oncursoractivity</td><td class="type">Function</td><td class="default">function(){}</td><td>光标位置变化</td><td>鼠标点击/方向键/PageUp等导致光标移动时触发。适合实时显示行列位置、状态栏更新</td><td>(cm) — CodeMirror实例</td></tr>
+    </table>
+</div>
+
+<div class="api-section" id="config-lang">
+    <h3>多语言配置（lang 对象）</h3>
+    <table class="api-table">
+        <tr><th style="width:25%">路径</th><th style="width:10%">类型</th><th style="width:18%">默认值</th><th>说明</th></tr>
+        <tr><td>lang.name</td><td class="type">String</td><td class="default">"zh-cn"</td><td>语言标识。内置 "zh-cn"</td></tr>
+        <tr><td>lang.description</td><td class="type">String</td><td class="default">"开源在线Markdown编辑器…"</td><td>关于对话框描述信息</td></tr>
+        <tr><td>lang.tocTitle</td><td class="type">String</td><td class="default">"目录"</td><td>默认目录标题</td></tr>
+        <tr><td>lang.placeholder</td><td class="type">String</td><td class="default">"写点什么吧~"</td><td>编辑器占位文本</td></tr>
+        <tr><td>lang.toolbar.*</td><td class="type">String</td><td class="default">各按钮中文文本</td><td>55+ 个工具栏按钮 hover 提示</td></tr>
+        <tr><td>lang.buttons.*</td><td class="type">String</td><td class="default">"确定"/"取消"/"关闭"</td><td>对话框按钮文本</td></tr>
+        <tr><td>lang.dialog.*</td><td class="type">Object</td><td class="default">见源码</td><td>各对话框的完整文本配置</td></tr>
+    </table>
+</div>
+
+<!-- END config sections -->
+
+<!-- SECTION: instance-methods -->
+<div class="api-section" id="instance-methods">
+    <h2>实例方法（30 个）</h2>
+    <table class="api-table">
+        <tr><th style="width:22%">方法签名</th><th style="width:10%">返回值</th><th style="width:22%">参数</th><th>说明</th></tr>
+        <tr><td>getMarkdown()</td><td class="type">String</td><td>无</td><td>获取 Markdown 源码</td></tr>
+        <tr><td>getValue()</td><td class="type">String</td><td>无</td><td>同 getMarkdown()，CodeMirror 别名</td></tr>
+        <tr><td>setValue(val)</td><td class="type">xfEditor</td><td>val: String</td><td>设置 Markdown 源码</td></tr>
+        <tr><td>getHTML()</td><td class="type">String</td><td>无</td><td>获取完整 HTML 文档（含内联样式）</td></tr>
+        <tr><td>getPreviewedHTML()</td><td class="type">String</td><td>无</td><td>获取预览区当前 HTML（不含外套）</td></tr>
+        <tr><td>watch()</td><td class="type">xfEditor</td><td>无</td><td>开启实时预览</td></tr>
+        <tr><td>unwatch()</td><td class="type">xfEditor</td><td>无</td><td>关闭实时预览</td></tr>
+        <tr><td>previewing()</td><td class="type">xfEditor</td><td>无</td><td>全窗口预览模式（Shift+ESC 退出）</td></tr>
+        <tr><td>previewed()</td><td class="type">xfEditor</td><td>无</td><td>退出全窗口预览</td></tr>
+        <tr><td>fullscreen()</td><td class="type">xfEditor</td><td>无</td><td>进入全屏（ESC 退出）</td></tr>
+        <tr><td>fullscreenExit()</td><td class="type">xfEditor</td><td>无</td><td>退出全屏</td></tr>
+        <tr><td>width(w)</td><td class="type">xfEditor</td><td>w: String|Number</td><td>设置宽度</td></tr>
+        <tr><td>height(h)</td><td class="type">xfEditor</td><td>h: String|Number</td><td>设置高度</td></tr>
+        <tr><td>resize(w, h)</td><td class="type">xfEditor</td><td>w, h: String|Number</td><td>同时调整宽高</td></tr>
+        <tr><td>save()</td><td class="type">xfEditor</td><td>无</td><td>手动保存（解析+刷新预览+同步到textarea）</td></tr>
+        <tr><td>focus()</td><td class="type">xfEditor</td><td>无</td><td>聚焦编辑器</td></tr>
+        <tr><td>setCursor(line, ch)</td><td class="type">xfEditor</td><td>line: Number, ch: Number</td><td>设置光标位置</td></tr>
+        <tr><td>getCursor()</td><td class="type">Object</td><td>无</td><td>获取光标 {line, ch}</td></tr>
+        <tr><td>getSelection()</td><td class="type">String</td><td>无</td><td>获取选中文本</td></tr>
+        <tr><td>replaceSelection(text)</td><td class="type">xfEditor</td><td>text: String</td><td>替换选中文本</td></tr>
+        <tr><td>insertValue(text)</td><td class="type">xfEditor</td><td>text: String</td><td>在光标处插入文本</td></tr>
+        <tr><td>clear()</td><td class="type">xfEditor</td><td>无</td><td>清空全部内容</td></tr>
+        <tr><td>gotoLine(line)</td><td class="type">xfEditor</td><td>line: Number</td><td>跳转指定行并高亮</td></tr>
+        <tr><td>showToolbar()</td><td class="type">xfEditor</td><td>无</td><td>显示工具栏</td></tr>
+        <tr><td>hideToolbar()</td><td class="type">xfEditor</td><td>无</td><td>隐藏工具栏</td></tr>
+        <tr><td>config(key, value)</td><td class="type">xfEditor</td><td>key: String|Object, value: Any</td><td>获取/设置配置。config({k:v}) 批量</td></tr>
+        <tr><td>setTheme(name)</td><td class="type">xfEditor</td><td>name: "default"|"dark"</td><td>切换主题</td></tr>
+        <tr><td>executePlugin(name, path)</td><td class="type">xfEditor</td><td>name: String, path: String</td><td>执行插件</td></tr>
+        <tr><td>saveDraft()</td><td class="type">xfEditor</td><td>无</td><td>手动保存草稿到 localStorage</td></tr>
+        <tr><td>clearDraft()</td><td class="type">xfEditor</td><td>无</td><td>清除草稿</td></tr>
+        <tr><td>showDraftRecovery()</td><td class="type">xfEditor</td><td>无</td><td>显示草稿恢复对话框</td></tr>
+        <tr><td>destroy()</td><td class="type">xfEditor</td><td>无</td><td>销毁实例，释放所有资源</td></tr>
+    </table>
+</div>
+
+<!-- SECTION: events -->
+<div class="api-section" id="events">
+    <h2>事件回调详解 <span class="tag tag-ver">共 30 个事件</span></h2>
+    <p>所有事件均可在初始化配置对象中声明，也可通过 <code>editor.on("事件名", fn)</code> 动态绑定。<strong>事件回调中的 <code>this</code> 指向编辑器实例</strong>（<code>xfEditor</code> 实例对象），可调用所有实例方法。</p>
+
+    <!-- === 初始化生命周期 === -->
+    <h3>🔵 初始化生命周期事件（5 个）</h3>
+    <table class="api-table">
+        <tr><th style="width:18%">事件名</th><th style="width:14%">中文名称</th><th>触发时机</th><th style="width:12%">回调参数</th></tr>
+        <tr>
+            <td><b>onEditorLoad</b></td><td>CodeMirror就绪</td>
+            <td><b>最早触发</b>。CodeMirror 编辑区初始化完成、所有快捷键和事件监听器绑定后</td>
+            <td class="type">无参数</td>
+        </tr>
+        <tr>
+            <td><b>onload</b></td><td>编辑器就绪</td>
+            <td>编辑器完整 DOM 渲染完成（工具栏、编辑区、预览区均已创建）、首批内容已解析到预览区</td>
+            <td class="type">无参数</td>
+        </tr>
+        <tr>
+            <td><b>onAllAsyncLoad</b></td><td>异步资源就绪</td>
+            <td>全部异步依赖加载并初始化完成（KaTeX/FlowChart/Sequence/ECharts 库），此后方可安全调用 <code>initECharts()</code>/<code>katexRender()</code> 等</td>
+            <td class="type">无参数</td>
+        </tr>
+        <tr>
+            <td><b>onPageLoad</b></td><td>页面加载</td>
+            <td>当前网页 <code>window.onload</code> 事件触发时。此时页面所有外部资源（CSS/图片/iframe）已加载</td>
+            <td class="type">无参数</td>
+        </tr>
+        <tr>
+            <td><b>onPageAllLoad</b></td><td>页面全部就绪</td>
+            <td>网页中所有异步加载完成。此事件在多个 xfEditor 实例或外部异步组件全部就绪后触发，<b>最晚触发</b></td>
+            <td class="type">无参数</td>
+        </tr>
+    </table>
+    <pre><span class="cmt">// 初始化生命周期示例 — 展示完整加载流程</span>
+<span class="key">var</span> editor = xfEditor(<span class="str">"editor"</span>, {
+    onEditorLoad: <span class="key">function</span>() {
+        <span class="cmt">// 此时 CM 已就绪，但预览可能尚未渲染</span>
+        console.log(<span class="str">"① CodeMirror 就绪"</span>);
+    },
+    onload: <span class="key">function</span>() {
+        <span class="cmt">// 此时可安全获取内容、修改配置</span>
+        console.log(<span class="str">"② 编辑器 DOM 渲染完成"</span>);
+        <span class="fn">this</span>.setValue(<span class="str">"# 动态设置初始内容"</span>);
+    },
+    onAllAsyncLoad: <span class="key">function</span>() {
+        <span class="cmt">// KaTeX/FlowChart/Sequence/ECharts 全部就绪</span>
+        console.log(<span class="str">"③ 异步资源加载完毕，可安全使用图表功能"</span>);
+    },
+    onPageLoad: <span class="key">function</span>() {
+        console.log(<span class="str">"④ 网页 window.onload 触发"</span>);
+    },
+    onPageAllLoad: <span class="key">function</span>() {
+        <span class="cmt">// 最晚触发 — 整个页面完全就绪</span>
+        console.log(<span class="str">"⑤ 页面全部异步加载完成"</span>);
+        <span class="cmt">// 此时可做：自动滚动到指定位置、发送页面就绪统计等</span>
+    }
+});</pre>
+
+    <!-- === 内容变更事件 === -->
+    <h3>🟢 内容变更事件（3 个）</h3>
+    <table class="api-table">
+        <tr><th style="width:18%">事件名</th><th style="width:14%">中文名称</th><th>触发时机</th><th style="width:12%">回调参数</th></tr>
+        <tr>
+            <td><b>onchange</b></td><td>内容变化</td>
+            <td>CodeMirror 内容变化时触发（含防抖延迟 <code>delay:80</code>ms）。每次输入、粘贴、删除均触发</td>
+            <td class="type">无参数（通过 this.getMarkdown() 获取内容）</td>
+        </tr>
+        <tr>
+            <td><b>ontablechange</b></td><td>表格编辑</td>
+            <td>在预览区对表格进行增删行列等交互操作后触发</td>
+            <td class="type">无参数</td>
+        </tr>
+        <tr>
+            <td><b>onimagechange</b></td><td>图片尺寸调整</td>
+            <td>在预览区拖拽调整图片尺寸后触发</td>
+            <td class="type">无参数</td>
+        </tr>
+    </table>
+    <pre><span class="cmt">// 内容变更监听 — 自动保存示例</span>
+<span class="key">var</span> autoSaveTimer = <span class="fn">null</span>;
+<span class="key">var</span> editor = xfEditor(<span class="str">"editor"</span>, {
+    onchange: <span class="key">function</span>() {
+        <span class="cmt">// 防抖自动保存：2秒无操作后保存到localStorage</span>
+        clearTimeout(autoSaveTimer);
+        autoSaveTimer = setTimeout(<span class="key">function</span>() {
+            <span class="key">var</span> content = editor.getMarkdown();
+            localStorage.setItem(<span class="str">"draft"</span>, content);
+            console.log(<span class="str">"自动保存完成，内容长度："</span> + content.length);
+        }, <span class="num">2000</span>);
+    },
+    ontablechange: <span class="key">function</span>() {
+        console.log(<span class="str">"表格结构已修改"</span>);
+    },
+    onimagechange: <span class="key">function</span>() {
+        console.log(<span class="str">"图片尺寸已调整"</span>);
+    }
+});</pre>
+
+    <!-- === 预览切换事件 === -->
+    <h3>🟡 预览切换事件（4 个）</h3>
+    <table class="api-table">
+        <tr><th style="width:18%">事件名</th><th style="width:14%">中文名称</th><th>触发时机</th><th style="width:12%">回调参数</th></tr>
+        <tr>
+            <td><b>onwatch</b></td><td>开启实时预览</td>
+            <td>调用 <code>watch()</code> 或点击"眼睛"按钮开启实时预览时。默认值 <code>null</code>（若初始化时 watch:true 不会触发此事件）</td>
+            <td class="type">无参数</td>
+        </tr>
+        <tr>
+            <td><b>onunwatch</b></td><td>关闭实时预览</td>
+            <td>调用 <code>unwatch()</code> 或再次点击"眼睛"按钮关闭实时预览时。默认值 <code>null</code></td>
+            <td class="type">无参数</td>
+        </tr>
+        <tr>
+            <td><b>onpreviewing</b></td><td>进入全窗口预览</td>
+            <td>调用 <code>previewing()</code> 或点击工具栏预览按钮进入全窗口预览模式（Shift+ESC 退出）</td>
+            <td class="type">无参数</td>
+        </tr>
+        <tr>
+            <td><b>onpreviewed</b></td><td>退出全窗口预览</td>
+            <td>调用 <code>previewed()</code> 或按 Shift+ESC 退出全窗口预览模式</td>
+            <td class="type">无参数</td>
+        </tr>
+    </table>
+    <pre><span class="cmt">// 预览切换监听 — 用于统计和分析</span>
+<span class="key">var</span> editor = xfEditor(<span class="str">"editor"</span>, {
+    onwatch: <span class="key">function</span>() {
+        console.log(<span class="str">"[统计] 用户开启了实时预览"</span>);
+        <span class="cmt">// 可发送分析事件: gtag('event', 'preview_on')</span>
+    },
+    onunwatch: <span class="key">function</span>() {
+        console.log(<span class="str">"[统计] 用户关闭了实时预览"</span>);
+        <span class="cmt">// 注意：onwatch/onunwatch 默认值 null，不同于 function(){}</span>
+        <span class="cmt">// 这意味着如果不显式设置，不会触发任何回调</span>
+    },
+    onpreviewing: <span class="key">function</span>() {
+        <span class="cmt">// 进入全窗口预览前可做一些准备工作</span>
+        console.log(<span class="str">"进入全窗口预览模式"</span>);
+    },
+    onpreviewed: <span class="key">function</span>() {
+        <span class="cmt">// 退出全窗口预览后恢复编辑器布局</span>
+        console.log(<span class="str">"退出全窗口预览模式"</span>);
+    }
+});</pre>
+
+    <!-- === 全屏事件 === -->
+    <h3>🔴 全屏切换事件（2 个）</h3>
+    <table class="api-table">
+        <tr><th style="width:18%">事件名</th><th style="width:14%">中文名称</th><th>触发时机</th><th style="width:12%">回调参数</th></tr>
+        <tr>
+            <td><b>onfullscreen</b></td><td>进入全屏</td>
+            <td>调用 <code>fullscreen()</code> 或按 <b>F11</b> 进入全屏模式时</td>
+            <td class="type">无参数</td>
+        </tr>
+        <tr>
+            <td><b>onfullscreenExit</b></td><td>退出全屏</td>
+            <td>调用 <code>fullscreenExit()</code> 或按 <b>ESC</b> 退出全屏时</td>
+            <td class="type">无参数</td>
+        </tr>
+    </table>
+
+    <!-- === 保存事件 === -->
+    <h3>🟣 保存相关事件（3 个）</h3>
+    <table class="api-table">
+        <tr><th style="width:18%">事件名</th><th style="width:14%">中文名称</th><th>触发时机</th><th style="width:12%">回调参数</th></tr>
+        <tr>
+            <td><b>onbeforesave</b></td><td>保存前</td>
+            <td>调用 <code>save()</code> 时，在 Markdown 解析和预览刷新<b>之前</b>触发。可在此做数据校验、内容预处理</td>
+            <td class="type">无参数</td>
+        </tr>
+        <tr>
+            <td><b>oninsert</b></td><td>插入内容</td>
+            <td>Markdown 解析过程中，每次 <code>insertValue()</code> 或工具栏按钮插入内容时触发</td>
+            <td class="type">无参数</td>
+        </tr>
+        <tr>
+            <td><b>onaftersave</b></td><td>保存后</td>
+            <td>调用 <code>save()</code> 时，在 Markdown 解析和预览刷新<b>完成之后</b>触发。可在此获取最新的 HTML、同步到后端</td>
+            <td class="type">无参数</td>
+        </tr>
+    </table>
+    <pre><span class="cmt">// 保存流程示例 — 含数据校验和后端同步</span>
+<span class="key">var</span> editor = xfEditor(<span class="str">"editor"</span>, {
+    onbeforesave: <span class="key">function</span>() {
+        <span class="cmt">// 保存前校验：内容不能为空</span>
+        <span class="key">var</span> md = <span class="fn">this</span>.getMarkdown();
+        <span class="key">if</span> (!md || md.trim() === <span class="str">""</span>) {
+            console.warn(<span class="str">"内容为空，跳过保存"</span>);
+        }
+        console.log(<span class="str">"保存前内容长度："</span>, md.length);
+    },
+    onaftersave: <span class="key">function</span>() {
+        <span class="cmt">// 保存后获取最新 HTML 并同步到后端</span>
+        <span class="key">var</span> html = <span class="fn">this</span>.getPreviewedHTML();
+        <span class="key">var</span> md   = <span class="fn">this</span>.getMarkdown();
+        <span class="cmt">// 发送到后端 API</span>
+        fetch(<span class="str">'/api/save'</span>, {
+            method: <span class="str">'POST'</span>,
+            headers: { <span class="str">'Content-Type'</span>: <span class="str">'application/json'</span> },
+            body: JSON.stringify({ markdown: md, html: html })
+        }).then(<span class="key">function</span>(res) {
+            console.log(<span class="str">"后端同步完成"</span>, res.status);
+        });
+    }
+});</pre>
+
+    <!-- === 键盘/鼠标/剪贴板事件 === -->
+    <h3>⌨️ 键盘事件（3 个）</h3>
+    <table class="api-table">
+        <tr><th style="width:18%">事件名</th><th style="width:14%">中文名称</th><th>触发时机</th><th style="width:12%">回调参数</th></tr>
+        <tr>
+            <td><b>onkeydown</b></td><td>按键按下</td>
+            <td>编辑区内键盘按键<b>按下</b>时触发（CodeMirror keydown 事件代理）</td>
+            <td class="type">(event) — 原生 KeyboardEvent 对象</td>
+        </tr>
+        <tr>
+            <td><b>onkeyup</b></td><td>按键弹起</td>
+            <td>编辑区内键盘按键<b>弹起</b>时触发（CodeMirror keyup 事件代理）</td>
+            <td class="type">(event) — 原生 KeyboardEvent 对象</td>
+        </tr>
+        <tr>
+            <td><b>oncursoractivity</b></td><td>光标移动</td>
+            <td>光标位置发生变化时触发。包括鼠标点击、键盘方向键、PageUp/PageDown 等</td>
+            <td class="type">(cm) — CodeMirror 实例对象</td>
+        </tr>
+    </table>
+
+    <h3>🖱️ 鼠标事件（2 个）</h3>
+    <table class="api-table">
+        <tr><th style="width:18%">事件名</th><th style="width:14%">中文名称</th><th>触发时机</th><th style="width:12%">回调参数</th></tr>
+        <tr>
+            <td><b>onmousedown</b></td><td>鼠标按下</td>
+            <td>编辑区内鼠标按下时触发</td>
+            <td class="type">(event) — 原生 MouseEvent 对象</td>
+        </tr>
+        <tr>
+            <td><b>onmouseup</b></td><td>鼠标弹起</td>
+            <td>编辑区内鼠标弹起时触发</td>
+            <td class="type">(event) — 原生 MouseEvent 对象</td>
+        </tr>
+    </table>
+
+    <h3>📋 剪贴板/拖拽事件（3 个）</h3>
+    <table class="api-table">
+        <tr><th style="width:18%">事件名</th><th style="width:14%">中文名称</th><th>触发时机</th><th style="width:12%">回调参数</th></tr>
+        <tr>
+            <td><b>onpaste</b></td><td>粘贴</td>
+            <td>编辑区内执行粘贴操作（Ctrl+V / Cmd+V）时触发</td>
+            <td class="type">(event) — 原生 ClipboardEvent 对象</td>
+        </tr>
+        <tr>
+            <td><b>ondrop</b></td><td>拖拽放下</td>
+            <td>拖拽文件/文本到编辑区内并释放时触发</td>
+            <td class="type">(event) — 原生 DragEvent 对象</td>
+        </tr>
+        <tr>
+            <td><b>oncopy</b></td><td>复制</td>
+            <td>编辑区内执行复制操作（Ctrl+C / Cmd+C）时触发</td>
+            <td class="type">(event) — 原生 ClipboardEvent 对象</td>
+        </tr>
+        <tr>
+            <td><b>oncut</b></td><td>剪切</td>
+            <td>编辑区内执行剪切操作（Ctrl+X / Cmd+X）时触发</td>
+            <td class="type">(event) — 原生 ClipboardEvent 对象</td>
+        </tr>
+    </table>
+
+    <h3>🎯 焦点事件（2 个）</h3>
+    <table class="api-table">
+        <tr><th style="width:18%">事件名</th><th style="width:14%">中文名称</th><th>触发时机</th><th style="width:12%">回调参数</th></tr>
+        <tr>
+            <td><b>onfocus</b></td><td>获得焦点</td>
+            <td>编辑器获得键盘焦点（点击编辑区或按 Tab 聚焦）</td>
+            <td class="type">(cm) — CodeMirror 实例对象</td>
+        </tr>
+        <tr>
+            <td><b>onblur</b></td><td>失去焦点</td>
+            <td>编辑器失去键盘焦点（点击编辑器外部）</td>
+            <td class="type">(cm) — CodeMirror 实例对象</td>
+        </tr>
+    </table>
+
+    <h3>📐 尺寸变化事件（1 个）</h3>
+    <table class="api-table">
+        <tr><th style="width:18%">事件名</th><th style="width:14%">中文名称</th><th>触发时机</th><th style="width:12%">回调参数</th></tr>
+        <tr>
+            <td><b>onresize</b></td><td>尺寸变化</td>
+            <td>调用 <code>resize()</code>/<code>width()</code>/<code>height()</code> 方法或浏览器窗口大小改变导致编辑器尺寸变化时</td>
+            <td class="type">(width, height) — 新的宽度和高度（像素数值）</td>
+        </tr>
+    </table>
+    <pre><span class="cmt">// 尺寸变化响应 — 动态调整外部布局</span>
+<span class="key">var</span> editor = xfEditor(<span class="str">"editor"</span>, {
+    onresize: <span class="key">function</span>(width, height) {
+        console.log(<span class="str">'编辑器尺寸变为：'</span> + width + <span class="str">' × '</span> + height);
+        <span class="cmt">// 可根据新尺寸调整外部容器布局</span>
+    }
+});</pre>
+
+    <div class="notice"><strong>💡 键盘/鼠标/剪贴板/焦点事件的回调参数说明：</strong><br>
+    • <code>onkeydown</code>/<code>onkeyup</code> 接收原生 <b>KeyboardEvent</b> 对象，可通过 <code>event.key</code>、<code>event.ctrlKey</code> 等属性判断按键<br>
+    • <code>onmousedown</code>/<code>onmouseup</code> 接收原生 <b>MouseEvent</b> 对象<br>
+    • <code>onpaste</code>/<code>oncopy</code>/<code>oncut</code> 接收原生 <b>ClipboardEvent</b> 对象，其中 <code>onpaste</code> 可通过 <code>event.clipboardData</code> 获取粘贴内容<br>
+    • <code>ondrop</code> 接收原生 <b>DragEvent</b> 对象，可通过 <code>event.dataTransfer.files</code> 获取拖入的文件<br>
+    • <code>onfocus</code>/<code>onblur</code>/<code>oncursoractivity</code> 接收 <b>CodeMirror 实例</b>（等同于 <code>editor.cm</code>）
     </div>
+
+    <!-- === 事件触发顺序 === -->
+    <h3>⏱️ 事件触发顺序总览</h3>
+    <table class="api-table">
+        <tr><th style="width:12%">阶段</th><th style="width:50%">事件顺序链路</th><th>说明</th></tr>
+        <tr><td><b>初始化</b></td><td><code>onEditorLoad</code> → <code>onload</code> → <code>onAllAsyncLoad</code> → <code>onPageLoad</code> → <code>onPageAllLoad</code></td><td>从 CodeMirror 就绪到网页全部异步加载完毕的完整生命周期</td></tr>
+        <tr><td><b>输入内容</b></td><td><code>onkeydown</code> → <code>onchange</code> → <code>onkeyup</code> → <code>oncursoractivity</code></td><td>每次按键触发的完整回调链，可用于字数统计或实时校验</td></tr>
+        <tr><td><b>粘贴操作</b></td><td><code>onpaste</code> → <code>onchange</code> → <code>oncursoractivity</code></td><td>粘贴内容触发变更和光标移动</td></tr>
+        <tr><td><b>保存流程</b></td><td><code>onbeforesave</code> → 渲染 → <code>oninsert</code> → <code>onaftersave</code></td><td>保存前校验 → Markdown解析 → 插入处理 → 保存后同步</td></tr>
+        <tr><td><b>预览切换</b></td><td><code>onunwatch</code> / <code>onwatch</code> / <code>onpreviewing</code> / <code>onpreviewed</code></td><td>实时预览和全窗口预览的打开/关闭</td></tr>
+        <tr><td><b>全屏切换</b></td><td><code>onfullscreen</code> / <code>onfullscreenExit</code></td><td>F11 / fullscreen() / ESC 触发</td></tr>
+        <tr><td><b>预览交互</b></td><td><code>ontablechange</code> / <code>onimagechange</code></td><td>预览区表格编辑或图片拖拽调整后触发</td></tr>
+        <tr><td><b>拖拽文件</b></td><td><code>ondrop</code> → <code>onchange</code> → <code>oncursoractivity</code></td><td>拖入文件后自动插入内容（需额外处理）</td></tr>
+        <tr><td><b>销毁实例</b></td><td>清理事件监听 + ECharts实例 + BlobURL + 定时器</td><td><code>editor.destroy()</code> 彻底释放所有资源</td></tr>
+    </table>
+
+    <!-- === 动态事件绑定 === -->
+    <h3>🔗 动态事件绑定（editor.on / editor.off）</h3>
+    <p>除在初始化配置中声明外，也可通过实例方法动态绑定/解绑事件：</p>
+    <pre><span class="cmt">// 方式一：初始化配置（静态绑定）</span>
+<span class="key">var</span> editor = xfEditor(<span class="str">"editor"</span>, {
+    onchange: <span class="key">function</span>() { <span class="cmt">/* ... */</span> }
+});
+
+<span class="cmt">// 方式二：动态绑定</span>
+editor.on(<span class="str">"onchange"</span>, <span class="key">function</span>() {
+    console.log(<span class="str">"内容变更"</span>);
+});
+
+<span class="cmt">// 方式三：解绑事件</span>
+editor.off(<span class="str">"onchange"</span>);
+
+<span class="cmt">// 方式四：绑定一次性事件（结合 JS 原生能力）</span>
+<span class="key">var</span> handler = <span class="key">function</span>() {
+    console.log(<span class="str">"只执行一次"</span>);
+    editor.off(<span class="str">"onload"</span>, handler);  <span class="cmt">// 回调内部解绑自身</span>
+};
+editor.on(<span class="str">"onload"</span>, handler);</pre>
+    <div class="warn"><strong>⚠️ 注意：</strong><code>onwatch</code> 和 <code>onunwatch</code> 的默认值是 <code>null</code>（不是 <code>function(){}</code>），如果不显式设置，不会执行任何回调。其他所有事件默认值为 <code>function(){}</code>（空函数）。</div>
+</div>
+
+<!-- SECTION: static-methods -->
+<div class="api-section" id="static-methods">
+    <h2>静态方法 <span class="tag tag-ver">共 13 个</span></h2>
+    <p>静态方法直接挂载在 <code>xfEditor</code> 全局对象上，无需实例即可调用。适用于独立预览、XSS 过滤、动态加载等场景。</p>
+    <table class="api-table">
+        <tr><th style="width:28%">方法签名</th><th style="width:12%">返回值</th><th>参数说明</th><th>用途</th></tr>
+        <tr>
+            <td><b>xfEditor.markdownToHTML(targetId, settings)</b></td>
+            <td class="type">String</td>
+            <td><b>targetId</b> — 目标容器 ID（String）；<b>settings</b> — 配置对象（Object，同编辑器配置项）</td>
+            <td>将 Markdown 文本渲染为独立 HTML 页面。适用于纯预览场景，无需创建编辑器实例</td>
+        </tr>
+        <tr>
+            <td><b>xfEditor.markdownToCRenderer(toc, container, dropdown, startLevel)</b></td>
+            <td class="type">void</td>
+            <td><b>toc</b> — TOC 开关（Boolean）；<b>container</b> — 目录容器（jQuery对象）；<b>dropdown</b> — 是否下拉（Boolean）；<b>startLevel</b> — 起始标题层级（Number, 默认1）</td>
+            <td>为已渲染的 HTML 文档生成侧栏目录导航，支持滚动高亮和层级缩进</td>
+        </tr>
+        <tr>
+            <td><b>xfEditor.filterHTMLTags(html, filters)</b></td>
+            <td class="type">String</td>
+            <td><b>html</b> — 原始 HTML 字符串（String）；<b>filters</b> — 过滤模式（Boolean/String）：true=全部过滤, false=不过滤, "tag1,tag2"=白名单</td>
+            <td>XSS 安全过滤。移除危险标签（script/iframe/object/embed等），保留白名单标签和属性</td>
+        </tr>
+        <tr>
+            <td><b>xfEditor.loadScript(url, callback)</b></td>
+            <td class="type">void</td>
+            <td><b>url</b> — JS 文件路径（String）；<b>callback</b> — 加载完成后的回调函数（Function，可选）</td>
+            <td>动态加载 JavaScript 文件。自动防重复加载，支持可选回调</td>
+        </tr>
+        <tr>
+            <td><b>xfEditor.loadCSS(url)</b></td>
+            <td class="type">void</td>
+            <td><b>url</b> — CSS 文件路径（String）</td>
+            <td>动态加载 CSS 样式文件。自动防重复加载</td>
+        </tr>
+        <tr>
+            <td><b>xfEditor.loadKaTeX(callback)</b></td>
+            <td class="type">void</td>
+            <td><b>callback</b> — KaTeX 加载完成后的回调函数（Function，可选）</td>
+            <td>动态加载 KaTeX 数学公式渲染库（katex.min.js + katex.min.css）</td>
+        </tr>
+        <tr>
+            <td><b>xfEditor.lockScreen(lock)</b></td>
+            <td class="type">void</td>
+            <td><b>lock</b> — true=锁屏, false=解锁（Boolean）</td>
+            <td>全局锁屏控制。锁屏后禁止页面滚动和用户交互</td>
+        </tr>
+        <tr>
+            <td><b>xfEditor.escapeHtml(str)</b></td>
+            <td class="type">String</td>
+            <td><b>str</b> — 源字符串（String）</td>
+            <td>HTML 实体编码：&amp; → &amp;amp;  &lt; → &amp;lt;  &gt; → &amp;gt;  " → &amp;quot;  ' → &amp;#39;</td>
+        </tr>
+        <tr>
+            <td><b>xfEditor.escapeAttr(str)</b></td>
+            <td class="type">String</td>
+            <td><b>str</b> — 源字符串（String）</td>
+            <td>HTML 属性值编码。用于属性值中的特殊字符安全转义</td>
+        </tr>
+        <tr>
+            <td><b>xfEditor.base64Encode(str)</b></td>
+            <td class="type">String</td>
+            <td><b>str</b> — 源字符串（String）</td>
+            <td>安全 Base64 编码（UTF-8 码点安全处理，非标准 btoa）</td>
+        </tr>
+        <tr>
+            <td><b>xfEditor.base64Decode(b64)</b></td>
+            <td class="type">String</td>
+            <td><b>b64</b> — Base64 字符串（String）</td>
+            <td>安全 Base64 解码（UTF-8 码点安全处理，非标准 atob）</td>
+        </tr>
+        <tr>
+            <td><b>xfEditor.registerLang(name, langObj)</b></td>
+            <td class="type">void</td>
+            <td><b>name</b> — 语言标识（String, 如 "ja"）；<b>langObj</b> — 语言包对象（Object，结构同 languages/zh-cn.js）</td>
+            <td>注册自定义语言包。注册后可通过 <code>lang.name</code> 配置使用</td>
+        </tr>
+        <tr>
+            <td><b>xfEditor.getLang(name)</b></td>
+            <td class="type">Object|null</td>
+            <td><b>name</b> — 语言标识（String, 如 "zh-cn"）</td>
+            <td>获取已注册的语言包对象，未注册返回 null</td>
+        </tr>
+    </table>
+
+    <h3>详细示例</h3>
+    <pre><span class="cmt">// 1. markdownToHTML — 独立 Markdown 转完整 HTML 页面</span>
+<span class="key">var</span> fullHtml = xfEditor.markdownToHTML(<span class="str">"preview-container"</span>, {
+    markdown    : <span class="str">"# 标题\n\n内容段落..."</span>,
+    toc         : <span class="fn">true</span>,            <span class="cmt">// 生成目录</span>
+    tocDropdown : <span class="fn">false</span>,          <span class="cmt">// 内嵌目录（非下拉）</span>
+    tocTitle    : <span class="str">"目录导航"</span>,      <span class="cmt">// 自定义目录标题</span>
+    tocStartLevel : <span class="num">2</span>,           <span class="cmt">// 从 H2 开始收录目录</span>
+    htmlDecode  : <span class="str">"b,i,u,span,p,a"</span>, <span class="cmt">// 仅允许安全标签</span>
+    tex         : <span class="fn">true</span>,            <span class="cmt">// 启用 KaTeX 公式</span>
+    echarts     : <span class="fn">true</span>,            <span class="cmt">// 启用 ECharts 图表</span>
+    tabs        : <span class="fn">true</span>,            <span class="cmt">// 启用标签页组件</span>
+    columns     : <span class="fn">true</span>,            <span class="cmt">// 启用多列排版</span>
+    tooltip     : <span class="fn">true</span>,            <span class="cmt">// 启用悬浮提示</span>
+    pageBlock   : <span class="fn">true</span>,            <span class="cmt">// 启用纸张页面</span>
+    grid        : <span class="fn">true</span>            <span class="cmt">// 启用栅格布局</span>
+});
+
+<span class="cmt">// 2. filterHTMLTags — XSS 安全过滤</span>
+<span class="cmt">// 最安全：过滤所有 HTML 标签</span>
+<span class="key">var</span> safe1 = xfEditor.filterHTMLTags(<span class="str">'&lt;p&gt;Hi &lt;script&gt;alert(1)&lt;/script&gt;&lt;/p&gt;'</span>, <span class="fn">true</span>);
+<span class="cmt">// → "&lt;p&gt;Hi &lt;/p&gt;"  — script 标签被移除</span>
+
+<span class="cmt">// 白名单模式：仅保留指定标签</span>
+<span class="key">var</span> safe2 = xfEditor.filterHTMLTags(dirtyHtml, <span class="str">"b,i,u,span,div,p,br,img,table"</span>);
+<span class="cmt">// → 只保留白名单标签，其余全部转义</span>
+
+<span class="cmt">// 3. 动态加载与锁屏组合使用</span>
+xfEditor.loadScript(<span class="str">"./lib/echarts.min.js"</span>, <span class="key">function</span>() {
+    console.log(<span class="str">"ECharts 加载成功，版本："</span> + (echarts.version || <span class="str">"未知"</span>));
+    <span class="cmt">// 加载完成后可初始化图表</span>
+});
+
+xfEditor.loadCSS(<span class="str">"https://cdn.example.com/custom-theme.css"</span>);
+
+<span class="cmt">// 4. 锁屏控制 — 用于长时间操作前防止用户误操作</span>
+xfEditor.lockScreen(<span class="fn">true</span>);   <span class="cmt">// 锁屏</span>
+<span class="cmt">// ... 执行耗时操作 ...</span>
+setTimeout(<span class="key">function</span>() {
+    xfEditor.lockScreen(<span class="fn">false</span>); <span class="cmt">// 解锁</span>
+}, <span class="num">3000</span>);
+
+<span class="cmt">// 5. 自定义语言包注册</span>
+xfEditor.registerLang(<span class="str">"ja"</span>, {
+    name        : <span class="str">"ja"</span>,
+    description : <span class="str">"Markdownエディタ"</span>,
+    tocTitle    : <span class="str">"目次"</span>,
+    placeholder : <span class="str">"何かを書いてください〜"</span>,
+    toolbar     : {
+        bold             : <span class="str">"太字 (Ctrl+B)"</span>,
+        italic           : <span class="str">"斜体 (Ctrl+I)"</span>,
+        <span class="cmt">// ... 更多翻译项</span>
+    }
+});
+<span class="key">var</span> jaLang = xfEditor.getLang(<span class="str">"ja"</span>); <span class="cmt">// 获取已注册的日语包</span></pre>
+</div>
+
+<!-- SECTION: image-upload -->
+<div class="api-section" id="image-upload">
+    <h2>图片上传接口</h2>
+    <h3>请求方式</h3>
+    <p><code>POST</code> | <code>Content-Type: multipart/form-data</code></p>
+    <h3>请求参数</h3>
+    <table class="api-table">
+        <tr><th style="width:18%">参数名</th><th style="width:10%">类型</th><th style="width:8%">必填</th><th>说明</th></tr>
+        <tr><td><b>xf_editor-image-file</b></td><td class="type">File</td><td>✅ 是</td><td>上传的图片文件。HTML 表单 <code>&lt;input type="file" name="xf_editor-image-file"&gt;</code></td></tr>
+        <tr><td><b>guid</b></td><td class="type">String</td><td>否</td><td>唯一标识符，用于追踪上传请求</td></tr>
+    </table>
+
+    <h3>✅ 成功响应（HTTP 200）</h3>
+    <div class="notice"><strong>必需字段：</strong><code>success</code>=1、<code>message</code>（提示信息）、<code>url</code>（图片公网可访问 URL）</div>
+    <pre>{
+    <span class="str">"success"</span>: <span class="num">1</span>,
+    <span class="str">"message"</span>: <span class="str">"上传成功！"</span>,
+    <span class="str">"url"</span>:     <span class="str">"https://cdn.example.com/uploads/2024/abc123.png"</span>
+}</pre>
+    <div class="notice"><strong>额外字段说明：</strong>服务端可额外返回以下字段用于高级功能</div>
+    <pre>{
+    <span class="str">"success"</span> : <span class="num">1</span>,
+    <span class="str">"message"</span> : <span class="str">"上传成功！"</span>,
+    <span class="str">"url"</span>     : <span class="str">"https://cdn.example.com/uploads/photo.png"</span>,
+    <span class="str">"width"</span>   : <span class="num">1920</span>,                   <span class="cmt">// 可选：图片宽度(px)，自动回填到尺寸输入框</span>
+    <span class="str">"height"</span>  : <span class="num">1080</span>,                   <span class="cmt">// 可选：图片高度(px)</span>
+    <span class="str">"alt"</span>     : <span class="str">"图片描述"</span>,              <span class="cmt">// 可选：替代文本，自动回填</span>
+    <span class="str">"title"</span>   : <span class="str">"图片标题"</span>              <span class="cmt">// 可选：标题文本，自动回填</span>
+}</pre>
+
+    <h3>❌ 失败响应（HTTP 200）</h3>
+    <pre>{
+    <span class="str">"success"</span>: <span class="num">0</span>,
+    <span class="str">"message"</span>: <span class="str">"上传失败：文件格式不支持，仅允许 jpg/jpeg/gif/png/bmp/webp"</span>
+}</pre>
+
+    <h3>❌ 服务器错误响应（HTTP 4xx/5xx）</h3>
+    <pre>{
+    <span class="str">"success"</span>: <span class="num">0</span>,
+    <span class="str">"message"</span>: <span class="str">"服务器内部错误，请稍后重试"</span>
+}</pre>
+
+    <div class="warn"><strong>⚠️ 关键注意事项：</strong><br>
+    1. 无论成功失败，HTTP 状态码都建议返回 <b>200</b>，通过 <code>success</code> 字段区分<br>
+    2. <code>url</code> 必须是<b>浏览器可直接访问的完整 URL</b>（含协议和域名）<br>
+    3. 上传字段名必须为 <code>xf_editor-image-file</code>，对应 HTML 表单 <code>&lt;input name="xf_editor-image-file"&gt;</code><br>
+    4. 返回 <code>Content-Type: application/json; charset=utf-8</code> 编码头</div>
+
+    <h3>跨域上传流程</h3>
+    <p>当 <code>crossDomainUpload: true</code> 时，通过隐藏 iframe 提交。服务端返回 <b>302 重定向</b>到 callback 页面：</p>
+    <pre><span class="cmt">// 服务端重定向 URL（GET 参数）</span>
+<span class="str">callback.html?</span>
+    success=<span class="num">1</span>&
+    message=<span class="str">上传成功</span>&
+    url=<span class="str">https://example.com/img.png</span>&
+    dialog_id=<span class="str">xf_editor-dialog-xxx</span>&
+    temp=<span class="str">1700000000000</span></pre>
+    <table class="api-table">
+        <tr><th style="width:18%">参数</th><th>说明</th></tr>
+        <tr><td><b>success</b></td><td>1=成功，0=失败</td></tr>
+        <tr><td><b>message</b></td><td>提示信息（需 URL 编码）</td></tr>
+        <tr><td><b>url</b></td><td>图片公网 URL（需 URL 编码）</td></tr>
+        <tr><td><b>dialog_id</b></td><td>对话框 ID，用于定位对应弹窗</td></tr>
+        <tr><td><b>temp</b></td><td>时间戳，防止浏览器缓存</td></tr>
+    </table>
+</div>
+
+<!-- SECTION: file-upload -->
+<div class="api-section" id="file-upload">
+    <h2>文件上传接口 <span class="tag tag-ver">v1.7.0</span></h2>
+    <h3>请求方式</h3>
+    <p><code>POST</code> | <code>Content-Type: multipart/form-data</code></p>
+    <h3>请求参数</h3>
+    <table class="api-table">
+        <tr><th style="width:18%">参数名</th><th style="width:10%">类型</th><th style="width:8%">必填</th><th>说明</th></tr>
+        <tr><td><b>xf_editor-file-file</b></td><td class="type">File</td><td>✅ 是</td><td>上传的文件。字段名 <code>xf_editor-file-file</code></td></tr>
+        <tr><td><b>guid</b></td><td class="type">String</td><td>否</td><td>唯一标识符</td></tr>
+    </table>
+    <h3>✅ 成功响应</h3>
+    <pre>{
+    <span class="str">"success"</span>: <span class="num">1</span>,
+    <span class="str">"message"</span>: <span class="str">"上传成功！"</span>,
+    <span class="str">"url"</span>:     <span class="str">"https://cdn.example.com/files/document.pdf"</span>,
+    <span class="str">"name"</span>:    <span class="str">"document.pdf"</span>,
+    <span class="str">"size"</span>:    <span class="num">2048576</span>          <span class="cmt">// 可选：文件大小(字节)</span>
+}</pre>
+    <h3>❌ 失败响应</h3>
+    <pre>{
+    <span class="str">"success"</span>: <span class="num">0</span>,
+    <span class="str">"message"</span>: <span class="str">"上传失败：文件大小超过限制(最大 50MB)"</span>
+}</pre>
+    <div class="notice"><strong>必需字段：</strong><code>success</code>（1/0）、<code>message</code>（提示）、<code>url</code>（文件下载地址）、<code>name</code>（文件名，自动回填到文件名称输入框）</div>
+</div>
+
+<!-- SECTION: video-upload -->
+<div class="api-section" id="video-upload">
+    <h2>视频上传接口 <span class="tag tag-ver">v1.7.0</span></h2>
+    <h3>请求方式</h3>
+    <p><code>POST</code> | <code>Content-Type: multipart/form-data</code></p>
+    <h3>请求参数</h3>
+    <table class="api-table">
+        <tr><th style="width:18%">参数名</th><th style="width:10%">类型</th><th style="width:8%">必填</th><th>说明</th></tr>
+        <tr><td><b>xf_editor-video-file</b></td><td class="type">File</td><td>✅ 是</td><td>上传的视频文件</td></tr>
+        <tr><td><b>guid</b></td><td class="type">String</td><td>否</td><td>唯一标识符</td></tr>
+    </table>
+    <h3>✅ 成功响应</h3>
+    <pre>{
+    <span class="str">"success"</span>: <span class="num">1</span>,
+    <span class="str">"message"</span>: <span class="str">"上传成功！"</span>,
+    <span class="str">"url"</span>:     <span class="str">"https://cdn.example.com/videos/demo.mp4"</span>,
+    <span class="str">"poster"</span>:  <span class="str">"https://cdn.example.com/videos/demo-poster.jpg"</span>  <span class="cmt">// 可选：视频封面</span>
+}</pre>
+    <h3>❌ 失败响应</h3>
+    <pre>{
+    <span class="str">"success"</span>: <span class="num">0</span>,
+    <span class="str">"message"</span>: <span class="str">"上传失败：视频格式不支持，仅允许 mp4/webm/ogv/mov"</span>
+}</pre>
+    <div class="notice"><strong>必需字段：</strong><code>success</code>（1/0）、<code>message</code>（提示）、<code>url</code>（视频地址）。可选字段 <code>poster</code> 用于视频封面图。</div>
+</div>
+
+<!-- SECTION: syntax -->
+<div class="api-section" id="syntax">
+    <h2>扩展语法速查</h2>
+
+    <h3>Tabs 标签页 <span class="tag tag-ver">v1.7.0</span></h3>
+    <table class="api-table">
+        <tr><th>语法</th><th>说明</th></tr>
+        <tr><td><code>[[tabs]]...[[/tabs]]</code></td><td>标签页容器。支持内部嵌套代码块、表格、图表等</td></tr>
+        <tr><td><code>[[tab:标题]]...[[/tab]]</code></td><td>单个标签页，标题必填。最多 50 个标签</td></tr>
+    </table>
+
+    <h3>多列排版 <span class="tag tag-ver">v1.7.0</span></h3>
+    <table class="api-table">
+        <tr><th>语法</th><th>说明</th></tr>
+        <tr><td><code>[[columns:N]]...[[/columns]]</code></td><td>N 栏排版，N 取值 1-12</td></tr>
+    </table>
+
+    <h3>栅格化布局 <span class="tag tag-new">NEW v1.17.10</span></h3>
+    <table class="api-table">
+        <tr><th>语法</th><th>说明</th></tr>
+        <tr><td><code>[[row]]...[[/row]]</code></td><td>栅格行容器（10 栏系统）</td></tr>
+        <tr><td><code>[[col:N]]...[[/col]]</code></td><td>栅格列，N（1-10）=占用栏数。省略 N 自动平分</td></tr>
+    </table>
+
+    <h3>纸张页面 <span class="tag tag-ver">v1.7.0</span></h3>
+    <table class="api-table">
+        <tr><th>语法</th><th>说明</th></tr>
+        <tr><td><code>[[page:A4]]...[[/page]]</code></td><td>A4 尺寸（210×297mm）</td></tr>
+        <tr><td><code>[[page:A5]]...[[/page]]</code></td><td>A5 尺寸（148×210mm）</td></tr>
+    </table>
+
+    <h3>文本对齐</h3>
+    <table class="api-table">
+        <tr><th>语法</th><th>说明</th></tr>
+        <tr><td><code>⁑内容⁑</code></td><td>行内居中（U+2051）</td></tr>
+        <tr><td><code>⁑⁖内容⁖⁑</code></td><td>行内左对齐</td></tr>
+        <tr><td><code>⠪内容⠪</code></td><td>行内右对齐（U+282A）</td></tr>
+    </table>
+
+    <h3>悬浮提示 Tooltip</h3>
+    <table class="api-table">
+        <tr><th>语法</th><th>说明</th></tr>
+        <tr><td><code>[文本](tooltip:text:内容)</code></td><td>文本悬浮提示。可选 &lt;宽,高&gt;</td></tr>
+        <tr><td><code>[文本](tooltip:image:URL)</code></td><td>图片悬浮提示。支持 &lt;宽,高&gt;</td></tr>
+        <tr><td><code>[文本](tooltip:iframe:URL)</code></td><td>iframe 悬浮预览。支持 &lt;宽,高&gt;</td></tr>
+        <tr><td><code>[文本](tooltip:html:选择器)</code></td><td>HTML DOM 元素。支持 .class、#id、[attr]</td></tr>
+        <tr><td><code>[文本](tooltip:iframe:pre#id)</code></td><td><span class="tag tag-new">NEW v1.17.10</span> 代码块悬浮预览。支持 #id / .class</td></tr>
+    </table>
+
+    <h3>ECharts 图表</h3>
+    <table class="api-table">
+        <tr><th>语法</th><th>说明</th></tr>
+        <tr><td><code>```echarts {JSON}```</code></td><td>ECharts 图表。type 支持 bar/line/pie/radar/funnel/tree</td></tr>
+    </table>
+
+    <h3>代码块扩展 <span class="tag tag-new">NEW v1.17.10</span></h3>
+    <table class="api-table">
+        <tr><th>语法</th><th>说明</th></tr>
+        <tr><td><code>```(.class)```</code></td><td>为 pre 设置 class 属性</td></tr>
+        <tr><td><code>```(#id)```</code></td><td>为 pre 设置 id 属性</td></tr>
+        <tr><td><code>```(hidden)```</code></td><td>隐藏代码块 display:none!important。配合 iframe:pre 使用</td></tr>
+        <tr><td><code>```语言(.class#id)```</code></td><td>语言+class+id 组合</td></tr>
+    </table>
+
+    <h3>其他扩展语法</h3>
+    <table class="api-table">
+        <tr><th>语法</th><th>说明</th></tr>
+        <tr><td><code>{文本|拼音}</code></td><td>拼音标注</td></tr>
+        <tr><td><code>^上标^</code></td><td>上标（右上角）</td></tr>
+        <tr><td><code>^^下标^^</code></td><td>下标（右下角）</td></tr>
+        <tr><td><code>&lt;&lt;下标&gt;^&lt;上标&gt;&gt;</code></td><td>组合上下标</td></tr>
+        <tr><td><code>!字号 文本!</code></td><td>自定义字号（8-200px）</td></tr>
+        <tr><td><code>[^脚注名]</code> + <code>[^脚注名]: 内容</code></td><td>脚注引用与定义</td></tr>
+        <tr><td><code>![alt](url)&lt;W,H&gt;</code></td><td>固定图片尺寸</td></tr>
+        <tr><td><code>[链接](url){target=_blank}</code></td><td><span class="tag tag-new">NEW v1.17.10</span> 链接 target</td></tr>
+        <tr><td><code>[========]</code></td><td>分页符</td></tr>
+        <tr><td><code>@username</code></td><td>@用户链接</td></tr>
+        <tr><td><code>[[video]]URL[[/video]]</code></td><td>视频嵌入</td></tr>
+        <tr><td><code>[[file]]URL|名称[[/file]]</code></td><td>附件链接</td></tr>
+        <tr><td><code>[[copybookTian]](字)(字)[[/copybookTian]]</code></td><td>田字格</td></tr>
+        <tr><td><code>[[copybookMi]](字)(字)[[/copybookMi]]</code></td><td>米字格</td></tr>
+        <tr><td><code>[[copybookPinyin]]{汉字|拼音}(!width:N)[[/copybookPinyin]]</code></td><td>拼音格</td></tr>
+        <tr><td><code>```flow ... ```</code></td><td>流程图（flowchart.js）</td></tr>
+        <tr><td><code>```seq ... ```</code></td><td>时序图（js-sequence-diagrams）</td></tr>
+    </table>
+</div>
+
+<!-- SECTION: full-example -->
+<div class="api-section" id="full-example">
+    <h2>完整配置示例（含所有参数 + 中文注释）</h2>
+    <p>以下为 xfEditor v1.17.10 <strong>全部</strong>配置参数的完整示例，每个参数后均有详细中文注释（含默认值、可选值与区别）。</p>
+
+    <h3>最简配置（3 参数即用）</h3>
+    <pre><span class="cmt">// ★ 最小可行配置</span>
+<span class="key">var</span> editor = xfEditor(<span class="str">"editor-container"</span>, {
+    width  : <span class="str">"100%"</span>,   <span class="cmt">// 宽度，默认 "100%"</span>
+    height : <span class="num">640</span>,      <span class="cmt">// 高度，默认 "100%"</span>
+    path   : <span class="str">"./lib/"</span>  <span class="cmt">// 依赖目录，默认 "./lib/"</span>
+});</pre>
+
+    <h3>生产环境完整配置</h3>
+    <pre><span class="cmt">/**
+ * xfEditor v1.17.10 完整配置
+ * 涵盖所有参数、默认值、可选值及中文说明
+ */</span>
+<span class="key">var</span> editor = xfEditor(<span class="str">"editor-container"</span>, {
+
+    <span class="cmt">/* ===== 基础配置 ===== */</span>
+    <span class="cmt">// 解析模式，默认 "gfm"</span>
+    <span class="cmt">// "gfm"=GitHub风格(推荐) | "markdown"=标准 | "text/x-markdown"=CM原生</span>
+    mode              : <span class="str">"gfm"</span>,
+    width             : <span class="str">"100%"</span>,      <span class="cmt">// 宽度，默认 "100%"</span>
+    height            : <span class="num">640</span>,         <span class="cmt">// 高度，默认 "100%"</span>
+    path              : <span class="str">"./lib/"</span>,    <span class="cmt">// 依赖目录，默认 "./lib/"</span>
+    pluginPath        : <span class="str">"../plugins/"</span>,<span class="cmt">// 插件目录，默认 "../plugins/"</span>
+    markdown          : <span class="str">"# Hello"</span>,  <span class="cmt">// 初始内容，默认 ""</span>
+    appendMarkdown    : <span class="str">""</span>,         <span class="cmt">// 追加内容，默认 ""</span>
+    name              : <span class="str">""</span>,         <span class="cmt">// 表单name，默认 ""（自动生成）</span>
+    value             : <span class="str">""</span>,         <span class="cmt">// CM初始值，默认 ""</span>
+    placeholder       : <span class="str">"写点什么吧~"</span>,<span class="cmt">// 占位文本，默认 "写点什么吧~"</span>
+    delay             : <span class="num">80</span>,          <span class="cmt">// 解析延迟ms，默认 80</span>
+    autoLoadModules   : <span class="fn">true</span>,       <span class="cmt">// 自动加载模块，默认 true</span>
+    readOnly          : <span class="fn">false</span>,      <span class="cmt">// 只读，默认 false</span>
+    fontSize          : <span class="str">"13px"</span>,    <span class="cmt">// 字号，默认 "13px"</span>
+    saveHTMLToTextarea: <span class="fn">false</span>,      <span class="cmt">// 保存HTML到textarea，默认 false</span>
+    disabledKeyMaps   : [],          <span class="cmt">// 禁用快捷键，默认 []</span>
+
+    <span class="cmt">/* ===== 主题配置 ===== */</span>
+    <span class="cmt">// theme: 编辑器主题，默认 ""，可选 ""|"default"|"dark"</span>
+    theme             : <span class="str">"default"</span>,
+    <span class="cmt">// editorTheme: CodeMirror主题，默认 "default"</span>
+    <span class="cmt">// 可选: monokai|cobalt|ambiance|midnight|solarized|eclipse等35+种</span>
+    editorTheme       : <span class="str">"default"</span>,
+    <span class="cmt">// previewTheme: 预览主题，默认 ""，可选 ""|"default"|"dark"</span>
+    previewTheme      : <span class="str">"default"</span>,
+
+    <span class="cmt">/* ===== 对话框配置 ===== */</span>
+    dialogLockScreen  : <span class="fn">true</span>,       <span class="cmt">// 对话框锁屏，默认 true</span>
+    dialogShowMask    : <span class="fn">true</span>,       <span class="cmt">// 显示遮罩，默认 true</span>
+    dialogDraggable   : <span class="fn">true</span>,       <span class="cmt">// 可拖拽，默认 true</span>
+    dialogMaskBgColor : <span class="str">"#fff"</span>,    <span class="cmt">// 遮罩背景色，默认 "#fff"</span>
+    dialogMaskOpacity : <span class="num">0.1</span>,        <span class="cmt">// 遮罩透明度，默认 0.1</span>
+
+    <span class="cmt">/* ===== CodeMirror配置 ===== */</span>
+    autoFocus         : <span class="fn">true</span>,       <span class="cmt">// 自动聚焦，默认 true</span>
+    autoHeight        : <span class="fn">false</span>,      <span class="cmt">// 自适应高度，默认 false</span>
+    codeFold          : <span class="fn">false</span>,      <span class="cmt">// 代码折叠，默认 false</span>
+    gotoLine          : <span class="fn">true</span>,       <span class="cmt">// 跳转行，默认 true</span>
+    lineNumbers       : <span class="fn">true</span>,       <span class="cmt">// 行号，默认 true</span>
+    lineWrapping      : <span class="fn">true</span>,       <span class="cmt">// 自动换行，默认 true</span>
+    autoCloseBrackets : <span class="fn">true</span>,       <span class="cmt">// 括号闭合，默认 true</span>
+    autoCloseTags     : <span class="fn">true</span>,       <span class="cmt">// 标签闭合，默认 true</span>
+    tabSize           : <span class="num">4</span>,          <span class="cmt">// Tab宽度，默认 4</span>
+    indentUnit        : <span class="num">4</span>,          <span class="cmt">// 缩进单位，默认 4</span>
+    indentWithTabs    : <span class="fn">true</span>,       <span class="cmt">// Tab缩进，默认 true(false=空格)</span>
+    showTrailingSpace : <span class="fn">true</span>,       <span class="cmt">// 尾部空格标记，默认 true</span>
+    matchBrackets     : <span class="fn">true</span>,       <span class="cmt">// 括号匹配，默认 true</span>
+    styleSelectedText : <span class="fn">true</span>,       <span class="cmt">// 选中样式，默认 true</span>
+    <span class="cmt">// matchWordHighlight: 单词匹配，默认 true</span>
+    <span class="cmt">// true=始终高亮 | "onselected"=选中时高亮 | false=关闭</span>
+    matchWordHighlight: <span class="fn">true</span>,
+    styleActiveLine   : <span class="fn">true</span>,       <span class="cmt">// 当前行高亮，默认 true</span>
+    searchReplace     : <span class="fn">true</span>,       <span class="cmt">// 搜索替换，默认 true</span>
+
+    <span class="cmt">/* ===== 工具栏配置 ===== */</span>
+    toolbar           : <span class="fn">true</span>,       <span class="cmt">// 显示工具栏，默认 true</span>
+    toolbarAutoFixed  : <span class="fn">true</span>,       <span class="cmt">// 工具栏固定，默认 true</span>
+    <span class="cmt">// toolbarIcons: 图标模式，默认 "full"</span>
+    <span class="cmt">// "full"=55+按钮 | "simple"=~20按钮 | "mini"=6按钮 | 数组=自定义</span>
+    toolbarIcons      : <span class="str">"full"</span>,
+    <span class="cmt">// toolbarDropdown: 下拉分组，默认 true</span>
+    <span class="cmt">// true=分组下拉(省空间) | false=全部平铺</span>
+    toolbarDropdown   : <span class="fn">true</span>,
+    toolbarTitles     : {},          <span class="cmt">// 自定义tooltip，默认 {}</span>
+    toolbarHandlers   : {},          <span class="cmt">// 自定义处理函数，默认 {}</span>
+    toolbarCustomIcons: {},          <span class="cmt">// 自定义图标HTML，默认 {}</span>
+    toolbarIconsClass : {},          <span class="cmt">// 自定义图标class，默认 {}</span>
+    toolbarIconTexts  : {},          <span class="cmt">// 自定义图标文本，默认 {}</span>
+
+    <span class="cmt">/* ===== 功能开关 ===== */</span>
+    watch             : <span class="fn">true</span>,       <span class="cmt">// 实时预览，默认 true</span>
+    <span class="cmt">// htmlDecode: HTML解析，默认 false</span>
+    <span class="cmt">// false=不解析 | true=全部解析 | "tag1,tag2"=仅允许</span>
+    htmlDecode        : <span class="fn">false</span>,
+    toc               : <span class="fn">true</span>,       <span class="cmt">// 目录，默认 true</span>
+    tocm              : <span class="fn">false</span>,      <span class="cmt">// TOCM下拉菜单，默认 false</span>
+    <span class="cmt">// tocDropdown: 目录下拉，默认 false</span>
+    <span class="cmt">// true=下拉(省空间) | false=内嵌(滚动高亮)</span>
+    tocDropdown       : <span class="fn">false</span>,
+    tocTitle          : <span class="str">""</span>,         <span class="cmt">// 目录标题，默认 ""</span>
+    tocContainer      : <span class="str">""</span>,         <span class="cmt">// 目录容器，默认 ""</span>
+    tocStartLevel     : <span class="num">1</span>,          <span class="cmt">// 起始标题层级，默认 1</span>
+    taskList          : <span class="fn">true</span>,       <span class="cmt">// GFM任务列表，默认 true</span>
+    tex               : <span class="fn">false</span>,      <span class="cmt">// KaTeX公式，默认 false</span>
+    flowChart         : <span class="fn">false</span>,      <span class="cmt">// 流程图，默认 false</span>
+    sequenceDiagram   : <span class="fn">false</span>,      <span class="cmt">// 时序图，默认 false</span>
+    pinyin            : <span class="fn">false</span>,      <span class="cmt">// 拼音标注，默认 false</span>
+    textAlign         : <span class="fn">true</span>,       <span class="cmt">// 文本对齐，默认 true</span>
+    tableEdit         : <span class="fn">true</span>,       <span class="cmt">// 表格编辑，默认 true</span>
+    imageResize       : <span class="fn">true</span>,       <span class="cmt">// 图片缩放，默认 true</span>
+    echarts           : <span class="fn">false</span>,      <span class="cmt">// ECharts，默认 false(支持bar/line/pie/radar/funnel/tree)</span>
+    tabs              : <span class="fn">true</span>,       <span class="cmt">// 标签页，默认 true</span>
+    columns           : <span class="fn">true</span>,       <span class="cmt">// 多栏排版，默认 true</span>
+    grid              : <span class="fn">true</span>,       <span class="cmt">// 栅格布局，默认 true</span>
+    pageBlock         : <span class="fn">true</span>,       <span class="cmt">// 纸张页面，默认 true</span>
+    pageBreak         : <span class="fn">true</span>,       <span class="cmt">// 分页符，默认 true</span>
+    <span class="cmt">// tooltip: 悬浮提示，默认 true（5种：text|image|iframe|html|iframe:pre）</span>
+    tooltip           : <span class="fn">true</span>,
+    atLink            : <span class="fn">true</span>,       <span class="cmt">// @链接，默认 true</span>
+    emailLink         : <span class="fn">true</span>,       <span class="cmt">// 邮件链接，默认 true</span>
+    copybook          : <span class="fn">false</span>,      <span class="cmt">// 字帖，默认 false(田字格/米字格/拼音格)</span>
+    previewCodeHighlight: <span class="fn">true</span>,     <span class="cmt">// 代码高亮，默认 true</span>
+    syncScroll        : <span class="fn">true</span>,       <span class="cmt">// 同步滚动，默认 true(v1.17.10重写引擎)</span>
+    previewOnly       : <span class="fn">false</span>,      <span class="cmt">// 纯预览，默认 false</span>
+
+    <span class="cmt">/* ===== 上传配置 ===== */</span>
+    imageUpload       : <span class="fn">true</span>,       <span class="cmt">// 图片上传，默认 false</span>
+    imageUploadURL    : <span class="str">"./php/upload.php"</span>,<span class="cmt">// 图片上传URL，默认 ""</span>
+    imageFormats      : [<span class="str">"jpg"</span>,<span class="str">"jpeg"</span>,<span class="str">"gif"</span>,<span class="str">"png"</span>,<span class="str">"bmp"</span>,<span class="str">"webp"</span>],
+    crossDomainUpload : <span class="fn">false</span>,      <span class="cmt">// 跨域上传，默认 false</span>
+    uploadCallbackURL : <span class="str">""</span>,         <span class="cmt">// 回调URL，默认 ""</span>
+
+    fileUpload        : <span class="fn">true</span>,       <span class="cmt">// 文件上传，默认 false</span>
+    fileUploadURL     : <span class="str">"./php/upload.php"</span>,<span class="cmt">// 文件上传URL，默认 ""</span>
+    fileFormats       : [<span class="str">"doc"</span>,<span class="str">"docx"</span>,<span class="str">"pdf"</span>,<span class="str">"txt"</span>,<span class="str">"zip"</span>,<span class="str">"rar"</span>,<span class="str">"xls"</span>,<span class="str">"xlsx"</span>,<span class="str">"ppt"</span>,<span class="str">"pptx"</span>,<span class="str">"mp4"</span>,<span class="str">"mp3"</span>],
+
+    videoUpload       : <span class="fn">false</span>,      <span class="cmt">// 视频上传，默认 false</span>
+    videoUploadURL    : <span class="str">""</span>,         <span class="cmt">// 视频上传URL，默认 ""</span>
+    videoFormats      : [<span class="str">"mp4"</span>,<span class="str">"webm"</span>,<span class="str">"ogv"</span>,<span class="str">"mov"</span>],
+
+    <span class="cmt">/* ===== 草稿配置 ===== */</span>
+    draftAutoSave     : <span class="fn">false</span>,      <span class="cmt">// 自动保存，默认 false</span>
+    draftInterval     : <span class="num">30</span>,          <span class="cmt">// 保存间隔(秒)，默认 30</span>
+    draftMaxDays      : <span class="num">30</span>,          <span class="cmt">// 最大保留天数，默认 30</span>
+
+    <span class="cmt">/* ===== 事件回调（30个） ===== */</span>
+    <span class="cmt">// ★ 请按需使用，this 指向编辑器实例</span>
+    onload            : <span class="key">function</span>() { <span class="cmt">/* DOM渲染完成，可操作UI */</span> },
+    onEditorLoad      : <span class="key">function</span>() { <span class="cmt">/* CM就绪，最早触发 */</span> },
+    onPageLoad        : <span class="key">function</span>() { <span class="cmt">/* window.onload触发 */</span> },
+    onAllAsyncLoad    : <span class="key">function</span>() { <span class="cmt">/* KaTeX/ECharts/FlowChart全部就绪 */</span> },
+    onPageAllLoad     : <span class="key">function</span>() { <span class="cmt">/* 网页全部异步加载完成，最晚触发 */</span> },
+    onresize          : <span class="key">function</span>(w, h) { <span class="cmt">/* 尺寸变化: w=新宽度px, h=新高度px */</span> },
+    onchange          : <span class="key">function</span>() { <span class="cmt">/* 内容变化(含delay防抖)，this.getMarkdown()获取内容 */</span> },
+    onwatch           : <span class="fn">null</span>, <span class="cmt">/* ★ 注意: 默认null不是function(){}，不设置不触发 */</span>
+    onunwatch         : <span class="fn">null</span>, <span class="cmt">/* ★ 注意: 默认null，不设置不触发 */</span>
+    onpreviewing      : <span class="key">function</span>() { <span class="cmt">/* 进入全窗口预览(Shift+ESC退出) */</span> },
+    onpreviewed       : <span class="key">function</span>() { <span class="cmt">/* 退出全窗口预览，恢复编辑布局 */</span> },
+    onfullscreen      : <span class="key">function</span>() { <span class="cmt">/* 进入浏览器全屏(F11)，可切换全屏UI */</span> },
+    onfullscreenExit  : <span class="key">function</span>() { <span class="cmt">/* 退出浏览器全屏(ESC)，恢复普通布局 */</span> },
+    onbeforesave      : <span class="key">function</span>() { <span class="cmt">/* 保存前(渲染前)校验/预处理 */</span> },
+    onaftersave       : <span class="key">function</span>() { <span class="cmt">/* 保存后(渲染完)获取最新HTML同步后端 */</span> },
+    oninsert          : <span class="key">function</span>() { <span class="cmt">/* 插入内容时触发 */</span> },
+    ontablechange     : <span class="key">function</span>(action, row, col) { <span class="cmt">/* 表格编辑后，action=增删操作 */</span> },
+    onimagechange     : <span class="key">function</span>(src, w, h) { <span class="cmt">/* 图片尺寸调整后 */</span> },
+    onkeydown         : <span class="key">function</span>(e) { <span class="cmt">/* 按键按下，e.key/e.ctrlKey拦截快捷键 */</span> },
+    onkeyup           : <span class="key">function</span>(e) { <span class="cmt">/* 按键弹起，适合字数统计 */</span> },
+    onmouseup         : <span class="key">function</span>(e) { <span class="cmt">/* 鼠标弹起，选区完成后处理 */</span> },
+    onmousedown       : <span class="key">function</span>(e) { <span class="cmt">/* 鼠标按下，可自定义右键菜单 */</span> },
+    onpaste           : <span class="key">function</span>(e) { <span class="cmt">/* 粘贴，e.clipboardData获取粘贴内容 */</span> },
+    ondrop            : <span class="key">function</span>(e) { <span class="cmt">/* 拖拽放下，e.dataTransfer.files获取文件 */</span> },
+    oncopy            : <span class="key">function</span>(e) { <span class="cmt">/* 复制(Ctrl+C) */</span> },
+    oncut             : <span class="key">function</span>(e) { <span class="cmt">/* 剪切(Ctrl+X) */</span> },
+    onfocus           : <span class="key">function</span>(cm) { <span class="cmt">/* 获得焦点，cm=CodeMirror实例 */</span> },
+    onblur            : <span class="key">function</span>(cm) { <span class="cmt">/* 失去焦点，可自动保存草稿 */</span> },
+    oncursoractivity  : <span class="key">function</span>(cm) { <span class="cmt">/* 光标移动，显示实时行列位置 */</span> }
+});</pre>
+    <div class="notice"><strong>💡 提示：</strong>以上配置可直接复制使用。所有未设置的参数使用默认值。按需删除不需要的配置项即可。</div>
+
+    <h3>常见配置场景速查</h3>
+    <table class="api-table">
+        <tr><th>场景</th><th>关键配置</th></tr>
+        <tr><td>纯编辑器</td><td><code>watch:false, toolbarIcons:"mini"</code></td></tr>
+        <tr><td>纯预览</td><td><code>readOnly:true, watch:true, toolbar:false</code></td></tr>
+        <tr><td>暗色主题</td><td><code>theme:"dark", previewTheme:"dark", editorTheme:"monokai"</code></td></tr>
+        <tr><td>全功能</td><td><code>tex/flowChart/sequenceDiagram/echarts/tabs/columns/grid/tooltip/pinyin/copybook:true</code></td></tr>
+        <tr><td>最小部署</td><td><code>toolbarIcons:"mini", 功能开关全false, watch:false</code></td></tr>
+        <tr><td>表单集成</td><td><code>saveHTMLToTextarea:true, name:"content"</code></td></tr>
+        <tr><td>博客写作</td><td><code>draftAutoSave:true, draftInterval:10, imageUpload:true</code></td></tr>
+    </table>
+
+    <h3>实例方法速查</h3>
+    <pre><span class="cmt">// 内容操作</span>
+<span class="key">var</span> md = editor.getMarkdown();                <span class="cmt">// 获取 Markdown</span>
+editor.setValue(<span class="str">"# 新内容"</span>);                  <span class="cmt">// 设置内容</span>
+<span class="key">var</span> html = editor.getPreviewedHTML();         <span class="cmt">// 获取预览 HTML</span>
+
+<span class="cmt">// 预览控制</span>
+editor.watch();        <span class="cmt">// 开启实时预览</span>
+editor.unwatch();      <span class="cmt">// 关闭实时预览</span>
+editor.previewing();   <span class="cmt">// 全窗口预览</span>
+editor.previewed();    <span class="cmt">// 退出全窗口预览</span>
+
+<span class="cmt">// 全屏</span>
+editor.fullscreen();       <span class="cmt">// 进入全屏 (F11)</span>
+editor.fullscreenExit();   <span class="cmt">// 退出全屏 (ESC)</span>
+
+<span class="cmt">// 动态配置</span>
+editor.config(<span class="str">"watch"</span>, <span class="fn">false</span>);           <span class="cmt">// 单项设置</span>
+editor.config({ watch: <span class="fn">true</span>, readOnly: <span class="fn">false</span> }); <span class="cmt">// 批量设置</span>
+
+<span class="cmt">// 主题切换</span>
+editor.setTheme(<span class="str">"dark"</span>);
+editor.setTheme(<span class="str">"default"</span>);
+
+<span class="cmt">// 光标操作</span>
+editor.focus();                     <span class="cmt">// 聚焦</span>
+editor.setCursor(<span class="num">10</span>, <span class="num">5</span>);           <span class="cmt">// 移动到第10行第5列</span>
+<span class="key">var</span> pos = editor.getCursor();      <span class="cmt">// {line:10, ch:5}</span>
+<span class="key">var</span> sel = editor.getSelection();    <span class="cmt">// 选中文本</span>
+editor.replaceSelection(<span class="str">"替换"</span>);   <span class="cmt">// 替换选中</span>
+editor.insertValue(<span class="str">"插入"</span>);        <span class="cmt">// 插入文本</span>
+
+<span class="cmt">// 其他</span>
+editor.gotoLine(<span class="num">42</span>);           <span class="cmt">// 跳转到行</span>
+editor.showToolbar();        <span class="cmt">// 显示工具栏</span>
+editor.hideToolbar();        <span class="cmt">// 隐藏工具栏</span>
+editor.width(<span class="str">"80%"</span>);          <span class="cmt">// 设置宽度</span>
+editor.height(<span class="num">800</span>);          <span class="cmt">// 设置高度</span>
+editor.resize(<span class="str">"100%"</span>, <span class="num">600</span>); <span class="cmt">// 同时调整</span>
+editor.save();              <span class="cmt">// 手动保存</span>
+editor.clear();             <span class="cmt">// 清空内容</span>
+editor.saveDraft();         <span class="cmt">// 保存草稿</span>
+editor.showDraftRecovery(); <span class="cmt">// 恢复草稿对话框</span>
+editor.clearDraft();        <span class="cmt">// 清除草稿</span>
+editor.destroy();           <span class="cmt">// 销毁实例（释放资源）</span>
+
+<span class="cmt">// 静态方法</span>
+<span class="key">var</span> h = xfEditor.markdownToHTML(<span class="str">"id"</span>, { markdown:<span class="str">"# H1"</span>, toc:<span class="fn">true</span> });
+xfEditor.loadScript(<span class="str">"./lib/echarts.min.js"</span>, <span class="key">function</span>(){});
+<span class="key">var</span> safe = xfEditor.filterHTMLTags(dirtyHtml, <span class="fn">true</span>);
+xfEditor.lockScreen(<span class="fn">true</span>);   <span class="cmt">// 锁屏</span>
+xfEditor.lockScreen(<span class="fn">false</span>);  <span class="cmt">// 解锁</span></pre>
+</div>
+
+<!-- END full-example -->
+
+        </div><!-- /api-content -->
+    </div><!-- /layout -->
+
+    <script>
+    (function() {
+        var OFFSET = 20;
+        var nav = document.getElementById('apiNav');
+        if (!nav) return;
+
+        // 点击导航拦截：平滑滚动 + 高亮
+        nav.addEventListener('click', function(e) {
+            var link = e.target.closest('a');
+            if (!link) return;
+            var href = link.getAttribute('href');
+            if (!href || href.charAt(0) !== '#') return;
+
+            e.preventDefault();
+            var targetId = href.substring(1);
+            var target = document.getElementById(targetId);
+            if (target) {
+                var rect = target.getBoundingClientRect();
+                var scrollTop = window.pageYOffset + rect.top - OFFSET;
+                window.scrollTo({ top: scrollTop, behavior: 'smooth' });
+
+                // 高亮当前导航项
+                var allLinks = nav.querySelectorAll('a');
+                for (var i = 0; i < allLinks.length; i++) {
+                    allLinks[i].classList.remove('active');
+                }
+                link.classList.add('active');
+            }
+        });
+
+        // 滚动时高亮可见的 anchor
+        var sections = [];
+        var navLinks = nav.querySelectorAll('a');
+        for (var i = 0; i < navLinks.length; i++) {
+            var h = navLinks[i].getAttribute('href');
+            if (h && h.charAt(0) === '#') {
+                var sec = document.getElementById(h.substring(1));
+                if (sec) sections.push({ el: sec, link: navLinks[i] });
+            }
+        }
+
+        var ticking = false;
+        window.addEventListener('scroll', function() {
+            if (!ticking) {
+                requestAnimationFrame(function() {
+                    var scrollY = window.pageYOffset + OFFSET + 80;
+                    var current = null;
+                    for (var i = 0; i < sections.length; i++) {
+                        if (sections[i].el.offsetTop <= scrollY) {
+                            current = sections[i].link;
+                        }
+                    }
+                    for (var j = 0; j < navLinks.length; j++) {
+                        navLinks[j].classList.remove('active');
+                    }
+                    if (current) current.classList.add('active');
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        });
+    })();
+    </script>
 </body>
 </html>

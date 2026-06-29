@@ -5,7 +5,7 @@
         <meta charset="utf-8" />
         <title>Onchange - xfEditor examples</title>
         <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" />
+        <link rel="stylesheet" href="../css/xf_editor.min.css" />
     </head>
     <body>
         <div id="layout">
@@ -14,7 +14,7 @@
                 <p>Plaese press F12, open the develop tools.</p> 
                 <p id="output"></p>    
             </header>
-            <div id="test-editormd">                
+            <div id="test-xfEditor">                
                 <textarea style="display:none;">#### Settings
 
 ```javascript
@@ -29,12 +29,12 @@
             </div>
         </div>        
         <script src="js/jquery.min.js"></script>
-        <script src="../editormd.min.js"></script>   
+        <script src="../xf_editor.min.js"></script>   
         <script type="text/javascript">
             var testEditor;
             
             $(function() {
-                testEditor = editormd("test-editormd", {
+                testEditor = xfEditor("test-xfEditor", {
                     width  : "90%",
                     height : 720,
                     path   : '../lib/',

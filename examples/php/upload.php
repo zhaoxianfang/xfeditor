@@ -1,15 +1,15 @@
 <?php
 
 /**
- * Editor.md 统一上传接口（PHP 8 版本）
+ * xfEditor 统一上传接口（PHP 8 版本）
  *
  * ## 功能说明
  *
  * 支持图片、附件（文件）、视频三种类型的文件上传。
  * 根据不同的 file input name 自动识别上传类型：
- *   - editormd-image-file → 图片上传
- *   - editormd-file-file  → 附件上传
- *   - editormd-video-file → 视频上传
+ *   - xfeditor-image-file → 图片上传
+ *   - xfeditor-file-file  → 附件上传
+ *   - xfeditor-video-file → 视频上传
  *
  * 也可通过 POST 参数 `upload_type` 明确指定：image / file / video
  *
@@ -18,9 +18,9 @@
  * ### 文件域（multipart/form-data）：
  * | 参数名              | 类型   | 必填 | 说明                              |
  * |---------------------|--------|------|-----------------------------------|
- * | editormd-image-file | File   | 否   | 图片文件。当 upload_type=image 时有效   |
- * | editormd-file-file  | File   | 否   | 附件文件。当 upload_type=file 时有效    |
- * | editormd-video-file | File   | 否   | 视频文件。当 upload_type=video 时有效   |
+ * | xfeditor-image-file | File   | 否   | 图片文件。当 upload_type=image 时有效   |
+ * | xfeditor-file-file  | File   | 否   | 附件文件。当 upload_type=file 时有效    |
+ * | xfeditor-video-file | File   | 否   | 视频文件。当 upload_type=video 时有效   |
  *
  * ### POST 参数（可选）：
  * | 参数名      | 类型   | 必填 | 说明                                              |
@@ -57,13 +57,13 @@
  * }
  * ```
  *
- * @package   Editor.md
+ * @package   xfEditor
  * @version   2.0.0
  */
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/EditorMdUploader.php';
+require_once __DIR__ . '/XfEditorUploader.php';
 
 // ==================== 请求头 ====================
 
@@ -98,26 +98,26 @@ if (!is_dir($uploadsDir)) {
 }
 $savePath = realpath($uploadsDir) . DIRECTORY_SEPARATOR;
 // 相对于站点根目录的 URL 路径
-$url      = rtrim(dirname($_SERVER['PHP_SELF']), '/') . '/';
+$url      = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/') . '/';
 $saveURL  = $url . '../uploads/';
 
 // 各类文件允许的扩展名
 $allowedFormats = [
-    EditorMdUploader::TYPE_IMAGE => ['gif', 'jpg', 'jpeg', 'png', 'bmp', 'webp', 'svg'],
-    EditorMdUploader::TYPE_FILE  => [
+    XfEditorUploader::TYPE_IMAGE => ['gif', 'jpg', 'jpeg', 'png', 'bmp', 'webp', 'svg'],
+    XfEditorUploader::TYPE_FILE  => [
         'zip', 'rar', '7z', 'tar', 'gz',           // 压缩包
         'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', // Office
         'pdf', 'txt', 'md', 'csv',                   // 文档
         'mp3', 'wav', 'ogg',                         // 音频
     ],
-    EditorMdUploader::TYPE_VIDEO => ['mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm'],
+    XfEditorUploader::TYPE_VIDEO => ['mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm'],
 ];
 
 // 各类文件的默认大小限制（KB）
 $maxSizeMap = [
-    EditorMdUploader::TYPE_IMAGE => 1024 * 5,     // 图片最大 5MB
-    EditorMdUploader::TYPE_FILE  => 1024 * 20,    // 附件最大 20MB
-    EditorMdUploader::TYPE_VIDEO => 1024 * 50,    // 视频最大 50MB
+    XfEditorUploader::TYPE_IMAGE => 1024 * 5,     // 图片最大 5MB
+    XfEditorUploader::TYPE_FILE  => 1024 * 20,    // 附件最大 20MB
+    XfEditorUploader::TYPE_VIDEO => 1024 * 50,    // 视频最大 50MB
 ];
 
 // ==================== 识别上传类型与文件域名称 ====================
@@ -126,9 +126,9 @@ $maxSizeMap = [
  * file input name → 上传类型的映射
  */
 $typeMap = [
-    'editormd-image-file' => EditorMdUploader::TYPE_IMAGE,
-    'editormd-file-file'  => EditorMdUploader::TYPE_FILE,
-    'editormd-video-file' => EditorMdUploader::TYPE_VIDEO,
+    'xfeditor-image-file' => XfEditorUploader::TYPE_IMAGE,
+    'xfeditor-file-file'  => XfEditorUploader::TYPE_FILE,
+    'xfeditor-video-file' => XfEditorUploader::TYPE_VIDEO,
 ];
 
 // 优先使用 POST 参数中的 upload_type
@@ -152,20 +152,20 @@ if ($uploadType === null) {
         if (!empty($fileInfo['tmp_name'])) {
             // 根据字段名猜测类型
             if (str_contains($fieldName, 'image')) {
-                $uploadType = EditorMdUploader::TYPE_IMAGE;
+                $uploadType = XfEditorUploader::TYPE_IMAGE;
             } elseif (str_contains($fieldName, 'video')) {
-                $uploadType = EditorMdUploader::TYPE_VIDEO;
+                $uploadType = XfEditorUploader::TYPE_VIDEO;
             } elseif (str_contains($fieldName, 'file')) {
-                $uploadType = EditorMdUploader::TYPE_FILE;
+                $uploadType = XfEditorUploader::TYPE_FILE;
             } else {
                 // 根据扩展名猜测
                 $ext = strtolower(pathinfo((string)$fileInfo['name'], PATHINFO_EXTENSION));
-                if (in_array($ext, $allowedFormats[EditorMdUploader::TYPE_IMAGE], true)) {
-                    $uploadType = EditorMdUploader::TYPE_IMAGE;
-                } elseif (in_array($ext, $allowedFormats[EditorMdUploader::TYPE_VIDEO], true)) {
-                    $uploadType = EditorMdUploader::TYPE_VIDEO;
+                if (in_array($ext, $allowedFormats[XfEditorUploader::TYPE_IMAGE], true)) {
+                    $uploadType = XfEditorUploader::TYPE_IMAGE;
+                } elseif (in_array($ext, $allowedFormats[XfEditorUploader::TYPE_VIDEO], true)) {
+                    $uploadType = XfEditorUploader::TYPE_VIDEO;
                 } else {
-                    $uploadType = EditorMdUploader::TYPE_FILE;
+                    $uploadType = XfEditorUploader::TYPE_FILE;
                 }
             }
             break;
@@ -175,11 +175,11 @@ if ($uploadType === null) {
 
 // 最终默认为图片类型
 if ($uploadType === null) {
-    $uploadType = EditorMdUploader::TYPE_IMAGE;
+    $uploadType = XfEditorUploader::TYPE_IMAGE;
 }
 
 // 验证上传类型是否合法
-if (!in_array($uploadType, [EditorMdUploader::TYPE_IMAGE, EditorMdUploader::TYPE_FILE, EditorMdUploader::TYPE_VIDEO], true)) {
+if (!in_array($uploadType, [XfEditorUploader::TYPE_IMAGE, XfEditorUploader::TYPE_FILE, XfEditorUploader::TYPE_VIDEO], true)) {
     http_response_code(400);
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode([
@@ -193,8 +193,8 @@ if (!in_array($uploadType, [EditorMdUploader::TYPE_IMAGE, EditorMdUploader::TYPE
 // ==================== 确定文件域名称和配置 ====================
 
 // 反向查找文件域名称
-$fileInputName = array_search($uploadType, $typeMap, true) ?: 'editormd-image-file';
-$formats       = $allowedFormats[$uploadType] ?? $allowedFormats[EditorMdUploader::TYPE_IMAGE];
+$fileInputName = array_search($uploadType, $typeMap, true) ?: 'xfeditor-image-file';
+$formats       = $allowedFormats[$uploadType] ?? $allowedFormats[XfEditorUploader::TYPE_IMAGE];
 
 // 自定义最大文件大小（可通过 POST 参数覆盖）
 $customMaxSize = isset($_POST['max_size']) ? (int)$_POST['max_size'] : null;
@@ -203,7 +203,7 @@ $maxSize       = $customMaxSize ?? $maxSizeMap[$uploadType] ?? 1024;
 // 检查是否启用了上传（文件域名称对应的文件必须有内容）
 $hasFile = isset($_FILES[$fileInputName]) && !empty($_FILES[$fileInputName]['tmp_name']);
 
-if (!$hasFile && $uploadType === EditorMdUploader::TYPE_IMAGE) {
+if (!$hasFile && $uploadType === XfEditorUploader::TYPE_IMAGE) {
     // 对于图片上传，也尝试检查是否有其他文件域
     foreach ($_FILES as $fName => $fInfo) {
         if (!empty($fInfo['tmp_name'])) {
@@ -230,11 +230,11 @@ if (!$hasFile) {
 
 // ==================== 创建上传器并执行上传 ====================
 
-$uploader = new EditorMdUploader(
+$uploader = new XfEditorUploader(
     savePath: $savePath,
     saveURL: $saveURL,
     formats: $formats,
-    randomNameType: EditorMdUploader::RANDOM_DATE,
+    randomNameType: XfEditorUploader::RANDOM_DATE,
     randomLength: 'YmdHis',
     cover: true,
     maxSize: $maxSize,

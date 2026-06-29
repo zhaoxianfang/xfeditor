@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Editor.md 跨域上传接口（PHP 8 版本）
+ * xfEditor 跨域上传接口（PHP 8 版本）
  *
  * ## 功能说明
  *
@@ -20,7 +20,7 @@
  * ### 文件域（multipart/form-data）：
  * | 参数名              | 类型 | 必填 | 说明     |
  * |---------------------|------|------|----------|
- * | editormd-image-file | File | 是   | 图片文件  |
+ * | xfeditor-image-file | File | 是   | 图片文件  |
  *
  * ## 工作流程
  *
@@ -41,13 +41,13 @@
  * | dialog_id | 原样传递                     | 图片对话框 DOM ID    |
  * | temp      | 时间戳                       | 防止浏览器缓存        |
  *
- * @package   Editor.md
+ * @package   xfEditor
  * @version   2.0.0
  */
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/EditorMdUploader.php';
+require_once __DIR__ . '/XfEditorUploader.php';
 
 // ==================== 请求头 ====================
 
@@ -91,13 +91,13 @@ $savePath = realpath($uploadsDir) . DIRECTORY_SEPARATOR;
 
 // 跨域上传：使用绝对路径（包含域名）
 $scheme   = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-$saveURL  = $scheme . '://' . $_SERVER['HTTP_HOST'] . rtrim(dirname($_SERVER['PHP_SELF']), '/') . '/../uploads/';
+$saveURL  = $scheme . '://' . $_SERVER['HTTP_HOST'] . rtrim(dirname($_SERVER['SCRIPT_NAME']), '/') . '/../uploads/';
 
 // 允许的图片格式
 $formats = ['gif', 'jpg', 'jpeg', 'png', 'bmp', 'webp'];
 
 // 文件域名称
-$fileInputName = 'editormd-image-file';
+$fileInputName = 'xfeditor-image-file';
 
 // ==================== 构建重定向 URL ====================
 
@@ -107,11 +107,11 @@ $callbackUrl .= $separator . 'dialog_id=' . urlencode($dialogId) . '&temp=' . da
 
 // ==================== 创建上传器并执行上传 ====================
 
-$uploader = new EditorMdUploader(
+$uploader = new XfEditorUploader(
     savePath: $savePath,
     saveURL: $saveURL,
     formats: $formats,
-    randomNameType: EditorMdUploader::RANDOM_DATE,
+    randomNameType: XfEditorUploader::RANDOM_DATE,
     randomLength: 'YmdHis',
     cover: true,
     maxSize: 1024 * 5,  // 5MB

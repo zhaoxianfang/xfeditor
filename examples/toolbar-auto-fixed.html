@@ -5,7 +5,7 @@
         <meta charset="utf-8" />
         <title>Toolbar auto fixed - xfEditor examples</title>
         <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" />
+        <link rel="stylesheet" href="../css/xf_editor.min.css" />
     </head>
     <body>
         <div id="layout" style="height:3000px;">
@@ -17,7 +17,7 @@
                 <button id="enable-btn">Enable</button>
                 <button id="disable-btn">Disable</button>
             </div>
-            <div id="test-editormd">
+            <div id="test-xfEditor">
                 <textarea style="display:none;">### Hello world!
 
 codemirror
@@ -94,12 +94,12 @@ Bower Distribution of the Sparqlification Mapping Language (SML) Syntax Highligh
             </div>
         </div>
         <script src="js/jquery.min.js"></script>
-        <script src="../editormd.min.js"></script>
+        <script src="../xf_editor.min.js"></script>
         <script type="text/javascript">
 			var testEditor;
 
             $(function() {
-                testEditor = editormd("test-editormd", {
+                testEditor = xfEditor("test-xfEditor", {
                     width  : "90%",
                     height : 1600,
                     path   : "../lib/"

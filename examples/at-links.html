@@ -5,8 +5,8 @@
     <meta charset="utf-8" />
     <title>@链接 和 Email 自动链接 — xfEditor v1.17.8</title>
     <link rel="stylesheet" href="css/style.css" />
-    <link rel="stylesheet" href="../css/editormd.css" />
-    <link rel="stylesheet" href="../css/editormd.preview.css" />
+    <link rel="stylesheet" href="../css/xf_editor.min.css" />
+    <link rel="stylesheet" href="../css/xf_editor.preview.min.css" />
     <style>
         #layout { max-width: 1200px; margin: 0 auto; padding: 20px; }
         header { text-align: center; padding: 30px 20px; background: linear-gradient(135deg, #0969da, #0550ae); color: #fff; border-radius: 8px; margin-bottom: 20px; }
@@ -18,7 +18,7 @@
         .info table { width: 100%; border-collapse: collapse; margin: 10px 0; }
         .info th { background: #e8eaed; padding: 8px 12px; text-align: left; border: 1px solid #d0d7de; font-size: 13px; }
         .info td { padding: 8px 12px; border: 1px solid #d0d7de; font-size: 13px; }
-        #test-editormd { background: #fff; border-radius: 8px; border: 1px solid #d0d7de; overflow: hidden; }
+        #test-xfEditor { background: #fff; border-radius: 8px; border: 1px solid #d0d7de; overflow: hidden; }
     </style>
 </head>
 <body>
@@ -44,10 +44,10 @@
 
             <h3>🔧 配置方式</h3>
             <p><strong>基础 URL 配置</strong> — 在初始化前修改全局变量：</p>
-            <pre style="background:#f6f8fa; padding:10px; border-radius:4px; overflow-x:auto;"><code>editormd.urls.atLinkBase = "https://github.com/"; // @link 的基础 URL</code></pre>
+            <pre style="background:#f6f8fa; padding:10px; border-radius:4px; overflow-x:auto;"><code>xfEditor.urls.atLinkBase = "https://github.com/"; // @link 的基础 URL</code></pre>
 
             <p><strong>禁用功能</strong> — 在配置中关闭：</p>
-            <pre style="background:#f6f8fa; padding:10px; border-radius:4px; overflow-x:auto;"><code>testEditor = editormd("test-editormd", {
+            <pre style="background:#f6f8fa; padding:10px; border-radius:4px; overflow-x:auto;"><code>testEditor = xfEditor("test-xfEditor", {
     atLink    : false,    // 禁用 @link 自动链接
     emailLink : false,    // 禁用 email 地址自动链接
     path      : '../lib/'
@@ -71,7 +71,7 @@
             </ol>
         </div>
 
-        <div id="test-editormd">
+        <div id="test-xfEditor">
             <textarea style="display:none;">### 演示：@link 和 Email 自动链接
 
 ---
@@ -153,15 +153,15 @@ Setext 风格二级标题 @pandao
         </div>
     </div>
     <script src="js/jquery.min.js"></script>
-    <script src="../editormd.js"></script>
+    <script src="../xf_editor.js"></script>
     <script type="text/javascript">
         var testEditor;
 
         $(function() {
             // 自定义 @link 基础 URL
-            editormd.urls.atLinkBase = "https://github.com/";
+            xfEditor.urls.atLinkBase = "https://github.com/";
 
-            testEditor = editormd("test-editormd", {
+            testEditor = xfEditor("test-xfEditor", {
                 width     : "100%",
                 height    : 740,
                 toc       : true,

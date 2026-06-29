@@ -1,0 +1,324 @@
+@charset "UTF-8";
+
+@import "lib/variables";
+@import "lib/prefixes";
+        
+.xf_editor {
+    width: 90%;
+    height: 640px;
+    margin: 0 auto;
+    text-align: left;
+    overflow: visible;
+    position: relative;
+    margin-bottom: 15px;
+    border: 1px solid $borderColor;
+    font-family: "Meiryo UI", "Microsoft YaHei", "Malgun Gothic", "Segoe UI", "Trebuchet MS", Helvetica, "Monaco", monospace, Tahoma, STXihei, "华文细黑", STHeiti, "Helvetica Neue", "Droid Sans", "wenquanyi micro hei", FreeSans, Arimo, Arial, SimSun, "宋体", Heiti, "黑体", sans-serif;
+
+    *, *:before, *:after {
+        @include box-sizing(border-box);
+    }
+    
+    a {
+        text-decoration: none;
+    }
+
+    img {
+        border: none;
+        vertical-align: middle;
+    }            
+
+    > textarea,
+    #{$prefix}html-textarea,
+    #{$prefix}markdown-textarea {
+        width: 0;
+        height: 0;
+        outline: 0;
+        resize:none;
+    }
+    
+    #{$prefix}html-textarea,
+    #{$prefix}markdown-textarea {
+        display : none;
+    }
+
+    input[type="text"], 
+    input[type="button"], 
+    input[type="submit"], 
+    select, textarea, button {
+        @include appearance(none);
+    }
+            
+    ::-webkit-scrollbar {
+        height: 10px;
+        width: 7px;
+        background: rgba(0, 0, 0, .1);
+
+        &:hover {
+            background: rgba(0, 0, 0, .2);
+        }
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: rgba(0,0,0,0.3);
+        @include border-radius(6px);
+
+        &:hover {
+            @include box-shadow(inset 1px 1px 1px rgba(0, 0, 0, .25));
+            background-color: rgba(0, 0, 0, .4);
+        }
+    }
+}
+            
+#{$prefix}user-unselect { 
+    @include user-select(none); 
+}
+
+#{$prefix}toolbar {
+    width: 100%;
+    min-height: 37px;
+    background: #fff;
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 10;
+    overflow: visible;
+    border-bottom: 1px solid $borderColor;
+}
+
+#{$prefix}toolbar-container {
+    padding: 0 8px;
+    min-height: 35px;
+    @include user-select(none);
+}
+
+@import "xf_editor.menu";
+
+/* Toolbar dropdown enhancements */
+#{$prefix}toolbar-dropdown {
+    position: relative;
+
+    &.open #{$prefix}dropdown-menu {
+        display: block;
+    }
+
+    .fa-caret-down {
+        font-size: 10px;
+        margin-left: 2px;
+    }
+}
+
+/* Pinyin / TextAlign / ImageResize styles are defined in xf_editor.preview.scss
+   and imported via @import "xf_editor.preview" below.
+   Duplicate definitions removed to avoid CSS bloat. */
+
+/* Editor focus state */
+#{$prefix}focus {
+    border-color: #2C7EEA;
+
+    #{$prefix}toolbar {
+        border-bottom-color: #2C7EEA;
+    }
+}
+
+/* ECharts/Tabs/Columns/Row/Col styles are defined in xf_editor.preview.scss
+   and imported via @import "xf_editor.preview" below.
+   Duplicate definitions removed to avoid CSS bloat. */
+
+#{$prefix}container {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    padding: 35px 0 0;
+    position: relative;   
+    background: #fff;
+    @include box-sizing(border-box);
+}
+
+@import "xf_editor.dialog"; 
+@import "xf_editor.grid"; 
+@import "xf_editor.tab"; 
+@import "xf_editor.form"; 
+@import "xf_editor.codemirror"; 
+@import "xf_editor.preview";
+@import "xf_editor.preview.themes";
+
+/* ===========================================
+ * 颜色选择器样式 (Color Picker Styles)
+ * =========================================== */
+.xf_editor-color-picker-panel {
+    position: absolute;
+    z-index: 100001;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 12px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    min-width: 200px;
+}
+
+.xf_editor-color-picker-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.xf_editor-color-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.xf_editor-color-picker-swatch {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.15s ease;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    &:hover {
+        transform: scale(1.1);
+        border-color: #667eea;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    }
+}
+
+.xf_editor-color-picker-custom {
+    background: linear-gradient(135deg, #f3f4f6 50%, #e5e7eb 50%);
+    border: 2px dashed #d1d5db;
+    position: relative;
+    overflow: hidden;
+    
+    &:hover {
+        border-color: #667eea;
+        background: linear-gradient(135deg, #f3f4f6 50%, #e5e7eb 50%);
+    }
+}
+
+.xf_editor-color-picker-plus-bg {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.xf_editor-color-picker-custom:hover .xf_editor-color-picker-plus-bg {
+    opacity: 0.1;
+}
+
+.xf_editor-color-picker-plus {
+    font-size: 20px;
+    font-weight: 300;
+    color: #6b7280;
+    z-index: 1;
+    transition: color 0.2s ease;
+}
+
+.xf_editor-color-picker-custom:hover .xf_editor-color-picker-plus {
+    color: #667eea;
+}
+
+.xf_editor-color-picker-custom-area {
+    padding-top: 8px;
+}
+
+.xf_editor-color-picker-back {
+    display: block;
+    width: 100%;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    
+    &:hover {
+        background: #e5e7eb;
+        border-color: #9ca3af;
+    }
+}
+
+.xf_editor-color-picker-hex-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.xf_editor-color-picker-hex-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: "SF Mono", Monaco, Consolas, monospace;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    
+    &:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+    }
+}
+
+.xf_editor-color-picker-confirm {
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    
+    &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    
+    &:active {
+        transform: translateY(0);
+    }
+}
+
+#{$prefix}onlyread {
+    #{$prefix}toolbar {
+        display: none;
+    }
+
+    .CodeMirror {
+        margin-top: 0;
+    }
+
+    #{$prefix}preview {
+        top: 0;
+    }
+}
+
+#{$prefix}fullscreen {
+    position: fixed; 
+    top   : 0; 
+    left  : 0;
+    width : 100% !important;
+    height: 100% !important;
+    border: none;
+    margin: 0;
+    z-index: 9999;
+    max-width: none !important;
+    box-sizing: border-box;
+}
+
+@import "xf_editor.themes";

@@ -5,7 +5,7 @@
         <meta charset="utf-8" />
         <title>Search / Replace - xfEditor examples</title>
         <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/editormd.min.css" />
+        <link rel="stylesheet" href="../css/xf_editor.min.css" />
     </head>
     <body>
         <div id="layout">
@@ -15,18 +15,18 @@
                 <p>Replace: Press Ctrl + Shift + F / Command + Option + F</p>
                 <p>Replace All: Press Ctrl + Shift + R / Command + Option + R</p>
             </header>
-            <div id="test-editormd">
+            <div id="test-xfEditor">
                 <textarea style="display:none;"></textarea>
             </div>
         </div>
         <script src="js/jquery.min.js"></script>
-        <script src="../editormd.min.js"></script>
+        <script src="../xf_editor.min.js"></script>
         <script type="text/javascript">
             var testEditor;
             
             $(function() {
-                $.get("./test.md", function(md) {
-                    testEditor = editormd("test-editormd", {
+                $.get("md/full.md", function(md) {
+                    testEditor = xfEditor("test-xfEditor", {
                         width  : "90%",
                         height : 720,
                         markdown : "#### Setting\r\n\r\n    {\n        searchReplace : true // default true\n    }\r\n\r\n" + md,
