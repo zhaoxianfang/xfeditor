@@ -10,6 +10,14 @@
 
 **xfEditor** 是一款开源可嵌入的 Markdown 在线编辑器组件，基于 CodeMirror、jQuery 和 marked 构建。
 
+
+## 在线体验
+- [功能导航页](https://zhaoxianfang.github.io/xfeditor/examples/index.html)
+- [带目录预览](https://zhaoxianfang.github.io/xfeditor/examples/html-preview-markdown-to-html-custom-toc-container.html)
+- [字帖](https://zhaoxianfang.github.io/xfeditor/examples/copybook.html)
+- [图表](https://zhaoxianfang.github.io/xfeditor/examples/echarts.html)
+- [完整演示](https://zhaoxianfang.github.io/xfeditor/examples/all-features.html)
+
 **v1.17.10 全面修复：**
 - **Tabs 嵌套智能感知**：`findTabsBlocksAware()` 追踪 `[[tab:xxx]]`/`[[/tab]]` 上下文深度，表格文本 `[[tabs]]` 不再被误判为标签
 - **内嵌 Tabs 占位符保护**：`extractTabItems` 用绝对位置替换 inner-tabs 块，确保深层嵌套时正确提取顶层 tab 项
