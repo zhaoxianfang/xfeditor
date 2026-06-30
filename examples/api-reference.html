@@ -363,7 +363,7 @@ toolbarIcons: [
     <table class="api-table">
         <tr><th style="width:20%">名称</th><th style="width:10%">类型</th><th style="width:10%">默认值</th><th style="width:15%">可选值</th><th>说明</th></tr>
         <tr><td>watch</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>初始化后立即开启实时预览</td></tr>
-        <tr><td>htmlDecode</td><td class="type">Boolean/String</td><td class="default">false</td><td class="values">false|true|"tag1,tag2"</td><td>HTML解析。false=不解析；true=全解析；字符串=仅允许指定标签(XSS始终过滤)</td></tr>
+        <tr><td>htmlDecode</td><td class="type">Boolean/String</td><td class="default">false</td><td class="values">false|true|"tag|rule"</td><td>HTML解析。false=不解析；true=全解析；字符串=黑名单模式(tag=移除标签,rule=属性过滤规则)。XSS始终过滤</td></tr>
         <tr><td>toc</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>[TOC]/[TOCM]目录</td></tr>
         <tr><td>tocm</td><td class="type">Boolean</td><td class="default">false</td><td class="values">true|false</td><td>[TOCM]渲染为下拉菜单</td></tr>
         <tr><td>tocDropdown</td><td class="type">Boolean</td><td class="default">false</td><td class="values">true|false</td><td>目录默认下拉。true=省空间；false=内嵌+滚动高亮</td></tr>
@@ -394,33 +394,132 @@ toolbarIcons: [
     </table>
 
     <h4>htmlDecode 参数详解 <span class="tag tag-new">安全关键</span></h4>
-    <div class="warn"><strong>htmlDecode 是安全敏感参数，控制 Markdown 中内嵌 HTML 的解析行为：</strong></div>
+    <div class="warn"><strong>htmlDecode 是安全敏感参数，控制 Markdown 中内嵌 HTML 的解析行为。无论配置为何值，XSS 安全过滤始终生效（危险标签、事件属性、危险协议等自动移除）。</strong></div>
+
+    <!-- 三种基本模式 -->
+    <h5>一、基本取值模式</h5>
     <table class="api-table">
         <tr><th style="width:10%">值</th><th style="width:15%">行为</th><th>说明与示例</th></tr>
         <tr>
             <td><b>false</b></td><td>不解析 HTML</td>
-            <td><b>默认值、最安全。</b>所有 HTML 标签原样显示，&lt;script&gt;、&lt;iframe&gt; 等危险标签不会被渲染。<br>
-            <code>htmlDecode: false</code> → 输入 <code>&lt;b&gt;加粗&lt;/b&gt;</code> 显示为 <code>&amp;lt;b&amp;gt;加粗&amp;lt;/b&amp;gt;</code>（纯文本）</td>
+            <td><b>默认值、最安全。</b>所有 HTML 标签原样显示为文本，&lt;script&gt;、&lt;iframe&gt; 等危险标签以纯文本显示。<br>
+            <code>htmlDecode: false</code> → 输入 <code>&lt;b&gt;加粗&lt;/b&gt;</code> 显示为 <code>&amp;lt;b&amp;gt;加粗&amp;lt;/b&amp;gt;</code>（纯文本，Marked 自动转义）</td>
         </tr>
         <tr>
             <td><b>true</b></td><td>解析全部 HTML</td>
-            <td>允许所有 HTML 标签渲染。<b>注意：</b>即使设为 true，XSS 攻击标签（如 &lt;script&gt;）仍会被自动过滤。<br>
+            <td>允许所有 HTML 标签被 Marked 解析并渲染为真实 HTML 元素。<b>注意：</b>即使设为 true，系统内置 XSS 安全过滤会自动移除 &lt;script&gt;、&lt;iframe&gt;、&lt;form&gt;、&lt;object&gt; 等危险标签，以及 on* 事件属性（如 onclick、onerror）、javascript:/vbscript: 协议等。<br>
             <code>htmlDecode: true</code> → 输入 <code>&lt;b&gt;加粗&lt;/b&gt;</code> 显示为 <b>加粗</b></td>
         </tr>
         <tr>
-            <td><b>"tag1,tag2"</b></td><td>白名单模式</td>
-            <td>仅允许指定标签被解析，其他标签全部转义。这是推荐的平衡方案。<br>
-            <code>htmlDecode: "b,i,u,span,div,p,br,img,table,style"</code> → 只解析这些标签</td>
+            <td><b>"tag1,tag2,…"</b></td><td>黑名单模式</td>
+            <td>允许 HTML 解析，但<b>移除列表中指定的标签</b>（黑名单），其余标签正常渲染。<br>
+            <code>htmlDecode: "span,div"</code> → &lt;span&gt;和&lt;div&gt;标签被移除，其余标签（如 &lt;b&gt;、&lt;i&gt;、&lt;table&gt;）正常显示</td>
         </tr>
     </table>
-    <pre><span class="cmt">// 推荐配置：仅允许安全标签 + 内联样式</span>
-htmlDecode: <span class="str">"b,i,u,span,div,p,br,img,style"</span>
 
-<span class="cmt">// 严格模式：仅允许纯文本标签</span>
-htmlDecode: <span class="str">"b,i,u,em,strong,del"</span>
+    <!-- 带属性过滤规则的字符串模式 -->
+    <h5 style="margin-top:24px;">二、标签 + 属性过滤规则（格式：<code>"标签列表|属性规则"</code>）</h5>
+    <div class="info">
+        <strong>语法格式：</strong><code>htmlDecode: "要移除的标签,逗号分隔|属性过滤规则"</code><br>
+        用 <code>|</code> 分隔左右两部分——左侧是<b>要移除的标签</b>（黑名单），右侧是<b>剩余标签的属性过滤规则</b>。
+    </div>
+    <table class="api-table">
+        <tr><th style="width:18%">值</th><th style="width:22%">左侧：标签过滤</th><th style="width:22%">右侧：属性过滤规则</th><th>效果说明</th></tr>
+        <tr>
+            <td><b>"style,script,iframe"</b></td>
+            <td>移除 style、script、iframe 标签</td>
+            <td>（无，省略了 | 及右侧）</td>
+            <td>仅移除这三个标签，其余标签的属性和内容<b>完整保留</b>。适合允许用户使用 HTML 但又担心内联样式注入的场景。</td>
+        </tr>
+        <tr>
+            <td><b>"style,script,iframe|*"</b></td>
+            <td>移除 style、script、iframe 标签</td>
+            <td><code>*</code> → 剥离所有属性</td>
+            <td>移除三个标签后，对其余所有标签<b>清除全部属性</b>（class、id、style、href 等全部删除），只保留标签名和文本内容。这是<b>最强安全策略</b>之一。</td>
+        </tr>
+        <tr>
+            <td><b>"style,script,iframe|on*"</b></td>
+            <td>移除 style、script、iframe 标签</td>
+            <td><code>on*</code> → 剥离事件属性</td>
+            <td>移除三个标签后，对其余所有标签只清除 <b>on</b> 开头的事件属性（onclick、onerror、onload、onmouseover…），<b>保留</b> class、id、style、href 等正常属性。</td>
+        </tr>
+        <tr>
+            <td><b>"script,iframe|style,class"</b></td>
+            <td>移除 script、iframe 标签</td>
+            <td><code>style,class</code> → 剥离指定属性</td>
+            <td>移除 script/iframe 后，对其余标签清除 <b>style 和 class 属性</b>，其余属性保留。适合需要布局控制但禁止自定义样式的场景。</td>
+        </tr>
+        <tr>
+            <td><b>"script|id,data-*"</b></td>
+            <td>移除 script 标签</td>
+            <td><code>id,data-*</code> → 剥离指定属性</td>
+            <td>移除 script 标签后，对其余标签清除 <b>id 和 data-* 属性</b>，其余属性保留。</td>
+        </tr>
+    </table>
 
-<span class="cmt">// 开启表格布局能力</span>
-htmlDecode: <span class="str">"div,span,table,tr,td,th,p,br,b,i,style"</span></pre>
+    <!-- 属性过滤规则详解 -->
+    <h5 style="margin-top:24px;">三、属性过滤规则详解</h5>
+    <table class="api-table">
+        <tr><th style="width:12%">规则值</th><th style="width:20%">作用</th><th>详细说明</th></tr>
+        <tr>
+            <td><b>*</b></td>
+            <td>清除所有属性</td>
+            <td>对所有<b>未被黑名单移除</b>的标签，剥离其全部 HTML 属性（class、id、style、href、src、alt、title 等），只保留纯标签名和文本内容。<br>
+            例如 <code>&lt;a href="https://x.com" class="link" target="_blank"&gt;链接&lt;/a&gt;</code> 将变为 <code>&lt;a&gt;链接&lt;/a&gt;</code></td>
+        </tr>
+        <tr>
+            <td><b>on*</b></td>
+            <td>清除事件属性</td>
+            <td>对所有标签清除 <b>以 on 开头</b> 的事件处理属性。包括但不限于：onclick、onerror、onload、onmouseover、onmouseout、onfocus、onblur、onchange、onsubmit、onkeydown、onkeyup、onkeypress、ondblclick、onmousedown、onmouseup 等。<br>
+            这是 XSS 防御的关键规则——即使系统已自动移除 on*，再次使用此规则可提供<b>深度防御</b>。</td>
+        </tr>
+        <tr>
+            <td><b>"attr1,attr2,…"</b></td>
+            <td>清除指定属性</td>
+            <td>对所有标签清除逗号分隔的<b>指定属性名</b>。例如 <code>"style"</code> 清除所有 style 属性，<code>"style,class"</code> 同时清除 style 和 class，<code>"id,data-url"</code> 清除 id 和 data-url。</td>
+        </tr>
+    </table>
+
+    <h5 style="margin-top:24px;">四、实战配置示例</h5>
+    <pre><span class="cmt">// ===== 场景一：完全关闭 HTML（默认、最安全） =====</span>
+htmlDecode: <span class="fn">false</span>
+
+<span class="cmt">// ===== 场景二：完全信任（解析所有 HTML，XSS 过滤仍生效） =====</span>
+htmlDecode: <span class="fn">true</span>
+
+<span class="cmt">// ===== 场景三：移除危险标签，保留所有属性 =====</span>
+<span class="cmt">// 适合用户评论/UGC 场景，担心 style 注入 CSS 攻击</span>
+htmlDecode: <span class="str">"style,script,iframe"</span>
+
+<span class="cmt">// ===== 场景四：移除危险标签 + 清除所有属性（极严格） =====</span>
+<span class="cmt">// 适合对安全要求极高的公开内容平台</span>
+htmlDecode: <span class="str">"style,script,iframe|*"</span>
+
+<span class="cmt">// ===== 场景五：移除危险标签 + 清除事件属性（推荐生产环境） =====</span>
+<span class="cmt">// 保留 class/style/href 等正常属性，仅移除事件处理器</span>
+htmlDecode: <span class="str">"style,script,iframe|on*"</span>
+
+<span class="cmt">// ===== 场景六：移除危险标签 + 清除 class/style（控制外观） =====</span>
+<span class="cmt">// 允许用户使用 HTML 结构但禁止自定义样式</span>
+htmlDecode: <span class="str">"script,iframe,object|style,class"</span>
+
+<span class="cmt">// ===== 场景七：仅限制最核心危险标签，其余自由 =====</span>
+htmlDecode: <span class="str">"script"</span>
+
+<span class="cmt">// ===== 场景八：用户内容需要表格排版 =====</span>
+<span class="cmt">// 移除 script/iframe，剥离所有属性（防止注入），保留表格标签</span>
+htmlDecode: <span class="str">"script,iframe|*"</span></pre>
+
+    <div class="warn" style="margin-top:12px;">
+        <strong>重要提示：</strong>
+        <ul style="margin:8px 0 0 16px; padding:0;">
+            <li><b>黑名单语义：</b>字符串中的标签列表是<b>黑名单</b>（要移除的），而非白名单。例如 <code>"script,iframe"</code> 表示"移除 script 和 iframe"，而不是"只允许 script 和 iframe"。</li>
+            <li><b>XSS 安全过滤始终生效：</b>无论 htmlDecode 配置为何值，系统内置的危险标签（script、iframe、frame、object、embed、applet、form、base、link、meta 等 20+ 种）、危险事件属性（onclick、onerror 等 60+ 种）和危险协议（javascript:、vbscript:、data:text/html 等）都会被自动过滤。</li>
+            <li><b>标签移除优先级：</b>XSS 安全过滤 → 用户标签过滤 → 属性规则过滤，按此顺序执行。</li>
+            <li><b>属性规则仅影响黑名单移除后剩余的标签：</b>已被黑名单移除的标签不会经过属性规则处理。</li>
+            <li><b>true ≠ 完全开放：</b>即使设为 true，危险标签和属性仍会被系统自动移除。</li>
+        </ul>
+    </div>
 
     <h4>Array 类型参数展开说明</h4>
     <table class="api-table">
@@ -1365,7 +1464,7 @@ xfEditor.registerLang(<span class="str">"ja"</span>, {
     <span class="cmt">/* ===== 功能开关 ===== */</span>
     watch             : <span class="fn">true</span>,       <span class="cmt">// 实时预览，默认 true</span>
     <span class="cmt">// htmlDecode: HTML解析，默认 false</span>
-    <span class="cmt">// false=不解析 | true=全部解析 | "tag1,tag2"=仅允许</span>
+    <span class="cmt">// false=不解析 | true=全部解析 | "tag|rule"=黑名单+属性过滤</span>
     htmlDecode        : <span class="fn">false</span>,
     toc               : <span class="fn">true</span>,       <span class="cmt">// 目录，默认 true</span>
     tocm              : <span class="fn">false</span>,      <span class="cmt">// TOCM下拉菜单，默认 false</span>
