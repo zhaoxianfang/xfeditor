@@ -45,7 +45,8 @@
             预览 JS 加载方式（二选一）：
             
             方式一（推荐）：引入单个打包文件 xf_editor.preview.min.js
-            只需 1 个 HTTP 请求，包含所有预览依赖（jQuery + marked + prettify + ... + xfEditor）
+            只需 2 个 HTTP 请求（jQuery + 打包文件），打包文件包含：marked + prettify + raphael + underscore + sequence-diagram + flowchart + jquery.flowchart + echarts + xfEditor
+            <script src="js/jquery.min.js"></script>
             <script src="../xf_editor.preview.min.js"></script>
             
             方式二（兼容旧模式）：分别引入各文件

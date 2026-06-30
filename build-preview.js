@@ -1,14 +1,15 @@
 /**
  * xfEditor 预览页面 JS 打包脚本
- * 将所有预览所需的 JS 文件合并为单个 xf_editor.preview.min.js
+ * 将预览所需的 JS 文件（不含 jQuery）合并为单个 xf_editor.preview.min.js
+ * jQuery 需要由使用者单独引入（<script src="jquery.min.js"></script>）
  * （所有源文件已经是 .min.js，直接拼接即可）
  */
 
 var fs = require('fs');
 var path = require('path');
 
+// ★ 不包含 jQuery，jQuery 由使用者单独引入
 var previewFiles = [
-    { path: 'examples/js/jquery.min.js',    required: true },
     { path: 'lib/marked.min.js',             required: true },
     { path: 'lib/prettify.min.js',           required: false },
     { path: 'lib/raphael.min.js',            required: false },
