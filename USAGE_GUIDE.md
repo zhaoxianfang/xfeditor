@@ -1,6 +1,6 @@
 # xfEditor 使用指南
 
-> xfEditor v1.17.10 完整使用手册
+> xfEditor v1.17.13 完整使用手册
 
 ---
 
@@ -872,7 +872,9 @@ https://example.com/file2.docx | 文件名2
 ```javascript
 editor.getMarkdown();          // 获取 Markdown
 editor.setMarkdown(md);        // 设置 Markdown
-editor.getHTML();              // 获取完整独立 HTML 文档（含 DOCTYPE、内联 CSS/JS）
+editor.getHTML();              // 获取完整独立 HTML 文档（含 DOCTYPE、内联 CSS/JS，默认压缩）
+editor.getHTML(true);          // 强制压缩输出（与无参调用等效）
+editor.getHTML(false);         // 不压缩输出，保留格式化可读代码（适合调试）
 editor.getPreviewedHTML();     // 获取预览区 HTML（支持全页、片段、压缩模式）
 editor.getTextareaSavedHTML(); // 获取保存的 HTML（getHTML 的别名）
 ```

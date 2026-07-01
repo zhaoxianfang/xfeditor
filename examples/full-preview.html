@@ -2,7 +2,7 @@
 <html lang="zh">
     <head>
         <meta charset="utf-8" />
-        <title>完整独立预览 - xfEditor v1.17.10</title>
+        <title>完整独立预览 - xfEditor v1.17.13</title>
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="../css/xf_editor.preview.min.css" />
     <link rel="shortcut icon" href="../images/favicon.ico" type="image/x-icon" />
@@ -33,7 +33,7 @@
     <body>
         <div id="layout">
             <header>
-                <h1>xfEditor v1.17.10 完整独立预览</h1>
+                <h1>xfEditor v1.17.13 完整独立预览</h1>
                 <p>Full Preview Page — 内容由 <code>examples/md/full.md</code> 动态加载，演示所有 Markdown 扩展语法的渲染效果</p>
             </header>
             <div id="full-preview">
@@ -45,15 +45,20 @@
             预览 JS 加载方式（二选一）：
             
             方式一（推荐）：引入单个打包文件 xf_editor.preview.min.js
-            只需 2 个 HTTP 请求（jQuery + 打包文件），打包文件包含：marked + prettify + raphael + underscore + sequence-diagram + flowchart + jquery.flowchart + echarts + xfEditor
+            只需 2 个 HTTP 请求（jQuery + 打包文件），打包文件包含：
+            marked + prettify + raphael + underscore + sequence-diagram +
+            flowchart + jquery.flowchart + echarts + xf_editor
+            注意：KaTeX 公式字体已内嵌为 Base64，无需额外字体请求，完全离线可用
             <script src="js/jquery.min.js"></script>
             <script src="../xf_editor.preview.min.js"></script>
             
             方式二（兼容旧模式）：分别引入各文件
             需要 10 个 HTTP 请求，适合按需加载或调试
         -->
-        <!-- 方式二：分别引入（当前使用） -->
+        <!-- 方式一：推荐使用打包文件（当前使用） -->
         <script src="js/jquery.min.js"></script>
+        <script src="../xf_editor.preview.min.js"></script>
+        <!-- 方式二：分别引入（已注释，供参考）
         <script src="../lib/marked.min.js"></script>
         <script src="../lib/prettify.min.js"></script>
         <script src="../lib/raphael.min.js"></script>
@@ -63,6 +68,7 @@
         <script src="../lib/jquery.flowchart.min.js"></script>
         <script src="../lib/echarts.min.js"></script>
         <script src="../xf_editor.min.js"></script>
+        -->
         <script type="text/javascript">
             $(function() {
                 // 从 md/full.md 加载完整演示内容

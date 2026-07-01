@@ -1,53 +1,43 @@
 @charset "UTF-8";
 
-/*! Pretty printing styles. Used with prettify.js. */
-/* SPAN elements with the classes below are added by prettyprint. */
-.pln { color: #000 }  /* plain text */
+/* Pretty printing styles — Dark theme adapted for #0d1117 pre background */
 
-@media screen {
-  .str { color: #080 }  /* string content */
-  .kwd { color: #008 }  /* a keyword */
-  .com { color: #800 }  /* a comment */
-  .typ { color: #606 }  /* a type name */
-  .lit { color: #066 }  /* a literal value */
-  /* punctuation, lisp open bracket, lisp close bracket */
-  .pun, .opn, .clo { color: #660 }
-  .tag { color: #008 }  /* a markup tag name */
-  .atn { color: #606 }  /* a markup attribute name */
-  .atv { color: #080 }  /* a markup attribute value */
-  .dec, .var { color: #606 }  /* a declaration; a variable name */
-  .fun { color: red }  /* a function name */
+/* Base: all token spans inherit the pre's text color, overridden individually below */
+.pln { color: #e6edf3 }  /* plain text */
+
+/* Syntax highlight — VS Code Dark+ inspired, works on dark background */
+.str   { color: #ce9178 }  /* string */
+.kwd   { color: #569cd6 }  /* keyword */
+.com   { color: #6a9955; font-style: italic }  /* comment */
+.typ   { color: #4ec9b0 }  /* type name */
+.lit   { color: #b5cea8 }  /* literal */
+.pun   { color: #d4d4d4 }  /* punctuation */
+.opn   { color: #d4d4d4 }  /* lisp open */
+.clo   { color: #d4d4d4 }  /* lisp close */
+.tag   { color: #569cd6 }  /* markup tag */
+.atn   { color: #9cdcfe }  /* markup attribute name */
+.atv   { color: #ce9178 }  /* markup attribute value */
+.dec   { color: #4ec9b0 }  /* declaration */
+.var   { color: #9cdcfe }  /* variable name */
+.fun   { color: #dcdcaa }  /* function name */
+
+/* Line numbering */
+ol.linenums { margin-top: 0; margin-bottom: 0; color: #484f58; }
+
+/* All lines get uniform styling — no alternating background */
+li.L0,li.L1,li.L2,li.L3,li.L4,li.L5,li.L6,li.L7,li.L8,li.L9 {
+  list-style-type: decimal;
 }
 
-/* Use higher contrast and text-weight for printable form. */
+/* Print / projection — same dark colors (no paper assumption) */
 @media print, projection {
-  .str { color: #060 }
-  .kwd { color: #006; font-weight: bold }
-  .com { color: #600; font-style: italic }
-  .typ { color: #404; font-weight: bold }
-  .lit { color: #044 }
-  .pun, .opn, .clo { color: #440 }
-  .tag { color: #006; font-weight: bold }
-  .atn { color: #404 }
-  .atv { color: #060 }
+  .str   { color: #ce9178 }
+  .kwd   { color: #569cd6; font-weight: bold }
+  .com   { color: #6a9955; font-style: italic }
+  .typ   { color: #4ec9b0; font-weight: bold }
+  .lit   { color: #b5cea8 }
+  .pun,.opn,.clo { color: #d4d4d4 }
+  .tag   { color: #569cd6; font-weight: bold }
+  .atn   { color: #9cdcfe }
+  .atv   { color: #ce9178 }
 }
-
-/* Put a border around prettyprinted code snippets. */
-pre.prettyprint { padding: 2px; border: 1px solid #888 }
-
-/* Specify class=linenums on a pre to get line numbering */
-ol.linenums { margin-top: 0; margin-bottom: 0 } /* IE indents via margin-left */
-li.L0,
-li.L1,
-li.L2,
-li.L3,
-li.L5,
-li.L6,
-li.L7,
-li.L8 { list-style-type: none }
-/* Alternate shading for lines */
-li.L1,
-li.L3,
-li.L5,
-li.L7,
-li.L9 { background: #eee }

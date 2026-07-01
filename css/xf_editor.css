@@ -326,101 +326,9 @@
   margin-left: 2px;
 }
 
-/* Pinyin ruby annotation */
-.xf_editor-pinyin {
-  display: ruby;
-  ruby-align: center;
-  line-height: 2.2;
-  margin: 0 1px;
-}
-.xf_editor-pinyin rb {
-  display: ruby-base;
-}
-.xf_editor-pinyin rt {
-  display: ruby-text;
-  font-size: 0.65em;
-  color: #6b8e6b;
-  line-height: 1.1;
-  font-weight: 400;
-  letter-spacing: 0.1px;
-  font-family: "Segoe UI", "Lucida Grande", "Arial", "Noto Sans", sans-serif;
-}
-
-/* ★ v1.17.7: 一一对应拼音 — 每个字独立 ruby */
-.xf_editor-pinyin-matched {
-  margin: 0;
-}
-.xf_editor-pinyin-matched rb {
-  min-width: 1.1em;
-  text-align: center;
-}
-.xf_editor-pinyin-matched rt {
-  font-size: 0.6em;
-  min-width: 1.1em;
-  text-align: center;
-}
-
-/* ★ v1.17.7: 拼音宽度容器 — {text|pinyin}(!width:NNN) 语法 */
-.xf_editor-pinyin-wrap {
-  display: inline-flex;
-  justify-content: space-between;
-  vertical-align: middle;
-}
-
-/* ★ v1.17.7: 拼音内嵌脚注 — 脚注不显示拼音上标 */
-.xf_editor-pinyin .xf_editor-footnote-ref-wrapper {
-  font-size: 0.55em;
-  vertical-align: super;
-  position: relative;
-  top: -0.3em;
-}
-
-/* Text alignment */
-.xf_editor-text-align {
-  display: block;
-  margin: 0.5em 0;
-}
-.xf_editor-text-align-left {
-  text-align: left !important;
-}
-.xf_editor-text-align-center {
-  text-align: center !important;
-}
-.xf_editor-text-align-right {
-  text-align: right !important;
-}
-
-/* Table editing in preview — styles moved to xf_editor.preview.scss */
-/* Image resize in preview */
-.xf_editor-img-wrapper {
-  position: relative;
-  display: inline-block;
-}
-
-.xf_editor-img-resizable {
-  cursor: pointer;
-}
-
-.xf_editor-img-resize-handle {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 12px;
-  height: 12px;
-  background: #2C7EEA;
-  cursor: se-resize;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.xf_editor-img-wrapper:hover .xf_editor-img-resize-handle {
-  opacity: 1;
-}
-
-.xf_editor-img-wrapper:hover .xf_editor-img-resizable {
-  outline: 2px solid #2C7EEA;
-}
-
+/* Pinyin / TextAlign / ImageResize styles are defined in xf_editor.preview.scss
+   and imported via @import "xf_editor.preview" below.
+   Duplicate definitions removed to avoid CSS bloat. */
 /* Editor focus state */
 .xf_editor-focus {
   border-color: #2C7EEA;
@@ -1525,22 +1433,6 @@
   padding: 8px;
   border: 1px solid #ddd;
 }
-.xf_editor-form select {
-  color: #555;
-  padding: 7px 8px;
-  border: 1px solid #ddd;
-  background: #fff;
-  display: inline-block;
-  width: 264px;
-  font-size: 14px;
-  border-radius: 2px;
-  -webkit-appearance: menulist;
-  appearance: menulist;
-}
-.xf_editor-form select:focus {
-  outline: 0;
-  border-color: #aaa;
-}
 .xf_editor-form input[type=number] {
   width: 40px;
   display: inline-block;
@@ -1549,6 +1441,26 @@
 .xf_editor-form input[type=text] {
   display: inline-block;
   width: 264px;
+}
+.xf_editor-form select {
+  color: #555;
+  padding: 7px 8px;
+  border: 1px solid #ddd;
+  background: #fff;
+  display: inline-block;
+  width: 264px;
+  font-size: 14px;
+  -webkit-appearance: menulist;
+  appearance: menulist;
+  -webkit-border-radius: 2px;
+  -moz-border-radius: 2px;
+  -ms-border-radius: 2px;
+  -o-border-radius: 2px;
+  border-radius: 2px;
+}
+.xf_editor-form select:focus {
+  outline: 0;
+  border-color: #aaa;
 }
 .xf_editor-form .fa-btns {
   display: inline-block;
@@ -4902,6 +4814,18 @@
   width: 100%;
   background-color: #fff;
 }
+.xf_editor-preview-container img, .xf_editor-preview-container video, .xf_editor-preview-container iframe, .xf_editor-preview-container svg, .xf_editor-preview-container .katex, .xf_editor-preview-container .flowchart, .xf_editor-preview-container .sequence-diagram, .xf_editor-html-preview img, .xf_editor-html-preview video, .xf_editor-html-preview iframe, .xf_editor-html-preview svg, .xf_editor-html-preview .katex, .xf_editor-html-preview .flowchart, .xf_editor-html-preview .sequence-diagram {
+  max-width: 100% !important;
+  height: auto;
+  box-sizing: border-box;
+}
+.xf_editor-preview-container table, .xf_editor-html-preview table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  word-break: normal;
+  -webkit-overflow-scrolling: touch;
+}
 .xf_editor-preview-container blockquote, .xf_editor-html-preview blockquote {
   color: #666;
   border-left: 4px solid #ddd;
@@ -4924,104 +4848,131 @@
   background: none;
 }
 .xf_editor-preview-container, .xf_editor-html-preview {
-  /* --- Inline code (not inside pre) --- */
+  /* --- Inline code (not inside pre) — 淡绿色背景 --- */
 }
 .xf_editor-preview-container code:not(pre code), .xf_editor-html-preview code:not(pre code) {
-  color: #c7254e;
-  background: #f9f2f4;
-  border: 1px solid #f0d0d8;
+  color: #1a6b3c;
+  background: #e6ffed;
+  border: 1px solid #b7ebc9;
   padding: 2px 6px;
   border-radius: 3px;
-  font-size: 13px;
+  font-size: 85%;
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
   white-space: nowrap;
 }
-.xf_editor-preview-container code, .xf_editor-html-preview code {
-  border: 1px solid #ddd;
-  background: #f6f6f6;
-  padding: 3px;
-  border-radius: 3px;
-  font-size: 14px;
-}
 .xf_editor-preview-container, .xf_editor-html-preview {
-  /* --- Pre block (code block container) --- */
+  /* --- Pre block (code block container) — 精致暗色主题 --- */
 }
 .xf_editor-preview-container pre, .xf_editor-html-preview pre {
   position: relative;
-  border: 1px solid #e1e4e8;
-  background: #f6f8fa;
-  padding: 16px;
-  margin-bottom: 16px;
+  border: 1px solid #30363d;
+  background: #0d1117;
+  padding: 44px 20px 20px 20px;
+  margin-bottom: 20px;
   overflow: auto;
-  line-height: 1.6;
-  font-size: 13px;
+  line-height: 1.65;
+  font-size: 13.5px;
   word-wrap: normal;
-  -webkit-border-radius: 6px;
-  -moz-border-radius: 6px;
-  -ms-border-radius: 6px;
-  -o-border-radius: 6px;
   border-radius: 6px;
   font-family: "SF Mono", "Fira Code", "Cascadia Code", Consolas, "Liberation Mono", Menlo, Monaco, monospace;
-  color: #24292e;
+  color: #e6edf3;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+.xf_editor-preview-container pre::before, .xf_editor-html-preview pre::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 36px;
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
+  border-radius: 6px 6px 0 0;
+}
+.xf_editor-preview-container pre::after, .xf_editor-html-preview pre::after {
+  content: "";
+  position: absolute;
+  top: 12px;
+  left: 16px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ff5f57;
+  box-shadow: 18px 0 0 #febc2e, 36px 0 0 #28c840;
+  z-index: 2;
 }
 .xf_editor-preview-container pre code, .xf_editor-html-preview pre code {
   padding: 0;
   background: transparent;
   border: none;
-  font-size: 13px;
-  line-height: 1.6;
-  color: inherit;
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: #e6edf3;
   white-space: pre;
   word-break: normal;
   font-family: inherit;
 }
-.xf_editor-preview-container pre:hover .xf_editor-code-copy-btn, .xf_editor-html-preview pre:hover .xf_editor-code-copy-btn {
-  opacity: 1;
+.xf_editor-preview-container pre, .xf_editor-html-preview pre {
+  /* 暗色滚动条 */
+}
+.xf_editor-preview-container pre::-webkit-scrollbar, .xf_editor-html-preview pre::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+.xf_editor-preview-container pre::-webkit-scrollbar-track, .xf_editor-html-preview pre::-webkit-scrollbar-track {
+  background: #161b22;
+  border-radius: 3px;
+}
+.xf_editor-preview-container pre::-webkit-scrollbar-thumb, .xf_editor-html-preview pre::-webkit-scrollbar-thumb {
+  background: #444c56;
+  border-radius: 3px;
+}
+.xf_editor-preview-container pre::-webkit-scrollbar-thumb:hover, .xf_editor-html-preview pre::-webkit-scrollbar-thumb:hover {
+  background: #6e7681;
 }
 .xf_editor-preview-container, .xf_editor-html-preview {
-  /* --- Copy button inside pre (always at top-right, fixed when scrolling) --- */
+  /* --- Copy button inside pre — 暗色主题 header bar 适配 --- */
 }
 .xf_editor-preview-container .xf_editor-code-copy-btn, .xf_editor-html-preview .xf_editor-code-copy-btn {
   position: absolute;
   top: 6px;
-  right: 6px;
+  right: 12px;
   z-index: 10;
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 8px;
+  padding: 4px 10px;
   font-size: 11px;
   line-height: 1.3;
-  color: #57606a;
-  background: #fff;
-  border: 1px solid #d0d7de;
-  border-radius: 5px;
+  color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
   cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
   transition: all 0.15s ease;
-  opacity: 0;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  opacity: 1;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 .xf_editor-preview-container .xf_editor-code-copy-btn:hover, .xf_editor-html-preview .xf_editor-code-copy-btn:hover {
-  color: #0969da;
-  border-color: #0969da;
-  background: #f6f8fe;
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.22);
   opacity: 1;
 }
 .xf_editor-preview-container .xf_editor-code-copy-btn.copied, .xf_editor-html-preview .xf_editor-code-copy-btn.copied {
-  color: #1a7f37;
-  border-color: #1a7f37;
-  background: #dafbe1;
+  color: #4caf50;
+  border-color: #4caf50;
+  background: rgba(76, 175, 80, 0.15);
   cursor: default;
   pointer-events: none;
   opacity: 1;
 }
 .xf_editor-preview-container .xf_editor-code-copy-btn.failed, .xf_editor-html-preview .xf_editor-code-copy-btn.failed {
-  color: #cf222e;
-  border-color: #cf222e;
-  background: #ffebe9;
+  color: #f44336;
+  border-color: #f44336;
+  background: rgba(244, 67, 54, 0.15);
   cursor: default;
   pointer-events: none;
   opacity: 1;
@@ -5039,9 +4990,6 @@
   float: left;
   margin: 0.35em 0 0.25em -1.6em;
   vertical-align: middle;
-}
-.xf_editor-preview-container pre, .xf_editor-preview-container code, .xf_editor-preview-container kbd, .xf_editor-html-preview pre, .xf_editor-html-preview code, .xf_editor-html-preview kbd {
-  font-family: "YaHei Consolas Hybrid", Consolas, "Meiryo UI", "Malgun Gothic", "Segoe UI", "Trebuchet MS", Helvetica, monospace, monospace;
 }
 .xf_editor-preview-container table thead tr, .xf_editor-html-preview table thead tr {
   background-color: #F8F8F8;
@@ -5121,129 +5069,103 @@
   font-family: "YaHei Consolas Hybrid", Consolas, "Microsoft YaHei", "Malgun Gothic", "Segoe UI", Helvetica, Arial !important;
 }
 
-/*! Pretty printing styles. Used with prettify.js. */
-/* SPAN elements with the classes below are added by prettyprint. */
+/* Pretty printing styles — Dark theme adapted for #0d1117 pre background */
+/* Base: all token spans inherit the pre's text color, overridden individually below */
 .pln {
-  color: #000;
+  color: #e6edf3;
 } /* plain text */
-@media screen {
-  .str {
-    color: #080;
-  } /* string content */
-  .kwd {
-    color: #008;
-  } /* a keyword */
-  .com {
-    color: #800;
-  } /* a comment */
-  .typ {
-    color: #606;
-  } /* a type name */
-  .lit {
-    color: #066;
-  } /* a literal value */
-  /* punctuation, lisp open bracket, lisp close bracket */
-  .pun, .opn, .clo {
-    color: #660;
-  }
-  .tag {
-    color: #008;
-  } /* a markup tag name */
-  .atn {
-    color: #606;
-  } /* a markup attribute name */
-  .atv {
-    color: #080;
-  } /* a markup attribute value */
-  .dec, .var {
-    color: #606;
-  } /* a declaration; a variable name */
-  .fun {
-    color: red;
-  } /* a function name */
-}
-/* Use higher contrast and text-weight for printable form. */
-@media print, projection {
-  .str {
-    color: #060;
-  }
-  .kwd {
-    color: #006;
-    font-weight: bold;
-  }
-  .com {
-    color: #600;
-    font-style: italic;
-  }
-  .typ {
-    color: #404;
-    font-weight: bold;
-  }
-  .lit {
-    color: #044;
-  }
-  .pun, .opn, .clo {
-    color: #440;
-  }
-  .tag {
-    color: #006;
-    font-weight: bold;
-  }
-  .atn {
-    color: #404;
-  }
-  .atv {
-    color: #060;
-  }
-}
-/* Put a border around prettyprinted code snippets. */
-pre.prettyprint {
-  padding: 2px;
-  border: 1px solid #888;
-}
-
-/* Specify class=linenums on a pre to get line numbering */
+/* Syntax highlight — VS Code Dark+ inspired, works on dark background */
+.str {
+  color: #ce9178;
+} /* string */
+.kwd {
+  color: #569cd6;
+} /* keyword */
+.com {
+  color: #6a9955;
+  font-style: italic;
+} /* comment */
+.typ {
+  color: #4ec9b0;
+} /* type name */
+.lit {
+  color: #b5cea8;
+} /* literal */
+.pun {
+  color: #d4d4d4;
+} /* punctuation */
+.opn {
+  color: #d4d4d4;
+} /* lisp open */
+.clo {
+  color: #d4d4d4;
+} /* lisp close */
+.tag {
+  color: #569cd6;
+} /* markup tag */
+.atn {
+  color: #9cdcfe;
+} /* markup attribute name */
+.atv {
+  color: #ce9178;
+} /* markup attribute value */
+.dec {
+  color: #4ec9b0;
+} /* declaration */
+.var {
+  color: #9cdcfe;
+} /* variable name */
+.fun {
+  color: #dcdcaa;
+} /* function name */
+/* Line numbering */
 ol.linenums {
   margin-top: 0;
   margin-bottom: 0;
-} /* IE indents via margin-left */
-li.L0,
-li.L1,
-li.L2,
-li.L3,
-li.L5,
-li.L6,
-li.L7,
-li.L8 {
-  list-style-type: none;
+  color: #484f58;
 }
 
-/* Alternate shading for lines */
-li.L1,
-li.L3,
-li.L5,
-li.L7,
-li.L9 {
-  background: #eee;
+/* All lines get uniform styling — no alternating background */
+li.L0, li.L1, li.L2, li.L3, li.L4, li.L5, li.L6, li.L7, li.L8, li.L9 {
+  list-style-type: decimal;
 }
 
-.xf_editor-preview-container pre.prettyprint, .xf_editor-preview-container pre:not(.xf_editor-copybook-svg), .xf_editor-html-preview pre.prettyprint, .xf_editor-html-preview pre:not(.xf_editor-copybook-svg) {
-  padding: 16px;
-  margin: 1em 0;
-  border: 1px solid #e1e4e8;
-  border-radius: 6px;
-  background: #f6f8fa;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  font-size: 13px;
-  line-height: 1.6;
-  color: #24292e;
-  position: relative;
-  overflow: auto;
-  box-shadow: inset 0 1px 2px rgba(27, 31, 35, 0.05);
+/* Print / projection — same dark colors (no paper assumption) */
+@media print, projection {
+  .str {
+    color: #ce9178;
+  }
+  .kwd {
+    color: #569cd6;
+    font-weight: bold;
+  }
+  .com {
+    color: #6a9955;
+    font-style: italic;
+  }
+  .typ {
+    color: #4ec9b0;
+    font-weight: bold;
+  }
+  .lit {
+    color: #b5cea8;
+  }
+  .pun, .opn, .clo {
+    color: #d4d4d4;
+  }
+  .tag {
+    color: #569cd6;
+    font-weight: bold;
+  }
+  .atn {
+    color: #9cdcfe;
+  }
+  .atv {
+    color: #ce9178;
+  }
 }
 .xf_editor-preview-container ol.linenums, .xf_editor-html-preview ol.linenums {
-  color: #8b949e;
+  color: #484f58;
   padding: 0 0 0 3.5em;
   margin: 0;
 }
@@ -5257,18 +5179,8 @@ li.L9 {
   border: none;
   background: none;
   padding: 0;
-  color: #24292e;
-  font-size: 13px;
-}
-.xf_editor-preview-container code:not(pre code):not([class*=language-]), .xf_editor-html-preview code:not(pre code):not([class*=language-]) {
-  padding: 2px 6px;
-  margin: 0 2px;
-  font-size: 85%;
-  background-color: rgba(27, 31, 35, 0.05);
-  border: 1px solid rgba(27, 31, 35, 0.1);
-  border-radius: 4px;
-  color: #e83e8c;
-  font-family: "SF Mono", "Monaco", "Menlo", "Consolas", "Liberation Mono", "Courier New", monospace;
+  color: #e6edf3;
+  font-size: 13.5px;
 }
 
 .xf_editor-preview-container .xf_editor-toc-menu, .xf_editor-html-preview .xf_editor-toc-menu {
@@ -5824,7 +5736,6 @@ hr.xf_editor-page-break {
   display: ruby;
   ruby-align: center;
   line-height: 2.2;
-  margin: 0 1px;
 }
 .xf_editor-pinyin rb {
   display: ruby-base;
@@ -5832,25 +5743,8 @@ hr.xf_editor-page-break {
 .xf_editor-pinyin rt {
   display: ruby-text;
   font-size: 0.65em;
-  color: #6b8e6b;
-  line-height: 1.1;
-  font-weight: 400;
-  letter-spacing: 0.1px;
-  font-family: "Segoe UI", "Lucida Grande", "Arial", "Noto Sans", sans-serif;
-}
-
-/* ★ v1.17.7: 一一对应拼音 — 每个字独立 ruby */
-.xf_editor-pinyin-matched {
-  margin: 0;
-}
-.xf_editor-pinyin-matched rb {
-  min-width: 1.1em;
-  text-align: center;
-}
-.xf_editor-pinyin-matched rt {
-  font-size: 0.6em;
-  min-width: 1.1em;
-  text-align: center;
+  color: #666;
+  line-height: 1;
 }
 
 /* Text alignment */
@@ -6109,52 +6003,6 @@ hr.xf_editor-page-break {
   border-top: none;
   margin-top: 2px;
 }
-/* ★ v1.17.7: 字帖组级宽度容器 — 支持 {text|pinyin}(!width:NNN) 语法 */
-.xf_editor-copybook-group {
-  display: inline-flex;
-  flex-shrink: 0;
-  justify-content: space-between;
-  gap: 3px;
-  vertical-align: middle;
-}
-.xf_editor-copybook-group-pinyin {
-  /* 拼音格组容器：两端对齐排列 */
-}
-.xf_editor-copybook-group-grid {
-  /* 田字格/米字格组容器 */
-}
-.xf_editor-copybook-row-wide {
-  justify-content: flex-start;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-/* ★ v1.17.7: 字帖脚注 — 在汉字格右上角显示，不在拼音区显示 */
-.xf_editor-copybook-footnote {
-  position: absolute;
-  top: 1px;
-  right: 2px;
-  z-index: 5;
-  font-size: 10px;
-  line-height: 1;
-}
-.xf_editor-copybook-footnote a {
-  color: #2C7EEA;
-  text-decoration: none;
-  font-weight: 600;
-}
-.xf_editor-copybook-footnote a:hover {
-  color: #1a5dc4;
-  text-decoration: underline;
-}
-
-/* ★ v1.17.7: 拼音格内脚注 — 汉字格右上角显示，拼音区不受影响 */
-.xf_editor-copybook-pinyin-cell .xf_editor-copybook-footnote {
-  top: 0;
-  right: 1px;
-  font-size: 9px;
-}
-
 .xf_editor-copybook-pinyin-bottom .xf_editor-copybook-svg {
   position: absolute;
   top: 0;
@@ -6179,6 +6027,51 @@ hr.xf_editor-page-break {
   color: #3e2a1a;
   line-height: 1;
   z-index: 3;
+}
+.xf_editor-copybook-pinyin-bottom .xf_editor-copybook-footnote {
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  z-index: 5;
+}
+.xf_editor-copybook-pinyin-bottom .xf_editor-copybook-footnote a {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  color: #e65100;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 2px;
+  padding: 0 2px;
+  line-height: 1.3;
+}
+.xf_editor-copybook-pinyin-bottom .xf_editor-copybook-footnote a:hover {
+  color: #bf360c;
+  text-decoration: underline;
+  background: rgba(255, 243, 224, 0.95);
+}
+
+.xf_editor-copybook-grid-cell .xf_editor-copybook-footnote {
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  z-index: 5;
+}
+.xf_editor-copybook-grid-cell .xf_editor-copybook-footnote a {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  color: #e65100;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 2px;
+  padding: 0 2px;
+  line-height: 1.3;
+}
+.xf_editor-copybook-grid-cell .xf_editor-copybook-footnote a:hover {
+  color: #bf360c;
+  text-decoration: underline;
+  background: rgba(255, 243, 224, 0.95);
 }
 
 @media (max-width: 600px) {
@@ -6677,32 +6570,6 @@ hr.xf_editor-page-break {
 .xf_editor-preview-theme-dark .xf_editor-copybook {
   background: #2a2218;
 }
-.xf_editor-preview-theme-dark .xf_editor-copybook-grid-cell {
-  background: #2d2618;
-  border-color: #5a4a2e;
-}
-.xf_editor-preview-theme-dark .xf_editor-copybook-row {
-  background: transparent;
-}
-.xf_editor-preview-theme-dark .xf_editor-copybook-pinyin-top {
-  background: #2a2518;
-}
-.xf_editor-preview-theme-dark .xf_editor-copybook-pinyin-bottom {
-  background: #2d2618;
-  border-color: #5a4a2e;
-}
-.xf_editor-preview-theme-dark .xf_editor-copybook-hanzi-text {
-  color: #c4b998;
-}
-.xf_editor-preview-theme-dark .xf_editor-copybook-pinyin-text {
-  color: #7aa87a;
-}
-.xf_editor-preview-theme-dark .xf_editor-copybook-footnote a {
-  color: #6ea8fe;
-}
-.xf_editor-preview-theme-dark .xf_editor-copybook-footnote a:hover {
-  color: #93c5fd;
-}
 .xf_editor-preview-theme-dark {
   /* Page Block */
 }
@@ -6947,5 +6814,3 @@ hr.xf_editor-page-break {
 .xf_editor-theme-dark .CodeMirror {
   border-right: 1px solid rgba(0, 0, 0, 0.1);
 }
-
-/*# sourceMappingURL=xf_editor.css.map */

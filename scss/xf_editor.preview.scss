@@ -18,6 +18,21 @@
     width: 100%;
     background-color: #fff;
 
+    // ★ 所有媒体元素最大宽度 100%，防止溢出
+    img, video, iframe, svg, .katex, .flowchart, .sequence-diagram {
+        max-width: 100% !important;
+        height: auto;
+        box-sizing: border-box;
+    }
+    // ★ 表格超出时显示水平滚动条
+    table {
+        display: block;
+        max-width: 100%;
+        overflow-x: auto;
+        word-break: normal;
+        -webkit-overflow-scrolling: touch;
+    }
+
     blockquote {
         color: $color;
         border-left: 4px solid $borderColor;
@@ -43,104 +58,130 @@
         background: none;
     }
 
-    /* --- Inline code (not inside pre) --- */
+    /* --- Inline code (not inside pre) — 淡绿色背景 --- */
     code:not(pre code) {
-        color: #c7254e;
-        background: #f9f2f4;
-        border: 1px solid #f0d0d8;
+        color: #1a6b3c;
+        background: #e6ffed;
+        border: 1px solid #b7ebc9;
         padding: 2px 6px;
         border-radius: 3px;
-        font-size: 13px;
+        font-size: 85%;
         font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
         white-space: nowrap;
     }
 
-    code {
-        border: 1px solid $borderColor;
-        background: #f6f6f6;
-        padding: 3px;
-        border-radius: 3px;
-        font-size: 14px;
-    }
-
-    /* --- Pre block (code block container) --- */
+    /* --- Pre block (code block container) — 精致暗色主题 --- */
     pre {
         position: relative;
-        border: 1px solid #e1e4e8;
-        background: #f6f8fa;
-        padding: 16px;
-        margin-bottom: 16px;
+        border: 1px solid #30363d;
+        background: #0d1117;
+        padding: 44px 20px 20px 20px;
+        margin-bottom: 20px;
         overflow: auto;
-        line-height: 1.6;
-        font-size: 13px;
+        line-height: 1.65;
+        font-size: 13.5px;
         word-wrap: normal;
-        @include border-radius(6px);
+        border-radius: 6px;
         font-family: "SF Mono", "Fira Code", "Cascadia Code", Consolas, "Liberation Mono", Menlo, Monaco, monospace;
-        color: #24292e;
+        color: #e6edf3;
+        box-shadow: 0 1px 3px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.03);
+
+        // ★ 顶部 macOS 风格红绿灯
+        &::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 36px;
+            background: #161b22;
+            border-bottom: 1px solid #30363d;
+            border-radius: 6px 6px 0 0;
+        }
+        &::after {
+            content: "";
+            position: absolute;
+            top: 12px; left: 16px;
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: #ff5f57;
+            box-shadow: 
+                18px 0 0 #febc2e,
+                36px 0 0 #28c840;
+            z-index: 2;
+        }
 
         code {
             padding: 0;
             background: transparent;
             border: none;
-            font-size: 13px;
-            line-height: 1.6;
-            color: inherit;
+            font-size: 13.5px;
+            line-height: 1.65;
+            color: #e6edf3;
             white-space: pre;
             word-break: normal;
             font-family: inherit;
         }
 
-        &:hover {
-            #{$prefix}code-copy-btn {
-                opacity: 1;
-            }
+        /* 暗色滚动条 */
+        &::-webkit-scrollbar {
+            height: 6px;
+            width: 6px;
+        }
+        &::-webkit-scrollbar-track {
+            background: #161b22;
+            border-radius: 3px;
+        }
+        &::-webkit-scrollbar-thumb {
+            background: #444c56;
+            border-radius: 3px;
+        }
+        &::-webkit-scrollbar-thumb:hover {
+            background: #6e7681;
         }
     }
 
-    /* --- Copy button inside pre (always at top-right, fixed when scrolling) --- */
+    /* --- Copy button inside pre — 暗色主题 header bar 适配 --- */
     #{$prefix}code-copy-btn {
         position: absolute;
         top: 6px;
-        right: 6px;
+        right: 12px;
         z-index: 10;
         display: inline-flex;
         align-items: center;
         gap: 4px;
-        padding: 4px 8px;
+        padding: 4px 10px;
         font-size: 11px;
         line-height: 1.3;
-        color: #57606a;
-        background: #fff;
-        border: 1px solid #d0d7de;
-        border-radius: 5px;
+        color: rgba(255,255,255,0.55);
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 4px;
         cursor: pointer;
         user-select: none;
         -webkit-user-select: none;
         transition: all 0.15s ease;
-        opacity: 0;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        opacity: 1;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
         &:hover {
-            color: #0969da;
-            border-color: #0969da;
-            background: #f6f8fe;
+            color: #fff;
+            border-color: rgba(255,255,255,0.4);
+            background: rgba(255,255,255,0.22);
             opacity: 1;
         }
 
         &.copied {
-            color: #1a7f37;
-            border-color: #1a7f37;
-            background: #dafbe1;
+            color: #4caf50;
+            border-color: #4caf50;
+            background: rgba(76,175,80,0.15);
             cursor: default;
             pointer-events: none;
             opacity: 1;
         }
 
         &.failed {
-            color: #cf222e;
-            border-color: #cf222e;
-            background: #ffebe9;
+            color: #f44336;
+            border-color: #f44336;
+            background: rgba(244,67,54,0.15);
             cursor: default;
             pointer-events: none;
             opacity: 1;
@@ -162,10 +203,6 @@
         }
     }
     
-    pre, code, kbd {        
-        font-family:  "YaHei Consolas Hybrid", Consolas, "Meiryo UI", "Malgun Gothic", "Segoe UI", "Trebuchet MS", Helvetica, monospace, monospace;
-    }
-
     table thead tr {
         background-color: #F8F8F8;
     }
@@ -260,29 +297,13 @@
     }
 }
 
-//Pretty printing styles. Used with prettify.js.
-
+// Pretty printing styles — Dark theme (imported from prettify.scss)
 @import "prettify";
 
+// Prettify 行号容器暗色适配
 #{$prefix}preview-container, #{$prefix}html-preview {
-    pre.prettyprint, pre:not(.xf_editor-copybook-svg) {
-        padding: 16px;
-        margin: 1em 0;
-        border: 1px solid #e1e4e8;
-        border-radius: 6px;
-        background: #f6f8fa;
-        white-space: pre-wrap;
-        word-wrap: break-word;
-        font-size: 13px;
-        line-height: 1.6;
-        color: #24292e;
-        position: relative;
-        overflow: auto;
-        box-shadow: inset 0 1px 2px rgba(27,31,35,0.05);
-    }
-
     ol.linenums { 
-        color: #8b949e; 
+        color: #484f58; 
         padding: 0 0 0 3.5em;
         margin: 0;
 
@@ -296,24 +317,12 @@
                 border: none;
                 background: none;  
                 padding: 0;
-                color: #24292e;
-                font-size: 13px;
+                color: #e6edf3;
+                font-size: 13.5px;
             }
         }
     }
-
-    // 行内代码美化
-    code:not(pre code):not([class*="language-"]) {
-        padding: 2px 6px;
-        margin: 0 2px;
-        font-size: 85%;
-        background-color: rgba(27,31,35,0.05);
-        border: 1px solid rgba(27,31,35,0.1);
-        border-radius: 4px;
-        color: #e83e8c;
-        font-family: "SF Mono", "Monaco", "Menlo", "Consolas", "Liberation Mono", "Courier New", monospace;
-    }
-}    
+}
 
 #{$prefix}preview-container, #{$prefix}html-preview {
 

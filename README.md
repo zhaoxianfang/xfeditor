@@ -4,11 +4,11 @@
 
 </p>
 
-# xfEditor 编辑器 v1.17.10
+# xfEditor 编辑器 v1.17.13
 
 > **xfEditor 是一款更适合教育、教学、网页演示、数据呈现、内容排版的现代化 Markdown 开源在线编辑器。** 基于 [pandao/editor.md](https://github.com/pandao/editor.md) 深度改进，在原有基础上进行了系统性优化、Bug 修复和新功能拓展。
 
-**xfEditor** 是一款开源可嵌入的 Markdown 在线编辑器组件，基于 CodeMirror、jQuery 和 marked 构建。
+**xfEditor** 是一款开源可嵌入的 Markdown 在线编辑器组件，基于 CodeMirror、jQuery 和 marked 构建。**完全离线可用**，不依赖任何外部 CDN 资源。
 
 
 ## 在线体验
@@ -17,8 +17,34 @@
 - [字帖](https://zhaoxianfang.github.io/xfeditor/examples/copybook.html)
 - [图表](https://zhaoxianfang.github.io/xfeditor/examples/echarts.html)
 - [完整演示](https://zhaoxianfang.github.io/xfeditor/examples/all-features.html)
+- [API 接口文档](https://zhaoxianfang.github.io/xfeditor/examples/api-reference.html)
 
-**v1.17.10 全面修复：**
+**v1.17.13 安全加固 + 兼容性增强 + 全面审计修复：**
+- **🔒 XSS 安全修复**：`markedRenderer.image` 中 `href`/`title`/`text` 属性现在全部经过 `escapeAttr`/`escapeHtml` 安全转义，防止属性注入攻击；`filterHTMLTags` 新增 HTML 实体解码检测（`&#106;avascript:` 等编码绕过），覆盖所有危险协议变体
+- **🌐 ES5 浏览器兼容性修复**：移除 `(?<!!)` ES2018 负向后瞻语法，改用捕获组前置字符检查，确保 IE11 和老版 Safari 正常运行
+- **🐛 多反引号保护修复**：`preprocessLinkTarget` 现在正确保护 `` `…` `` 多反引号行内代码，防止混淆 `[text](url){target=…}` 链接语法
+- **🧹 死代码标记**：5 个未使用正则（`tabs`/`tabItem`/`columns`/`videoBlock`/`fileBlock`）标记为 `[DEPRECATED]` 保留向后兼容
+- **🎯 货币符号优化**：`protectTeXSyntax` 新增货币模式检测，`$100` 等以数字开头的 `$…$` 不再误触 LaTeX 保护
+- **✅ 任务列表去重**：`postProcessTaskLists` 跳过已包含 checkbox 的 HTML，避免与 `markedRenderer.listitem` 重复渲染
+- **📦 全面重构构建**：所有 `.js` / `.css` / `.min.js` / `.min.css` / `preview.min.js` 文件已同步重构
+
+**v1.17.12 深色主题 + 体积优化 + 代码精简：**
+- **🎨 Prettify 深色主题重写**：彻底移除亮色背景和黑白交替行号样式冲突，统一为 VS Code Dark+ 配色（纯文本 #e6edf3、字符串 #ce9178、关键字 #569cd6、注释 #6a9955、类型 #4ec9b0、函数 #dcdcaa），所有行号无交替背景、完美适配 #0d1117 暗色 pre 背景
+- **📄 API 文档页 Header 对齐**：Header 与正文 .api-content 左侧完美对齐（margin-left: 270px），消除固定导航栏与 Header 的交叉遮挡
+- **📦 getHTML 默认压缩**：`minify` 选项默认值改为 `true`，输出时 CSS 自动去除空格、JS 自动压缩，减少存储体积且保证代码可正常运行
+- **🔧 代码精简**：提取 `_renderMarkdownPipeline` 统一共享 Markdown 渲染管线（消除 4 处重复的 9 步处理流程）、`save()` 使用 `_buildRendererOptions` 替代手写 22 行配置、移除 IE8 兼容代码和调试 console 注释
+- **📊 体积优化**：源文件从 12,991 行减少至 ~12,940 行，消除约 60 行冗余代码
+
+**v1.17.11 全面优化与增强：**
+- **🎨 代码块样式全面重设计**：macOS 风格 header bar（红绿灯装饰）、精致暗色 GitHub Dark 主题（#0d1117）、优化字体渲染与间距、代码复制按钮移至 header bar 右侧
+- **📐 预览区媒体自适应**：图片、视频、表格、公式、图表均设置 `max-width: 100%`，防止内容溢出；表格超出水平宽度自动显示滚动条
+- **🔧 工具栏固定定位修复**：修复嵌入页面滚动时工具栏左右偏移问题，改用 `editor.offset().left` 精确定位，确保工具栏始终与编辑器保持对齐且同宽
+- **📄 API 文档页重设计**：现代化 Header（渐变背景 + 几何装饰 + 版本标签 + 能力指标）、表格水平滚动容器（防止内容溢出导致页面布局混乱）、圆角 tag 标签
+- **📦 离线完备性**：getHTML 接口产出的 HTML 完全不依赖任何外部资源（无 CDN/Google Fonts），包含内联完整 CSS 样式（代码块、复制按钮、媒体自适应、表格滚动等），可在离线条件下完美渲染
+- **🧹 样式清理**：移除 SCSS 中重复的 pre/code 样式规则，消除 CSS 特异性冲突导致的代码块样式异常
+- **📝 示例与文档**：所有示例文件、README、USAGE_GUIDE 更新至最新版本
+
+**v1.17.10 修复：**
 - **Tabs 嵌套智能感知**：`findTabsBlocksAware()` 追踪 `[[tab:xxx]]`/`[[/tab]]` 上下文深度，表格文本 `[[tabs]]` 不再被误判为标签
 - **内嵌 Tabs 占位符保护**：`extractTabItems` 用绝对位置替换 inner-tabs 块，确保深层嵌套时正确提取顶层 tab 项
 - **Video/File 块嵌套支持**：`[[video]]`/`[[file]]` 改用 `findBalancedBlocks`，支持与其他块级语法交叉嵌套
@@ -348,7 +374,7 @@ ToC 目录 `[TOC]` / `[TOCM]`、任务列表 `- [x]`、@链接 `@username`、KaT
 - `代码高亮`
 - $E=mc^2$ 数学公式</textarea>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+<script src="examples/js/jquery.min.js"></script>
 <script src="xf_editor.min.js"></script>
 <script>
 $(function(){
@@ -558,7 +584,7 @@ editor.exportFile("文档", "markdown"); // 导出文件
 | `appendMarkdown(md)` | 追加内容 |
 | `insertValue(v, [append])` | 插入/追加 |
 | `clear()` | 清空 |
-| `getHTML([opts])` | 完整独立 HTML（含样式+脚本） |
+| `getHTML([minify\|opts])` | 完整独立 HTML（含样式+脚本）；支持布尔简写 `getHTML(true/false)` |
 | `getPreviewedHTML([opts])` | 预览区 HTML 片段 |
 | `getTextareaSavedHTML()` | getHTML() 别名 |
 
@@ -1209,7 +1235,7 @@ $(element).off("click");
 | [CodeMirror](http://codemirror.net/) | 代码编辑器核心 |
 | [marked](https://github.com/markedjs/marked) | Markdown 解析器 |
 | [jQuery](http://jquery.com/) | DOM 操作 |
-| [KaTeX](https://khan.github.io/KaTeX/) (v0.16.9) | 数学公式渲染 |
+| [KaTeX](https://khan.github.io/KaTeX/) (v0.16.9) | 数学公式渲染（字体已 Base64 内嵌，离线可用） |
 | [prettify.js](https://github.com/google/code-prettify) | 代码语法高亮 |
 | [Raphael.js](http://raphaeljs.com/) | SVG 矢量图形（流程图/时序图依赖） |
 | [flowchart.js](http://flowchart.js.org/) | 流程图 |
@@ -1220,6 +1246,17 @@ $(element).off("click");
 
 ---
 
-**最后更新**: 2026-06-24  
+**最后更新**: 2026-07-01
 **版本**: v1.17.10
+
+### 最新优化 (2026-07-01)
+
+| 优化项 | 说明 |
+|--------|------|
+| **代码块暗色主题** | pre 代码块使用暗色背景 (#1e1e1e)，取消圆角边框；行内 code 使用淡绿色背景 (#e6ffed) |
+| **KaTeX 完全离线** | getHTML() 输出的 KaTeX 公式字体由 CDN 改为 Base64 内嵌，完全支持离线使用，无需任何外部网络请求 |
+| **UI 全面升级** | 预览区/编辑区整体样式优化：代码块暗色滚动条、复制按钮暗色主题适配、API 文档页面美化 |
+| **getHTML 智能输出** | 根据 Markdown 内容自动检测使用的语法特性，按需输出精简有效的 CSS/JS，不包含未使用功能的冗余代码 |
+| **代码体积优化** | 合并重复代码，提高复用率，降低代码体积 |
+| **构建产物** | 所有 .js/.css 和 .min 版本已重新编译压缩 |
 
