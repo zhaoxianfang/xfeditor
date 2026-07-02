@@ -68,7 +68,7 @@
                 });
                 
                 $("#print-btn").click(function(){
-                    var html = testEditor.preview.html();
+                    var html = testEditor.getPreviewedHTML();
                     
                     document.write('<link rel="stylesheet" href="css/style.css" /><link rel="stylesheet" href="../css/xf_editor.min.css" />' + html);
                     window.print();

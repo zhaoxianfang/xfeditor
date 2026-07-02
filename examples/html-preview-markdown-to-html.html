@@ -83,18 +83,8 @@ alert("script");
             </div>
         </div>
         <script src="js/jquery.min.js"></script>
-        <script src="../lib/marked.min.js"></script>
-        <script src="../lib/prettify.min.js"></script>
-        <script src="../lib/raphael.min.js"></script>
-        <script src="../lib/underscore.min.js"></script>
-        <script src="../lib/sequence-diagram.min.js"></script>
-        <script src="../lib/flowchart.min.js"></script>
-        <link rel="stylesheet" href="../lib/katex/katex.min.css" />
-        <script src="../lib/katex/katex.min.js"></script>
-        <script src="../lib/echarts.min.js"></script>
-        <script src="../lib/jquery.flowchart.min.js"></script>
         <script src="../xf_editor.min.js"></script>
-        <script type="text/javascript">
+        <script type="text/javascript">            
             $(function() {
                 var testXfEditorView, testXfEditorView2;
                 
@@ -125,6 +115,7 @@ alert("script");
                         pageBreak       : true,
                         atLink          : true,
                         copybook        : true,
+                        path            : "../lib/",  // ★ 必须指定 path，否则依赖模块无法加载
                     });
                     
                     //console.log("返回一个 jQuery 实例 =>", testXfEditorView);
@@ -152,6 +143,7 @@ alert("script");
                     pageBreak       : true,
                     atLink          : true,
                     copybook        : true,
+                    path            : "../lib/",  // ★ 必须指定 path，否则依赖模块无法加载
                 });
             });
         </script>

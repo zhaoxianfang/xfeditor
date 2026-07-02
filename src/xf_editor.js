@@ -45,6 +45,25 @@
     
     "use strict";
     
+    // ★ v1.17.15: CSS.escape polyfill（IE/旧浏览器兼容）
+    if (typeof CSS !== "undefined" && !CSS.escape) {
+        CSS.escape = function(value) {
+            var str = String(value);
+            return str.replace(/[!"#$%&'()*+,.\/:;<=>?@[\]^`{|}~]/g, "\\$&");
+        };
+    }
+    // ★ v1.17.15: String.prototype.padStart polyfill（IE/ES2016-兼容）
+    if (!String.prototype.padStart) {
+        String.prototype.padStart = function(targetLength, padString) {
+            targetLength = targetLength >> 0;
+            padString = String(typeof padString !== "undefined" ? padString : " ");
+            if (this.length >= targetLength) return String(this);
+            var pad = "";
+            while (pad.length < targetLength - this.length) pad += padString;
+            return pad.substring(0, targetLength - this.length) + String(this);
+        };
+    }
+    
     var $ = (typeof (jQuery) !== "undefined") ? jQuery : Zepto;
 
 	if (typeof ($) === "undefined") {
@@ -64,7 +83,7 @@
     };
     
     xfEditor.title        = xfEditor.$name = "xfEditor";
-    xfEditor.version      = "1.17.13";
+    xfEditor.version      = "1.17.19";
     xfEditor.homePage     = "https://github.com/zhaoxianfang/xfeditor";
     xfEditor.classPrefix  = "xf_editor-";
     
@@ -809,7 +828,9 @@
             }
             
             xfEditor.loadScript(loadPath + "codemirror/codemirror.min", function() {
-                xfEditor.$CodeMirror = CodeMirror;
+                // ★ v1.17.18: 空值安全检查
+                xfEditor.$CodeMirror = (typeof CodeMirror !== "undefined") ? CodeMirror : null;
+                if (!xfEditor.$CodeMirror) { console.warn("[xfEditor] CodeMirror 加载失败"); return; }
                 
                 xfEditor.loadScript(loadPath + "diff_match_patch", function() {
                     
@@ -830,7 +851,9 @@
 
                         xfEditor.loadScript(loadPath + "marked.min", function() {
 
-                            xfEditor.$marked = marked;
+                            // ★ v1.17.18: 空值安全检查
+                            xfEditor.$marked = (typeof marked !== "undefined") ? marked : null;
+                            if (!xfEditor.$marked) { console.error("[xfEditor] marked 库加载失败"); return; }
                                 
                             if (settings.previewCodeHighlight) 
                             {
@@ -1196,8 +1219,7 @@
             {
                 settings = $.extend(true, settings, key);
             }
-            
-            if (typeof key === "string")
+            else if (typeof key === "string" && value !== undefined)
             {
                 settings[key] = value;
             }
@@ -1888,13 +1910,12 @@
             
             if (settings.previewCodeHighlight) 
             {
-                // Store original code text BEFORE prettyPrint modifies the DOM,
-                // so copy buttons can access the unmodified source
+                // ★ v1.17.16: 使用 extractCodeText 提取原始代码（保留缩进/换行/空格）
                 previewContainer.find("pre").each(function() {
                     var $pre = $(this);
                     var $code = $pre.find("code");
                     if ($code.length > 0 && $pre.data("_originalCode") === undefined) {
-                        $pre.data("_originalCode", $code.text());
+                        $pre.data("_originalCode", xfEditor.extractCodeText($code));
                     }
                 });
                 
@@ -1948,13 +1969,13 @@
 
                     if ($btn.hasClass("copied") || $btn.hasClass("failed")) return;
 
-                    // Use stored original code text (set before prettyPrint), fallback to live extraction
+                    // ★ v1.17.17: 优先读取存储的原始代码，fallback 用 extractCodeText 保留完整格式
                     var code = $pre.data("_originalCode");
                     if (!code) {
                         var $code = $pre.find("code");
                         code = $code.length > 0
-                            ? $code.text()
-                            : $pre.clone().find("." + classPrefix + "code-copy-btn").remove().end().text();
+                            ? xfEditor.extractCodeText($code)
+                            : xfEditor.extractCodeText($pre.clone().find("." + classPrefix + "code-copy-btn").remove().end());
                     }
 
                     var done = function(success) {
@@ -3863,15 +3884,27 @@
                 content = this.cm.getValue();
             }
 
-            var blob = new Blob([content], { type: "text/" + format + ";charset=utf-8" });
-            var url = URL.createObjectURL(blob);
-            var a = document.createElement("a");
-            a.href = url;
-            a.download = filename + "." + format;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            try {
+                var blob = new Blob([content], { type: "text/" + format + ";charset=utf-8" });
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement("a");
+                a.href = url;
+                a.download = filename + "." + format;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } catch(e) {
+                // ★ v1.17.15-FIX: 旧浏览器降级方案 — 使用 data URI 下载
+                var fallbackUrl = "data:text/" + format + ";charset=utf-8," + encodeURIComponent(content);
+                var fa = document.createElement("a");
+                fa.href = fallbackUrl;
+                fa.download = filename + "." + format;
+                fa.target = "_blank";
+                document.body.appendChild(fa);
+                fa.click();
+                document.body.removeChild(fa);
+            }
 
             return this;
         },
@@ -4920,13 +4953,22 @@
             s.push('    var cloned=pre.cloneNode(true);');
             s.push('    var oldBtns=cloned.querySelectorAll(".xf_editor-code-copy-btn");');
             s.push('    for(var bi=0;bi<oldBtns.length;bi++){oldBtns[bi].parentNode.removeChild(oldBtns[bi]);}');
-            s.push('    // ★ 收集 ALL <code> 元素的内容');
+            s.push('    // ★ 收集 ALL <code> 元素的内容 — 优先用 textContent（保留原始空白），innerText 作为降级');
+            s.push('    // ★ v1.17.16: 使用 innerHTML 提取，保留原始缩进/空格/换行');
             s.push('    var codeEls=cloned.querySelectorAll("code");');
             s.push('    if(codeEls.length>0){');
-            s.push('      var parts=[];for(var ci=0;ci<codeEls.length;ci++){var t=(codeEls[ci].innerText||codeEls[ci].textContent||"");if(t)parts.push(t);}');
+            s.push('      var parts=[];for(var ci=0;ci<codeEls.length;ci++){');
+            s.push('        var h=codeEls[ci].innerHTML;if(!h){parts.push("");continue;}');
+            s.push('        h=h.replace(/<br\\s*\\/?>/gi,"\\n");h=h.replace(/<[^>]+>/g,"");');
+            s.push('        h=h.replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,\'"\').replace(/&#39;/g,"\\\'").replace(/&apos;/g,"\\\'").replace(/&nbsp;/g," ");');
+            s.push('        parts.push(h.replace(/^\\n+/,"").replace(/\\n+$/,""));');
+            s.push('      }');
             s.push('      pre._originalCode=parts.join("\\n");');
             s.push('    }else{');
-            s.push('      pre._originalCode=(cloned.innerText||cloned.textContent||"");');
+            s.push('      var hc=cloned.innerHTML;');
+            s.push('      hc=hc.replace(/<br\\s*\\/?>/gi,"\\n");hc=hc.replace(/<[^>]+>/g,"");');
+            s.push('      hc=hc.replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,\'"\').replace(/&#39;/g,"\\\'").replace(/&apos;/g,"\\\'").replace(/&nbsp;/g," ");');
+            s.push('      pre._originalCode=hc.replace(/^\\n+/,"").replace(/\\n+$/,"");');
             s.push('    }');
             s.push('    var btn=_doc.createElement("span");');
             s.push('    btn.className="xf_editor-code-copy-btn";');
@@ -4941,15 +4983,24 @@
             s.push('      var targetPre=self._preRef||self.parentElement;');
             s.push('      var code=targetPre._originalCode;');
             s.push('      if(!code||!code.trim()){');
-            s.push('        // fallback: 重新提取');
+            s.push('        // ★ v1.17.16 fallback: innerHTML 提取保留原始格式');
             s.push('        var cp=targetPre.cloneNode(true);');
             s.push('        var cbs=cp.querySelectorAll(".xf_editor-code-copy-btn");');
             s.push('        for(var cj=0;cj<cbs.length;cj++){cbs[cj].parentNode.removeChild(cbs[cj]);}');
             s.push('        var ce=cp.querySelectorAll("code");');
             s.push('        if(ce.length>0){');
-            s.push('          var pp=[];for(var ck=0;ck<ce.length;ck++){var tt=(ce[ck].innerText||ce[ck].textContent||"");if(tt)pp.push(tt);}');
+            s.push('          var pp=[];for(var ck=0;ck<ce.length;ck++){');
+            s.push('            var hi=ce[ck].innerHTML;if(!hi){pp.push("");continue;}');
+            s.push('            hi=hi.replace(/<br\\s*\\/?>/gi,"\\n");hi=hi.replace(/<[^>]+>/g,"");');
+            s.push('            hi=hi.replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,\'"\').replace(/&#39;/g,"\\\'").replace(/&apos;/g,"\\\'").replace(/&nbsp;/g," ");');
+            s.push('            pp.push(hi.replace(/^\\n+/,"").replace(/\\n+$/,""));');
+            s.push('          }');
             s.push('          code=pp.join("\\n");');
-            s.push('        }else{code=cp.innerText||cp.textContent||"";}');
+            s.push('        }else{');
+            s.push('          var hr=cp.innerHTML;hr=hr.replace(/<br\\s*\\/?>/gi,"\\n");hr=hr.replace(/<[^>]+>/g,"");');
+            s.push('          hr=hr.replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,\'"\').replace(/&#39;/g,"\\\'").replace(/&apos;/g,"\\\'").replace(/&nbsp;/g," ");');
+            s.push('          code=hr.replace(/^\\n+/,"").replace(/\\n+$/,"");');
+            s.push('        }');
             s.push('        if(code&&code.trim()){targetPre._originalCode=code;}');
             s.push('      }');
             s.push('      if(!code||!code.trim()){code="";}');
@@ -5096,7 +5147,12 @@
             s.push('      if(tooltipType==="html"){');
             s.push('        tooltipContent=base64Decode(getAttr(trigger,"data-tooltip-html")||"");');
             s.push('        if(!tooltipContent)return;');
-            s.push('        htmlContent=\'<div class="xf_editor-tooltip-html-content">\'+tooltipContent+"</div>";');
+            s.push('        // ★ v1.17.18 XSS 防护：使用 textContent 而非 innerHTML 注入安全文本内容');
+            s.push('        // 如果确实需要 HTML，则通过 filterHTMLTags 过滤危险标签');
+            s.push('        var tmpDiv=document.createElement("div");tmpDiv.innerHTML=tooltipContent;');
+            s.push('        tooltipContent=tmpDiv.textContent||tmpDiv.innerText||"";');
+            s.push('        if(!tooltipContent.trim())return;');
+            s.push('        htmlContent=\'<div class="xf_editor-tooltip-html-content">\'+escapeHTML(tooltipContent)+"</div>";');
             s.push('      }else if(tooltipType==="image"){');
             s.push('        var istyle="display:none;";');
             s.push('        if(tooltipWidth){istyle+="width:"+tooltipWidth+"px;max-width:"+tooltipWidth+"px;";}else{istyle+="max-width:340px;";}');
@@ -5115,10 +5171,21 @@
             s.push('              // ★ 收集 ALL <code> 元素，确保多组代码块全部提取');
             s.push('              var ces=preEl.querySelectorAll("code");');
             s.push('              var rawCode;');
+            s.push('              // ★ v1.17.17: 使用 innerHTML 提取原始代码（保留缩进/换行/空格）');
             s.push('              if(ces.length>0){');
-            s.push('                var rp=[];for(var ri=0;ri<ces.length;ri++){var ct=ces[ri].innerText||ces[ri].textContent;if(ct)rp.push(ct);}');
+            s.push('                var rp=[];for(var ri=0;ri<ces.length;ri++){');
+            s.push('                  var hi=ces[ri].innerHTML;if(!hi){rp.push("");continue;}');
+            s.push('                  hi=hi.replace(/<br\\s*\\/?>/gi,"\\n");hi=hi.replace(/<[^>]+>/g,"");');
+            s.push('                  hi=hi.replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,\'"\').replace(/&#39;/g,"\\\'").replace(/&apos;/g,"\\\'").replace(/&nbsp;/g," ");');
+            s.push('                  rp.push(hi.replace(/^\\n+/,"").replace(/\\n+$/,""));');
+            s.push('                }');
             s.push('                rawCode=rp.join("\\n");');
-            s.push('              }else{rawCode=preEl.innerText||preEl.textContent;}');
+            s.push('              }else{');
+            s.push('                var hc=preEl.innerHTML;');
+            s.push('                hc=hc.replace(/<br\\s*\\/?>/gi,"\\n");hc=hc.replace(/<[^>]+>/g,"");');
+            s.push('                hc=hc.replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,\'"\').replace(/&#39;/g,"\\\'").replace(/&apos;/g,"\\\'").replace(/&nbsp;/g," ");');
+            s.push('                rawCode=hc.replace(/^\\n+/,"").replace(/\\n+$/,"");');
+            s.push('              }');
             s.push('              var langCls=preEl.className||"";');
             s.push('              // ★ 将原始代码构建为完整的独立 HTML 页面，确保 JS 和 CSS 能在 iframe 中正常执行');
             s.push('              _rawPreCode=buildIframeHTML(rawCode,langCls);');
@@ -10094,11 +10161,11 @@
                     pageContentHtml = xfEditor.restorePlaceholders(pageContentHtml, pagePreprocessed.placeholders);
 
                     // 构建页面HTML，包含页头、页脚区域
-                    var headerHtml = pageHeader ? '<div class="xf_editor-page-header">' + pageHeader.replace(/</g, "&lt;").replace(/>/g, "&gt;") + '</div>' : '';
+                    var headerHtml = pageHeader ? '<div class="xf_editor-page-header">' + pageHeader.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;") + '</div>' : '';
                     // ★ v1.17.9-FIX1: 直接渲染页脚初始内容（{page}/{total} 暂用 1/1）
                     // data-footer-template 属性保留供 initPages() 分页时更新
                     // 解决 markdownToHTML 模式下 footer 不显示的问题
-                    var footerContent = pageFooter ? pageFooter.replace(/{page}/gi, '1').replace(/{total}/gi, '1') : '';
+                    var footerContent = pageFooter ? xfEditor.escapeHtml(pageFooter.replace(/{page}/gi, '1').replace(/{total}/gi, '1')) : '';
                     var footerHtml = pageFooter ? '<div class="xf_editor-page-footer" data-footer-template="' + pageFooter.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + '">' + footerContent + '</div>' : '';
 
                     var pageHtml = '<div class="xf_editor-page-block" data-paper="' + paperKey + '" data-width="' + paperSize.w + '" data-height="' + paperSize.h + '" style="width:' + paperSize.w + 'px;min-height:' + paperSize.h + 'px;">' +
@@ -10187,7 +10254,7 @@
                         
                         var name = parts[1] ? parts[1].trim() : url.split("/").pop();
                         var ext = url.split(".").pop().toLowerCase();
-                        fresultHtml += '<a href="' + url.replace(/"/g, "&quot;") + '" download class="xf_editor-attachment-link" data-ext="' + ext + '">' + name.replace(/</g,"&lt;").replace(/>/g,"&gt;") + '</a>';
+                        fresultHtml += '<a href="' + url.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;") + '" download class="xf_editor-attachment-link" data-ext="' + ext + '">' + name.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;") + '</a>';
                         
                         // 安全限制：最多支持 100 个文件
                         if (i >= 99) {
@@ -11208,6 +11275,15 @@
             dangerousTags: ['script', 'style', 'iframe', 'frame', 'frameset', 'object', 'embed', 'applet', 'base', 'basefont', 'link', 'meta', 'noscript', 'template', 'form', 'textarea', 'button', 'select', 'option', 'optgroup', 'datalist', 'fieldset', 'label', 'legend', 'meter', 'output', 'progress']
         };
         
+        // ★ v1.17.15-FIX: 保护 <pre> 和 <code> 块，防止代码示例中的 <script>/<style>/<iframe> 等标签被过滤误删
+        var xssProtectedBlocks = [];
+        var xssProtectId = 0;
+        html = html.replace(/(<(pre|code)\b[^>]*>)([\s\S]*?)(<\/\2>)/gi, function(match) {
+            var id = "xf_editor-xssp-" + (++xssProtectId);
+            xssProtectedBlocks.push({ id: id, html: match });
+            return "<!--" + id + "-->";
+        });
+        
         // 彻底移除危险标签（始终执行，安全底线）
         for (var dt = 0; dt < xssWhitelist.dangerousTags.length; dt++) {
             var dTag = xssWhitelist.dangerousTags[dt];
@@ -11267,8 +11343,13 @@
             return sanitized;
         });
 
+        // ★ v1.17.16-FIX: 还原被保护的 <pre>/<code> 块必须在早期返回之前（而不是之后）
+        // 否则 htmlDecode: true/false（typeof !== "string"）时会跳过还原，导致代码块消失！
+        for (var xpi = 0; xpi < xssProtectedBlocks.length; xpi++) {
+            html = html.split("<!--" + xssProtectedBlocks[xpi].id + "-->").join(xssProtectedBlocks[xpi].html);
+        }
+
         // === 用户自定义标签过滤（仅在 htmlDecode 配置了过滤规则时执行） ===
-        
         if (typeof filters !== "string") {
             return html;
         }
@@ -11279,7 +11360,10 @@
 
         for (var i = 0, len = filterTags.length; i < len; i++)
         {
-            var tag = filterTags[i];
+            var tag = filterTags[i].trim();
+            
+            // ★ v1.17.15-FIX: 跳过空标签名，防止生成错误正则
+            if (!tag) continue;
 
             html = html.replace(new RegExp("\<\s*" + tag + "\s*([^\>]*)\>([^\>]*)\<\s*\/" + tag + "\s*\>", "igm"), "");
         }
@@ -11338,6 +11422,36 @@
     };
 
     /**
+     * ★ v1.17.16: 从 &lt;code&gt; 元素可靠提取原始代码文本（保留缩进/空格/换行）
+     * 使用 innerHTML + 实体解码，比 textContent 更可靠（textContent 在 DOM 结构复杂时可能丢失空白）
+     *
+     * @param   {HTMLElement|jQuery} el  code 元素
+     * @returns {string}                  解码后的原始代码文本
+     */
+    xfEditor.extractCodeText = function(el) {
+        if (!el) return "";
+        var dom = (el.jquery) ? el[0] : el;
+        if (!dom) return "";
+        // 使用 innerHTML 获取原始 HTML，这保留了所有空格/换行/实体
+        var raw = dom.innerHTML;
+        if (!raw) return "";
+        // ★ v1.17.19: 先处理 <br> 转回换行
+        raw = raw.replace(/<br\s*\/?>/gi, "\n");
+        // ★ v1.17.19: 剥离所有 HTML 标签（必须在实体解码之前！否则解码后的 < > 会被贪婪式 <[^>]+> 消耗）
+        raw = raw.replace(/<[^>]+>/g, "");
+        // ★ v1.17.19: 最后解码 HTML 实体 — &amp; 必须在 &lt;/&gt; 之前，避免 &amp;lt; 被错误拆解
+        raw = raw.replace(/&amp;/g, "&")
+                 .replace(/&lt;/g, "<")
+                 .replace(/&gt;/g, ">")
+                 .replace(/&quot;/g, '"')
+                 .replace(/&#39;/g, "'")
+                 .replace(/&apos;/g, "'")
+                 .replace(/&nbsp;/g, " ");
+        // 去除首尾多余的空白行（保留代码内部的空白）
+        return raw.replace(/^\n+/, "").replace(/\n+$/, "");
+    };
+
+    /**
      * Static helper: Inject "Copy" buttons into every <pre> block inside a container.
      * Places a floating copy button at the top-right corner of each pre.
      * The button is absolute-positioned and does not scroll with code content.
@@ -11375,13 +11489,13 @@
                 e.preventDefault();
                 if ($btn.hasClass("copied") || $btn.hasClass("failed")) return;
 
-                // Use stored original code text (set before prettyPrint), fallback to live extraction
+                // ★ v1.17.16: 优先读取存储的原始代码，fallback 用 extractCodeText 保留完整格式
                 var code = $pre.data("_originalCode");
                 if (!code) {
                     var $code = $pre.find("code");
                     code = $code.length > 0
-                        ? $code.text()
-                        : $pre.clone().find("." + classPrefix + "code-copy-btn").remove().end().text();
+                        ? xfEditor.extractCodeText($code)
+                        : xfEditor.extractCodeText($pre.clone().find("." + classPrefix + "code-copy-btn").remove().end());
                 }
 
                 var done = function(success) {
@@ -11477,11 +11591,9 @@
                     }
                     if ($pre.length > 0) {
                         isPreContent = true;
-                        // 提取 pre 中的原始文本内容（使用 .text() 获取解码后的原始 HTML）
-                        // 注意：.text() 会将 HTML 实体（如 &lt;）解码为原始字符（如 <），
-                        // 这样放入 Blob 后浏览器便可以正常解析渲染 HTML 页面效果
+                        // ★ v1.17.17: 使用 extractCodeText 提取原始代码（保留缩进/换行/空格）
                         // jQuery 可以正常访问 display:none!important 的隐藏元素，不受可见性影响
-                        _rawPreCode = ($pre.find("code").length > 0) ? $pre.find("code").text() : $pre.text();
+                        _rawPreCode = ($pre.find("code").length > 0) ? xfEditor.extractCodeText($pre.find("code")) : xfEditor.extractCodeText($pre);
                         // 不在此处创建 Blob URL，而是存储原始代码，在每次 showTooltip 时动态创建
                         // 这样每次鼠标悬停都会执行 iframe 中的 JS 代码
                         // 隐藏 pre 的 display:none!important 不会传递到 iframe（iframe 是独立文档）
@@ -11970,9 +12082,16 @@
             copybook             : true
         };
         
-        xfEditor.$marked  = marked;
+        xfEditor.$marked  = (typeof marked !== "undefined") ? marked : null;
 
+        // ★ v1.17.18: 验证 target element 是否存在
         var div           = $("#" + id);
+        if (div.length === 0) {
+            if (typeof console !== "undefined" && console.error) {
+                console.error("[xfEditor] markdownToHTML: 找不到目标元素 #" + id);
+            }
+            return;
+        }
         var settings      = div.settings = $.extend(true, defaults, options || {});
         var saveTo        = div.find("textarea");
         
@@ -12069,8 +12188,19 @@
             
         if (settings.previewCodeHighlight) 
         {
+            // ★ v1.17.16: 使用 extractCodeText 提取原始代码（保留缩进/换行/空格）
+            div.find("pre").each(function() {
+                var $pre = $(this);
+                var $code = $pre.find("code");
+                if ($code.length > 0 && $pre.data("_originalCode") === undefined) {
+                    $pre.data("_originalCode", xfEditor.extractCodeText($code));
+                }
+            });
             div.find("pre").addClass("prettyprint linenums");
-            prettyPrint();
+            // ★ 方案 B: 若 prettyPrint 全局函数可用，执行高亮；否则忽略（已保存原始代码）
+            if (typeof prettyPrint !== "undefined" && prettyPrint) {
+                prettyPrint();
+            }
         }
 
         // 向所有 pre 代码块注入复制按钮

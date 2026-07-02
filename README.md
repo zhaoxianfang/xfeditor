@@ -4,7 +4,7 @@
 
 </p>
 
-# xfEditor 编辑器 v1.17.13
+# xfEditor 编辑器 v1.17.19
 
 > **xfEditor 是一款更适合教育、教学、网页演示、数据呈现、内容排版的现代化 Markdown 开源在线编辑器。** 基于 [pandao/editor.md](https://github.com/pandao/editor.md) 深度改进，在原有基础上进行了系统性优化、Bug 修复和新功能拓展。
 
@@ -19,6 +19,24 @@
 - [完整演示](https://zhaoxianfang.github.io/xfeditor/examples/all-features.html)
 - [API 接口文档](https://zhaoxianfang.github.io/xfeditor/examples/api-reference.html)
 
+**v1.17.19 代码复制修复 + extractCodeText 处理器顺序修正：**
+- **🐛 复制按钮代码丢失修复**：`extractCodeText()` 中实体解码（`&lt;`→`<`）在 HTML 标签剥离之前执行，导致 prettyPrint 高亮后的 `&lt;=` 解码为 `<=` 后被贪婪式 `<[^>]+>` 正则消耗。修复为 **先剥离标签 → 再解码实体**（`<br>`→`\n` → `<[^>]+>`→`` → `&amp;`/`&lt;`/`&gt;` 解码），同时修正 `&amp;` 解码顺序（必须在 `&lt;`/`&gt;` 之前，防止 `&amp;lt;` 被错误拆解）
+- **🔧 内联脚本同步修复**：3 处内联生成的代码提取脚本（HTML 导出/iframe:pre/tooltip）同样修正为标签剥离优先顺序
+- **📦 全部构建产物重编译**：`xf_editor.js`/`.min.js`/`preview.min.js` 已同步重建
+
+**v1.17.18 全面审查修复 + SCSS/CSS 强化 + 安全加固：**
+- **🔧 SCSS/CSS 全面修复**：移除 `xf_editor.dialog.scss` 中 2 处冗余 hover 渐变（与默认值完全相同的无效 hover）；修复 10 处裸 `transform` 缺少 `-webkit-`/`-ms-` 厂商前缀的问题（改用 `@include transform()` mixin）；修复 `github-markdown.scss` 中 `word-break: normal;` 紧接 `word-break: keep-all;` 的覆盖冗余；修复 `font-awesome.scss` 中 `transform` 缺少前缀
+- **🔒 Tooltip HTML XSS 防护**：`tooltipType="html"` 的 `popup.innerHTML` 注入 Base64 解码内容现在先经过 `textContent` 提取再 `escapeHTML` 包装，防止恶意 HTML 执行
+- **🔒 多处 HTML 转义增强**：`pageHeader` 增加 `&`/`"`/`'` 转义；`footerContent` 使用 `escapeHtml()`；附件链接 `url`/`name` 增加 `&`/`'` 转义防止属性注入
+- **🐛 上传插件事件累积修复**：`image-dialog`/`file-dialog`/`video-dialog` 中 submit handler 改为 `.off().on()` 模式，防止多次打开弹窗导致一次点击触发多次上传
+- **🛡️ 库加载空值保护**：`CodeMirror` 和 `marked` 加载后增加 `typeof undefined` 检查，防止库文件缺失时静默失败；`markdownToHTML` 增加目标元素 `#id` 不存在时的错误提示
+- **📦 全部构建产物**：所有 `.js`/`.min.js`/`preview.min.js`/`.css`/`.min.css` 已同步重构
+
+**v1.17.17 预览版复制按钮格式保留 + tooltip iframe 代码提取修复：**
+- **🐛 preview.min.js 代码提取修复**：实例 `initCodeCopy` fallback 从 `.text()` 改为 `extractCodeText()`（v1.17.16 遗留；3 处遗漏）
+- **🐛 Tooltip iframe 代码提取**：jQuery 侧和内联脚本侧改用 `innerHTML` + HTML 实体解码（之前是 `.text()`/`textContent`）
+- **📦 构建产物同步**：`xf_editor.preview.min.js` 重新编译，全部 6 个文件代码提取点已统一
+
 **v1.17.13 安全加固 + 兼容性增强 + 全面审计修复：**
 - **🔒 XSS 安全修复**：`markedRenderer.image` 中 `href`/`title`/`text` 属性现在全部经过 `escapeAttr`/`escapeHtml` 安全转义，防止属性注入攻击；`filterHTMLTags` 新增 HTML 实体解码检测（`&#106;avascript:` 等编码绕过），覆盖所有危险协议变体
 - **🌐 ES5 浏览器兼容性修复**：移除 `(?<!!)` ES2018 负向后瞻语法，改用捕获组前置字符检查，确保 IE11 和老版 Safari 正常运行
@@ -27,6 +45,25 @@
 - **🎯 货币符号优化**：`protectTeXSyntax` 新增货币模式检测，`$100` 等以数字开头的 `$…$` 不再误触 LaTeX 保护
 - **✅ 任务列表去重**：`postProcessTaskLists` 跳过已包含 checkbox 的 HTML，避免与 `markedRenderer.listitem` 重复渲染
 - **📦 全面重构构建**：所有 `.js` / `.css` / `.min.js` / `.min.css` / `preview.min.js` 文件已同步重构
+
+**v1.17.16 复制按钮格式保留修复 + filterHTMLTags 核心 Bug 修复：**
+- **🐛 filterHTMLTags pre/code 块消失 Bug 修复**：v1.17.15 引入的 pre/code 保护块还原代码被错误放置在 `typeof filters !== "string"` 早期返回之后，导致 `htmlDecode: true/false` 时所有 `<pre>`/`<code>` 内容被永久替换为 HTML 注释（代码块完全消失）。修复：将还原代码移到安全过滤完成但用户过滤之前，确保所有路径都正确还原
+- **🐛 复制按钮代码格式保留**：引入 `xfEditor.extractCodeText()` 使用 `innerHTML` + HTML 实体解码提取代码文本，代替之前的 `textContent`/`.text()` 方式。`innerHTML` 方式完美保留原始缩进/空格/换行，解决了 prettify 后 `<span>` 结构下 `textContent` 可能丢失空白的问题
+- **🔧 全部提取点统一**：编辑器实例 `previewCodeHighlight`、静态方法 `markdownToHTML`、实例方法 `initCodeCopy`、静态方法 `xfEditor.initCodeCopy`、内联脚本 `initCodeCopy` 共 5 处代码提取点全部切换为 `extractCodeText`
+- **📦 构建产物**：所有 `.js` / `.min.js` / `preview.min.js` 文件已重新编译
+
+**v1.17.15 全面安全加固 + 示例修复 + 文档完善：**
+- **🛡️ XSS 过滤保护 pre/code 块**：`filterHTMLTags()` 在移除危险标签前保护 `<pre>`/`<code>` 块，确保代码示例中的 `<script>`/`<style>`/`<iframe>` 等标签不被误删（修复最严重的安全过滤缺陷）
+- **🛡️ CSS.escape polyfill**：为 IE/旧浏览器添加 `CSS.escape` polyfill，修复脚注点击跳转在旧浏览器中失败的问题
+- **🛡️ padStart polyfill**：为 IE/ES2016- 浏览器添加 `String.prototype.padStart` polyfill，修复草稿恢复功能在旧浏览器中崩溃的问题
+- **🔧 config() 防御性参数**：`config("key", undefined)` 不再覆盖已有值；两个 `if` 改为 `if-else` 避免逻辑混淆
+- **🔧 exportFile 降级方案**：Blob/URL.createObjectURL 不可用时自动降级为 data URI 下载
+- **🔧 用户过滤空标签名**：`filters.split("|")` 空标签名跳过处理，防止生成错误正则
+- **🔧 getHTML 布尔简写**：支持 `editor.getHTML(true)` / `editor.getHTML(false)` 控制压缩输出
+- **🔧 代码复制保留格式**：`markdownToHTML` 在 `prettyPrint` 前保存原始代码文本，修复复制按钮丢失换行/空格问题
+- **📝 示例文件全面修复**：12 个示例文件修复（拼写错误 `htmlDebode`→`htmlDecode`、弃用 API `todoList`→`taskList`、缺失 `path` 参数、过期版本号、弃用 `<a name>` 属性、非压缩 JS 引用）
+- **📄 API 文档 Header 对齐**：`api-reference.html` Header 与 `.api-content` 使用 block 自然流式布局对齐
+- **📦 构建产物**：所有 `.js` / `.css` / `.min.js` / `.min.css` / `preview.min.js` 文件已重新编译
 
 **v1.17.12 深色主题 + 体积优化 + 代码精简：**
 - **🎨 Prettify 深色主题重写**：彻底移除亮色背景和黑白交替行号样式冲突，统一为 VS Code Dark+ 配色（纯文本 #e6edf3、字符串 #ce9178、关键字 #569cd6、注释 #6a9955、类型 #4ec9b0、函数 #dcdcaa），所有行号无交替背景、完美适配 #0d1117 暗色 pre 背景

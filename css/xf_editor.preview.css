@@ -20,6 +20,8 @@
   text-rendering: auto;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-transform: translate(0, 0);
+  -ms-transform: translate(0, 0);
   transform: translate(0, 0);
 }
 
@@ -2843,7 +2845,6 @@
   display: block;
   width: 100%;
   overflow: auto;
-  word-break: normal;
   word-break: keep-all;
 }
 

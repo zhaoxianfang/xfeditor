@@ -1,6 +1,6 @@
 # xfEditor 使用指南
 
-> xfEditor v1.17.13 完整使用手册
+> xfEditor v1.17.18 完整使用手册
 
 ---
 

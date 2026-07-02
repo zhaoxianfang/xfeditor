@@ -136,11 +136,12 @@
     @include box-sizing(border-box);
 }
 
-@import "xf_editor.dialog"; 
-@import "xf_editor.grid"; 
-@import "xf_editor.tab"; 
-@import "xf_editor.form"; 
-@import "xf_editor.codemirror"; 
+// ★ v1.17.18: grid → preview 导入顺序确保 preview.scss 中 row/col 样式优先
+@import "xf_editor.dialog";
+@import "xf_editor.grid";
+@import "xf_editor.tab";
+@import "xf_editor.form";
+@import "xf_editor.codemirror";
 @import "xf_editor.preview";
 @import "xf_editor.preview.themes";
 

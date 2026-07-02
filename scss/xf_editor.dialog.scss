@@ -22,15 +22,11 @@
     @include transition(opacity 200ms ease, transform 200ms ease);
 }
 
+// ★ v1.17.18: 移除冗余 hover（与默认背景相同）
 #{$prefix}dialog-header {
     padding: 14px 20px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-bottom: none;
-    @include transition(background 300ms ease-out);
-
-    &:hover {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
 }
 
 #{$prefix}dialog-title {
@@ -463,7 +459,7 @@
     &:hover {
         background: #fff;
         border-color: #6366f1;
-        transform: translateY(-2px);
+        @include transform(translateY(-2px));
         box-shadow: 0 4px 14px rgba(99, 102, 241, 0.15);
 
         #{$prefix}formula-name {
@@ -472,7 +468,7 @@
     }
 
     &:active {
-        transform: translateY(0);
+        @include transform(translateY(0));
         box-shadow: 0 2px 6px rgba(99, 102, 241, 0.1);
     }
 
@@ -623,11 +619,11 @@
 
     &:hover {
         box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
-        transform: translateY(-1px);
+        @include transform(translateY(-1px));
     }
 
     &:active {
-        transform: translateY(0);
+        @include transform(translateY(0));
     }
 }
 
@@ -646,14 +642,11 @@
     background: #fff;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
+    // ★ v1.17.18: 移除冗余 hover（与默认背景相同）
     #{$prefix}dialog-header {
         padding: 16px 20px;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         border-bottom: none;
-        
-        &:hover {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
     }
 
     #{$prefix}dialog-title {
@@ -774,7 +767,7 @@
     &:hover {
         border-color: #667eea;
         @include box-shadow(0 4px 12px rgba(102, 126, 234, 0.15));
-        transform: translateY(-1px);
+        @include transform(translateY(-1px));
 
         &:before {
             opacity: 1;
@@ -786,7 +779,7 @@
     }
 
     &:active {
-        transform: translateY(0);
+        @include transform(translateY(0));
     }
 }
 
@@ -855,7 +848,7 @@
 
 @keyframes draft-spin {
     to {
-        transform: rotate(360deg);
+        @include transform(rotate(360deg));
     }
 }
 
@@ -895,11 +888,11 @@
 
     &:hover {
         @include box-shadow(0 4px 12px rgba(102, 126, 234, 0.4));
-        transform: translateY(-1px);
+        @include transform(translateY(-1px));
     }
 
     &:active {
-        transform: translateY(0);
+        @include transform(translateY(0));
     }
 }
 

@@ -102,6 +102,7 @@
     
     pre {
         color: #999;
+        // ★ v1.17.18: 合并重复 background-color，使用 rgba 回退到 #111
         background-color: #111;
         background-color: rgba(0,0,0,.4);
 

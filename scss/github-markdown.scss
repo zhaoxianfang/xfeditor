@@ -409,7 +409,7 @@
   display: block;
   width: 100%;
   overflow: auto;
-  word-break: normal;
+  // ★ v1.17.18: 只保留最终生效的 word-break 属性
   word-break: keep-all;
 }
 

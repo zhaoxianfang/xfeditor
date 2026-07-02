@@ -218,7 +218,8 @@
                             };
                         };
 
-                        dialog.find("[type=\"submit\"]").on("click", submitHandler).trigger("click");
+                        // ★ v1.17.18: 先解绑旧 handler 再绑定，防止累积绑定导致多次上传
+                        dialog.find("[type=\"submit\"]").off("click", submitHandler).on("click", submitHandler).trigger("click");
                     });
                 }
             }
