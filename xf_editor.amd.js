@@ -1,4 +1,4 @@
-/* xfEditor v1.17.19 | xf_editor.js | MIT License | 2026-07-02 */
+/* xfEditor v1.17.20 | xf_editor.js | MIT License | 2026-07-02 */
 ;(function(factory) {
     "use strict";
 
@@ -84,7 +84,7 @@
     };
     
     xfEditor.title        = xfEditor.$name = "xfEditor";
-    xfEditor.version      = "1.17.19";
+    xfEditor.version      = "1.17.20";
     xfEditor.homePage     = "https://github.com/zhaoxianfang/xfeditor";
     xfEditor.classPrefix  = "xf_editor-";
     
@@ -4018,7 +4018,108 @@
         getValue : function() {
             return this.cm.getValue();
         },
+
+        /**
+         * 判断编辑器编辑区内容使用了哪些语法特性
+         * Detect which syntax features are used in the editor content
+         * 
+         * @returns {Object}  返回键值对对象，键为特性名称，值为布尔值（true 表示已使用）
+         * @example
+         * var types = editor.getUseTypes();
+         * // { echarts: true, katex: false, copybook: false, ... }
+         */
         
+        getUseTypes : function() {
+            var md = this.getMarkdown() || '';
+            if (!md.trim()) return {};
+
+            var r = {};
+
+            // ECharts 图表：```echarts
+            r.echarts = /```echarts\b/.test(md);
+
+            // KaTeX 科学公式：$$ 块级公式 或 $...$ 行内公式
+            r.katex = /\$\$/.test(md) || /\$[^$\n\r]+\$/.test(md);
+
+            // 字帖：[[tian: / [[mi: / [[pinyin:
+            r.copybook = /\[\[(tian|mi|pinyin)\s*:/.test(md);
+
+            // 流程图：```flow
+            r.flowchart = /```flow\b/.test(md);
+
+            // 时序图：```sequence
+            r.sequenceDiagram = /```sequence\b/.test(md);
+
+            // 任务列表：- [ ] 或 - [x]
+            r.taskList = /^\s*[-*+]\s+\[[ x]\]/m.test(md);
+
+            // 分页符：[========]
+            r.pageBreak = /\[========\]/.test(md);
+
+            // 多标签页：[[tabs]] / [[tab: / [[/tabs]]
+            r.tabs = /\[\[\/?tabs\]\]|\[\[tab\s*:/.test(md);
+
+            // 多列排版：[[columns: / [[/columns]]
+            r.columns = /\[\[\/?columns[:\]]/.test(md);
+
+            // 栅格布局：[[row]] / [[col: / [[/col]] / [[/row]]
+            r.grid = /\[\[\/?row\]\]|\[\[\/?col[:\]]/.test(md);
+
+            // 页面块：[[page:
+            r.pageBlock = /\[\[page\s*:/.test(md);
+
+            // 视频：[[video]]
+            r.video = /\[\[video\]\]/.test(md);
+
+            // 文件列表：[[file]]
+            r.fileList = /\[\[file\]\]/.test(md);
+
+            // 悬浮提示：[text](tooltip:...)
+            r.tooltip = /\]\(tooltip\s*:/.test(md);
+
+            // 拼音标注：{汉字|pinyin}
+            r.pinyin = /\{[^}]+\|[^}]+\}/.test(md);
+
+            // 上下标：~下标~ 或 ^上标^（排除 ~~ 删除线和 ^^ 尖括号）
+            r.supsub = /(?<!\*)[~\^][^~\^\n\r]+[~\^](?!\*)/.test(md);
+
+            // 文字对齐：-> / <- / 行首控制标记
+            r.textAlign = /^[ \t]*(->|<-)/m.test(md);
+
+            // Badge 标签：%badge:...%
+            r.badge = /%badge\s*:[^%]+%/.test(md);
+
+            // 脚注：[^label]
+            r.footnote = /\[\^[^\]]+\][^:(]/m.test(md);
+
+            // @提及链接：@username
+            r.atLink = /(?<!\w)@[a-zA-Z0-9_\u4e00-\u9fa5]+/.test(md);
+
+            // 邮件链接：<email> 或 [text](mailto:...)
+            r.emailLink = /<[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}>/.test(md) ||
+                          /\[[^\]]*\]\(mailto:/i.test(md);
+
+            // 围栏代码块：```
+            r.codeBlock = /```/.test(md);
+
+            // 指定语言代码高亮：```lang（fence 后跟语言标识符）
+            r.codeHighlight = /```[a-zA-Z#+\-][a-zA-Z0-9_+#-]*\s*[\n\r]/.test(md);
+
+            // 表格：管道表格 |...|
+            r.table = /^\s*\|[^\n\r]+\|[ \t]*$/m.test(md);
+
+            // 图片：![...](...)
+            r.image = /!\[[^\]]*\]\([^)]+\)/.test(md);
+
+            // 引用块：> 行首
+            r.blockquote = /^>\s/m.test(md);
+
+            // 标题：# ~ ######
+            r.headings = /^#{1,6}\s/m.test(md);
+
+            return r;
+        },
+
         /**
          * 设置编辑器的源文档
          * Set CodeMirror value

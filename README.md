@@ -19,6 +19,10 @@
 - [完整演示](https://zhaoxianfang.github.io/xfeditor/examples/all-features.html)
 - [API 接口文档](https://zhaoxianfang.github.io/xfeditor/examples/api-reference.html)
 
+**v1.17.20 getUseTypes() 语法特性检测 + API 页面重构：**
+- **🆕 新增 `getUseTypes()` 实例方法**：通过 `editor.getUseTypes()` 实时分析编辑器 Markdown 源码，返回 `{名称:bool}` 键值对（共 27 个检测维度：echarts/katex/copybook/flowchart/sequenceDiagram/taskList/pageBreak/tabs/columns/grid/pageBlock/video/fileList/tooltip/pinyin/supsub/textAlign/badge/footnote/atLink/emailLink/codeBlock/codeHighlight/table/image/blockquote/headings），典型场景：保存前按需加载资源（如检测到 echarts 则加载 ECharts JS）
+- **🏗️ api-reference.html 页面重构**：Header 从 `<header>` 改为 `<div class="api-header">`，移入 `.api-content` 内部统一布局；新增 `getUseTypes` 完整文档（返回值表格 + 代码示例）
+
 **v1.17.19 代码复制修复 + extractCodeText 处理器顺序修正：**
 - **🐛 复制按钮代码丢失修复**：`extractCodeText()` 中实体解码（`&lt;`→`<`）在 HTML 标签剥离之前执行，导致 prettyPrint 高亮后的 `&lt;=` 解码为 `<=` 后被贪婪式 `<[^>]+>` 正则消耗。修复为 **先剥离标签 → 再解码实体**（`<br>`→`\n` → `<[^>]+>`→`` → `&amp;`/`&lt;`/`&gt;` 解码），同时修正 `&amp;` 解码顺序（必须在 `&lt;`/`&gt;` 之前，防止 `&amp;lt;` 被错误拆解）
 - **🔧 内联脚本同步修复**：3 处内联生成的代码提取脚本（HTML 导出/iframe:pre/tooltip）同样修正为标签剥离优先顺序

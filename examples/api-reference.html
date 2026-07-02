@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
     <meta charset="utf-8" />
-    <title>API 接口文档 - xfEditor v1.17.18</title>
+    <title>API 接口文档 - xfEditor v1.17.20</title>
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="../css/xf_editor.min.css" />
     <link rel="shortcut icon" href="../images/favicon.ico" type="image/x-icon" />
@@ -236,7 +236,7 @@
         <h1>xfEditor API 接口文档</h1>
         <p>完整配置项、实例方法、事件回调、静态方法、上传接口与扩展语法说明 — 一站式 Markdown 编辑器参考</p>
         <div class="api-header-meta">
-            <div class="api-header-meta-item"><span class="meta-dot green"></span> v1.17.13</div>
+            <div class="api-header-meta-item"><span class="meta-dot green"></span> v1.17.20</div>
             <div class="api-header-meta-item"><span class="meta-dot blue"></span> 30+ 实例方法</div>
             <div class="api-header-meta-item"><span class="meta-dot orange"></span> 20+ 事件回调</div>
             <div class="api-header-meta-item"><span class="meta-dot green"></span> 离线可用</div>
@@ -807,11 +807,12 @@ htmlDecode: <span class="str">"script,iframe|*"</span></pre>
 
 <!-- SECTION: instance-methods -->
 <div class="api-section" id="instance-methods">
-    <h2>实例方法（30 个）</h2>
+    <h2>实例方法（31 个）</h2>
     <div class="table-wrap"><table class="api-table">
         <tr><th style="width:22%">方法签名</th><th style="width:10%">返回值</th><th style="width:22%">参数</th><th>说明</th></tr>
         <tr><td>getMarkdown()</td><td class="type">String</td><td>无</td><td>获取 Markdown 源码</td></tr>
         <tr><td>getValue()</td><td class="type">String</td><td>无</td><td>同 getMarkdown()，CodeMirror 别名</td></tr>
+        <tr><td>getUseTypes()</td><td class="type">Object</td><td>无</td><td>⭐ 检测编辑区内容使用了哪些语法特性，返回 {名称:bool} 键值对（如 {echarts:true, katex:false}），详见 <a href="#method-getusetypes">getUseTypes 详解</a></td></tr>
         <tr><td>setValue(val)</td><td class="type">xfEditor</td><td>val: String</td><td>设置 Markdown 源码</td></tr>
         <tr><td>getHTML([minify])</td><td class="type">String</td><td>minify: Boolean — 是否压缩输出（默认 true）</td><td>获取完整 HTML 文档（含内联样式+脚本）；支持 <code>getHTML(true)</code> 布尔简写或 <code>getHTML({minify:false})</code> 对象形式</td></tr>
         <tr><td>getPreviewedHTML()</td><td class="type">String</td><td>无</td><td>获取预览区当前 HTML（不含外套）</td></tr>
@@ -843,6 +844,75 @@ htmlDecode: <span class="str">"script,iframe|*"</span></pre>
         <tr><td>showDraftRecovery()</td><td class="type">xfEditor</td><td>无</td><td>显示草稿恢复对话框</td></tr>
         <tr><td>destroy()</td><td class="type">xfEditor</td><td>无</td><td>销毁实例，释放所有资源</td></tr>
     </table></div>
+
+    <h3 id="method-getusetypes">getUseTypes() — 语法特性检测详解</h3>
+    <p>基于编辑器左侧 Markdown 源码，实时检测当前文档使用了哪些扩展语法。返回一个键值对对象，键为特性名称，值为 <code>true</code> / <code>false</code>。</p>
+    <div class="notice">💡 <strong>典型用途：</strong>保存/导出前判断是否需要加载额外资源（如 ECharts JS、KaTeX CSS），或在前端做条件渲染。</div>
+
+    <h4>返回值字段一览</h4>
+    <div class="table-wrap"><table class="api-table">
+        <tr><th style="width:18%">字段名</th><th style="width:12%">类型</th><th style="width:28%">Markdown 检测模式</th><th>说明</th></tr>
+        <tr><td>echarts</td><td class="type">Boolean</td><td><code>```echarts</code></td><td>ECharts 图表代码块</td></tr>
+        <tr><td>katex</td><td class="type">Boolean</td><td><code>$$...$$</code> 或 <code>$...$</code></td><td>KaTeX 块级 / 行内科学公式</td></tr>
+        <tr><td>copybook</td><td class="type">Boolean</td><td><code>[[tian:]]</code> / <code>[[mi:]]</code> / <code>[[pinyin:]]</code></td><td>字帖（田字格 / 米字格 / 拼音格）</td></tr>
+        <tr><td>flowchart</td><td class="type">Boolean</td><td><code>```flow</code></td><td>流程图（flowchart.js）</td></tr>
+        <tr><td>sequenceDiagram</td><td class="type">Boolean</td><td><code>```sequence</code></td><td>时序图（js-sequence-diagrams）</td></tr>
+        <tr><td>taskList</td><td class="type">Boolean</td><td><code>- [ ]</code> / <code>- [x]</code></td><td>任务列表（Checkbox）</td></tr>
+        <tr><td>pageBreak</td><td class="type">Boolean</td><td><code>[========]</code></td><td>分页符</td></tr>
+        <tr><td>tabs</td><td class="type">Boolean</td><td><code>[[tabs]]</code> / <code>[[tab:]]</code></td><td>多标签页容器</td></tr>
+        <tr><td>columns</td><td class="type">Boolean</td><td><code>[[columns:N]]</code></td><td>多列排版</td></tr>
+        <tr><td>grid</td><td class="type">Boolean</td><td><code>[[row]]</code> / <code>[[col:N]]</code></td><td>栅格布局</td></tr>
+        <tr><td>pageBlock</td><td class="type">Boolean</td><td><code>[[page:A4]]</code></td><td>页面块（A4/A5/A3 纸张模拟）</td></tr>
+        <tr><td>video</td><td class="type">Boolean</td><td><code>[[video]]</code></td><td>视频播放器列表</td></tr>
+        <tr><td>fileList</td><td class="type">Boolean</td><td><code>[[file]]</code></td><td>附件文件列表</td></tr>
+        <tr><td>tooltip</td><td class="type">Boolean</td><td><code>[text](tooltip:…)</code></td><td>鼠标悬浮提示</td></tr>
+        <tr><td>pinyin</td><td class="type">Boolean</td><td><code>{汉字|拼音}</code></td><td>拼音标注</td></tr>
+        <tr><td>supsub</td><td class="type">Boolean</td><td><code>~下标~</code> / <code>^上标^</code></td><td>上下标文字</td></tr>
+        <tr><td>textAlign</td><td class="type">Boolean</td><td><code>-&gt;</code> / <code>&lt;-</code> 行首标记</td><td>文字对齐控制</td></tr>
+        <tr><td>badge</td><td class="type">Boolean</td><td><code>%badge:文本%</code></td><td>内联徽章标签</td></tr>
+        <tr><td>footnote</td><td class="type">Boolean</td><td><code>[^label]</code></td><td>Markdown 脚注</td></tr>
+        <tr><td>atLink</td><td class="type">Boolean</td><td><code>@username</code></td><td>@提及链接</td></tr>
+        <tr><td>emailLink</td><td class="type">Boolean</td><td><code>&lt;email&gt;</code> 或 <code>[text](mailto:…)</code></td><td>邮件链接</td></tr>
+        <tr><td>codeBlock</td><td class="type">Boolean</td><td><code>```</code></td><td>围栏代码块</td></tr>
+        <tr><td>codeHighlight</td><td class="type">Boolean</td><td><code>```lang</code>（指定语言）</td><td>语法高亮代码块</td></tr>
+        <tr><td>table</td><td class="type">Boolean</td><td><code>|…|…|</code></td><td>Markdown 管道表格</td></tr>
+        <tr><td>image</td><td class="type">Boolean</td><td><code>![](url)</code></td><td>图片引用</td></tr>
+        <tr><td>blockquote</td><td class="type">Boolean</td><td><code>&gt; …</code> 行首</td><td>块引用</td></tr>
+        <tr><td>headings</td><td class="type">Boolean</td><td><code># …</code> ~ <code>###### …</code></td><td>标题</td></tr>
+    </table></div>
+
+    <h4>完整示例</h4>
+    <pre><span class="cmt">// 创建编辑器</span>
+<span class="key">var</span> editor = xfEditor(<span class="str">"editor"</span>, { echarts: <span class="fn">true</span>, tex: <span class="fn">true</span>, copybook: <span class="fn">true</span> });
+
+<span class="cmt">// 编辑区内容为下面文本时：</span>
+<span class="cmt">// ```echarts</span>
+<span class="cmt">// {"xAxis":{"type":"category"},"series":[{"type":"bar","data":[1,2,3]}]}</span>
+<span class="cmt">// ```</span>
+<span class="cmt">// </span>
+<span class="cmt">// $$ E = mc^2 $$</span>
+<span class="cmt">// </span>
+<span class="cmt">// [[tian:大]] [[mi:小]]</span>
+
+<span class="key">var</span> types = editor.getUseTypes();
+console.log(types);
+<span class="cmt">// {</span>
+<span class="cmt">//   echarts: true,          // ✓ ```echarts 图表</span>
+<span class="cmt">//   katex: true,            // ✓ $$ 科学公式</span>
+<span class="cmt">//   copybook: true,         // ✓ [[tian:]][[mi:]] 字帖</span>
+<span class="cmt">//   flowchart: false,       // ✗ 无 ```flow</span>
+<span class="cmt">//   sequenceDiagram: false, // ✗ 无 ```sequence</span>
+<span class="cmt">//   taskList: false,        // ✗ 无 - [ ]</span>
+<span class="cmt">//   ...</span>
+<span class="cmt">// }</span>
+
+<span class="cmt">// 保存/导出前按需加载资源</span>
+<span class="key">if</span> (types.echarts) {
+    <span class="cmt">// 确保 ECharts JS 已加载</span>
+}
+<span class="key">if</span> (types.katex) {
+    <span class="cmt">// 确保 KaTeX CSS/JS 已加载</span>
+}</pre>
 </div>
 
 <!-- SECTION: events -->
@@ -1742,6 +1812,7 @@ xfEditor.registerLang(<span class="str">"ja"</span>, {
 <span class="key">var</span> md = editor.getMarkdown();                <span class="cmt">// 获取 Markdown</span>
 editor.setValue(<span class="str">"# 新内容"</span>);                  <span class="cmt">// 设置内容</span>
 <span class="key">var</span> html = editor.getPreviewedHTML();         <span class="cmt">// 获取预览 HTML</span>
+<span class="key">var</span> types = editor.getUseTypes();            <span class="cmt">// 检测语法特性 {echarts:true, katex:false, ...}</span>
 
 <span class="cmt">// 预览控制</span>
 editor.watch();        <span class="cmt">// 开启实时预览</span>

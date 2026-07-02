@@ -1,6 +1,6 @@
 {
   "name": "xf_editor",
-  "version": "1.17.18",
+  "version": "1.17.20",
   "description": "开源可嵌入 Markdown 在线编辑器 - 基于 pandao/editor.md 的改进增强版 | Open source embeddable online Markdown editor (improved fork of pandao/editor.md)",
   "directories": {
     "example": "examples",
