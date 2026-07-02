@@ -37,7 +37,7 @@ previewFiles.forEach(function(f) {
     console.log('  OK ' + f.path + ' (' + (stat.size / 1024).toFixed(1) + ' KB)');
 });
 
-var header = '/** xfEditor Preview Bundle v1.17.20 | ' + new Date().toISOString().slice(0,10) + ' | KaTeX fonts embedded (offline) */\n';
+var header = '/** xfEditor Preview Bundle v1.17.22 | ' + new Date().toISOString().slice(0,10) + ' | KaTeX fonts embedded (offline) */\n';
 var bundle = header;
 previewFiles.forEach(function(f) {
     var fullPath = path.join(__dirname, f.path);

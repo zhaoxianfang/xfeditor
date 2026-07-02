@@ -1,4 +1,4 @@
-/* xfEditor v1.17.20 | xf_editor.js | MIT License | 2026-07-02 */
+/* xfEditor v1.17.22 | xf_editor.js | MIT License | 2026-07-02 */
 ;(function(factory) {
     "use strict";
 
@@ -84,7 +84,7 @@
     };
     
     xfEditor.title        = xfEditor.$name = "xfEditor";
-    xfEditor.version      = "1.17.20";
+    xfEditor.version      = "1.17.22";
     xfEditor.homePage     = "https://github.com/zhaoxianfang/xfeditor";
     xfEditor.classPrefix  = "xf_editor-";
     
@@ -934,6 +934,7 @@
                 xfEditor.loadCSS(settings.path + "codemirror/theme/" + settings.editorTheme);
             }
             
+            if (!this.cm) return this;
             this.cm.setOption("theme", theme);
             
             return this;
@@ -1049,7 +1050,8 @@
          * @returns {Mixed}                  return CodeMirror setting option value
          */
         
-        getCodeMirrorOption : function(key) {            
+        getCodeMirrorOption : function(key) {
+            if (!this.cm) return undefined;
             return this.cm.getOption(key);
         },
         
@@ -3772,6 +3774,7 @@
          */
         
         focus : function() {
+            if (!this.cm) return this;
             this.cm.focus();
 
             return this;
@@ -3786,6 +3789,7 @@
          */
         
         setCursor : function(cursor) {
+            if (!this.cm) return this;
             this.cm.setCursor(cursor);
 
             return this;
@@ -3799,6 +3803,7 @@
          */
         
         getCursor : function() {
+            if (!this.cm) return {line: 0, ch: 0};
             return this.cm.getCursor();
         },
         
@@ -3812,6 +3817,7 @@
          */
         
         setSelection : function(from, to) {
+            if (!this.cm) return this;
         
             this.cm.setSelection(from, to);
         
@@ -3826,6 +3832,7 @@
          */
         
         getSelection : function() {
+            if (!this.cm) return "";
             return this.cm.getSelection();
         },
 
@@ -3837,6 +3844,7 @@
          */
 
         getWordCount : function() {
+            if (!this.cm) return {text: 0, word: 0};
             var text = this.cm.getValue();
             var totalChars = text.length;
             // 统计中文字符数
@@ -3877,6 +3885,7 @@
             filename = filename || ("xf_editor-export-" + xfEditor.dateFormat());
             var content = "";
 
+            if (!this.cm) return this;
             if (format === "html") {
                 content = this.previewContainer.html();
             } else if (format === "txt") {
@@ -3919,8 +3928,9 @@
          */
         
         setSelections : function(ranges) {
+            if (!this.cm) return this;
             this.cm.setSelections(ranges);
-            
+
             return this;
         },
         
@@ -3932,6 +3942,7 @@
          */
         
         getSelections : function() {
+            if (!this.cm) return [""];
             return this.cm.getSelections();
         },
         
@@ -3944,6 +3955,7 @@
          */
         
         replaceSelection : function(value) {
+            if (!this.cm) return this;
             this.cm.replaceSelection(value);
 
             return this;
@@ -3992,6 +4004,7 @@
          */
         
         setMarkdown : function(md) {
+            if (!this.cm) return this;
             this.cm.setValue(md || this.settings.markdown);
             
             return this;
@@ -4005,6 +4018,7 @@
          */
         
         getMarkdown : function() {
+            if (!this.cm) return "";
             return this.cm.getValue();
         },
         
@@ -4016,6 +4030,7 @@
          */
         
         getValue : function() {
+            if (!this.cm) return "";
             return this.cm.getValue();
         },
 
@@ -4142,6 +4157,7 @@
          */
         
         clear : function() {
+            if (!this.cm) return this;
             this.cm.setValue("");
 
             return this;
@@ -4155,7 +4171,7 @@
          */
 
         saveDraft : function() {
-            if (!this.settings.draftAutoSave || this.settings.readOnly) return this;
+            if (!this.settings.draftAutoSave || this.settings.readOnly || !this.cm) return this;
 
             var cmValue = this.cm.getValue();
             if (!cmValue || cmValue.trim() === "") return this;
@@ -5062,14 +5078,14 @@
             s.push('      var parts=[];for(var ci=0;ci<codeEls.length;ci++){');
             s.push('        var h=codeEls[ci].innerHTML;if(!h){parts.push("");continue;}');
             s.push('        h=h.replace(/<br\\s*\\/?>/gi,"\\n");h=h.replace(/<[^>]+>/g,"");');
-            s.push('        h=h.replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,\'"\').replace(/&#39;/g,"\\\'").replace(/&apos;/g,"\\\'").replace(/&nbsp;/g," ");');
+            s.push('        h=h.replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,\'"\').replace(/&#39;/g,"\'").replace(/&apos;/g,"\'").replace(/&nbsp;/g," ");');
             s.push('        parts.push(h.replace(/^\\n+/,"").replace(/\\n+$/,""));');
             s.push('      }');
             s.push('      pre._originalCode=parts.join("\\n");');
             s.push('    }else{');
             s.push('      var hc=cloned.innerHTML;');
             s.push('      hc=hc.replace(/<br\\s*\\/?>/gi,"\\n");hc=hc.replace(/<[^>]+>/g,"");');
-            s.push('      hc=hc.replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,\'"\').replace(/&#39;/g,"\\\'").replace(/&apos;/g,"\\\'").replace(/&nbsp;/g," ");');
+            s.push('      hc=hc.replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,\'"\').replace(/&#39;/g,"\'").replace(/&apos;/g,"\'").replace(/&nbsp;/g," ");');
             s.push('      pre._originalCode=hc.replace(/^\\n+/,"").replace(/\\n+$/,"");');
             s.push('    }');
             s.push('    var btn=_doc.createElement("span");');
@@ -5094,13 +5110,13 @@
             s.push('          var pp=[];for(var ck=0;ck<ce.length;ck++){');
             s.push('            var hi=ce[ck].innerHTML;if(!hi){pp.push("");continue;}');
             s.push('            hi=hi.replace(/<br\\s*\\/?>/gi,"\\n");hi=hi.replace(/<[^>]+>/g,"");');
-            s.push('            hi=hi.replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,\'"\').replace(/&#39;/g,"\\\'").replace(/&apos;/g,"\\\'").replace(/&nbsp;/g," ");');
+            s.push('            hi=hi.replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,\'"\').replace(/&#39;/g,"\'").replace(/&apos;/g,"\'").replace(/&nbsp;/g," ");');
             s.push('            pp.push(hi.replace(/^\\n+/,"").replace(/\\n+$/,""));');
             s.push('          }');
             s.push('          code=pp.join("\\n");');
             s.push('        }else{');
             s.push('          var hr=cp.innerHTML;hr=hr.replace(/<br\\s*\\/?>/gi,"\\n");hr=hr.replace(/<[^>]+>/g,"");');
-            s.push('          hr=hr.replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,\'"\').replace(/&#39;/g,"\\\'").replace(/&apos;/g,"\\\'").replace(/&nbsp;/g," ");');
+            s.push('          hr=hr.replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,\'"\').replace(/&#39;/g,"\'").replace(/&apos;/g,"\'").replace(/&nbsp;/g," ");');
             s.push('          code=hr.replace(/^\\n+/,"").replace(/\\n+$/,"");');
             s.push('        }');
             s.push('        if(code&&code.trim()){targetPre._originalCode=code;}');
@@ -5203,7 +5219,7 @@
             // --- Tooltip 悬浮提示（纯 JS 实现，不依赖 jQuery/xfEditor）---
             if (f.tooltip) {
             s.push('function base64Decode(str){try{return decodeURIComponent(Array.prototype.map.call(atob(str),function(c){return"%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);}).join(""));}catch(e){return"";}}');
-            s.push('function escapeHTML(s){var d=document.createElement("div");d.textContent=s;return d.innerHTML;}');
+            s.push('function escapeHTML(s){if(s==null||typeof s!=="string")return"";var d=document.createElement("div");d.textContent=s;return d.innerHTML;}');
             s.push('function escapeAttr(s){return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}');
             s.push('');
             s.push('function buildIframeHTML(code,langCls){');
@@ -5278,14 +5294,14 @@
             s.push('                var rp=[];for(var ri=0;ri<ces.length;ri++){');
             s.push('                  var hi=ces[ri].innerHTML;if(!hi){rp.push("");continue;}');
             s.push('                  hi=hi.replace(/<br\\s*\\/?>/gi,"\\n");hi=hi.replace(/<[^>]+>/g,"");');
-            s.push('                  hi=hi.replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,\'"\').replace(/&#39;/g,"\\\'").replace(/&apos;/g,"\\\'").replace(/&nbsp;/g," ");');
+            s.push('                  hi=hi.replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,\'"\').replace(/&#39;/g,"\'").replace(/&apos;/g,"\'").replace(/&nbsp;/g," ");');
             s.push('                  rp.push(hi.replace(/^\\n+/,"").replace(/\\n+$/,""));');
             s.push('                }');
             s.push('                rawCode=rp.join("\\n");');
             s.push('              }else{');
             s.push('                var hc=preEl.innerHTML;');
             s.push('                hc=hc.replace(/<br\\s*\\/?>/gi,"\\n");hc=hc.replace(/<[^>]+>/g,"");');
-            s.push('                hc=hc.replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,\'"\').replace(/&#39;/g,"\\\'").replace(/&apos;/g,"\\\'").replace(/&nbsp;/g," ");');
+            s.push('                hc=hc.replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,\'"\').replace(/&#39;/g,"\'").replace(/&apos;/g,"\'").replace(/&nbsp;/g," ");');
             s.push('                rawCode=hc.replace(/^\\n+/,"").replace(/\\n+$/,"");');
             s.push('              }');
             s.push('              var langCls=preEl.className||"";');
@@ -5300,7 +5316,7 @@
             s.push('      }else if(tooltipType==="html-selector"){');
             s.push('        htmlContent=\'<div class="xf_editor-tooltip-html-content">正在加载HTML内容...</div>\';');
             s.push('      }else{');
-            s.push('        htmlContent=\'<div class="xf_editor-tooltip-text-content">\'+(tooltipContent||"")+"</div>";');
+            s.push('        htmlContent=\'<div class="xf_editor-tooltip-text-content">\'+escapeHTML(tooltipContent||"")+"</div>";');
             s.push('      }');
             s.push('');
             s.push('      var popup=document.createElement("div");');
@@ -5399,6 +5415,14 @@
             s.push('          var tgt=_doc.querySelector(tooltipContent);');
             s.push('          if(tgt){');
             s.push('            var clone=tgt.cloneNode(true);');
+            s.push('            // ★ v1.17.22 XSS 防护：移除所有内联事件处理器 (on*) 属性');
+            s.push('            (function stripEvents(el){');
+            s.push('              var attrs=el.attributes;');
+            s.push('              for(var a=attrs.length-1;a>=0;a--){');
+            s.push('                if(/^on/i.test(attrs[a].name)){el.removeAttribute(attrs[a].name);}');
+            s.push('              }');
+            s.push('              for(var c=el.firstChild;c;c=c.nextSibling){if(c.nodeType===1)stripEvents(c);}');
+            s.push('            })(clone);');
             s.push('            clone.style.cssText="display:block;visibility:visible;opacity:1;position:relative;max-width:100%;max-height:300px;overflow:auto;";');
             s.push('            clone.removeAttribute("hidden");clone.removeAttribute("aria-hidden");');
             s.push('            popup.innerHTML=\'<div class="xf_editor-tooltip-html-content">\'+clone.outerHTML+"</div>";');
@@ -7272,7 +7296,7 @@
             $("body").append($panel);
             
             // 保存上下文信息用于应用颜色
-            this._colorPickerSelection = this.cm.getSelection();
+            this._colorPickerSelection = this.cm ? this.cm.getSelection() : "";
             this._colorPickerType = type;
             
             // 预设颜色块点击
@@ -11532,7 +11556,25 @@
      */
     xfEditor.extractCodeText = function(el) {
         if (!el) return "";
+        // ★ v1.17.20: 支持 jQuery 多元素集合 — 逐个提取后合并（如 pre 内嵌多个 code 元素）
+        if (el.jquery && el.length > 1) {
+            var parts = [];
+            for (var i = 0; i < el.length; i++) {
+                var part = xfEditor._extractSingleCodeText(el[i]);
+                if (part) parts.push(part);
+            }
+            return parts.join("\n");
+        }
         var dom = (el.jquery) ? el[0] : el;
+        return xfEditor._extractSingleCodeText(dom);
+    };
+
+    /**
+     * 从单个 DOM 元素提取原始代码文本（内部方法）
+     * @param   {HTMLElement} dom  单个 DOM 元素（code 或 pre）
+     * @returns {string}           解码后的原始代码文本
+     */
+    xfEditor._extractSingleCodeText = function(dom) {
         if (!dom) return "";
         // 使用 innerHTML 获取原始 HTML，这保留了所有空格/换行/实体
         var raw = dom.innerHTML;
@@ -11551,6 +11593,38 @@
                  .replace(/&nbsp;/g, " ");
         // 去除首尾多余的空白行（保留代码内部的空白）
         return raw.replace(/^\n+/, "").replace(/\n+$/, "");
+    };
+
+    /**
+     * ★ v1.17.20: 将提取的原始代码构建为完整的独立 HTML 页面
+     * 用于 tooltip iframe:pre 类型悬浮预览 — 根据代码语言自动选择渲染方式
+     * （JS → <script>、CSS → <style>、HTML → <body>、纯文本 → <pre>）
+     *
+     * @param   {String} code    提取后的原始代码文本
+     * @param   {String} langCls pre 元素的 className（用于判断语言）
+     * @returns {String}         完整的 HTML 文档字符串
+     */
+    xfEditor.buildIframeHTML = function(code, langCls) {
+        if (!code || !code.trim()) return '<!DOCTYPE html><html><body></body></html>';
+        // ★ 已经是完整 HTML 页面，直接使用
+        if (/^\s*<!DOCTYPE\s/i.test(code) || /^\s*<html[\s>]/i.test(code) || /<\/html>\s*$/i.test(code)) return code;
+        // ★ 检测代码类型：含 HTML 标签 vs 纯 JS/CSS
+        var hasHtmlTags = /<[a-zA-Z][\s\S]*>/i.test(code) || /<\/[a-zA-Z]+>/i.test(code);
+        var hasScriptTag = /<script[\s>]/i.test(code);
+        var isJs = (/lang(uage)?[\s"\x27]*[:=]\s*[\s"\x27]*js|javascript/i.test(langCls));
+        var isCss = (/lang(uage)?[\s"\x27]*[:=]\s*[\s"\x27]*css/i.test(langCls));
+        if (hasScriptTag || isJs) {
+            return '<!DOCTYPE html>\n<html><head><meta charset="utf-8"></head><body>\n<script>\n' + code + '\n<\/script>\n</body></html>';
+        }
+        if (isCss) {
+            return '<!DOCTYPE html>\n<html><head><meta charset="utf-8"><style>\n' + code + '\n</style></head><body><p>CSS 代码已在 style 标签中生效。</p></body></html>';
+        }
+        if (hasHtmlTags) {
+            return '<!DOCTYPE html>\n<html><head><meta charset="utf-8"></head><body>\n' + code + '\n</body></html>';
+        }
+        // ★ 默认：作为纯文本展示在 pre 中，使用 textContent 赋值防止 XSS
+        var escaped = xfEditor.escapeHTML(code);
+        return '<!DOCTYPE html>\n<html><head><meta charset="utf-8"></head><body>\n<pre style="font-size:13px;line-height:1.6;white-space:pre-wrap;font-family:monospace;">' + escaped + '</pre>\n</body></html>';
     };
 
     /**
@@ -11693,12 +11767,11 @@
                     }
                     if ($pre.length > 0) {
                         isPreContent = true;
-                        // ★ v1.17.17: 使用 extractCodeText 提取原始代码（保留缩进/换行/空格）
-                        // jQuery 可以正常访问 display:none!important 的隐藏元素，不受可见性影响
-                        _rawPreCode = ($pre.find("code").length > 0) ? xfEditor.extractCodeText($pre.find("code")) : xfEditor.extractCodeText($pre);
-                        // 不在此处创建 Blob URL，而是存储原始代码，在每次 showTooltip 时动态创建
-                        // 这样每次鼠标悬停都会执行 iframe 中的 JS 代码
-                        // 隐藏 pre 的 display:none!important 不会传递到 iframe（iframe 是独立文档）
+                        // ★ v1.17.20: 使用 extractCodeText 提取原始代码，再通过 buildIframeHTML 包裹为完整 HTML 页面
+                        // 这样 iframe 中的 JS/CSS 可以正常执行，纯文本也会在 <pre> 标签中正确显示
+                        var rawCode = ($pre.find("code").length > 0) ? xfEditor.extractCodeText($pre.find("code")) : xfEditor.extractCodeText($pre);
+                        var langCls = $pre[0].className || "";
+                        _rawPreCode = xfEditor.buildIframeHTML(rawCode, langCls);
                     }
                 }
                 var iframeStyle = 'display:none;';
@@ -11718,12 +11791,14 @@
                     tooltipHtml = '<div class="xf_editor-tooltip-loading"><span>加载中...</span></div><iframe src="' + xfEditor.escapeAttr(tooltipContent) + '" frameborder="0" style="' + iframeStyle + '" onload="$(this).prev().hide();$(this).fadeIn(200);"></iframe>';
                 }
             } else if (tooltipType === "html") {
-                    tooltipHtml = '<div class="xf_editor-tooltip-html-content">' + tooltipContent + '</div>';
+                    // ★ v1.17.22 XSS 防护：将 HTML 内容转为纯文本后重新包裹，防止 XSS 注入
+                    var safeHtml = xfEditor.escapeHTML(tooltipContent);
+                    tooltipHtml = '<div class="xf_editor-tooltip-html-content">' + safeHtml + '</div>';
             } else if (tooltipType === "html-selector") {
                     tooltipHtml = '<div class="xf_editor-tooltip-html-content xf_editor-tooltip-selector-loading">正在加载HTML内容...</div>';
             } else {
-                // 文本类型：包裹在 .xf_editor-tooltip-text-content 中
-                tooltipHtml = '<div class="xf_editor-tooltip-text-content">' + tooltipContent + '</div>';
+                // 文本类型：包裹在 .xf_editor-tooltip-text-content 中，XSS 防护：escapeHTML 转义
+                tooltipHtml = '<div class="xf_editor-tooltip-text-content">' + xfEditor.escapeHTML(tooltipContent) + '</div>';
             }
             
             var $tooltip = $('<div class="xf_editor-tooltip-popup xf_editor-tooltip-' + tooltipType + '">' + tooltipHtml + '</div>');
@@ -11990,7 +12065,21 @@
                             overflow: 'auto'
                         });
                         
-                        // 更新tooltip内容（安全防护：使用 .html() 设置）
+                        // ★ v1.17.22 XSS 防护：移除克隆元素中所有内联事件处理器 (on*) 属性
+                        $clone.find('*').addBack().each(function() {
+                            var attrs = this.attributes;
+                            if (attrs) {
+                                var toRemove = [];
+                                for (var a = 0; a < attrs.length; a++) {
+                                    if (/^on/i.test(attrs[a].name)) toRemove.push(attrs[a].name);
+                                }
+                                for (var r = 0; r < toRemove.length; r++) {
+                                    this.removeAttribute(toRemove[r]);
+                                }
+                            }
+                        });
+                        
+                        // 更新tooltip内容（安全防护：已剥离 on* 事件属性后使用 outerHTML）
                         var cloneHtml = $clone[0] ? $clone[0].outerHTML : '';
                         $tooltip.html('<div class="xf_editor-tooltip-html-content">' + cloneHtml + '</div>');
                         $tooltip.removeClass('xf_editor-tooltip-text xf_editor-tooltip-image xf_editor-tooltip-iframe xf_editor-tooltip-html');
@@ -12080,6 +12169,12 @@
                 // 鼠标离开 popup：同样使用延迟隐藏，给用户回到 trigger 的机会
                 $trigger.data("tooltip-timer", setTimeout(function() {
                     $tooltip.removeClass("show");
+                    // ★ v1.17.22 释放 iframe:pre 类型的 Blob URL，避免内存泄漏
+                    var blobUrl2 = $tooltip.attr("data-blob-url");
+                    if (blobUrl2) {
+                        try { (window.URL || window.webkitURL).revokeObjectURL(blobUrl2); } catch(ex) {}
+                        $tooltip.removeAttr("data-blob-url");
+                    }
                     setTimeout(function() {
                         if (!$tooltip.hasClass("show")) {
                             $tooltip.css({ display: "none" });

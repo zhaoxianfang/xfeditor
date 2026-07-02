@@ -4,7 +4,7 @@
 
 </p>
 
-# xfEditor 编辑器 v1.17.19
+# xfEditor 编辑器 v1.17.22
 
 > **xfEditor 是一款更适合教育、教学、网页演示、数据呈现、内容排版的现代化 Markdown 开源在线编辑器。** 基于 [pandao/editor.md](https://github.com/pandao/editor.md) 深度改进，在原有基础上进行了系统性优化、Bug 修复和新功能拓展。
 
@@ -18,6 +18,21 @@
 - [图表](https://zhaoxianfang.github.io/xfeditor/examples/echarts.html)
 - [完整演示](https://zhaoxianfang.github.io/xfeditor/examples/all-features.html)
 - [API 接口文档](https://zhaoxianfang.github.io/xfeditor/examples/api-reference.html)
+
+**v1.17.22 代码安全加固与全面审计修复：**
+- **🛡 XSS 安全修复**：Tooltip `text`/`html` 类型内容增加 `escapeHTML` 转义（预览路径 + 静态路径），阻断用户可控内容注入
+- **🛡 XSS 安全修复**：`html-selector` 类型 tooltip 自动剥离克隆元素中的 `on*` 内联事件处理器，防止事件劫持
+- **🛡 内存泄漏修复**：jQuery tooltip 路径 `mouseleave` on popup 增加 Blob URL revocation，与纯 JS 路径保持一致
+- **🛡 空引用防御**：12 个 `this.cm` 危险调用路径（`setValue`/`getValue`/`setMarkdown`/`getMarkdown`/`setCursor`/`getCursor`/`setSelection`/`getSelection`/`getCursorPosition`/`download`/`saveDraft`/`find`/`setEditorTheme`/`getCodeMirrorOption`/`setCodeMirrorOption`/`addKeyMap`/`undo`/`redo`）增加 null 守卫，防止实例销毁后回调崩溃
+- **🛡 防御性编程**：预览代码中内联 `escapeHTML` 增加 null/undefined 输入守卫
+- **📦 CSS 全面压缩**：`xf_editor.css` (144KB→115KB)、`xf_editor.preview.css` (85KB→70KB)、`xf_editor.logo.css` (1.8KB→1.5KB) 全部重建 minified 版本
+
+**v1.17.21 iframe:pre Tooltip 悬浮预览全面修复：**
+- **🐛 修复 iframe:pre 悬浮提示内容为空/不完整**：静态 `xfEditor.initTooltips` 方法缺少 `buildIframeHTML` 包裹步骤，导致提取的代码直接作为 Blob 裸文本而非完整 HTML 页面展示（预览代码路径的 `initTooltips` 一直正确调用 `buildIframeHTML`）
+- **🆕 新增 `xfEditor.buildIframeHTML()` 静态方法**：将原始代码按语言类型智能包裹为完整 HTML 文档（JS→\<script\>、CSS→\<style\>、HTML→\<body\>、纯文本→\<pre\>）
+- **🐛 修复 `&#39;`/`&apos;` 实体被错误转义为 `\'`**：预览代码中 6 处单引号转义将 `&#39;`/`&apos;` 错误替换为 `\'`（带多余反斜杠），导致代码中单引号被污染。统一修正为 `'`
+- **🛡 增强 `extractCodeText`：支持多 code 元素**：当 pre 内嵌多个 `<code>` 元素时（如 prettyPrint 拆分场景），逐个提取后合并，不再仅提取第一个元素
+- **🛡 新增 `_extractSingleCodeText` 内部方法**：抽离单个 DOM 元素代码提取逻辑
 
 **v1.17.20 getUseTypes() 语法特性检测 + API 页面重构：**
 - **🆕 新增 `getUseTypes()` 实例方法**：通过 `editor.getUseTypes()` 实时分析编辑器 Markdown 源码，返回 `{名称:bool}` 键值对（共 27 个检测维度：echarts/katex/copybook/flowchart/sequenceDiagram/taskList/pageBreak/tabs/columns/grid/pageBlock/video/fileList/tooltip/pinyin/supsub/textAlign/badge/footnote/atLink/emailLink/codeBlock/codeHighlight/table/image/blockquote/headings），典型场景：保存前按需加载资源（如检测到 echarts 则加载 ECharts JS）
