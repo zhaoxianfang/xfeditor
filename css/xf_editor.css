@@ -4759,6 +4759,9 @@
   -webkit-overflow-scrolling: touch;
   margin: 16px 0;
 }
+.markdown-body.xf_editor-preview-container .xf_editor-table-scroll.xf_editor-table-editing, .markdown-body.xf_editor-html-preview .xf_editor-table-scroll.xf_editor-table-editing {
+  overflow: visible;
+}
 .markdown-body.xf_editor-preview-container .xf_editor-table-scroll > table, .markdown-body.xf_editor-html-preview .xf_editor-table-scroll > table {
   margin: 0;
 }
@@ -6706,7 +6709,7 @@ a.xf_editor-banner-link::after {
     max-width: 52px;
   }
 }
-/* ========== 表格编辑按钮 (Table Editing in Preview) ========== */
+/* ========== 预览区表格动态编辑（增删行列 / 单元格编辑） ========== */
 .xf_editor-table-wrapper {
   position: relative;
   display: block;
@@ -6717,58 +6720,16 @@ a.xf_editor-banner-link::after {
 
 .xf_editor-table-editable {
   position: relative;
+  box-shadow: 0 0 0 2px rgba(44, 126, 234, 0.12);
+  border-radius: 8px;
+  transition: box-shadow 0.18s ease;
 }
 
-.xf_editor-table-col-controls,
-.xf_editor-table-row-controls {
-  display: none;
-  position: absolute;
-  z-index: 50;
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+.xf_editor-table-wrapper:hover .xf_editor-table-editable {
+  box-shadow: 0 0 0 2px rgba(44, 126, 234, 0.22);
 }
 
-.xf_editor-table-col-controls {
-  height: 28px;
-  padding: 2px 4px;
-  justify-content: space-between;
-  align-items: center;
-  white-space: nowrap;
-}
-
-.xf_editor-table-row-controls {
-  width: 28px;
-  padding: 4px 2px;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
-  min-height: 60px;
-}
-
-.xf_editor-table-btn {
-  display: inline-flex;
-  width: 22px;
-  height: 22px;
-  line-height: 22px;
-  text-align: center;
-  color: #666;
-  cursor: pointer;
-  border-radius: 3px;
-  font-size: 14px;
-  font-weight: bold;
-  justify-content: center;
-  align-items: center;
-  user-select: none;
-  -webkit-user-select: none;
-  text-decoration: none;
-}
-.xf_editor-table-btn:hover {
-  background: #2C7EEA;
-  color: #fff;
-}
-
+/* 单元格悬停高亮 */
 .xf_editor-table-editable th,
 .xf_editor-table-editable td {
   cursor: pointer;
@@ -6779,6 +6740,152 @@ a.xf_editor-banner-link::after {
 .xf_editor-table-editable td:hover {
   background-color: rgba(44, 126, 234, 0.12);
   box-shadow: inset 0 0 0 1px rgba(44, 126, 234, 0.3);
+}
+
+/* 边框悬停时的高亮线（视觉提示，不拦截鼠标） */
+.xf_editor-table-edit-hline,
+.xf_editor-table-edit-vline {
+  position: absolute;
+  background: #2C7EEA;
+  pointer-events: none;
+  z-index: 40;
+  display: none;
+}
+
+/* 编辑浮层：承载「+」按钮，默认不拦截鼠标 */
+.xf_editor-table-edit-overlay {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 45;
+}
+
+/* 列/行高亮色带（插入=蓝、删除=红，背景色由 JS 内联设置） */
+.xf_editor-table-band-v,
+.xf_editor-table-band-h {
+  position: absolute;
+  display: none;
+  pointer-events: none;
+  z-index: 1;
+  border-radius: 4px;
+}
+
+/* 加号/减号编辑按钮（以中心点定位：left/top 为圆心，transform 居中） */
+.xf_editor-table-add {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  padding: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border-radius: 50%;
+  background: #2C7EEA;
+  color: #fff;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgba(44, 126, 234, 0.25), 0 2px 6px rgba(0, 0, 0, 0.3);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
+  transform: translate(-50%, -50%);
+  transition: transform 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+}
+.xf_editor-table-add:hover {
+  background: #1b66c9;
+  transform: translate(-50%, -50%) scale(1.18);
+  box-shadow: 0 0 0 3px rgba(44, 126, 234, 0.22), 0 4px 10px rgba(0, 0, 0, 0.35);
+}
+.xf_editor-table-add.xf_editor-table-add-show {
+  display: flex;
+  animation: xf_table_add_pop 0.16s cubic-bezier(0.2, 0.8, 0.3, 1.2);
+}
+.xf_editor-table-add {
+  /* 删除按钮（−）：红色以区分插入（＋） */
+}
+.xf_editor-table-add.xf_editor-table-del {
+  background: #e23b3b;
+  box-shadow: 0 0 0 1px rgba(226, 59, 59, 0.25), 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+.xf_editor-table-add.xf_editor-table-del:hover {
+  background: #c5282b;
+  box-shadow: 0 0 0 3px rgba(226, 59, 59, 0.22), 0 4px 10px rgba(0, 0, 0, 0.35);
+}
+.xf_editor-table-add {
+  /* 自定义悬停提示标签 */
+}
+.xf_editor-table-add::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 50%;
+  top: 150%;
+  transform: translateX(-50%) translateY(4px);
+  background: rgba(17, 24, 39, 0.92);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  padding: 3px 8px;
+  border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  z-index: 5;
+}
+.xf_editor-table-add:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* 按钮出现时的弹入动画 */
+@keyframes xf_table_add_pop {
+  0% {
+    transform: translate(-50%, -50%) scale(0.4);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+/* 单元格内联编辑：多行文本输入框（至少 2 行），文字黑色 */
+.xf_editor-cell-edit-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #2C7EEA;
+  border-radius: 6px;
+  padding: 5px 7px;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #000;
+  background: #fff;
+  outline: none;
+  resize: vertical;
+  box-shadow: 0 2px 8px rgba(44, 126, 234, 0.18);
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.xf_editor-cell-edit-input:focus {
+  border-color: #1b66c9;
+  box-shadow: 0 0 0 3px rgba(44, 126, 234, 0.18);
+}
+
+/* 暗黑模式下输入框文字必须为黑色，保证可读 */
+.xf_editor-editor.theme-dark .xf_editor-cell-edit-input,
+.theme-dark .xf_editor-cell-edit-input,
+[data-theme=dark] .xf_editor-cell-edit-input {
+  color: #000 !important;
+  background: #fff;
 }
 
 /* ===========================================

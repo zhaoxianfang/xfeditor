@@ -4517,321 +4517,627 @@
         /**
          * Initialize table editing in preview area
          */
+        /**
+         * 初始化预览区表格的动态编辑：
+         *  - 鼠标悬停/点击表格「垂直边框线」→ 在该边框上、下两端显示「+」→ 点击插入一列
+         *  - 鼠标悬停/点击表格「水平边框线」→ 在该边框左、右两端显示「+」→ 点击插入一行
+         *  - 点击任意单元格 → 就地变为文本输入框，失焦（或回车）写回 Markdown
+         * 写回时仅精确设置编辑器文档内容并刷新预览，不触发编辑区内容重新渲染或筛选。
+         */
         initTableEdit : function() {
             var _this = this;
             var previewContainer = this.previewContainer;
             var cm = this.cm;
-            var markdown = cm.getValue();
-            var lines = markdown.split("\n");
-            
-            // 在 Markdown 源中查找所有表格块
-            var allTableBlocks = [];
-            var i = 0;
-            while (i < lines.length) {
-                if (/^\|/.test(lines[i])) {
-                    var blockStart = i;
-                    i++;
-                    while (i < lines.length && (/^\|/.test(lines[i]) || lines[i].trim() === "")) {
-                        if (lines[i].trim() === "") {
-                            // 表格内部空行 — 跳过但不中断扫描（某些表格含有空行）
-                            i++;
-                            continue;
-                        }
-                        i++;
-                    }
-                    allTableBlocks.push({ start: blockStart, end: i - 1 });
-                } else {
-                    i++;
-                }
+            if (!cm) return;
+
+            var classPrefix = this.classPrefix;
+            var wrapperCls = classPrefix + "table-wrapper";
+            var scrollCls  = classPrefix + "table-scroll";
+            var overlayCls = classPrefix + "table-edit-overlay";
+            var addCls     = classPrefix + "table-add";
+            var hLineCls   = classPrefix + "table-edit-hline";
+            var vLineCls   = classPrefix + "table-edit-vline";
+            var editSel    = "input." + classPrefix + "cell-edit-input, textarea." + classPrefix + "cell-edit-input";
+
+            // 编辑中的单元格标记（防止悬停检测与多层编辑相互干扰）
+            if (_this._tableCellEditing !== false && _this._tableCellEditing !== true) {
+                _this._tableCellEditing = false;
             }
-            
-            var tableBlockIndex = 0;
-            
-            previewContainer.find("table").each(function() {
+
+            // 预扫描 Markdown 中的表格块，记录每个表格的起始行
+            var tableBlocks = this._findTableBlocks(cm.getValue());
+
+            previewContainer.find("table").each(function(ti) {
                 var table = dom(this);
                 if (table.hasClass("xf_editor-table-editable")) {
                     return;
                 }
                 table.addClass("xf_editor-table-editable");
 
-                var classPrefix = this.classPrefix;
-                var tableWrapperClass = classPrefix + "table-wrapper";
-                var tableScrollClass = classPrefix + "table-scroll";
-
-                var wrapper, scroll;
-                var existingScroll = table.closest("." + tableScrollClass);
+                // 确保表格已包裹在滚动/外层容器中
+                var existingScroll = table.closest("." + scrollCls);
+                var wrapper;
                 if (existingScroll.length) {
-                    scroll = existingScroll;
-                    if (!scroll.parent().hasClass(tableWrapperClass)) {
-                        scroll.wrap('<div class="' + tableWrapperClass + '"></div>');
+                    if (!existingScroll.parent().hasClass(wrapperCls)) {
+                        existingScroll.wrap('<div class="' + wrapperCls + '"></div>');
                     }
-                    wrapper = scroll.parent();
+                    wrapper = existingScroll.parent();
                 } else {
-                    table.wrap('<div class="' + tableWrapperClass + '"><div class="' + tableScrollClass + '"></div></div>');
-                    wrapper = table.closest("." + tableWrapperClass);
-                    scroll = table.closest("." + tableScrollClass);
+                    table.wrap('<div class="' + wrapperCls + '"><div class="' + scrollCls + '"></div></div>');
+                    wrapper = table.closest("." + wrapperCls);
                 }
 
-                // 存储表格块引用信息（挂在最外层包装器上）
-                var currentBlock = (tableBlockIndex < allTableBlocks.length) ? allTableBlocks[tableBlockIndex] : null;
-                if (currentBlock) {
-                    wrapper.data("table-start", currentBlock.start);
-                    wrapper.data("table-end", currentBlock.end);
-                    // 同时存储首列表头文本，供表格被修改后重新识别
-                    var firstHeaderCell = lines[currentBlock.start].split("|");
-                    var headerText = (firstHeaderCell[1] || "").trim();
-                    wrapper.data("table-identifier", headerText);
+                // 记录表格块起始行与首列标识，供写回时定位
+                var block = (ti < tableBlocks.length) ? tableBlocks[ti] : null;
+                if (block) {
+                    wrapper.data("table-start", block.start);
+                    wrapper.data("table-end", block.end);
+                    var firstRowCells = _this._parseRow(cm.getValue().split("\n")[block.start]);
+                    wrapper.data("table-identifier", firstRowCells.length ? firstRowCells[0].trim() : "");
                 }
-                tableBlockIndex++;
-                
-                // 添加列控制按钮（定位在选中列上方）
-                var colControls = [
-                    '<div class="xf_editor-table-col-controls">',
-                    '<a class="xf_editor-table-btn" data-action="add-col-before" title="左侧插入列">+</a>',
-                    '<a class="xf_editor-table-btn" data-action="del-col" title="删除列">-</a>',
-                    '<a class="xf_editor-table-btn" data-action="add-col-after" title="右侧插入列">+</a>',
-                    '</div>'
-                ].join("");
 
-                // 添加行控制按钮（定位在选中行左侧）
-                var rowControls = [
-                    '<div class="xf_editor-table-row-controls">',
-                    '<a class="xf_editor-table-btn" data-action="add-row-before" title="上方插入行">+</a>',
-                    '<a class="xf_editor-table-btn" data-action="del-row" title="删除行">-</a>',
-                    '<a class="xf_editor-table-btn" data-action="add-row-after" title="下方插入行">+</a>',
-                    '</div>'
-                ].join("");
+                // 编辑浮层（承载「+」按钮，默认不拦截鼠标事件）
+                if (wrapper.find("." + overlayCls).length === 0) {
+                    wrapper.append('<div class="' + overlayCls + '"></div>');
+                }
+                // 悬停高亮线（可选视觉提示）
+                if (wrapper.find("." + hLineCls).length === 0) {
+                    wrapper.append('<div class="' + hLineCls + '"></div>');
+                    wrapper.append('<div class="' + vLineCls + '"></div>');
+                }
+                var overlay = wrapper.find("." + overlayCls);
+                var hLine = wrapper.find("." + hLineCls);
+                var vLine = wrapper.find("." + vLineCls);
 
-                wrapper.prepend(colControls + rowControls);
-                
-                // 跟踪当前选中的单元格
-                var currentCell = null;
+                // 列/行高亮色带（插入/删除时的视觉反馈）
+                var bandVCls = classPrefix + "table-band-v";
+                var bandHCls = classPrefix + "table-band-h";
+                if (wrapper.find("." + bandVCls).length === 0) {
+                    wrapper.append('<div class="' + bandVCls + '"></div><div class="' + bandHCls + '"></div>');
+                }
+                var bandV = wrapper.find("." + bandVCls);
+                var bandH = wrapper.find("." + bandHCls);
+
+                // 八个「+ / −」按钮（各表格仅创建一次）：
+                //   insert 类：悬停边框时显示，位于表格四边「外侧」，用于插入列/行
+                //   delete 类：单击单元格时显示，位于表格四边「外侧」，用于删除列/行
+                if (overlay.find("." + addCls).length === 0) {
+                    overlay.append(
+                        '<a class="' + addCls + '" data-action="insert" data-mode="col" data-pos="top" href="javascript:;" title="在左侧插入一列" data-tip="插入列 ◀">+</a>' +
+                        '<a class="' + addCls + '" data-action="insert" data-mode="col" data-pos="bottom" href="javascript:;" title="在右侧插入一列" data-tip="插入列 ▶">+</a>' +
+                        '<a class="' + addCls + '" data-action="insert" data-mode="row" data-pos="left" href="javascript:;" title="在上方插入一行" data-tip="插入行 ▲">+</a>' +
+                        '<a class="' + addCls + '" data-action="insert" data-mode="row" data-pos="right" href="javascript:;" title="在下方插入一行" data-tip="插入行 ▼">+</a>' +
+                        '<a class="' + addCls + ' xf_editor-table-del" data-action="delete" data-mode="col" data-pos="top" href="javascript:;" title="删除本列" data-tip="删除列">−</a>' +
+                        '<a class="' + addCls + ' xf_editor-table-del" data-action="delete" data-mode="col" data-pos="bottom" href="javascript:;" title="删除本列" data-tip="删除列">−</a>' +
+                        '<a class="' + addCls + ' xf_editor-table-del" data-action="delete" data-mode="row" data-pos="left" href="javascript:;" title="删除本行" data-tip="删除行">−</a>' +
+                        '<a class="' + addCls + ' xf_editor-table-del" data-action="delete" data-mode="row" data-pos="right" href="javascript:;" title="删除本行" data-tip="删除行">−</a>'
+                    );
+                }
+                var colTopBtn   = overlay.find("[data-action='insert'][data-mode='col'][data-pos='top']");
+                var colBotBtn   = overlay.find("[data-action='insert'][data-mode='col'][data-pos='bottom']");
+                var rowLeftBtn  = overlay.find("[data-action='insert'][data-mode='row'][data-pos='left']");
+                var rowRightBtn = overlay.find("[data-action='insert'][data-mode='row'][data-pos='right']");
+                var delColTopBtn   = overlay.find("[data-action='delete'][data-mode='col'][data-pos='top']");
+                var delColBotBtn   = overlay.find("[data-action='delete'][data-mode='col'][data-pos='bottom']");
+                var delRowLeftBtn  = overlay.find("[data-action='delete'][data-mode='row'][data-pos='left']");
+                var delRowRightBtn = overlay.find("[data-action='delete'][data-mode='row'][data-pos='right']");
+
+                var showCls = classPrefix + "table-add-show";
+                var scrollEl = table.closest("." + scrollCls);
+
+                var hideTimer = null;
+                function clearHide() {
+                    if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+                }
+                // 编辑态临时放开滚动容器裁剪，使位于表格外侧的按钮不被裁掉
+                function setEditingOverflow(on) {
+                    if (scrollEl.length) {
+                        if (on) scrollEl.addClass(classPrefix + "table-editing");
+                        else scrollEl.removeClass(classPrefix + "table-editing");
+                    }
+                }
+                function hideAll() {
+                    overlay.find("." + addCls).removeClass(showCls);
+                    hLine.hide();
+                    vLine.hide();
+                    bandV.hide();
+                    bandH.hide();
+                    _this._tableDeleteMode = false;
+                }
+                function scheduleHide() {
+                    clearHide();
+                    hideTimer = setTimeout(function() {
+                        hideAll();
+                        setEditingOverflow(false);
+                    }, 160);
+                }
+                function hideIcons() {
+                    clearHide();
+                    hideAll();
+                    setEditingOverflow(false);
+                }
+
+                // 计算表格网格边界（坐标相对 wrapper）
+                function computeGeometry() {
+                    var tableRect   = table[0].getBoundingClientRect();
+                    var wrapperRect = wrapper[0].getBoundingClientRect();
+                    var offX = tableRect.left - wrapperRect.left;
+                    var offY = tableRect.top  - wrapperRect.top;
+
+                    var trs = table.find("tr");
+                    var rowTops = [];
+                    var rowBottoms = [];
+                    trs.each(function() {
+                        var r = this.getBoundingClientRect();
+                        rowTops.push(r.top - tableRect.top);
+                        rowBottoms.push(r.bottom - tableRect.top);
+                    });
+                    // 水平边框：首行顶 → 末行底
+                    var hBounds = [rowTops[0]];
+                    for (var ri = 0; ri < trs.length; ri++) hBounds.push(rowBottoms[ri]);
+
+                    // 垂直边框：首行各单元格左缘 → 末单元格右缘
+                    var firstCells = trs.first().children();
+                    var vBounds = [];
+                    firstCells.each(function() {
+                        var r = this.getBoundingClientRect();
+                        vBounds.push(r.left - tableRect.left);
+                    });
+                    if (firstCells.length) {
+                        var lastR = firstCells.last()[0].getBoundingClientRect();
+                        vBounds.push(lastR.right - tableRect.left);
+                    }
+
+                    return { offX: offX, offY: offY, vBounds: vBounds, hBounds: hBounds, tableRect: tableRect };
+                }
+
+                // 图标推到表格四边「外侧」，避免与单元格内容/边框高亮重叠
+                var ICON_OUTSET = 16;
+
+                function showInsertCol(vb, g) {
+                    clearHide();
+                    hideAll();
+                    setEditingOverflow(true);
+                    var bx = g.offX + g.vBounds[vb];
+                    var topY = g.offY;
+                    var botY = g.offY + g.hBounds[g.hBounds.length - 1];
+                    colTopBtn.css({ left: bx, top: topY - ICON_OUTSET }).attr("data-index", vb).addClass(showCls);
+                    colBotBtn.css({ left: bx, top: botY + ICON_OUTSET }).attr("data-index", vb).addClass(showCls);
+                    var colW = (vb + 1 < g.vBounds.length) ? (g.vBounds[vb + 1] - g.vBounds[vb]) : 20;
+                    bandV.css({ left: g.offX + g.vBounds[vb], top: topY, width: colW, height: Math.max(botY - topY, 1), background: "rgba(44,126,234,0.10)" }).show();
+                    bandH.hide();
+                    // 高亮该垂直边框线
+                    vLine.css({ left: bx, top: topY, width: 2, height: Math.max(botY - topY, 1) }).show();
+                    hLine.hide();
+                }
+
+                function showInsertRow(hb, g) {
+                    clearHide();
+                    hideAll();
+                    setEditingOverflow(true);
+                    var by = g.offY + g.hBounds[hb];
+                    var leftX = g.offX;
+                    var rightX = g.offX + g.vBounds[g.vBounds.length - 1];
+                    rowLeftBtn.css({ left: leftX - ICON_OUTSET, top: by }).attr("data-index", hb).addClass(showCls);
+                    rowRightBtn.css({ left: rightX + ICON_OUTSET, top: by }).attr("data-index", hb).addClass(showCls);
+                    var rowH = (hb + 1 < g.hBounds.length) ? (g.hBounds[hb + 1] - g.hBounds[hb]) : 20;
+                    bandH.css({ left: leftX, top: g.offY + g.hBounds[hb], width: Math.max(rightX - leftX, 1), height: rowH, background: "rgba(44,126,234,0.10)" }).show();
+                    bandV.hide();
+                    // 高亮该水平边框线
+                    hLine.css({ left: leftX, top: by, width: Math.max(rightX - leftX, 1), height: 2 }).show();
+                    vLine.hide();
+                }
+
+                // 单击单元格：在其所在列（顶/底外侧）与所在行（左/右外侧）显示「−」删除按钮
+                function showDeleteIcons(cell, isThead, colIndex, mdRowIndex) {
+                    clearHide();
+                    hideAll();
+                    setEditingOverflow(true);
+                    _this._tableDeleteMode = true;
+                    var g = computeGeometry();
+                    var cr = cell[0].getBoundingClientRect();
+                    var cx = cr.left + cr.width / 2 - g.tableRect.left + g.offX;
+                    var cy = cr.top + cr.height / 2 - g.tableRect.top + g.offY;
+                    var topY = g.offY;
+                    var botY = g.offY + g.hBounds[g.hBounds.length - 1];
+                    var leftX = g.offX;
+                    var rightX = g.offX + g.vBounds[g.vBounds.length - 1];
+                    delColTopBtn.css({ left: cx, top: topY - ICON_OUTSET }).attr("data-index", colIndex).addClass(showCls);
+                    delColBotBtn.css({ left: cx, top: botY + ICON_OUTSET }).attr("data-index", colIndex).addClass(showCls);
+                    var colW = (colIndex + 1 < g.vBounds.length) ? (g.vBounds[colIndex + 1] - g.vBounds[colIndex]) : 20;
+                    bandV.css({ left: g.offX + g.vBounds[colIndex], top: topY, width: colW, height: Math.max(botY - topY, 1), background: "rgba(226,59,59,0.12)" }).show();
+                    if (!isThead) {
+                        delRowLeftBtn.css({ left: leftX - ICON_OUTSET, top: cy }).attr("data-index", mdRowIndex).addClass(showCls);
+                        delRowRightBtn.css({ left: rightX + ICON_OUTSET, top: cy }).attr("data-index", mdRowIndex).addClass(showCls);
+                        var cellTop = g.offY + (cr.top - g.tableRect.top);
+                        bandH.css({ left: leftX, top: cellTop, width: Math.max(rightX - leftX, 1), height: cr.height, background: "rgba(226,59,59,0.12)" }).show();
+                    } else {
+                        bandH.hide();
+                    }
+                }
+
+                // 鼠标靠近边框 → 显示对应「+」插入按钮
+                wrapper.on("mousemove.xf_editor-tbl", function(e) {
+                    if (_this._tableCellEditing || _this._tableDeleteMode) { return; }
+                    var g = computeGeometry();
+                    var mx = e.clientX - g.tableRect.left;
+                    var my = e.clientY - g.tableRect.top;
+
+                    var dV = Infinity, vIdx = -1;
+                    for (var i = 0; i < g.vBounds.length; i++) {
+                        var d = Math.abs(mx - g.vBounds[i]);
+                        if (d < dV) { dV = d; vIdx = i; }
+                    }
+                    var dH = Infinity, hIdx = -1;
+                    for (var j = 0; j < g.hBounds.length; j++) {
+                        var d2 = Math.abs(my - g.hBounds[j]);
+                        if (d2 < dH) { dH = d2; hIdx = j; }
+                    }
+
+                    var V_TH = 6, H_TH = 6;
+                    if (dV <= V_TH && dV <= dH) {
+                        showInsertCol(vIdx, g);
+                    } else if (dH <= H_TH) {
+                        showInsertRow(hIdx, g);
+                    } else {
+                        hideIcons();
+                        scheduleHide();
+                    }
+                });
+
+                wrapper.on("mouseleave.xf_editor-tbl", function() {
+                    scheduleHide();
+                });
+
+                // 点击「+ / −」按钮 → 插入或删除列/行
+                overlay.on("click", "." + addCls, function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    clearHide();
+                    _this._tableDeleteMode = false;
+                    var btn = dom(this);
+                    var action = btn.attr("data-action");
+                    var mode = btn.attr("data-mode");
+                    var idx = parseInt(btn.attr("data-index"), 10);
+                    if (isNaN(idx)) return;
+                    if (action === "delete") {
+                        if (mode === "col") _this.deleteColumnInMarkdown(idx, wrapper);
+                        else if (mode === "row") _this.deleteRowInMarkdown(idx, wrapper);
+                    } else {
+                        if (mode === "col") _this.insertColumnInMarkdown(idx, wrapper);
+                        else if (mode === "row") _this.insertRowInMarkdown(idx, wrapper);
+                    }
+                });
+                overlay.on("mouseenter", "." + addCls, function() { clearHide(); });
+
+                // 单击单元格 → 显示「−」删除按钮
                 table.on("click", "th, td", function(e) {
-                    e.stopPropagation();
                     e.preventDefault();
-                    currentCell = dom(this);
-                    // 使用相对于包装容器的偏移来正确处理滚动
-                    var wrapperOffset = wrapper.offset();
-                    var cellOffset = currentCell.offset();
-                    var relTop = cellOffset.top - wrapperOffset.top;
-                    var relLeft = cellOffset.left - wrapperOffset.left;
-                    
-                    // 先隐藏所有控件，再显示当前表格的控件
-                    previewContainer.find(".xf_editor-table-col-controls, .xf_editor-table-row-controls").hide();
-                    
-                    // 计算列控件位置（显示在选中列上方）
-                    var colTop = relTop - 28;
-                    var colLeft = relLeft;
-                    var colWidth = currentCell.outerWidth();
-                    
-                    // 计算行控件位置（显示在选中行左侧）
-                    var rowTop = relTop;
-                    var rowLeft = relLeft - 32;
-                    var rowHeight = Math.max(currentCell.outerHeight(), 60);
-                    
-                    // 列控件：显示在单元格上方
-                    wrapper.find(".xf_editor-table-col-controls").css({
-                        top: Math.max(colTop, -28),   // 防止过度偏移
-                        left: colLeft,
-                        width: colWidth,
-                        display: "flex"
-                    });
-                    // 行控件：显示在单元格左侧
-                    wrapper.find(".xf_editor-table-row-controls").css({
-                        top: rowTop,
-                        left: Math.max(rowLeft, -32), // 防止过度偏移
-                        height: rowHeight,
-                        display: "flex"
-                    });
-                });
-                
-                wrapper.find(".xf_editor-table-btn").on("click", function(e) {
                     e.stopPropagation();
-                    e.preventDefault();
-                    if (!currentCell) return;
-                    
-                    var action = dom(this).data("action");
-                    var row = currentCell.parent();
-                    var colIndex = row.children().index(currentCell);
-                    var rowIndex = row.parent().children().index(row);
+                    if (_this._tableCellEditing) return;
+                    var cell = dom(this);
+                    if (cell.find(editSel).length) return;
+
+                    var row = cell.parent();
                     var isThead = row.parent().is("thead");
+                    var colIndex = row.children().index(cell);
+                    var rowIndex = row.parent().children().index(row);
                     var tableStart = wrapper.data("table-start");
-                    
-                    if (typeof tableStart === "undefined" || tableStart < 0) return;
-                    
-                    _this.modifyTableInMarkdown(action, rowIndex, colIndex, isThead, tableStart, wrapper);
+                    var mdRowIndex = isThead ? tableStart : (tableStart + 2 + rowIndex);
+                    showDeleteIcons(cell, isThead, colIndex, mdRowIndex);
                 });
-            });
-            
-            // 点击表格外部时隐藏控制按钮
-            dom(document).off("click.xf_editor-table").on("click.xf_editor-table", function(e) {
-                if (!dom(e.target).closest(".xf_editor-table-wrapper").length) {
-                    previewContainer.find(".xf_editor-table-col-controls, .xf_editor-table-row-controls").hide();
-                }
+
+                // 双击单元格 → 就地编辑
+                table.on("dblclick", "th, td", function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (_this._tableCellEditing) return;
+                    var cell = dom(this);
+                    if (cell.find(editSel).length) return;
+
+                    var row = cell.parent();
+                    var isThead = row.parent().is("thead");
+                    var colIndex = row.children().index(cell);
+                    var rowIndex = row.parent().children().index(row);
+                    var tableStart = wrapper.data("table-start");
+                    var curVal = cell.text();
+
+                    _this._tableCellEditing = true;
+                    hideIcons();
+
+                    var input = dom('<textarea class="' + classPrefix + 'cell-edit-input" rows="2" spellcheck="false"></textarea>');
+                    input.val(curVal);
+                    cell.empty().append(input);
+                    var syncHeight = function() {
+                        input.css("height", "auto");
+                        input.css("height", Math.max(input[0].scrollHeight, 44) + "px");
+                    };
+                    input.focus();
+                    syncHeight();
+                    if (input[0] && input[0].select) input[0].select();
+
+                    var cancelled = false;
+                    function commit() {
+                        _this._tableCellEditing = false;
+                        if (cancelled) return;
+                        var newVal = input.val();
+                        _this.editCellInMarkdown(tableStart, isThead, rowIndex, colIndex, newVal, wrapper);
+                    }
+                    input.on("blur", function() { commit(); });
+                    input.on("input", function() { syncHeight(); });
+                    input.on("keydown", function(ev) {
+                        if (ev.keyCode === 27) {            // Esc 取消
+                            ev.preventDefault();
+                            cancelled = true;
+                            cell.text(curVal);
+                            input.blur();
+                        } else if ((ev.ctrlKey || ev.metaKey) && ev.keyCode === 13) {  // Ctrl/Cmd+Enter 提交
+                            ev.preventDefault();
+                            input.blur();
+                        }
+                        // 普通 Enter 保留为换行（支持多行文本编辑）
+                    });
+                });
             });
         },
         
         /**
-         * Modify table markdown source based on preview action
+         * 解析表格行：剥离首尾的管道符，返回内部单元格数组（保留每个单元格的原始文本，含两侧空格）
          */
-        modifyTableInMarkdown : function(action, rowIndex, colIndex, isThead, tableStart, wrapper) {
+        _parseRow : function(line) {
+            var cells = (line || "").split("|");
+            if (cells.length && cells[0].trim() === "") cells.shift();
+            if (cells.length && cells[cells.length - 1].trim() === "") cells.pop();
+            return cells;
+        },
+
+        /**
+         * 生成标准化分隔行：每个列固定 3 个连字符
+         */
+        _normalizeSeparator : function(colCount) {
+            var s = "|";
+            for (var k = 0; k < colCount; k++) s += "---|";
+            return s;
+        },
+
+        /**
+         * 在 Markdown 源码中查找所有表格块（首行为以 | 开头的连续区域）
+         */
+        _findTableBlocks : function(md) {
+            var lines = md.split("\n");
+            var blocks = [];
+            var i = 0;
+            while (i < lines.length) {
+                if (/^\|/.test(lines[i])) {
+                    var s = i;
+                    i++;
+                    while (i < lines.length) {
+                        if (/^\|/.test(lines[i])) { i++; continue; }
+                        if (lines[i].trim() === "") { i++; continue; }
+                        break;
+                    }
+                    blocks.push({ start: s, end: i - 1 });
+                } else {
+                    i++;
+                }
+            }
+            return blocks;
+        },
+
+        /**
+         * 由起始行定位表格结束行（最后一个以 | 开头的连续行）
+         */
+        _findTableEnd : function(lines, start) {
+            var end = start;
+            for (var j = start + 1; j < lines.length; j++) {
+                if (/^\|/.test(lines[j])) { end = j; continue; }
+                if (lines[j].trim() === "") { continue; }
+                break;
+            }
+            return end;
+        },
+
+        /**
+         * 解析表格起始行：优先使用缓存的 data-table-start，失效时按首列标识重新定位
+         */
+        _resolveTableStart : function(lines, wrapper) {
+            var start = wrapper ? wrapper.data("table-start") : null;
+            if (typeof start === "number" && start >= 0 && start < lines.length && /^\|/.test(lines[start])) {
+                return start;
+            }
+            var blocks = this._findTableBlocks(lines.join("\n"));
+            var id = wrapper ? wrapper.data("table-identifier") : "";
+            if (id) {
+                for (var b = 0; b < blocks.length; b++) {
+                    var hdr = this._parseRow(lines[blocks[b].start]);
+                    var first = hdr.length ? hdr[0].trim() : "";
+                    if (first && (first.indexOf(id) !== -1 || id.indexOf(first) !== -1)) return blocks[b].start;
+                }
+            }
+            return blocks.length ? blocks[0].start : -1;
+        },
+
+        /**
+         * 将修改后的 Markdown 写回编辑器并刷新预览。
+         * 仅精确设置编辑器文档内容（cm.setValue），不做任何转换/筛选；随后刷新预览。
+         * 已暂停双向同步滚动，避免写回过程触发编辑区→预览的反向同步。
+         */
+        _writeBackMarkdown : function(lines, wrapper, start) {
             var cm = this.cm;
-            var markdown = cm.getValue();
-            var lines = markdown.split("\n");
-            var tableEnd = -1;
-            
-            // 验证 tableStart 是否仍然有效，必要时重新查找表格边界
-            if (tableStart < 0 || tableStart >= lines.length || !/^\|/.test(lines[tableStart])) {
-                // 表格位置已变化 — 通过标识文本重新查找
-                var identifier = wrapper ? wrapper.data("table-identifier") : "";
-                tableStart = -1;
-                for (var fi = 0; fi < lines.length; fi++) {
-                    if (/^\|/.test(lines[fi])) {
-                        var cells = lines[fi].split("|");
-                        var first = (cells[1] || "").trim();
-                        if (first && identifier && (first.indexOf(identifier) !== -1 || identifier.indexOf(first) !== -1)) {
-                            tableStart = fi;
-                            break;
-                        }
-                    }
-                }
-                // 降级方案：查找任意表格作为备选
-                if (tableStart < 0) {
-                    for (var fi2 = 0; fi2 < lines.length; fi2++) {
-                        if (/^\|/.test(lines[fi2])) { tableStart = fi2; break; }
-                    }
-                }
-            }
-            
-            if (tableStart < 0) return;
-            
-            // 查找表格结束位置
-            for (var j = tableStart; j < lines.length; j++) {
-                if (j === tableStart) continue;
-                if (!/^\|/.test(lines[j]) && lines[j].trim() !== "") {
-                    tableEnd = j - 1;
-                    break;
-                }
-                if (j === lines.length - 1) {
-                    tableEnd = j;
-                }
-            }
-            
-            if (tableEnd < 0 || tableEnd < tableStart || tableEnd - tableStart < 1) return;
-            
-            var tableLines = lines.slice(tableStart, tableEnd + 1);
-            if (tableLines.length < 2) return;
-            
-            var headerLine = tableLines[0];
-            var alignLine = tableLines[1];
-            var bodyLines = tableLines.slice(2);
-            var cols = headerLine.split("|").filter(function(c) { return c.trim() !== ""; });
-            var colCount = cols.length;
-            if (colCount < 1) colCount = 1;
-            
-            // 确保最小行数：表头 + 分隔行 + 至少 1 行数据
-            var totalRows = tableLines.length;
+            if (!cm) return;
 
-            // 确保 rowIndex 在有效范围内
-            if (!isThead) {
-                rowIndex = Math.max(0, Math.min(rowIndex, bodyLines.length - 1));
-            }
-
-            switch(action) {
-                case "add-row-before":
-                    var newRow = "| " + new Array(colCount + 1).join(" | ");
-                    // 表头区域：在表头之前插入。表体：在 tableStart + 2 + rowIndex 处插入
-                    var insertIndex = isThead ? tableStart : tableStart + 2 + rowIndex;
-                    if (!isThead && insertIndex < tableStart + 2) insertIndex = tableStart + 2;
-                    lines.splice(insertIndex, 0, newRow);
-                    break;
-                case "add-row-after":
-                    var newRow2 = "| " + new Array(colCount + 1).join(" | ");
-                    // 表头区域：作为第一行数据插入。表体：在当前行之后插入
-                    var insertIndex2 = isThead ? tableStart + 2 : tableStart + 2 + rowIndex + 1;
-                    lines.splice(insertIndex2, 0, newRow2);
-                    break;
-                case "add-col-before":
-                    for (var k = 0; k < tableLines.length; k++) {
-                        var targetLine = tableStart + k;
-                        if (targetLine >= lines.length) break;
-                        var cells = lines[targetLine].split("|");
-                        var cellContent = (k === 1) ? " --- " : "   ";
-                        cells.splice(colIndex + 1, 0, cellContent);
-                        lines[targetLine] = cells.join("|");
-                    }
-                    break;
-                case "add-col-after":
-                    for (var k2 = 0; k2 < tableLines.length; k2++) {
-                        var targetLine2 = tableStart + k2;
-                        if (targetLine2 >= lines.length) break;
-                        var cells2 = lines[targetLine2].split("|");
-                        var cellContent2 = (k2 === 1) ? " --- " : "   ";
-                        cells2.splice(colIndex + 2, 0, cellContent2);
-                        lines[targetLine2] = cells2.join("|");
-                    }
-                    break;
-                case "del-row":
-                    // 仅剩表头和分隔行时阻止删除操作
-                    if (totalRows <= 2 && !isThead) return;
-                    if (isThead && totalRows <= 2) return;
-                    var delIndex = isThead ? tableStart : tableStart + 2 + rowIndex;
-                    if (!isThead && delIndex < tableStart + 2) delIndex = tableStart + 2;
-                    if (!isThead && delIndex > tableEnd) delIndex = tableEnd;
-                    lines.splice(delIndex, 1);
-                    break;
-                case "del-col":
-                    if (colCount <= 1) return;
-                    for (var k3 = 0; k3 < tableLines.length; k3++) {
-                        var targetLine3 = tableStart + k3;
-                        if (targetLine3 >= lines.length) break;
-                        var cells3 = lines[targetLine3].split("|");
-                        if (colIndex + 1 < cells3.length) {
-                            cells3.splice(colIndex + 1, 1);
-                        }
-                        lines[targetLine3] = cells3.join("|");
-                    }
-                    break;
-            }
-            
-            // 更新包装容器上的表格位置引用
-            if (wrapper) {
-                wrapper.data("table-start", tableStart);
-                wrapper.data("table-end", tableStart + tableLines.length - 1);
-            }
-            
-            if (this.timer && this.timer !== 0) { clearTimeout(this.timer); this.timer = null; }
-            
-            // ★ v1.17.4: 暂停双向同步滚动
             if (this.suspendSyncScroll) this.suspendSyncScroll();
-            
+            if (this.timer && this.timer !== 0) { clearTimeout(this.timer); this.timer = null; }
+
             var cursor = cm.getCursor();
             var editorScroll = cm.getScrollInfo();
-            var previewScroll = this.preview.scrollTop();
-            
+            var previewScroll = this.preview ? this.preview.scrollTop() : 0;
+
+            // 直接写回编辑器左侧文档（精确，无筛选）
             cm.setValue(lines.join("\n"));
-            
-            if (this.timer && this.timer !== 0) { clearTimeout(this.timer); this.timer = null; }
-            
-            cm.setCursor(Math.min(cursor.line, lines.length - 1), cursor.ch);
-            
-            cm.scrollTo(editorScroll.left, editorScroll.top);
+
+            try {
+                cm.setCursor(Math.min(cursor.line, lines.length - 1), cursor.ch);
+                cm.scrollTo(editorScroll.left, editorScroll.top);
+            } catch (e) {}
+
             this.timer = 0;
-            
+
+            // 刷新预览（DOM 重建后由 save() 内部重新绑定表格编辑）
             this.save();
-            
-            this.preview.scrollTop(previewScroll);
+
+            if (this.preview) this.preview.scrollTop(previewScroll);
             this.timer = null;
-            
-            // ★ v1.17.4: 恢复同步滚动
-            var _thisTable = this;
+
+            var _self = this;
             setTimeout(function() {
-                if (_thisTable.resumeSyncScroll) _thisTable.resumeSyncScroll();
+                if (_self.resumeSyncScroll) _self.resumeSyncScroll();
             }, 150);
-            
-            this.settings.ontablechange.call(this, action, rowIndex, colIndex);
         },
-        
+
+        /**
+         * 在预览表格的第 vb 条「垂直边框」（0=最左，colCount=最右）处插入一列空单元格
+         */
+        insertColumnInMarkdown : function(vb, wrapper) {
+            var cm = this.cm;
+            if (!cm) return;
+            var lines = cm.getValue().split("\n");
+            var start = this._resolveTableStart(lines, wrapper);
+            if (start < 0) return;
+            var end = this._findTableEnd(lines, start);
+            if (end < 0 || end < start + 1) return;
+
+            var sepLine = start + 1;
+            var colCount = this._parseRow(lines[start]).length;
+
+            if (vb < 0) vb = 0;
+            if (vb > colCount) vb = colCount;
+
+            for (var li = start; li <= end; li++) {
+                var cells = this._parseRow(lines[li]);
+                var isSep = (li === sepLine);
+                cells.splice(vb, 0, isSep ? "---" : " ");
+                lines[li] = "|" + cells.join("|") + "|";
+            }
+
+            // 分隔行统一规范为 3 个连字符
+            lines[sepLine] = this._normalizeSeparator(colCount + 1);
+
+            this._writeBackMarkdown(lines, wrapper, start);
+            this.settings.ontablechange.call(this, "add-col", vb, -1);
+        },
+
+        /**
+         * 在预览表格的第 hb 条「水平边框」（0=表头上方，totalRows=最下方）处插入一行空单元格
+         */
+        insertRowInMarkdown : function(hb, wrapper) {
+            var cm = this.cm;
+            if (!cm) return;
+            var lines = cm.getValue().split("\n");
+            var start = this._resolveTableStart(lines, wrapper);
+            if (start < 0) return;
+            var end = this._findTableEnd(lines, start);
+            if (end < 0 || end < start + 1) return;
+
+            var colCount = this._parseRow(lines[start]).length;
+            var totalRows = end - start + 1;
+
+            if (hb < 0) hb = 0;
+            if (hb > totalRows) hb = totalRows;
+
+            // 插入行在 Markdown 中的行号：表头上方 = start；其余 = start + 1 + hb
+            var insertLine = (hb === 0) ? start : (start + 1 + hb);
+
+            var emptyCells = [];
+            for (var k = 0; k < colCount; k++) emptyCells.push(" ");
+            var emptyRow = "|" + emptyCells.join("|") + "|";
+
+            lines.splice(insertLine, 0, emptyRow);
+
+            this._writeBackMarkdown(lines, wrapper, start);
+            this.settings.ontablechange.call(this, "add-row", hb, -1);
+        },
+
+        /**
+         * 编辑预览表格中的某个单元格内容并写回 Markdown
+         */
+        editCellInMarkdown : function(tableStart, isThead, rowIndex, colIndex, newVal, wrapper) {
+            var cm = this.cm;
+            if (!cm) return;
+            var lines = cm.getValue().split("\n");
+            var start = this._resolveTableStart(lines, wrapper);
+            if (start < 0) return;
+            var end = this._findTableEnd(lines, start);
+            if (end < 0 || end < start + 1) return;
+
+            var lineIdx = isThead ? start : (start + 2 + rowIndex);
+            if (lineIdx < start || lineIdx > end) return;
+
+            var cells = this._parseRow(lines[lineIdx]);
+            if (colIndex < 0 || colIndex >= cells.length) return;
+
+            cells[colIndex] = " " + (newVal == null ? "" : String(newVal)) + " ";
+            lines[lineIdx] = "|" + cells.join("|") + "|";
+
+            this._writeBackMarkdown(lines, wrapper, start);
+            this.settings.ontablechange.call(this, "edit-cell", rowIndex, colIndex);
+        },
+
+        /**
+         * 删除预览表格的第 vb 列（至少保留一列，分隔行一并重规范）
+         */
+        deleteColumnInMarkdown : function(vb, wrapper) {
+            var cm = this.cm;
+            if (!cm) return;
+            var lines = cm.getValue().split("\n");
+            var start = this._resolveTableStart(lines, wrapper);
+            if (start < 0) return;
+            var end = this._findTableEnd(lines, start);
+            if (end < 0 || end < start + 1) return;
+
+            var sepLine = start + 1;
+            var colCount = this._parseRow(lines[start]).length;
+            if (colCount <= 1) return;                       // 至少保留一列
+
+            if (vb < 0) vb = 0;
+            if (vb >= colCount) vb = colCount - 1;
+
+            for (var li = start; li <= end; li++) {
+                var cells = this._parseRow(lines[li]);
+                if (vb < cells.length) cells.splice(vb, 1);
+                lines[li] = "|" + cells.join("|") + "|";
+            }
+
+            // 重新规范分隔行，保持对齐标记数量与列数一致
+            lines[sepLine] = this._normalizeSeparator(colCount - 1);
+
+            this._writeBackMarkdown(lines, wrapper, start);
+            this.settings.ontablechange.call(this, "del-col", vb, -1);
+        },
+
+        /**
+         * 删除预览表格的第 mdRowIndex 行（仅数据行可删，至少保留一行数据；表头与分隔行不可删）
+         */
+        deleteRowInMarkdown : function(mdRowIndex, wrapper) {
+            var cm = this.cm;
+            if (!cm) return;
+            var lines = cm.getValue().split("\n");
+            var start = this._resolveTableStart(lines, wrapper);
+            if (start < 0) return;
+            var end = this._findTableEnd(lines, start);
+            if (end < 0 || end < start + 1) return;
+
+            // 仅允许删除数据行（表头 start 与分隔行 start+1 不可删除）
+            if (mdRowIndex < start + 2 || mdRowIndex > end) return;
+            var dataRows = end - start - 1;
+            if (dataRows <= 1) return;                       // 至少保留一行数据
+
+            lines.splice(mdRowIndex, 1);
+
+            this._writeBackMarkdown(lines, wrapper, start);
+            this.settings.ontablechange.call(this, "del-row", mdRowIndex, -1);
+        },
+
         /**
          * Initialize image resize in preview area
          */
