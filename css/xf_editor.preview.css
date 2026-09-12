@@ -5157,6 +5157,12 @@ a.xf_editor-banner-link::after {
   background: #fff;
 }
 
+/* 正在编辑的单元格：淡蓝底色 + 内描边，明确指示当前编辑位置 */
+.xf_editor-table-editable .xf_editor-cell-editing {
+  background: #eef4ff;
+  box-shadow: inset 0 0 0 2px rgba(44, 126, 234, 0.45);
+}
+
 /* ===========================================
  * 脚注样式 (Footnote Styles)
  * =========================================== */

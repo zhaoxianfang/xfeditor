@@ -4807,6 +4807,7 @@
                     var input = dom('<textarea class="' + classPrefix + 'cell-edit-input" rows="2" spellcheck="false"></textarea>');
                     input.val(curVal);
                     cell.empty().append(input);
+                    cell.addClass(classPrefix + "cell-editing");
                     var syncHeight = function() {
                         input.css("height", "auto");
                         input.css("height", Math.max(input[0].scrollHeight, 44) + "px");
@@ -4818,6 +4819,7 @@
                     var cancelled = false;
                     function commit() {
                         _this._tableCellEditing = false;
+                        cell.removeClass(classPrefix + "cell-editing");
                         if (cancelled) return;
                         var newVal = input.val();
                         _this.editCellInMarkdown(tableStart, isThead, rowIndex, colIndex, newVal, wrapper);
@@ -4829,6 +4831,7 @@
                             ev.preventDefault();
                             cancelled = true;
                             cell.text(curVal);
+                            cell.removeClass(classPrefix + "cell-editing");
                             input.blur();
                         } else if ((ev.ctrlKey || ev.metaKey) && ev.keyCode === 13) {  // Ctrl/Cmd+Enter 提交
                             ev.preventDefault();
