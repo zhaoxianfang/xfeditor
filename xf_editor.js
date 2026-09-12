@@ -2532,8 +2532,8 @@
             };
             if (themeToEditorTheme[theme]) {
                 this.setEditorTheme(themeToEditorTheme[theme]);
-            } else if (themeToEditorTheme[oldTheme] && (theme === "default" || !theme)) {
-                // ★ v1.17.29: 从暗色切换回默认时，重置 CodeMirror 为 default
+            } else if (themeToEditorTheme[oldTheme]) {
+                // ★ 加固：离开任何已映射主题（如 dark）切换到未映射主题时，均重置 CodeMirror 为 default
                 this.setEditorTheme("default");
             }
             
@@ -3590,6 +3590,8 @@
             this.infoDialog.hide();
             this.mask.hide();
             this.lockScreen(false);
+            // ★ 加固：关闭关于对话框时解绑其 window resize 监听，避免泄漏（反复打开累计）
+            dom(window).off("resize.xf_infoDialog");
 
             return this;
         },
@@ -3762,7 +3764,14 @@
                 }
                 
                 dom(window).off("keydown.xf_editor-fkeys").on("keydown.xf_editor-fkeys", function(event) {
-                    
+                    // ★ 加固：仅当焦点位于编辑器内部时才拦截功能键，避免劫持宿主页面（编辑器之外元素）的 F9/F10/F11
+                    var _root = _this.editor && _this.editor[0];
+                    var _t = event.target;
+                    if (_root && _t && !_root.contains(_t) &&
+                        !(document.activeElement && _root.contains(document.activeElement))) {
+                        return;
+                    }
+
                     var keymaps = {
                         "120" : "F9",
                         "121" : "F10",
@@ -4002,9 +4011,14 @@
             });
             
             // 绑定 onPageAllLoad 事件（网页所有资源加载完成，包括图片、iframe 等）
-            dom(window).on("load.xf_editor-pageload", function() {
+            // ★ 加固：若编辑器在页面 load 之后才初始化（SPA/动态挂载），load 不会再触发，则立即回调
+            if (document.readyState === "complete") {
                 settings.onPageAllLoad.call(_this);
-            });
+            } else {
+                dom(window).on("load.xf_editor-pageload", function() {
+                    settings.onPageAllLoad.call(_this);
+                });
+            }
             
             this.state.loaded = true;
 
@@ -5122,6 +5136,8 @@
             
             // ★ v1.17.8: 全局文档级事件 — 只绑定一次（避免 .each 循环内累积）
             dom(document).on("mousemove.xf_editor-img", function(e) {
+                // ★ 加固：若按键已松开或拖拽状态异常，自动复位，避免卡住全局 mousemove 影响页面其它交互
+                if (e.buttons !== undefined && e.buttons === 0) { _resizeState = null; return; }
                 if (!_resizeState) return;
                 var s = _resizeState;
                 var newWidth = s.startWidth + (e.clientX - s.startX);
@@ -5181,6 +5197,8 @@
                 wrapper.append(handle);
                 
                 handle.on("mousedown", function(e) {
+                    // ★ 加固：仅响应左键拖拽，避免右键/中键误触发图片尺寸拖拽并卡住全局 mousemove
+                    if (e.button !== undefined && e.button !== 0) return;
                     // ★ v1.17.8: 拖拽期间暂停双向同步 — 预览区是主控区
                     if (_this.suspendSyncScroll) _this.suspendSyncScroll();
                     
@@ -5223,6 +5241,8 @@
         modifyImageSizeInMarkdown : function(src, alt, width, height, occurrence) {
             
             var cm = this.cm;
+            // ★ 加固：图片拖拽结束异步写入时编辑器可能已被销毁（cm 为 null），避免崩溃
+            if (!cm) return;
             var markdown = cm.getValue();
             var sizeStr = "<" + width + "," + height + ">";
             occurrence = occurrence || 1;  // 默认第一次出现，向后兼容
@@ -5488,7 +5508,8 @@
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
-                URL.revokeObjectURL(url);
+                // ★ 加固：延迟回收 Object URL，避免部分浏览器在 click 异步处理前就 revoke 导致下载被截断
+                setTimeout(function() { try { URL.revokeObjectURL(url); } catch (ex) {} }, 1000);
             } catch(e) {
                 // ★ v1.17.15-FIX: 旧浏览器降级方案 — 使用 data URI 下载
                 var fallbackUrl = "data:text/" + format + ";charset=utf-8," + encodeURIComponent(content);
@@ -5574,6 +5595,9 @@
         appendMarkdown : function(md) {
             var settings = this.settings;
             var cm       = this.cm;
+            
+            // ★ 加固：this.cm 可能为 null（未初始化或已 destroy），避免抛 Cannot read property 'setValue' of null
+            if (!cm) return this;
             
             cm.setValue(cm.getValue() + md);
             
@@ -5992,6 +6016,8 @@
                 }
                 dom(document).off("keydown.xfEditorDraft");
                 dom(window).off("resize.xfEditorDraft");
+                // ★ 加固：关闭对话框时解绑 window resize 居中监听，避免反复打开对话框累计泄漏
+                dom(window).off("resize.xf_editor-dialog");
             };
 
             dialog.find(".xf_editor-dialog-close, .xf_editor-draft-cancel").on("click", function() {
@@ -9643,6 +9669,18 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 this.draftTimer = null;
             }
 
+            // 1b. 取消可能仍在运行的滚动同步动画帧，避免销毁后继续操作已拆除的 CodeMirror
+            if (this.state) {
+                if (this.state.editorAnimTimer) {
+                    try { cancelAnimationFrame(this.state.editorAnimTimer); } catch (ex) {}
+                    this.state.editorAnimTimer = null;
+                }
+                if (this.state.editorCmAnimTimer) {
+                    try { cancelAnimationFrame(this.state.editorCmAnimTimer); } catch (ex) {}
+                    this.state.editorCmAnimTimer = null;
+                }
+            }
+
             // 2. 解绑所有文档级事件（xfEditor 命名空间）
             dom(document).off("click.xf_editor-table");
             dom(document).off("mousemove.xf_editor-img mouseup.xf_editor-img");
@@ -9677,6 +9715,15 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             // 解绑未命名空间的全局文档事件
             dom(document).off("click.xf_editor-dropdown");
             dom(document).off("click.tooltip keydown.tooltip");
+
+            // 3c. 解绑对话框拖拽命名空间监听（防止中断拖拽残留）
+            dom(document).off(".xf_editor-dialogdrag");
+            dom(window).off(".xf_editor-dialogdrag");
+            // 兜底：清理可能残留的整页文本选择禁用状态（避免编辑器之外元素无法选中文本）
+            try {
+                document.onselectstart = null;
+                dom("body").removeClass(classPrefix + "user-unselect").off("selectstart");
+            } catch (ex) {}
             
             // 清理对话框拖拽残留（防止幽灵拖拽）
             if (document.onmousemove) {
@@ -14716,9 +14763,12 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             decoded = decoded.replace(/&#(\d{2,4});?/g, function(m, dec) {
                 return String.fromCharCode(parseInt(dec, 10));
             });
-            // 移除 HTML 实体分号残留再转小写
+            // 移除 HTML 实体分号残留
             decoded = decoded.replace(/;/g, "");
-            var sanitizedUrl = decoded.toLowerCase();
+            // ★ 加固：解码后再次剔除控制字符（&#9; 等被解码为 tab 后需在检测前清除），再 trim 首尾空白。
+            //   浏览器会 trim URL 首部空白，攻击者可借 &#9;/空格/换行 绕过 scheme 检测（如 javascript:）
+            decoded = decoded.replace(/[\x00-\x1f\x7f]+/g, " ");
+            var sanitizedUrl = decoded.trim().toLowerCase();
             if (sanitizedUrl.indexOf("javascript:") === 0 || 
                 sanitizedUrl.indexOf("vbscript:") === 0 || 
                 sanitizedUrl.indexOf("data:text/html") === 0 ||
@@ -16963,12 +17013,28 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 });
             }
 
+            var _xfDragging = false;
+            var _xfEndDrag = function() {
+                _xfDragging = false;
+                userCanSelect(dom("body"));
+                userCanSelect(dialog);
+                // ★ 加固：仅移除本编辑器命名空间监听，绝不触碰宿主页面或其它库的全局 mouseup/mousemove
+                dom(document).off("mousemove.xf_editor-dialogdrag mouseup.xf_editor-dialogdrag");
+                dom(window).off("blur.xf_editor-dialogdrag");
+            };
+
             dialogHeader.mousedown(function(e) {
                 e = e || window.event;  // IE 兼容
+                // 仅响应主键（左键）拖拽，避免右键/中键误触发拖拽
+                if (e.button !== undefined && e.button !== 0) return;
                 posX = e.clientX - parseInt(dialog[0].style.left);
                 posY = e.clientY - parseInt(dialog[0].style.top);
-
-                document.onmousemove = moveAction;                   
+                _xfDragging = true;
+                // ★ 加固：使用命名空间监听，避免污染/覆盖宿主页面或其它库的全局 onmousemove/onmouseup
+                dom(document).off("mousemove.xf_editor-dialogdrag mouseup.xf_editor-dialogdrag")
+                             .on("mousemove.xf_editor-dialogdrag", moveAction)
+                             .on("mouseup.xf_editor-dialogdrag", _xfEndDrag);
+                dom(window).off("blur.xf_editor-dialogdrag").on("blur.xf_editor-dialogdrag", _xfEndDrag);
             });
 
             var userCanSelect = function (obj) {
@@ -16982,6 +17048,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             };
 
             var moveAction = function (e) {
+                if (!_xfDragging) return;
                 e = e || window.event;  //IE
 
                 var left, top, nowLeft = parseInt(dialog[0].style.left), nowTop = parseInt(dialog[0].style.top);
@@ -16989,25 +17056,21 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 if( nowLeft >= 0 ) {
                     if( nowLeft + dialog.width() <= dom(window).width()) {
                         left = e.clientX - posX;
-                    } else {	
+                    } else {
                         left = dom(window).width() - dialog.width();
-                        document.onmousemove = null;
+                        _xfDragging = false;
                     }
                 } else {
                     left = 0;
-                    document.onmousemove = null;
+                    _xfDragging = false;
                 }
 
                 if( nowTop >= 0 ) {
                     top = e.clientY - posY;
                 } else {
                     top = 0;
-                    document.onmousemove = null;
+                    _xfDragging = false;
                 }
-
-                document.onselectstart = function() {
-                    return false;
-                };
 
                 userUnselect(dom("body"));
                 userUnselect(dialog);
@@ -17015,13 +17078,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 dialog[0].style.top  = top + "px";
             };
 
-            document.onmouseup = function() {                            
-                userCanSelect(dom("body"));
-                userCanSelect(dialog);
-
-                document.onselectstart = null;         
-                document.onmousemove = null;
-            };
+            // 拖拽结束由 _xfEndDrag（mouseup / window blur 命名空间监听）统一处理，避免污染全局 onmouseup
 
             dialogHeader.touchDraggable = function() {
                 var offset = null;

@@ -640,7 +640,7 @@
 
 .xf_editor-container-mask {
   z-index: 20;
-  display: block;
+  display: none;
   background-color: #fff;
 }
 

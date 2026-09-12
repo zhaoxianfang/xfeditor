@@ -277,7 +277,10 @@
 
 #{$prefix}container-mask {
     z-index: 20;  
-    display: block;
+    // ★ 加固：默认隐藏。加载期间由内联 style="display:block" 显示 loading 动画，
+    //   加载完成后 JS 调用 containerMask.hide() 设内联 display:none。
+    //   此处改为 display:none 可防止「加载链异常未走到 hide()」时白色遮罩永久盖住编辑器。
+    display: none;
     background-color: #fff;    
 }
 
