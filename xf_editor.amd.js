@@ -3229,9 +3229,15 @@
                         }
                         else
                         {
-                            var displayText = subIsHeader ? subName.toUpperCase() : subTitle;
                             dropdownHTML += "<a href=\"javascript:;\" title=\"" + subTitle + "\" unselectable=\"on\">";
-                            dropdownHTML += "<i class=\"fa " + subIconClass + "\" name=\""+subName+"\" unselectable=\"on\"></i> " + displayText;
+                            if (subIsHeader)
+                            {
+                                dropdownHTML += "<i class=\"fa " + subIconClass + "\" name=\""+subName+"\" unselectable=\"on\">" + subName.toUpperCase() + "</i> " + subTitle;
+                            }
+                            else
+                            {
+                                dropdownHTML += "<i class=\"fa " + subIconClass + "\" name=\""+subName+"\" unselectable=\"on\"></i> " + subTitle;
+                            }
                             dropdownHTML += "</a>";
                         }
                         dropdownHTML += "</li>";
