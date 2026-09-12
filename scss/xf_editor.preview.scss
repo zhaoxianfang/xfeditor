@@ -54,68 +54,92 @@
         height: auto;
         box-sizing: border-box;
     }
-    // ★ v1.17.33: 增强型表格样式 — 美化边框、斑马条纹、表头渐变
+    // ★ v1.17.40: 增强型表格样式 — 参照 table_demo 示例（深色金属表头 + 隔行换色 + 悬停强调条）
+    // 注：github-markdown 基础样式对 th/td 的 padding 与 border 使用了 !important，
+    //     故此处对应属性也必须 !important 才能覆盖（否则会被基础样式回退成旧灰框）。
     table {
         display: table;
         width: 100%;
         max-width: 100%;
         margin: 16px 0;
-        border-collapse: collapse;
+        border-collapse: separate;
         border-spacing: 0;
         word-break: normal;
         font-size: 14px;
         line-height: 1.6;
-        border: 1px solid #e1e4e8;
+        font-variant-numeric: tabular-nums;
+        border: 1px solid #c6d5e2;
         border-radius: 8px;
         overflow: hidden;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        background: #fff;
+        box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset,
+                    0 6px 18px -6px rgba(11, 38, 58, 0.18),
+                    0 2px 6px -2px rgba(11, 38, 58, 0.08);
+        transition: box-shadow 0.25s ease, border-color 0.25s ease;
 
-        // 表头样式 - 渐变背景
+        &:hover {
+            border-color: #a8c1d6;
+            box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset,
+                        0 14px 32px -10px rgba(11, 38, 58, 0.24),
+                        0 4px 10px -3px rgba(11, 38, 58, 0.1);
+        }
+
+        // 表头样式 - 深色金属质感渐变
         thead tr {
-            background: linear-gradient(180deg, #f6f8fa 0%, #eef1f5 100%);
-            border-bottom: 2px solid #d1d5db;
-            
+            background: linear-gradient(180deg, #1d4159 0%, #12303f 100%);
+            border-bottom: 2px solid #0b2230;
+
             th {
-                padding: 10px 16px;
-                font-weight: 700;
-                font-size: 13px;
-                color: #1f2937;
+                padding: 0.85rem 1.1rem !important;
+                font-weight: 600;
+                font-size: 0.78rem;
+                color: #eaf3fa;
                 text-align: left;
                 white-space: nowrap;
-                letter-spacing: 0.02em;
-                border-right: 1px solid #e5e7eb;
-                &:last-child { border-right: none; }
+                letter-spacing: 0.6px;
+                text-transform: uppercase;
+                border: 0 !important;
+                border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+                border-bottom: 2px solid #0b2230 !important;
+                text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+                position: relative;
+                &:last-child { border-right: none !important; }
             }
         }
 
-        // 表体样式 - 斑马条纹
+        // 表体样式 - 隔行换色（柔和淡蓝）+ 悬停整行高亮 + 首列强调条
         tbody {
-            tr {
-                transition: background-color 0.15s ease;
-                border-bottom: 1px solid #f0f0f0;
-
-                &:nth-child(even) {
-                    background-color: #fafbfc;
-                }
-                &:nth-child(odd) {
-                    background-color: #ffffff;
-                }
-                &:hover {
-                    background-color: #f0f7ff;
-                }
-                &:last-child {
-                    border-bottom: none;
-                }
-            }
-
             td {
-                padding: 8px 16px;
-                color: #374151;
+                padding: 0.78rem 1.1rem !important;
+                color: #16293a;
                 font-size: 13.5px;
-                border-right: 1px solid #f3f4f6;
+                background-color: #fff;
+                border: 0 !important;
+                border-right: 1px solid #f0f5fa !important;
+                border-bottom: 1px solid #eaf1f7 !important;
                 vertical-align: middle;
-                &:last-child { border-right: none; }
+                transition: background-color 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+                &:last-child { border-right: none !important; }
+
+                // 首列强调（加粗、深色）
+                &:first-child {
+                    font-weight: 600;
+                    color: #0f2b3d;
+                }
             }
+
+            tr:nth-child(even) td { background-color: #f3f8fd; }
+
+            tr:hover td {
+                background-color: #e0eefb !important;
+                color: #0a1e2c !important;
+                border-bottom-color: #c1d8ea !important;
+            }
+            tr:hover td:first-child {
+                box-shadow: inset 4px 0 0 #0d5f8a !important;
+            }
+
+            tr:last-child td { border-bottom: none !important; }
         }
 
         // 对齐类
@@ -490,14 +514,14 @@
         }
     }
     
-    // ★ v1.17.33: 表头增强（与内嵌 table 样式中的 thead 保持一致）
+    // ★ v1.17.40: 表头增强（与上方 table 样式中的 thead 保持一致 — 深色金属渐变 + 浅色文字）
     table thead tr {
-        background: linear-gradient(180deg, #f6f8fa 0%, #eef1f5 100%);
-        border-bottom: 2px solid #d1d5db;
+        background: linear-gradient(180deg, #1d4159 0%, #12303f 100%);
+        border-bottom: 2px solid #0b2230;
     }
     table thead tr th {
-        color: #1f2937;
-        font-weight: 700;
+        color: #eaf3fa;
+        font-weight: 600;
     }
 
     .markdown-toc {

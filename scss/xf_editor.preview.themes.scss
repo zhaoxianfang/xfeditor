@@ -214,51 +214,77 @@
             border-color: #2d3a52;      
         }
 
-        /* ── v1.17.33: 表格暗色增强 ── */
+        /* ── v1.17.40: 表格暗色增强（结合编辑器 Slate 暗色主题 + table_demo 示例）── */
         table {
-            border-color: #2d3a52 !important;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            border: 1px solid #2d3a52 !important;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #0f172a;
+            font-variant-numeric: tabular-nums;
+            box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.5), 0 2px 6px -2px rgba(0, 0, 0, 0.4);
+            transition: box-shadow 0.25s ease, border-color 0.25s ease;
 
             thead tr {
-                background: linear-gradient(180deg, #1e293b 0%, #1a2332 100%) !important;
-                border-bottom-color: #3b4f6d !important;
+                background: linear-gradient(180deg, #243b55 0%, #16243a 100%) !important;
+                border-bottom: 2px solid #3b4f6d !important;
 
                 th {
                     color: #e2e8f0;
-                    border-right-color: #2d3a52;
+                    font-weight: 600;
+                    font-size: 0.78rem;
+                    text-transform: uppercase;
+                    letter-spacing: 0.6px;
+                    text-align: left;
+                    white-space: nowrap;
+                    padding: 0.85rem 1.1rem !important;
+                    border: 0 !important;
+                    border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+                    border-bottom: 2px solid #3b4f6d !important;
+                    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
+                    position: relative;
+                    &:last-child { border-right: none !important; }
                 }
             }
 
             tbody {
-                tr {
-                    border-bottom-color: #1e2d42;
-
-                    &:nth-child(even) {
-                        background-color: #131d2d;
-                    }
-                    &:nth-child(odd) {
-                        background-color: #0f172a;
-                    }
-                    &:hover {
-                        background-color: #1a2a4a;
-                    }
-                }
-
                 td {
+                    padding: 0.78rem 1.1rem !important;
                     color: #cbd5e1;
-                    border-right-color: #1e2d42;
-                }
-            }
+                    font-size: 13.5px;
+                    background-color: #0f172a;
+                    border: 0 !important;
+                    border-right: 1px solid #1e2d42 !important;
+                    border-bottom: 1px solid #1e2d42 !important;
+                    vertical-align: middle;
+                    transition: background-color 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+                    &:last-child { border-right: none !important; }
 
-            th, td {
-                border-color: #2d3a52;
+                    &:first-child {
+                        font-weight: 600;
+                        color: #e2e8f0;
+                    }
+                }
+
+                tr:nth-child(even) td { background-color: #131d2d; }
+                tr:nth-child(odd)  td { background-color: #0f172a; }
+
+                tr:hover td {
+                    background-color: #1a2a4a !important;
+                    color: #f1f5f9 !important;
+                    border-bottom-color: #3b4f6d !important;
+                }
+                tr:hover td:first-child {
+                    box-shadow: inset 4px 0 0 #60a5fa !important;
+                }
+
+                tr:last-child td { border-bottom: none !important; }
             }
         }
     }
 
     /* v1.17.33: 单独作用于预览容器内的表格 */
     #{$prefix}preview-container table thead tr {
-        background: linear-gradient(180deg, #1e293b 0%, #1a2332 100%) !important;
+        background: linear-gradient(180deg, #243b55 0%, #16243a 100%) !important;
     }
     
     // ★ v1.17.32: 暗色主题下的 pre 代码块 — 遵循 5b49578 设计：代码块始终保持暗色，
@@ -874,47 +900,72 @@
     }
 
 
-    // ── 表格（★ v1.17.35: 全面增强暗色表格 — 渐变表头、hover、斑马纹、阴影）──
+    // ── 表格（★ v1.17.40: 结合编辑器 Slate 暗色主题 + table_demo 示例：渐变表头、斑马纹、hover 强调条）──
     table {
-        border-color: #2d3a52 !important;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        border: 1px solid #2d3a52 !important;
+        border-radius: 8px;
         overflow: hidden;
+        background: #0f172a;
+        font-variant-numeric: tabular-nums;
+        box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.5), 0 2px 6px -2px rgba(0, 0, 0, 0.4);
+        transition: box-shadow 0.25s ease, border-color 0.25s ease;
 
         thead tr {
-            background: linear-gradient(180deg, #1e293b 0%, #1a2332 100%) !important;
+            background: linear-gradient(180deg, #243b55 0%, #16243a 100%) !important;
             border-bottom: 2px solid #3b4f6d !important;
 
             th {
                 color: #e2e8f0;
-                font-weight: 700;
-                border-right-color: #2d3a52;
-                &:last-child { border-right: none; }
+                font-weight: 600;
+                font-size: 0.78rem;
+                text-transform: uppercase;
+                letter-spacing: 0.6px;
+                text-align: left;
+                white-space: nowrap;
+                padding: 0.85rem 1.1rem !important;
+                border: 0 !important;
+                border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+                border-bottom: 2px solid #3b4f6d !important;
+                text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
+                position: relative;
+                &:last-child { border-right: none !important; }
             }
         }
 
         tbody {
             tr {
+                transition: background-color 0.16s ease;
                 border-bottom-color: #1e2d42;
-                transition: background-color 0.15s ease;
 
-                &:nth-child(even) {
-                    background-color: #131d2d;
+                &:nth-child(even) td { background-color: #131d2d; }
+                &:nth-child(odd)  td { background-color: #0f172a; }
+                &:hover td {
+                    background-color: #1a2a4a !important;
+                    color: #f1f5f9 !important;
+                    border-bottom-color: #3b4f6d !important;
                 }
-                &:nth-child(odd) {
-                    background-color: #0f172a;
-                }
-                &:hover {
-                    background-color: #1a2a4a;
-                }
-                &:last-child {
-                    border-bottom: none;
-                }
+                &:last-child { border-bottom: none !important; }
             }
 
             td {
+                padding: 0.78rem 1.1rem !important;
                 color: #cbd5e1;
-                border-right-color: #1e2d42;
-                &:last-child { border-right: none; }
+                font-size: 13.5px;
+                border: 0 !important;
+                border-right: 1px solid #1e2d42 !important;
+                border-bottom: 1px solid #1e2d42 !important;
+                vertical-align: middle;
+                transition: background-color 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+                &:last-child { border-right: none !important; }
+
+                &:first-child {
+                    font-weight: 600;
+                    color: #e2e8f0;
+                }
+            }
+
+            tr:hover td:first-child {
+                box-shadow: inset 4px 0 0 #60a5fa !important;
             }
         }
     }
