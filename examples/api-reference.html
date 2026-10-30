@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
     <meta charset="utf-8" />
-    <title>API 接口文档 - xfEditor v1.17.27</title>
+    <title>API 接口文档 - xfEditor v2.0.0</title>
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="../css/xf_editor.min.css" />
     <link rel="shortcut icon" href="../images/favicon.ico" type="image/x-icon" />
@@ -62,6 +62,19 @@
         .api-header-content h1 {
             font-size: 28px; font-weight: 800; margin-bottom: 8px;
             letter-spacing: -0.8px; line-height: 1.25; color: #fff;
+        }
+        /* ★ v2.0.0：小节标题内的版本徽章（如 “新增 / v2.0.0”） */
+        .badge {
+            display: inline-block; vertical-align: middle;
+            padding: 2px 8px; margin-left: 8px;
+            border-radius: 10px; font-size: 11px; font-weight: 700;
+            line-height: 1.5; letter-spacing: 0.3px; white-space: nowrap;
+            background: rgba(44,126,234,0.14); color: #2c7eea;
+            border: 1px solid rgba(44,126,234,0.3);
+        }
+        .badge-new {
+            background: rgba(52,199,89,0.14); color: #1a9b4a;
+            border-color: rgba(52,199,89,0.3);
         }
         .api-header-content p {
             font-size: 14px; opacity: 0.7; margin-bottom: 14px;
@@ -238,7 +251,7 @@
         <h1>xfEditor API 接口文档</h1>
         <p>完整配置项、实例方法、事件回调、静态方法、上传接口与扩展语法说明 — 一站式 Markdown 编辑器参考</p>
         <div class="api-header-meta">
-            <div class="api-header-meta-item"><span class="meta-dot green"></span> v1.17.27</div>
+            <div class="api-header-meta-item"><span class="meta-dot green"></span> v2.0.0</div>
             <div class="api-header-meta-item"><span class="meta-dot blue"></span> 30+ 实例方法</div>
             <div class="api-header-meta-item"><span class="meta-dot orange"></span> 20+ 事件回调</div>
             <div class="api-header-meta-item"><span class="meta-dot green"></span> 离线可用</div>
@@ -270,7 +283,7 @@
 
 <!-- SECTION: two-modes -->
 <div class="api-section" id="two-modes">
-    <h2>两种使用方式对比 <span class="tag tag-ver">v1.17.27</span></h2>
+    <h2>两种使用方式对比 <span class="tag tag-ver">v2.0.0</span></h2>
     <p>xfEditor 提供两种初始化方式：<strong>编辑器模式</strong>和<strong>纯预览模式</strong>。两种模式生成的渲染结果<strong>完全一致</strong>（共享同一套渲染管线），但适用场景、依赖和交互能力不同。</p>
 
     <h3>对比总览</h3>
@@ -314,7 +327,7 @@
         <tr>
             <td><b>Pages 分页</b></td>
             <td>✅ 页面拆分（{page}/{total} 动态替换）</td>
-            <td>✅ <strong>相同实现</strong>（v1.17.27 新增支持）</td>
+            <td>✅ <strong>相同实现</strong>（v2.0.0 新增支持）</td>
         </tr>
         <tr>
             <td><b>Tooltip 提示</b></td>
@@ -393,7 +406,7 @@
     </table></div>
 
     <div class="notice">
-        <strong>💡 重要：</strong>从 <b>v1.17.27</b> 起，<code>xfEditor.markdownToHTML()</code> 和 <code>xfEditor(id, options)</code> 的渲染结果<strong>完全一致</strong>。
+        <strong>💡 重要：</strong>从 <b>v2.0.0</b> 起，<code>xfEditor.markdownToHTML()</code> 和 <code>xfEditor(id, options)</code> 的渲染结果<strong>完全一致</strong>。
         所有后处理逻辑（代码高亮、KaTeX、ECharts、Tabs、Columns、Pages、Tooltip 等）均通过共享静态方法实现，避免了代码重复和结果不一致问题。
     </div>
 
@@ -409,7 +422,7 @@
 <!-- SECTION: config -->
 <div class="api-section" id="config">
     <h2>配置项总览</h2>
-    <p>以下为 xfEditor v1.17.27 支持的全部配置参数，按功能分组展示。每个参数均注明<strong>默认值</strong>、<strong>类型</strong>和<strong>所有可选值及区别</strong>。</p>
+    <p>以下为 xfEditor v2.0.0 支持的全部配置参数，按功能分组展示。每个参数均注明<strong>默认值</strong>、<strong>类型</strong>和<strong>所有可选值及区别</strong>。</p>
 </div>
 
 <!-- SECTION: config-base -->
@@ -946,7 +959,7 @@ htmlDecode: <span class="str">"script,iframe|*"</span></pre>
 
 <!-- SECTION: instance-methods -->
 <div class="api-section" id="instance-methods">
-    <h2>实例方法（34 个）</h2>
+    <h2>实例方法（36 个）</h2>
     <div class="table-wrap"><table class="api-table">
         <tr><th style="width:22%">方法签名</th><th style="width:10%">返回值</th><th style="width:22%">参数</th><th>说明</th></tr>
         <tr><td>getMarkdown()</td><td class="type">String</td><td>无</td><td>获取 Markdown 源码</td></tr>
@@ -954,7 +967,7 @@ htmlDecode: <span class="str">"script,iframe|*"</span></pre>
         <tr><td>getUseTypes()</td><td class="type">Object</td><td>无</td><td>⭐ 检测编辑区内容使用了哪些语法特性，返回 {名称:bool} 键值对（如 {echarts:true, katex:false}），详见 <a href="#method-getusetypes">getUseTypes 详解</a></td></tr>
         <tr><td>setValue(val)</td><td class="type">xfEditor</td><td>val: String</td><td>设置 Markdown 源码</td></tr>
         <tr><td>getHTML(options)</td><td class="type">String</td><td>options: Object — 可选，<a href="#method-gethtml">详见下方 getHTML(options) 详解</a>（含 wrap/title/theme/toc/includeStyles/includeScripts/minify/toBrowser 等配置）</td><td>获取片段或完整 HTML 文档（含内联样式+脚本）；支持 <code>getHTML(true)</code> 布尔简写（= <code>{minify:true}</code>）或 <code>getHTML({minify:false})</code> 对象形式；传 <code>toBrowser:"文件名"</code> 可直接触发浏览器下载</td></tr>
-        <tr><td>getPreviewedHTML()</td><td class="type">String</td><td>无</td><td>获取预览区当前 HTML（不含外套）</td></tr>
+        <tr><td>getPreviewedHTML(options)</td><td class="type">String</td><td>options: Object — 可选，<a href="#method-getpreviewedhtml">详见下方 getPreviewedHTML(options) 详解</a></td><td><strong>v2.0.0 增强。</strong>默认返回预览区原始片段（严格向后兼容）；可指定 <code>wrap</code> / <code>includeStyles</code> / <code>includeScripts</code> / <code>title</code> / <code>theme</code> 导出自包含文档，其中交互事件脚本会被一并内联</td></tr><tr><td>exportFile(filename, format)</td><td class="type">xfEditor</td><td>filename: String（留空自动推导）, format: String</td><td><strong>v2.0.0 重写。</strong>导出文件，支持 <code>pdf</code> / <code>word</code>（.doc）/ <code>markdown</code>（.md）/ <code>html</code> / <code>txt</code>；文件名省略时按 <a href="#method-filename">推导链</a> 自动确定</td></tr><tr><td>getExportFileName()</td><td class="type">String</td><td>无</td><td><strong>v2.0.0 新增。</strong>获取当前导出文件名（不含扩展名），推导优先级：<code>setExportFileName()</code> → <code>settings.exportFileName</code> → <code>settings.title</code> → 正文首个 H1 → 正文首个 H2 → 「未命名文档」</td></tr><tr><td>setExportFileName(name)</td><td class="type">xfEditor</td><td>name: String</td><td><strong>v2.0.0 新增。</strong>设置导出文件名（不含扩展名）；传空字符串可清除并回落到自动推导。返回实例以支持链式调用</td></tr>
         <tr><td>watch()</td><td class="type">xfEditor</td><td>无</td><td>开启实时预览</td></tr>
         <tr><td>unwatch()</td><td class="type">xfEditor</td><td>无</td><td>关闭实时预览</td></tr>
         <tr><td>previewing()</td><td class="type">xfEditor</td><td>无</td><td>全窗口预览模式（Shift+ESC 退出）</td></tr>
@@ -1010,6 +1023,46 @@ htmlDecode: <span class="str">"script,iframe|*"</span></pre>
         <tr><td><code>toBrowser</code></td><td class="type">String</td><td><code>''</code></td><td>浏览器下载文件名。为<strong>非空字符串</strong>时会<strong>强制将 wrap 设为 true</strong>，并把完整网页内容通过 <code>Blob</code> + <code>&lt;a download&gt;</code> 下载到本地，下载文件名即该字符串值（<strong>可带或不带 <code>.html</code> 后缀</strong>，缺省自动补 <code>.html</code>）。为空字符串 / 未定义 / <code>false</code> 等「假值」时<strong>不触发下载</strong>，仅返回 HTML 字符串（需浏览器环境，Node/SSR 下安全跳过，不影响返回值）。<br>示例：<code>getHTML({toBrowser:"xfEditor-export.html"})</code> 或 <code>getHTML({toBrowser:"xfEditor-export"})</code>。</td></tr>
     </table></div>
     <div class="notice">⚠️ <strong>注意：</strong><code>getHTML</code> 仅在 <code>wrap:false</code>（默认）时强制剥离内部残留的 <code>&lt;html&gt;</code>/<code>&lt;head&gt;</code>/<code>&lt;body&gt;</code> 等文档级标签，确保片段干净、可直接嵌入；当 <code>wrap:true</code> 时则保留完整文档结构。无论何种模式都会清除 jQuery <code>.data()</code> 留下的初始化标记，使独立页面中的脚本可重新初始化所有组件。<br>📦 <strong>外部资源策略：</strong>除通过 <code>getUseTypes()</code> 检测到 ECharts 语法时会自动注入<strong>当前域名下</strong>的 <code>@lib/echarts.min.js</code> 外链外，其余所有样式与脚本均以内联方式写入，<strong>不引入任何其它外部依赖</strong>。</div>
+
+    <h3 id="method-getpreviewedhtml">getPreviewedHTML(options) — 预览 HTML / 自包含导出详解 <span class="badge badge-new">v2.0.0</span></h3>
+    <p>默认形态 <code>getPreviewedHTML()</code> 直接返回预览区 <code>.xf_editor-preview-container</code> 内的原始 HTML
+    <strong>不做任何包裹</strong>，与旧版行为完全一致。传入选项后可升级为「带交互能力的自包含文档」。</p>
+    <div class="table-wrap"><table class="api-table">
+        <tr><th style="width:20%">配置项</th><th style="width:12%">类型</th><th style="width:14%">默认值</th><th>说明</th></tr>
+        <tr><td><code>rawMarkdown</code></td><td class="type">Boolean</td><td><code>false</code></td><td>为 <code>true</code> 时直接返回 Markdown 源码（等价于 <code>getMarkdown()</code>）</td></tr>
+        <tr><td><code>includeStyles</code></td><td class="type">Boolean</td><td><code>false</code></td><td>内联核心样式（含 <strong>宿主 CSS 干扰防护层</strong>），使片段脱离编辑器样式表也能正常显示</td></tr>
+        <tr><td><code>includeScripts</code></td><td class="type">Boolean</td><td><code>false</code></td><td>内联交互脚本，让 Tabs / Tooltip / 代码复制 / ECharts / 流程图 / 时序图 等在导出内容中<strong>依然可交互</strong></td></tr>
+        <tr><td><code>wrap</code></td><td class="type">Boolean</td><td><code>false</code></td><td>包裹为完整 HTML 文档（含 doctype、meta、title）</td></tr>
+        <tr><td><code>title</code></td><td class="type">String</td><td><code>''</code></td><td>文档标题，仅 <code>wrap:true</code> 时写入 <code>&lt;title&gt;</code></td></tr>
+        <tr><td><code>theme</code></td><td class="type">String</td><td><code>''</code></td><td>主题：<code>''</code> / <code>'dark'</code> / <code>'light'</code>；指定即触发增强路径</td></tr>
+    </table></div>
+    <div class="notice">💡 <strong>清理机制：</strong>开启增强选项时会自动移除 <code>data-*-initialized</code> 等运行时标记，
+    使独立页面重新绑定事件，避免「导出后交互失效」。</div>
+
+    <h3 id="method-filename">导出文件名推导链 <span class="badge badge-new">v2.0.0</span></h3>
+    <p>导出 PDF / Word / Markdown / HTML 时，文件名（不含扩展名）按以下优先级自动确定，
+    并用 <code>xfEditor.safeFileName()</code> 清洗（去除 Markdown 记号与 <code>\ / : * ? " &lt; &gt; |</code> 等非法字符、折叠路径穿越的连续点号、截断至 80 字符）：</p>
+    <div class="table-wrap"><table class="api-table">
+        <tr><th style="width:8%">优先级</th><th style="width:34%">来源</th><th>说明</th></tr>
+        <tr><td>1</td><td><code>setExportFileName(name)</code> / <code>settings.exportFileName</code></td><td>接口显式设置，优先级最高</td></tr>
+        <tr><td>2</td><td><code>settings.title</code> / <code>settings.markdownTitle</code></td><td>初始化配置中的文档标题</td></tr>
+        <tr><td>3</td><td>正文首个 <code># 一级标题</code></td><td>自动扫描 Markdown，<strong>跳过 ``` / ~~~ 代码围栏内的伪标题</strong></td></tr>
+        <tr><td>4</td><td>正文首个 <code>## 二级标题</code></td><td>无 H1 时回落</td></tr>
+        <tr><td>5</td><td><code>未命名文档</code></td><td>兜底常量</td></tr>
+    </table></div>
+    <pre><span class="key">var</span> editor = xfEditor(<span class="str">"editor"</span>, { markdown: <span class="str">"# 年度报告 2026\n\n正文..."</span> });
+
+editor.getExportFileName();                     <span class="cmt">// → "年度报告 2026"（来自 H1）</span>
+editor.setExportFileName(<span class="str">"2026年报-定稿"</span>);        <span class="cmt">// 接口指定，返回 this 可链式</span>
+editor.getExportFileName();                     <span class="cmt">// → "2026年报-定稿"</span>
+
+editor.exportFile(<span class="fn">null</span>, <span class="str">"pdf"</span>);                <span class="cmt">// 导出 "2026年报-定稿.pdf"</span>
+editor.exportFile(<span class="fn">null</span>, <span class="str">"word"</span>);               <span class="cmt">// 导出 "2026年报-定稿.doc"</span>
+editor.exportFile(<span class="fn">null</span>, <span class="str">"markdown"</span>);           <span class="cmt">// 导出 "2026年报-定稿.md"</span>
+editor.exportFile(<span class="fn">null</span>, <span class="str">"html"</span>);              <span class="cmt">// 导出 "2026年报-定稿.html"</span></pre>
+    <div class="notice">💡 <strong>工具栏入口：</strong>完整工具栏模式内置「导出」下拉菜单，含四个子项
+    <code>export-pdf</code> / <code>export-word</code> / <code>export-markdown</code> / <code>export-html</code>，
+    点击即使用上述推导结果作为文件名。可通过 <code>toolbar:["export"]</code> 单独引入该菜单组。</div>
 
     <h3 id="method-getusetypes">getUseTypes() — 语法特性检测详解</h3>
     <p>基于编辑器左侧 Markdown 源码，实时检测当前文档使用了哪些扩展语法。返回一个键值对对象，键为特性名称，值为 <code>true</code> / <code>false</code>。</p>
@@ -1709,7 +1762,7 @@ xfEditor.registerLang(<span class="str">"ja"</span>, {
         <tr><td><code>[[columns:N]]...[[/columns]]</code></td><td>N 栏排版，N 取值 1-12</td></tr>
     </table></div>
 
-    <h3>栅格化布局 <span class="tag tag-new">NEW v1.17.27</span></h3>
+    <h3>栅格化布局 <span class="tag tag-new">NEW v2.0.0</span></h3>
     <div class="table-wrap"><table class="api-table">
         <tr><th>语法</th><th>说明</th></tr>
         <tr><td><code>[[row]]...[[/row]]</code></td><td>栅格行容器（10 栏系统）</td></tr>
@@ -1738,7 +1791,7 @@ xfEditor.registerLang(<span class="str">"ja"</span>, {
         <tr><td><code>[文本](tooltip:image:URL)</code></td><td>图片悬浮提示。支持 &lt;宽,高&gt;</td></tr>
         <tr><td><code>[文本](tooltip:iframe:URL)</code></td><td>iframe 悬浮预览。支持 &lt;宽,高&gt;</td></tr>
         <tr><td><code>[文本](tooltip:html:选择器)</code></td><td>HTML DOM 元素。支持 .class、#id、[attr]</td></tr>
-        <tr><td><code>[文本](tooltip:iframe:pre#id)</code></td><td><span class="tag tag-new">NEW v1.17.27</span> 代码块悬浮预览。支持 #id / .class</td></tr>
+        <tr><td><code>[文本](tooltip:iframe:pre#id)</code></td><td><span class="tag tag-new">NEW v2.0.0</span> 代码块悬浮预览。支持 #id / .class</td></tr>
     </table></div>
 
     <h3>ECharts 图表</h3>
@@ -1747,7 +1800,7 @@ xfEditor.registerLang(<span class="str">"ja"</span>, {
         <tr><td><code>```echarts {JSON}```</code></td><td>ECharts 图表。type 支持 bar/line/pie/radar/funnel/tree</td></tr>
     </table></div>
 
-    <h3>代码块扩展 <span class="tag tag-new">NEW v1.17.27</span></h3>
+    <h3>代码块扩展 <span class="tag tag-new">NEW v2.0.0</span></h3>
     <div class="table-wrap"><table class="api-table">
         <tr><th>语法</th><th>说明</th></tr>
         <tr><td><code>```(.class)```</code></td><td>为 pre 设置 class 属性</td></tr>
@@ -1756,7 +1809,7 @@ xfEditor.registerLang(<span class="str">"ja"</span>, {
         <tr><td><code>```语言(.class#id)```</code></td><td>语言+class+id 组合</td></tr>
     </table></div>
 
-    <h3 id="syntax-canvas">画布涂鸦 Canvas Graffiti <span class="tag tag-new">NEW v1.17.27</span></h3>
+    <h3 id="syntax-canvas">画布涂鸦 Canvas Graffiti <span class="tag tag-new">NEW v2.0.0</span></h3>
     <p>通过工具栏 <strong>涂鸦（✏️）</strong> 按钮打开画布面板，可手绘画作、标注、签名、思维导图等，保存后以 <code>data:image/...;base64,...</code> 形式内嵌于文档，无需外部图片文件。已生成的涂鸦图片点击后可在面板中重新编辑。</p>
     <div class="table-wrap"><table class="api-table">
         <tr><th>语法</th><th>说明</th></tr>
@@ -1777,7 +1830,7 @@ xfEditor.registerLang(<span class="str">"ja"</span>, {
         <tr><td><code>!字号 文本!</code></td><td>自定义字号（8-200px）</td></tr>
         <tr><td><code>[^脚注名]</code> + <code>[^脚注名]: 内容</code></td><td>脚注引用与定义</td></tr>
         <tr><td><code>![alt](url)&lt;W,H&gt;</code></td><td>固定图片尺寸</td></tr>
-        <tr><td><code>[链接](url){target=_blank}</code></td><td><span class="tag tag-new">NEW v1.17.27</span> 链接 target</td></tr>
+        <tr><td><code>[链接](url){target=_blank}</code></td><td><span class="tag tag-new">NEW v2.0.0</span> 链接 target</td></tr>
         <tr><td><code>[========]</code></td><td>分页符</td></tr>
         <tr><td><code>@username</code></td><td>@用户链接</td></tr>
         <tr><td><code>[[video]]URL[[/video]]</code></td><td>视频嵌入</td></tr>
@@ -1793,7 +1846,7 @@ xfEditor.registerLang(<span class="str">"ja"</span>, {
 <!-- SECTION: full-example -->
 <div class="api-section" id="full-example">
     <h2>完整配置示例（含所有参数 + 中文注释）</h2>
-    <p>以下为 xfEditor v1.17.27 <strong>全部</strong>配置参数的完整示例，每个参数后均有详细中文注释（含默认值、可选值与区别）。</p>
+    <p>以下为 xfEditor v2.0.0 <strong>全部</strong>配置参数的完整示例，每个参数后均有详细中文注释（含默认值、可选值与区别）。</p>
 
     <h3>最简配置（3 参数即用）</h3>
     <pre><span class="cmt">// ★ 最小可行配置</span>
@@ -1805,7 +1858,7 @@ xfEditor.registerLang(<span class="str">"ja"</span>, {
 
     <h3>生产环境完整配置</h3>
     <pre><span class="cmt">/**
- * xfEditor v1.17.27 完整配置
+ * xfEditor v2.0.0 完整配置
  * 涵盖所有参数、默认值、可选值及中文说明
  */</span>
 <span class="key">var</span> editor = xfEditor(<span class="str">"editor-container"</span>, {
@@ -1988,7 +2041,13 @@ xfEditor.registerLang(<span class="str">"ja"</span>, {
     <pre><span class="cmt">// 内容操作</span>
 <span class="key">var</span> md = editor.getMarkdown();                <span class="cmt">// 获取 Markdown</span>
 editor.setValue(<span class="str">"# 新内容"</span>);                  <span class="cmt">// 设置内容</span>
-<span class="key">var</span> html = editor.getPreviewedHTML();         <span class="cmt">// 获取预览 HTML</span>
+<span class="key">var</span> html = editor.getPreviewedHTML();         <span class="cmt">// 获取预览 HTML 片段</span>
+<span class="key">var</span> full = editor.getPreviewedHTML({ wrap: <span class="fn">true</span>, includeScripts: <span class="fn">true</span> }); <span class="cmt">// 自包含 + 可交互</span>
+
+<span class="cmt">// 导出（v2.0.0）</span>
+editor.setExportFileName(<span class="str">"我的文档"</span>);          <span class="cmt">// 设置导出文件名</span>
+editor.exportFile(<span class="fn">null</span>, <span class="str">"pdf"</span>);           <span class="cmt">// 导出 PDF（文件名留空自动推导）</span>
+editor.exportFile(<span class="fn">null</span>, <span class="str">"word"</span>);          <span class="cmt">// 导出 Word(.doc)</span>
 <span class="key">var</span> types = editor.getUseTypes();            <span class="cmt">// 检测语法特性 {echarts:true, katex:false, ...}</span>
 
 <span class="cmt">// 预览控制</span>

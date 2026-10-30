@@ -45,14 +45,14 @@
     
     "use strict";
     
-    // ★ v1.17.15: CSS.escape polyfill（IE/旧浏览器兼容）
+    // ★ v2.0.0: CSS.escape polyfill（IE/旧浏览器兼容）
     if (typeof CSS !== "undefined" && !CSS.escape) {
         CSS.escape = function(value) {
             var str = String(value);
             return str.replace(/[!"#$%&'()*+,.\/:;<=>?@[\]^`{|}~]/g, "\\$&");
         };
     }
-    // ★ v1.17.15: String.prototype.padStart polyfill（IE/ES2016-兼容）
+    // ★ v2.0.0: String.prototype.padStart polyfill（IE/ES2016-兼容）
     if (!String.prototype.padStart) {
         String.prototype.padStart = function(targetLength, padString) {
             targetLength = targetLength >> 0;
@@ -63,11 +63,11 @@
             return pad.substring(0, targetLength - this.length) + String(this);
         };
     }
-    // ★ v1.17.38: Element.prototype.matches polyfill（IE/旧浏览器兼容）
+    // ★ v2.0.0: Element.prototype.matches polyfill（IE/旧浏览器兼容）
     if (!Element.prototype.matches) {
         Element.prototype.matches = Element.prototype.msMatchesSelector || Element.prototype.webkitMatchesSelector;
     }
-    // ★ v1.17.38: Element.prototype.closest polyfill（IE 兼容）
+    // ★ v2.0.0: Element.prototype.closest polyfill（IE 兼容）
     if (!Element.prototype.closest) {
         Element.prototype.closest = function(selector) {
             var el = this;
@@ -78,7 +78,7 @@
             return null;
         };
     }
-    // ★ v1.17.38: Object.assign polyfill（IE 兼容）
+    // ★ v2.0.0: Object.assign polyfill（IE 兼容）
     if (typeof Object.assign !== "function") {
         Object.assign = function(target) {
             if (target === null || target === undefined) throw new TypeError("Cannot convert undefined or null to object");
@@ -94,7 +94,7 @@
             return to;
         };
     }
-    // ★ v1.17.38: TextEncoder / TextDecoder polyfill（旧浏览器兼容）
+    // ★ v2.0.0: TextEncoder / TextDecoder polyfill（旧浏览器兼容）
     if (typeof TextEncoder === "undefined") {
         (function() {
             var encoder = function() {};
@@ -659,7 +659,7 @@
                         .map(function(o) { return o.value; });
                 }
                 
-                // ★ v1.17.27: 处理 checkbox/radio 组
+                // ★ v2.0.0: 处理 checkbox/radio 组
                 // 当元素是 checkbox 或 radio 且有 name 属性时，返回同 name 组的选中值数组
                 if ((el.type === "checkbox" || el.type === "radio") && el.name) {
                     var name = el.name;
@@ -1068,7 +1068,7 @@
             if (!el) return { top: 0, left: 0 };
             return { top: el.offsetTop, left: el.offsetLeft };
         };
-        // ★ v1.17.24: 补齐 jQuery 同名方法 —— XfDom 缺少 outerWidth/outerHeight，
+        // ★ v2.0.0: 补齐 jQuery 同名方法 —— XfDom 缺少 outerWidth/outerHeight，
         // 导致 showTooltip 中 $tooltip.outerWidth() 抛出 TypeError，tooltip 完全不可用。
         dom.fn.outerWidth = function(includeMargin) {
             var el = this[0];
@@ -1448,7 +1448,7 @@
                 }
             }
             
-            // ★ v1.17.27: 添加 timeout 支持
+            // ★ v2.0.0: 添加 timeout 支持
             if (opts.timeout && opts.timeout > 0) {
                 xhr.timeout = opts.timeout;
                 xhr.ontimeout = function() {
@@ -1459,10 +1459,10 @@
                 };
             }
             
-            // ★ v1.17.38: 防 XHR 双重回调标记（onerror 后 onreadystatechange 可能再次触发 error 分支）
+            // ★ v2.0.0: 防 XHR 双重回调标记（onerror 后 onreadystatechange 可能再次触发 error 分支）
             var _xhrHandled = false;
             
-            // ★ v1.17.27: 添加网络错误处理
+            // ★ v2.0.0: 添加网络错误处理
             xhr.onerror = function() {
                 if (_xhrHandled) return;
                 _xhrHandled = true;
@@ -1530,7 +1530,7 @@
                 fire(callbacks.always, []);
             };
             
-            // ★ v1.17.27: 添加脚本加载失败的错误处理
+            // ★ v2.0.0: 添加脚本加载失败的错误处理
             script.onerror = function() {
                 if (typeof console !== "undefined" && console.error) {
                     console.error("[xfEditor] Failed to load script: " + url);
@@ -1670,8 +1670,65 @@
     };
     
     xfEditor.title        = "xfEditor";
-    xfEditor.version      = "1.17.38";
+    xfEditor.version      = "2.0.0";          // ★ 全系统唯一版本号来源（展示时统一前缀 v）
+    xfEditor.versionName  = "v2.0.0";         // ★ 便于外部直接读取带 v 前缀的版本串
     xfEditor.homePage     = "https://github.com/zhaoxianfang/xfeditor";
+    /**
+     * 文件名安全化
+     * 去除 Markdown 残留记号与 Windows/POSIX 文件名非法字符，压缩空白并限制长度。
+     *
+     * @param   {String} name   原始文件名
+     * @returns {String}        可安全用于下载的文件名（不含扩展名）
+     */
+    xfEditor.safeFileName = function(name) {
+        var s = String(name == null ? "" : name);
+        s = s.replace(/^\s*#{1,6}\s*/, "")                 // 去掉行首 ATX 标题记号
+             .replace(/[*_`~\[\](){}<>]/g, "")             // 去掉常见 Markdown 语法字符
+             .replace(/[\\\/:*?"'|]+/g, "")                // 去掉文件名非法字符
+             .replace(/[\r\n\t]+/g, " ")                   // 换行/制表符转空格
+             .replace(/\.{2,}/g, ".")                      // 折叠连续点号（防路径穿越）
+             .replace(/\s{2,}/g, " ")                      // 压缩连续空白
+             .replace(/^[\s.]+|[\s.]+$/g, "");             // 去掉首尾空白与点号
+        return s.length > 80 ? s.slice(0, 80) : s;
+    };
+
+    /**
+     * 从 Markdown 源码中提取指定层级的第一个 ATX 标题文本
+     * 会跳过代码围栏（``` / ~~~）内部的内容，避免把注释里的 # 误判为标题。
+     *
+     * @param   {String} markdown  Markdown 源码
+     * @param   {Number} level     标题层级（1~6）
+     * @returns {String}           标题纯文本；未找到时返回空串
+     */
+    xfEditor.firstHeading = function(markdown, level) {
+        if (typeof markdown !== "string" || markdown === "") return "";
+        level = Math.max(1, Math.min(6, level | 0));
+        var lines = markdown.split(/\r?\n/);
+        var fence = "";
+        for (var i = 0; i < lines.length; i++) {
+            var trimmed = lines[i].replace(/^[ \t]+/, "");
+            var fenceHit = trimmed.match(/^(`{3,}|~{3,})/);
+            if (fenceHit) {
+                if (fence === "") fence = fenceHit[1].charAt(0);      // "`" 或 "~"
+                else if (fence === fenceHit[1].charAt(0)) fence = ""; // 成对才闭合
+                continue;
+            }
+            if (fence !== "") continue;                                // 跳过围栏内代码行
+            if (trimmed.charAt(0) !== "#") continue;
+
+            var depth = 0;
+            while (depth < trimmed.length && trimmed.charAt(depth) === "#") depth++;
+            if (depth !== level || depth > 6) continue;
+
+            var rest = trimmed.slice(depth);
+            // ATX 规则：井号后必须跟空白，"#abc" 不是标题
+            if (rest.length > 0 && rest.charAt(0) !== " " && rest.charAt(0) !== "\t") continue;
+            var text = rest.replace(/^\s+/, "").replace(/\s+#+\s*$/, "").replace(/\s+$/, "");
+            if (text !== "") return text;
+        }
+        return "";
+    };
+
     xfEditor.classPrefix  = "xf_editor-";
     xfEditor.dom          = dom; // micro-DOM 实例，替代 $/jQuery
     xfEditor._echartsSeq  = 0;   // echarts 图表 id 稳定计数器（避免 Math.random 每次渲染漂移）
@@ -1695,7 +1752,7 @@
     /**
      * HTML 属性值转义（与 escapeHtml 行为一致，转义所有特殊字符）
      * 提供独立函数名以便语义区分（'escapeAttr' 用于属性值上下文）
-     * ★ v1.17.24: 修正注释，实际转义行为与 escapeHtml 一致
+     * ★ v2.0.0: 修正注释，实际转义行为与 escapeHtml 一致
      */
     xfEditor.escapeAttr = xfEditor.escapeHtml;
     
@@ -1758,6 +1815,8 @@
             "tabs", "columns", "tooltip", "formula", "canvas", "|",
             "color", "bg-color", "|",
             "goto-line", "watch", "preview", "fullscreen", "clear", "search", "|",
+            { "export" : ["export-pdf", "export-word", "export-markdown", "export-html"] },
+            "|",
             "help", "info"
         ],
         simple : [
@@ -1789,6 +1848,7 @@
         height               : "100%",
         path                 : "./lib/",       // 依赖模块文件目录
         pluginPath           : "../plugins/", // 插件目录路径（相对于示例 HTML 页面）
+        logoURL              : "",              // 编辑器 Logo 图片地址；留空则使用内置图标字体，设置后「关于」弹窗将展示该图片（建议 images/logo.png）
         delay                : 80,             // Markdown 解析延迟，单位：毫秒
         	autoLoadModules      : true,           // 是否自动加载依赖模块文件
         	watch                : true,
@@ -1851,7 +1911,32 @@
         onPageLoad           : function() {},  // 当前网页加载完成
         onAllAsyncLoad       : function() {},  // 编辑器中的所有异步加载完成（KaTeX、FlowChart、SequenceDiagram、ECharts 等）
         onPageAllLoad        : function() {},  // 网页所有异步加载完成
-        
+
+        // 文件删除服务端通知（防止服务器存储僵尸文件占用资源）
+        // 已上传到服务器的文件在编辑器内容中被删除/替换时，会自动调用对应删除接口通知服务端清理，
+        // 并触发 onFileDeleted 回调；上传成功时会触发 onFileUploaded 回调。
+        fileDeleteURL        : "",              // 统一文件删除通知接口（图片/视频/音频/附件共用的兜底地址）
+        imageDeleteURL       : "",              // 图片删除通知接口（优先级高于 fileDeleteURL）
+        videoDeleteURL       : "",              // 视频删除通知接口（优先级高于 fileDeleteURL）
+        audioDeleteURL       : "",              // 音频删除通知接口（优先级高于 fileDeleteURL）
+        onFileUploaded       : function() {},  // 文件上传成功回调：function(fileInfo){}，fileInfo={type,url,name}
+        // 资源删除事件回调（图片/视频/音频/附件语法在编辑区被删除/替换时触发）
+        // 载荷：{ type:"image|video|audio|file", url, name, stillUsed, event:"delete" }
+        //   - url       ：被删除资源的地址
+        //   - name      ：从地址中提取的文件名（文件信息）
+        //   - stillUsed ：当前编辑区是否仍包含该地址（用于判断是“真正删除”还是“移动到别处/复制后删除原处”）
+        //   - onFileDeleted 对应“附件(file)”类型；图片/视频/音频分别由下方三个回调承载
+        onImageDeleted       : function() {},  // 图片语法被删除事件：function(info){}
+        onVideoDeleted       : function() {},  // 视频语法被删除事件：function(info){}
+        onAudioDeleted       : function() {},  // 音频语法被删除事件：function(info){}
+        onFileDeleted        : function() {},  // 附件(file)语法被删除事件：function(info){}
+
+        // CSRF 防护：上传/删除请求自动携带 CSRF Token，防止跨站请求伪造（CSRF）攻击
+        csrfToken            : "",              // 显式指定 CSRF Token；留空则自动读取 <meta name="csrf-token"> 或 window.csrfToken / window.Laravel.csrfToken / window.XSRF_TOKEN
+        csrfFieldName        : "_token",        // 隐藏 iframe 表单上传时，Token 写入的表单字段名（Laravel 默认 _token；XHR 上传始终使用 X-CSRF-TOKEN 请求头）
+
+        audioFormats         : ["mp3", "wav", "ogg", "m4a", "aac", "flac"], // 音频文件格式（与 imageFormats/videoFormats 同级，供资源扫描分类使用）
+
         imageUpload          : false,
         imageFormats         : ["jpg", "jpeg", "gif", "png", "bmp", "webp"],
         imageUploadURL       : "",
@@ -1893,7 +1978,9 @@
         canvas               : true,           // 启用画布涂鸦语法 [[canvas]]
         banner               : true,           // 启用轮播图语法 [[banner]]
         tooltip              : true,           // 启用悬浮提示语法 [text](tooltip:tip)
-        syncScroll           : true,           // 启用编辑区和预览区同步滚动（v1.17.0）
+        syncScroll           : true,           // 启用编辑区和预览区同步滚动（v2.0.0）
+        exportFileName       : "",             // 导出文件名（不含扩展名）；留空则按 getExportFileName() 自动推导（v2.0.0）
+        exportFileFormat     : "md",           // 未显式指定格式时的默认导出格式（v2.0.0）
         previewOnly          : false,          // 纯预览模式（禁用表格编辑、图片缩放等交互功能）
         draftAutoSave        : false,          // 启用浏览器草稿自动保存
         draftInterval        : 30,             // 草稿自动保存间隔（秒）
@@ -1985,7 +2072,12 @@
             "page"           : "fa-file-o",
             "insert-flowchart" : "fa-sitemap",
             "insert-sequence"  : "fa-exchange",
-            "banner"           : "fa-puzzle-piece"
+            "banner"           : "fa-puzzle-piece",
+            "export"           : "fa-download",
+            "export-pdf"       : "fa-file-pdf-o",
+            "export-word"      : "fa-file-word-o",
+            "export-markdown"  : "fa-file-text-o",
+            "export-html"      : "fa-file-code-o"
         },        
         toolbarIconTexts     : {},
         
@@ -2065,7 +2157,12 @@
                 "insert-flowchart" : "插入流程图",
                 "insert-sequence"  : "插入时序图",
                 "banner"           : "插入Banner",
-                "page"             : "页面尺寸"
+                "page"             : "页面尺寸",
+                "export"           : "导出",
+                "export-pdf"       : "导出 PDF 文件",
+                "export-word"      : "导出 Word 文件",
+                "export-markdown"  : "导出 Markdown 文件",
+                "export-html"      : "导出 HTML 文件"
             },
             buttons : {
                 enter  : "确定",
@@ -2159,7 +2256,7 @@
     xfEditor.dialogZindex = 99999;
     
     /**
-     * ★ v1.17.24: 统一日志辅助方法，避免 console.warn/error 守卫重复
+     * ★ v2.0.0: 统一日志辅助方法，避免 console.warn/error 守卫重复
      * @private
      */
     xfEditor._warn = function() {
@@ -2274,7 +2371,7 @@
             this._scrollSyncBound = false;   // 是否已绑定同步滚动事件
             this._syncScrollActive = null;   // 当前鼠标所在区域："editor" | "preview" | null
             this._applyingDomChanges = false;  // DOM 更新期间锁定滚动同步
-            // ★ v1.17.4: 统一同步滚动状态管理
+            // ★ v2.0.0: 统一同步滚动状态管理
             this._syncState = {
                 suppressAllSync    : false,   // 完全禁用双向同步（preview→editor内容更新时）
                 programmaticScroll : false,   // 标记为程序化滚动（忽略该次scroll事件）
@@ -2358,7 +2455,7 @@
             this.preview          = editor.children("." + classPrefix + "preview");
             this.previewContainer = this.preview.children("." + classPrefix + "preview-container");
             
-            // ★ v1.17.29: 如果设置了 editor theme 但没设 previewTheme，自动同步
+            // ★ v2.0.0: 如果设置了 editor theme 但没设 previewTheme，自动同步
             if (!settings.previewTheme && settings.theme && settings.theme !== "default") {
                 settings.previewTheme = settings.theme;
             }
@@ -2433,7 +2530,7 @@
             var loadPath     = settings.path;
                                 
             var onEditorReady = function() {
-                // ★ v1.17.24: 移除已失效的 IE8 分支
+                // ★ v2.0.0: 移除已失效的 IE8 分支
                 _this.loadedDisplay();
             };
 
@@ -2451,7 +2548,7 @@
             }
             
             xfEditor.loadScript(loadPath + "codemirror/codemirror.min", function() {
-                // ★ v1.17.18: 空值安全检查
+                // ★ v2.0.0: 空值安全检查
                 xfEditor.CodeMirror = (typeof CodeMirror !== "undefined") ? CodeMirror : null;
                 if (!xfEditor.CodeMirror) { console.warn("[xfEditor] CodeMirror 加载失败"); return; }
                 
@@ -2474,7 +2571,7 @@
 
                         xfEditor.loadScript(loadPath + "marked.min", function() {
 
-                            // ★ v1.17.18: 空值安全检查
+                            // ★ v2.0.0: 空值安全检查
                             xfEditor.marked = (typeof marked !== "undefined") ? marked : null;
                             if (!xfEditor.marked) { console.error("[xfEditor] marked 库加载失败"); return; }
                                 
@@ -2537,7 +2634,7 @@
                 this.setEditorTheme("default");
             }
             
-            // ★ v1.17.8: 同步切换预览区主题 — 确保左右两侧都切换到暗色/默认主题
+            // ★ v2.0.0: 同步切换预览区主题 — 确保左右两侧都切换到暗色/默认主题
             this.setPreviewTheme(theme);
             
             return this;
@@ -2717,6 +2814,9 @@
                 this.cm.setValue(settings.value);
             }
 
+            // 建立资源引用扫描基线（用于检测图片/视频/音频/附件语法被删除时触发删除事件）
+            try { this._resetResourceScan(); } catch (e) {}
+
             // 初始文档加载后，自动折叠所有超长 base64 图片
             if (xfFoldAllBase64) {
                 try { xfFoldAllBase64(); } catch (e) {}
@@ -2761,7 +2861,7 @@
          */
         
         setCodeMirrorOption : function(key, value) {
-            // ★ v1.17.25: 添加 null 守卫，防止编辑器未初始化时崩溃
+            // ★ v2.0.0: 添加 null 守卫，防止编辑器未初始化时崩溃
             if (!this.cm) return this;
             this.cm.setOption(key, value);
             
@@ -2791,7 +2891,7 @@
          */
         
         removeKeyMap : function(map) {
-            // ★ v1.17.25: 添加 null 守卫
+            // ★ v2.0.0: 添加 null 守卫
             if (!this.cm) return this;
             this.cm.removeKeyMap(map);
             
@@ -2816,7 +2916,7 @@
             }
             
             var cm       = this.cm;
-            // ★ v1.17.25: 添加 null 守卫，防止编辑器未初始化时崩溃
+            // ★ v2.0.0: 添加 null 守卫，防止编辑器未初始化时崩溃
             if (!cm) return this;
             var editor   = this.editor;
             var count    = cm.lineCount();
@@ -3484,13 +3584,23 @@
         createInfoDialog : function() {
             var _this        = this;
 			var editor       = this.editor;
-            var classPrefix  = this.classPrefix;  
+            var classPrefix  = this.classPrefix;
+            // ★ v2.0.0-FIX: 原实现在此直接引用裸变量 settings，而本函数从未声明它，
+            //   打开「关于」弹窗必然抛出 ReferenceError: settings is not defined。
+            //   现统一从实例上取，并在 this.settings 缺失时回落为默认配置，杜绝同类崩溃。
+            var settings     = this.settings || xfEditor.defaults || {};
+            var lang         = this.lang || (xfEditor.defaults && xfEditor.defaults.lang) || {};
             
             var infoDialogHTML = [
                 "<div class=\"" + classPrefix + "dialog " + classPrefix + "dialog-info\" style=\"\">",
                 "<div class=\"" + classPrefix + "dialog-container\">",
-                "<h1><i class=\"xf_editor-logo xf_editor-logo-lg xf_editor-logo-color\"></i> " + xfEditor.title + "<small>v" + xfEditor.version + "</small></h1>",
-                "<p>" + this.lang.description + "</p>",
+                (function() {
+                    var logoHTML = (settings.logoURL && String(settings.logoURL).trim() !== "")
+                        ? "<img class=\"" + classPrefix + "logo-img\" src=\"" + settings.logoURL + "\" alt=\"logo\" />"
+                        : "<i class=\"xf_editor-logo xf_editor-logo-lg xf_editor-logo-color\"></i>";
+                    return "<h1>" + logoHTML + " " + xfEditor.title + "<small>v" + xfEditor.version + "</small></h1>";
+                })(),
+                "<p>" + (lang.description || "") + "</p>",
                 "<p style=\"margin: 10px 0 20px 0;\">仓库地址：<a href=\"" + xfEditor.homePage + "\" target=\"_blank\">" + xfEditor.homePage + " <i class=\"fa fa-external-link\"></i></a></p>",
                 "<div style=\"background:#f6f8fa;border-radius:6px;padding:12px 16px;margin:12px 0;font-size:13px;line-height:1.7;\">",
                 "<strong>声明</strong><br>",
@@ -3537,7 +3647,7 @@
 
 			_infoDialogPosition();
 
-			// ★ v1.17.38: 使用命名空间避免多次调用叠加 handler
+			// ★ v2.0.0: 使用命名空间避免多次调用叠加 handler
 			dom(window).off("resize.xf_infoDialog").on("resize.xf_infoDialog", _infoDialogPosition);
             
             return this;
@@ -3664,7 +3774,7 @@
          */
         
         previewCodeHighlight : function() {
-            // ★ v1.17.23: 委托给统一静态方法
+            // ★ v2.0.0: 委托给统一静态方法
             xfEditor._previewCodeHighlight(this.previewContainer, this.settings);
             return this;
         },
@@ -3677,7 +3787,7 @@
          * @returns {xfEditor}
          */
         initCodeCopy : function(container) {
-            // ★ v1.17.24: 委托给统一静态方法，消除 ~73 行重复代码
+            // ★ v2.0.0: 委托给统一静态方法，消除 ~73 行重复代码
             xfEditor.initCodeCopy(container);
             return this;
         },
@@ -3690,7 +3800,7 @@
          */
         
         katexRender : function() {
-            // ★ v1.17.23: 委托给统一静态方法（编辑器模式，启用双击编辑定位）
+            // ★ v2.0.0: 委托给统一静态方法（编辑器模式，启用双击编辑定位）
             if (this.timer === null && typeof xfEditor.katex === "undefined") return this;
             xfEditor._renderKatex(this.previewContainer, this.settings, true, this);
             return this;
@@ -3704,7 +3814,7 @@
          */
         
         flowChartAndSequenceDiagramRender : function() {
-            // ★ v1.17.23: 委托给统一静态方法
+            // ★ v2.0.0: 委托给统一静态方法
             var settings = this.settings;
             var prev = this.previewContainer;
             var instanceOk = this.flowchartTimer !== null;
@@ -3839,8 +3949,33 @@
                     
                     _this.timer = null;
                 }, settings.delay);
+
+                // ★ 防抖比对已上传文件与正文引用：被删除/替换的文件通知服务端清理（防僵尸文件）
+                if (_this._uploadedFiles) {
+                    if (_this._xfFileSyncTimer) clearTimeout(_this._xfFileSyncTimer);
+                    _this._xfFileSyncTimer = setTimeout(function() {
+                        _this._xfFileSyncTimer = null;
+                        try { _this._syncUploadedFiles(); } catch (e) {}
+                    }, Math.max(settings.delay, 600));
+                }
+
+                // ★ 资源引用删除检测：图片/视频/音频/附件语法被删除/替换时触发对应删除事件（onImageDeleted 等）
+                //   仅在非程序化批量替换（setMarkdown/setValue/clear/appendMarkdown）时触发，避免误报
+                if (!_this._xfSuppressDeleteEvents) {
+                    if (_this._xfResourceScanTimer) clearTimeout(_this._xfResourceScanTimer);
+                    _this._xfResourceScanTimer = setTimeout(function() {
+                        _this._xfResourceScanTimer = null;
+                        try { _this._scanAndFireResourceDeletions(); } catch (e) {}
+                    }, Math.max(settings.delay, 600));
+                }
             });
-            
+
+            // ★ v2.0.0: 在每次变更「之前」捕获 Markdown 快照，供删除检测兜底比对。
+            //   必须在 beforeChange（变更尚未应用，getMarkdown 仍为旧值）捕获，而非 change 之后。
+            cm.on("beforeChange", function(_cm, changeObj) {
+                try { _this._xfBeforeChangeMarkdown = _this.getMarkdown(); } catch (e) {}
+            });
+
             // 增强的事件处理（keydown/keyup/mouseup/mousedown/paste/drop/copy/cut/focus/blur）
             cm.on("keydown", function(_cm, e) {
                 settings.onkeydown.call(_this, _cm, e);
@@ -3859,40 +3994,43 @@
             });
             
             cm.on("paste", function(_cm, e) {
+                var cd = e && (e.clipboardData || (e.originalEvent && e.originalEvent.clipboardData));
+                if (cd) {
+                    // 直接粘贴文件（部分浏览器把文件放在 clipboardData.files 中）
+                    if (cd.files && cd.files.length > 0) {
+                        if (e.preventDefault) e.preventDefault();
+                        _this._handleDroppedFiles(cd.files, _cm);
+                        return;
+                    }
+                    // 粘贴板中的图片项（截图粘贴等）
+                    if (cd.items && cd.items.length) {
+                        var imgItem = null;
+                        for (var ci = 0; ci < cd.items.length; ci++) {
+                            if (cd.items[ci].kind === "file" && cd.items[ci].type && cd.items[ci].type.indexOf("image/") === 0) {
+                                imgItem = cd.items[ci];
+                                break;
+                            }
+                        }
+                        if (imgItem) {
+                            var blob = imgItem.getAsFile();
+                            if (blob) {
+                                if (e.preventDefault) e.preventDefault();
+                                _this._handleDroppedFiles([blob], _cm);
+                                return;
+                            }
+                        }
+                    }
+                }
                 settings.onpaste.call(_this, _cm, e);
             });
             
             cm.on("drop", function(_cm, e) {
-                // ★ 拖拽图片到编辑器：开启 imageUpload 但无上传地址时，
-                //   将图片读取为 base64 并插入涂鸦块（替代默认插入文件路径的行为）
-                var hasUploadURL = !!(settings.imageUpload && settings.imageUploadURL && String(settings.imageUploadURL).trim() !== "");
-                if (settings.imageUpload && !hasUploadURL && e && e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                    var imgFiles = [];
-                    for (var fi = 0; fi < e.dataTransfer.files.length; fi++) {
-                        if (/^image\//.test(e.dataTransfer.files[fi].type)) {
-                            imgFiles.push(e.dataTransfer.files[fi]);
-                        }
-                    }
-                    if (imgFiles.length > 0) {
-                        if (e.preventDefault) e.preventDefault();
-                        if (typeof _cm !== "undefined" && _cm && typeof _cm.getCursor === "function") {
-                            var dropPos = _cm.coordsChar ? _cm.coordsChar({ left: e.clientX, top: e.clientY }, "page") : _cm.getCursor();
-                            if (typeof _cm.setCursor === "function") _cm.setCursor(dropPos);
-                        }
-                        var pending = imgFiles.length;
-                        imgFiles.forEach(function(f) {
-                            _this.fileToDataURL(f, function(err, dataUri) {
-                                pending--;
-                                if (!err && dataUri) {
-                                    var block = _this._buildCanvasBlock(dataUri, "center", f.name || "");
-                                    _cm.replaceSelection("\n" + block + "\n");
-                                } else if (pending === 0) {
-                                    xfEditor.notify("图片读取失败，请重试。", "error", 5000);
-                                }
-                            });
-                        });
-                        return;
-                    }
+                // ★ 拖拽文件（图片/视频/音频/附件）到编辑器：按类型识别并上传或离线插入
+                var dt = e && e.dataTransfer;
+                if (dt && dt.files && dt.files.length > 0) {
+                    if (e.preventDefault) e.preventDefault();
+                    var handled = _this._handleDroppedFiles(dt.files, _cm, e.clientX, e.clientY);
+                    if (handled) return;
                 }
                 settings.ondrop.call(_this, _cm, e);
             });
@@ -3960,6 +4098,33 @@
             dom(window).off("resize.xf_editor-resize").on("resize.xf_editor-resize", function(){
                 _this.resize();
             });
+
+            // ★ 拖拽文件进入编辑器时的高亮提示（仅做视觉反馈，真正处理在 cm drop 事件中）
+            (function(self) {
+                if (self._dragBound) return;
+                self._dragBound = true;
+                var editorEl = (self.editor && self.editor.get) ? self.editor.get(0) : (self.editor || null);
+                if (!editorEl || typeof editorEl.addEventListener !== "function") return;
+                var dragDepth = 0;
+                editorEl.addEventListener("dragenter", function(e) {
+                    dragDepth++;
+                    if (e.preventDefault) e.preventDefault();
+                    editorEl.classList.add("xf_editor-dragover");
+                });
+                editorEl.addEventListener("dragover", function(e) {
+                    if (e.preventDefault) e.preventDefault();
+                    if (e.dataTransfer) { try { e.dataTransfer.dropEffect = "copy"; } catch (err) {} }
+                    if (!editorEl.classList.contains("xf_editor-dragover")) editorEl.classList.add("xf_editor-dragover");
+                });
+                editorEl.addEventListener("dragleave", function() {
+                    dragDepth = Math.max(0, dragDepth - 1);
+                    if (dragDepth === 0) editorEl.classList.remove("xf_editor-dragover");
+                });
+                editorEl.addEventListener("drop", function() {
+                    dragDepth = 0;
+                    editorEl.classList.remove("xf_editor-dragover");
+                });
+            })(_this);
             
             this.bindChangeEvent();
             
@@ -4248,11 +4413,11 @@
             
             if(settings.watch || (!settings.watch && state.preview))
             {
-                // ★ v1.17.1: DOM 更新期间锁定同步滚动，防止内容变化触发反向同步
+                // ★ v2.0.0: DOM 更新期间锁定同步滚动，防止内容变化触发反向同步
                 this._applyingDomChanges = true;
                 clearTimeout(this.__syncDomLockTimer);
                 
-                // ★ v1.17.1: 注入 data-sign 块签名用于精准行号映射
+                // ★ v2.0.0: 注入 data-sign 块签名用于精准行号映射
                 if (settings.syncScroll) {
                     var totalEditorLines = (cmValue.match(/\n/g) || []).length + 1;
                     newMarkdownDoc = xfEditor.addBlockSignatures(newMarkdownDoc, totalEditorLines);
@@ -4260,12 +4425,12 @@
                 
                 previewContainer.html(newMarkdownDoc);
 
-                // ★ v1.17.1: 延迟解锁滚动同步，等待 DOM 高度稳定
+                // ★ v2.0.0: 延迟解锁滚动同步，等待 DOM 高度稳定
                 this.__syncDomLockTimer = setTimeout(function() {
                     _this._applyingDomChanges = false;
                 }, 100);
 
-                // ★ v1.17.35: 每次预览更新后重新绑定 tooltip 事件（DOM 已完全替换）
+                // ★ v2.0.0: 每次预览更新后重新绑定 tooltip 事件（DOM 已完全替换）
                 if (settings && settings.tooltip !== false) {
                     xfEditor.initTooltips(previewContainer);
                 }
@@ -4429,14 +4594,14 @@
                 if (settings.banner) {
                     _this.initBanners();
                 }
-                // ★ v1.17.35: tooltip 已在上方 xfEditor.initTooltips(previewContainer) 中初始化，
+                // ★ v2.0.0: tooltip 已在上方 xfEditor.initTooltips(previewContainer) 中初始化，
                 //     此处的重复调用已移除（避免双层清理+全量遍历无效迭代）
                 if (settings.syncScroll) {
-                    // ★ v1.17.7: 确保首次绑定
+                    // ★ v2.0.0: 确保首次绑定
                     if (!_this._scrollSyncBound) {
                         _this.bindSyncScroll();
                     }
-                    // ★ v1.17.7: 内容变更后强制刷新同步状态
+                    // ★ v2.0.0: 内容变更后强制刷新同步状态
                     // 即使 bindSyncScroll 已绑定，内容变更后也需要：
                     // 1. 重新无效化锚点缓存（因为 data-sign 已变化）
                     // 2. 延迟触发一次编辑区→预览区的同步滚动
@@ -5128,13 +5293,13 @@
             var previewContainer = this.previewContainer;
             var cm = this.cm;
             
-            // ★ v1.17.8: 冲突 prevention — 防止重复绑定文档级事件
+            // ★ v2.0.0: 冲突 prevention — 防止重复绑定文档级事件
             dom(document).off("mousemove.xf_editor-img").off("mouseup.xf_editor-img");
             
             var srcOccurrenceCounter = {};
             var _resizeState = null; // { img, wrapper, startX, startY, startWidth, startHeight, imgSrc }
             
-            // ★ v1.17.8: 全局文档级事件 — 只绑定一次（避免 .each 循环内累积）
+            // ★ v2.0.0: 全局文档级事件 — 只绑定一次（避免 .each 循环内累积）
             dom(document).on("mousemove.xf_editor-img", function(e) {
                 // ★ 加固：若按键已松开或拖拽状态异常，自动复位，避免卡住全局 mousemove 影响页面其它交互
                 if (e.buttons !== undefined && e.buttons === 0) { _resizeState = null; return; }
@@ -5157,7 +5322,7 @@
                 var s = _resizeState;
                 _resizeState = null;
                 
-                // ★ v1.17.8: 恢复双向同步
+                // ★ v2.0.0: 恢复双向同步
                 if (_this.resumeSyncScroll) _this.resumeSyncScroll();
                 
                 var finalWidth = Math.round(s.img.width());
@@ -5199,7 +5364,7 @@
                 handle.on("mousedown", function(e) {
                     // ★ 加固：仅响应左键拖拽，避免右键/中键误触发图片尺寸拖拽并卡住全局 mousemove
                     if (e.button !== undefined && e.button !== 0) return;
-                    // ★ v1.17.8: 拖拽期间暂停双向同步 — 预览区是主控区
+                    // ★ v2.0.0: 拖拽期间暂停双向同步 — 预览区是主控区
                     if (_this.suspendSyncScroll) _this.suspendSyncScroll();
                     
                     _resizeState = {
@@ -5289,7 +5454,7 @@
             if (newMarkdown !== markdown) {
                     if (this.timer && this.timer !== 0) { clearTimeout(this.timer); this.timer = null; }
                 
-                // ★ v1.17.4: 暂停双向同步滚动，防止内容更新触发滚动跳转
+                // ★ v2.0.0: 暂停双向同步滚动，防止内容更新触发滚动跳转
                 if (this.suspendSyncScroll) this.suspendSyncScroll();
                 
                 var editorScroll = cm.getScrollInfo();
@@ -5310,7 +5475,7 @@
                 this.preview.scrollTop(previewScroll);
                 this.timer = null;
                 
-                // ★ v1.17.4: 恢复同步滚动（延迟确保 DOM 稳定后重建锚点）
+                // ★ v2.0.0: 恢复同步滚动（延迟确保 DOM 稳定后重建锚点）
                 var _thisImg = this;
                 setTimeout(function() {
                     if (_thisImg.resumeSyncScroll) _thisImg.resumeSyncScroll();
@@ -5324,7 +5489,7 @@
          * Initialize ECharts in preview area
          */
         initECharts : function() {
-            // ★ v1.17.23: 委托给统一静态方法
+            // ★ v2.0.0: 委托给统一静态方法
             xfEditor._initECharts(this.previewContainer, this.settings, this.settings.theme);
         },
         
@@ -5332,7 +5497,7 @@
          * Initialize Tabs in preview area
          */
         initTabs : function() {
-            // ★ v1.17.23: 委托给统一静态方法（编辑器模式，面板切换时可重新可见内容初始化）
+            // ★ v2.0.0: 委托给统一静态方法（编辑器模式，面板切换时可重新可见内容初始化）
             xfEditor._initTabs(this.previewContainer, this.settings, this);
         },
         
@@ -5340,7 +5505,7 @@
          * Initialize multi-column layout dividers in preview area
          */
         initColumns : function() {
-            // ★ v1.17.23: 委托给统一静态方法
+            // ★ v2.0.0: 委托给统一静态方法
             xfEditor._initColumns(this.previewContainer);
         },
 
@@ -5358,7 +5523,7 @@
          * Also sets up resize handler for responsive page splitting.
          */
         initPages : function() {
-            // ★ v1.17.23: 委托给统一静态方法
+            // ★ v2.0.0: 委托给统一静态方法
             xfEditor._initPages(this.previewContainer);
         },
 
@@ -5477,51 +5642,215 @@
         },
 
         /**
+         * 获取导出文件名（不含扩展名）
+         *
+         * 推导优先级（由高到低）：
+         *   1) setExportFileName(name) / settings.exportFileName 显式设置的文件名
+         *   2) settings.title / settings.markdownTitle 文档标题
+         *   3) Markdown 正文中第一个一级标题「# 标题」的内容
+         *   4) Markdown 正文中第一个二级标题「## 标题」的内容
+         *   5) 兜底常量「未命名文档」
+         *
+         * 取得的名字会经过 xfEditor.safeFileName() 清洗，
+         * 去除 Markdown 记号与文件名非法字符，确保跨 Windows / macOS / Linux 通用。
+         *
+         * @returns {String} 导出文件名（不含扩展名）
+         */
+        getExportFileName : function() {
+            var settings = this.settings || {};
+
+            // 1) 接口显式设置优先
+            var explicit = settings.exportFileName || settings.fileName || "";
+            if (String(explicit).trim() !== "") return xfEditor.safeFileName(explicit) || "未命名文档";
+
+            // 2) 文档标题配置
+            var title = settings.title || settings.markdownTitle || "";
+            if (String(title).trim() !== "") return xfEditor.safeFileName(title) || "未命名文档";
+
+            // 3) / 4) 回落到 Markdown 正文的首个 H1 / H2
+            var md = "";
+            try {
+                md = (typeof this.getMarkdown === "function")
+                    ? this.getMarkdown()
+                    : (this.cm && typeof this.cm.getValue === "function" ? this.cm.getValue() : "");
+            } catch (e) { md = ""; }
+
+            if (typeof md === "string" && md !== "") {
+                var h1 = xfEditor.firstHeading(md, 1);
+                if (h1) return xfEditor.safeFileName(h1) || "未命名文档";
+                var h2 = xfEditor.firstHeading(md, 2);
+                if (h2) return xfEditor.safeFileName(h2) || "未命名文档";
+            }
+
+            return "未命名文档";
+        },
+
+        /**
+         * 设置导出文件名（接口）
+         * 设置后，导出 PDF / Word / Markdown / HTML 均会使用该文件名（不含扩展名）。
+         *
+         * @param   {String}    name    文件名，不含扩展名；传空字符串可清除设置
+         * @returns {xfEditor}          返回xfEditor的实例对象，支持链式调用
+         */
+        setExportFileName : function(name) {
+            if (!this.settings) this.settings = {};
+            this.settings.exportFileName = String(name == null ? "" : name).trim();
+            return this;
+        },
+
+        /**
+         * 兼容旧名：等价于 getExportFileName()
+         * ★ v2.0.0-FIX: 历史版本曾把同名方法定义在 xfEditor.toolbarHandlers 上，
+         *   而 handler 调用时 this 指向编辑器实例，导致 TypeError。此处统一落到原型。
+         *
+         * @returns {String} 导出文件名（不含扩展名）
+         */
+        _defaultExportName : function() {
+            return this.getExportFileName();
+        },
+
+        /**
          * 导出文件
          * Export editor content as file
          *
-         * @param   {String}    filename    文件名，不含扩展名
+         * @param   {String}    filename    文件名，不含扩展名；留空则自动推导（见 getExportFileName）
          * @param   {String}    format      格式：md, html, txt，默认 md
          * @returns {xfEditor}             返回xfEditor的实例对象
          */
 
         exportFile : function(filename, format) {
-            format = format || "md";
-            filename = filename || ("xf_editor-export-" + xfEditor.dateFormat());
-            var content = "";
-
+            format = String(format || "md").toLowerCase();
+            // ★ v2.0.0-FIX: 未提供文件名时自动推导（见 getExportFileName），
+            //   并统一执行 safeFileName 清洗，避免非法字符导致下载失败。
+            filename = String(filename == null ? "" : filename).trim();
+            filename = filename || this.getExportFileName();
+            filename = xfEditor.safeFileName(filename) || "未命名文档";
             if (!this.cm) return this;
-            if (format === "html") {
-                content = this.previewContainer.html();
+
+            /**
+             * 统一的浏览器下载触发器
+             * @param {String} content  文件内容
+             * @param {String} mime     Blob MIME 类型
+             * @param {String} ext      扩展名（不含点）
+             */
+            var triggerDownload = function(content, mime, ext) {
+                try {
+                    var blob = new Blob([content], { type: mime + ";charset=utf-8" });
+                    var url = URL.createObjectURL(blob);
+                    var el = document.createElement("a");
+                    el.href = url;
+                    el.download = filename + "." + ext;
+                    document.body.appendChild(el);
+                    el.click();
+                    document.body.removeChild(el);
+                    // ★ 加固：延迟回收 Object URL，避免部分浏览器在 click 异步处理前就 revoke 导致下载被截断
+                    setTimeout(function() { try { URL.revokeObjectURL(url); } catch (ex) {} }, 1000);
+                } catch (e) {
+                    // ★ v2.0.0-FIX: 旧浏览器降级方案 — 使用 data URI 下载
+                    var fallbackUrl = "data:" + mime + ";charset=utf-8," + encodeURIComponent(content);
+                    var fa = document.createElement("a");
+                    fa.href = fallbackUrl;
+                    fa.download = filename + "." + ext;
+                    fa.target = "_blank";
+                    document.body.appendChild(fa);
+                    fa.click();
+                    document.body.removeChild(fa);
+                }
+            };
+
+            // === PDF：写入新窗口并调用浏览器打印（用户可在打印对话框中选择「另存为 PDF」）===
+            if (format === "pdf") {
+                var pdfDoc = this.getHTML({
+                    wrap            : true,
+                    includeStyles   : true,
+                    includeScripts  : true,
+                    title           : filename,
+                    minify          : false
+                });
+                // 注入打印优化样式：隐藏交互控件（复制按钮、目录、工具栏），并规范纸张边距
+                var printCss = '<style media="print">' +
+                    '@page{size:A4;margin:16mm;}' +
+                    'html,body{background:#fff !important;color:#000 !important;}' +
+                    '.xf_editor-code-copy-btn,.xf_editor-toc-menu,.xf_editor-toolbar,' +
+                    '.xf_editor-dialog,.toc-menu-btn{display:none !important;}' +
+                    'pre,code,table{page-break-inside:avoid;}' +
+                    'img,svg,video{max-width:100% !important;}' +
+                    '</style>';
+                if (pdfDoc.indexOf("</head>") >= 0) {
+                    pdfDoc = pdfDoc.replace("</head>", printCss + "</head>");
+                } else {
+                    pdfDoc += printCss;
+                }
+                var pw = window.open("", "_blank");
+                if (!pw) {
+                    // 弹窗被拦截时降级：下载同名 HTML 供用户自行打印/转 PDF
+                    triggerDownload(pdfDoc, "text/html", "html");
+                    return this;
+                }
+                pw.document.open();
+                pw.document.write(pdfDoc);
+                pw.document.close();
+                try { pw.document.title = filename; } catch (e2) {}
+                // 等待子系统资源（echarts/图表等）渲染完成后再唤起打印
+                setTimeout(function() {
+                    try { pw.focus(); pw.print(); } catch (e3) {}
+                }, 400);
+                return this;
+            }
+
+            var content = "", mime = "text/plain", ext = format;
+
+            if (format === "markdown" || format === "md") {
+                // === Markdown：导出编辑器原始源码 ===
+                content = (typeof this.getMarkdown === "function") ? this.getMarkdown() : this.cm.getValue();
+                mime = "text/markdown";
+                ext  = "md";
+            } else if (format === "html") {
+                // === HTML：导出自包含完整文档（内联样式 + 交互脚本）===
+                content = this.getHTML({
+                    wrap           : true,
+                    includeStyles  : true,
+                    includeScripts : true,
+                    title          : filename,
+                    minify         : false
+                });
+                mime = "text/html";
+                ext  = "html";
+            } else if (format === "word" || format === "doc") {
+                // === Word：构造带 Office 命名空间的 HTML 文档，再由 Word 打开 ===
+                content = this.getHTML({
+                    wrap           : true,
+                    includeStyles  : true,
+                    includeScripts : false,
+                    title          : filename,
+                    minify         : false
+                });
+                // 注入 mso 命名空间，使 Word 正确识别并以文档视图打开
+                content = content.replace(/<html([^>]*)>/i,
+                    '<html xmlns:o="urn:schemas-microsoft-com:office:office"' +
+                    ' xmlns:w="urn:schemas-microsoft-com:office:word"' +
+                    ' xmlns:v="urn:schemas-microsoft-com:vml"' +
+                    ' xmlns:m="http://schemas.microsoft.com/office/2004/12/omml"$1>');
+                if (content.indexOf("</head>") >= 0) {
+                    content = content.replace("</head>",
+                        '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View>' +
+                        '<w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]--></head>');
+                }
+                mime = "application/msword";
+                ext  = "doc";
             } else if (format === "txt") {
+                // === TXT：保留历史行为 ===
                 content = this.cm.getValue().replace(/\n/g, "\r\n");
+                mime = "text/plain";
+                ext  = "txt";
             } else {
-                content = this.cm.getValue();
+                // 未知格式统一按 Markdown 处理，保证不丢内容
+                content = (typeof this.getMarkdown === "function") ? this.getMarkdown() : this.cm.getValue();
+                mime = "text/markdown";
+                ext  = "md";
             }
 
-            try {
-                var blob = new Blob([content], { type: "text/" + format + ";charset=utf-8" });
-                var url = URL.createObjectURL(blob);
-                var a = document.createElement("a");
-                a.href = url;
-                a.download = filename + "." + format;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                // ★ 加固：延迟回收 Object URL，避免部分浏览器在 click 异步处理前就 revoke 导致下载被截断
-                setTimeout(function() { try { URL.revokeObjectURL(url); } catch (ex) {} }, 1000);
-            } catch(e) {
-                // ★ v1.17.15-FIX: 旧浏览器降级方案 — 使用 data URI 下载
-                var fallbackUrl = "data:text/" + format + ";charset=utf-8," + encodeURIComponent(content);
-                var fa = document.createElement("a");
-                fa.href = fallbackUrl;
-                fa.download = filename + "." + format;
-                fa.target = "_blank";
-                document.body.appendChild(fa);
-                fa.click();
-                document.body.removeChild(fa);
-            }
-
+            triggerDownload(content, mime, ext);
             return this;
         },
 
@@ -5595,12 +5924,23 @@
         appendMarkdown : function(md) {
             var settings = this.settings;
             var cm       = this.cm;
-            
+
             // ★ 加固：this.cm 可能为 null（未初始化或已 destroy），避免抛 Cannot read property 'setValue' of null
             if (!cm) return this;
-            
-            cm.setValue(cm.getValue() + md);
-            
+
+            // ★ 健壮性：使用 try/finally 确保删除事件抑制标志一定被重置，
+            //   避免程序化替换异常导致 _xfSuppressDeleteEvents 永久卡在 true、
+            //   从而后续删除图片/视频/音频/附件事件全部不触发。
+            this._xfSuppressDeleteEvents = true;
+            try {
+                cm.setValue(cm.getValue() + md);
+            } catch (e) {
+                // 容错：即使 setValue 异常也继续，finally 会恢复标志
+            } finally {
+                this._xfSuppressDeleteEvents = false;
+            }
+            try { this._resetResourceScan(); } catch (e) {}
+
             return this;
         },
         
@@ -5614,8 +5954,18 @@
         
         setMarkdown : function(md) {
             if (!this.cm) return this;
-            this.cm.setValue(md || this.settings.markdown);
-            
+            // 程序化替换内容时临时抑制删除事件，避免误触发（替换完成后重置基线）
+            // ★ 健壮性：try/finally 保证异常时也能恢复标志，杜绝删除事件被永久抑制
+            this._xfSuppressDeleteEvents = true;
+            try {
+                this.cm.setValue(md || this.settings.markdown);
+            } catch (e) {
+                // 容错：异常时 finally 仍会恢复标志
+            } finally {
+                this._xfSuppressDeleteEvents = false;
+            }
+            try { this._resetResourceScan(); } catch (e) {}
+
             return this;
         },
         
@@ -5639,7 +5989,7 @@
          */
         
         getValue : function() {
-            // ★ v1.17.24: 委托给 getMarkdown（两个方法功能完全一致）
+            // ★ v2.0.0: 委托给 getMarkdown（两个方法功能完全一致）
             return this.getMarkdown();
         },
 
@@ -5758,8 +6108,17 @@
         setValue : function(value) {
             // ★ 空守卫：CodeMirror 未就绪时不操作，避免崩溃（与 setMarkdown 保持一致）
             if (!this.cm) return this;
-            this.cm.setValue(value);
-            
+            // ★ 健壮性：try/finally 确保异常时也能恢复标志，避免删除事件被永久抑制
+            this._xfSuppressDeleteEvents = true;
+            try {
+                this.cm.setValue(value);
+            } catch (e) {
+                // 容错：异常时 finally 仍会恢复标志
+            } finally {
+                this._xfSuppressDeleteEvents = false;
+            }
+            try { this._resetResourceScan(); } catch (e) {}
+
             return this;
         },
         
@@ -5772,7 +6131,16 @@
         
         clear : function() {
             if (!this.cm) return this;
-            this.cm.setValue("");
+            // ★ 健壮性：try/finally 确保异常时也能恢复标志，避免删除事件被永久抑制
+            this._xfSuppressDeleteEvents = true;
+            try {
+                this.cm.setValue("");
+            } catch (e) {
+                // 容错：异常时 finally 仍会恢复标志
+            } finally {
+                this._xfSuppressDeleteEvents = false;
+            }
+            try { this._resetResourceScan(); } catch (e) {}
 
             return this;
         },
@@ -6050,7 +6418,7 @@
                 
                 // 延迟恢复，让用户看到选中效果
                 setTimeout(function() {
-                    // ★ v1.17.25: 添加 _this.cm null 守卫，防止异步中编辑器被销毁
+                    // ★ v2.0.0: 添加 _this.cm null 守卫，防止异步中编辑器被销毁
                     if (drafts[idx] && drafts[idx].content && _this.cm) {
                         var editorScroll = _this.cm.getScrollInfo();
                         var previewScroll = _this.preview.scrollTop();
@@ -6216,7 +6584,7 @@
             // 移除旧版代码复制按钮（仅简单 span，避免破坏嵌套结构）
             rawHTML = rawHTML.replace(/<span\b[^>]*?\bxf_editor-code-copy-btn\b[^>]*>[^]*?<\/span>/gi, '');
             
-            // ★ v1.17.38: 清理由 XfDom/外部 DOM 库 .data() 留下的 attr 数据标记（独立页面不需要）
+            // ★ v2.0.0: 清理由 XfDom/外部 DOM 库 .data() 留下的 attr 数据标记（独立页面不需要）
             rawHTML = rawHTML
                 .replace(/\sdata-_copyBtnReady="true"/g, '')
                 .replace(/\sdata-_originalCode="[^"]*"/g, '')
@@ -6310,7 +6678,7 @@
                 inlineScripts = this._getInitScripts(rawHTML, featureFlags);
             }
             
-            // ★ v1.17.36: 更安全的压缩与完整 HTML 文档封装
+            // ★ v2.0.0: 更安全的压缩与完整 HTML 文档封装
             var nl = opts.minify ? '' : '\n';
             var sp = opts.minify ? '' : '  ';
             
@@ -6531,7 +6899,7 @@
          * @returns {Object}
          */
         _buildRendererOptions : function(settings, overrides) {
-            // ★ v1.17.24: 委托给静态版本，消除重复代码
+            // ★ v2.0.0: 委托给静态版本，消除重复代码
             return xfEditor._buildRendererOptionsStatic(settings, overrides);
         },
 
@@ -6567,6 +6935,8 @@
             f.echarts = html.indexOf('xf_editor-echarts') >= 0 || html.indexOf('_echarts_instance_') >= 0;
             // 视频播放器
             f.video = html.indexOf('xf_editor-video-player') >= 0 || /<video\b/.test(html);
+            // 音频播放器
+            f.audio = html.indexOf('xf_editor-audio-player') >= 0 || /<audio\b/.test(html);
             // 文件列表
             f.fileList = html.indexOf('xf_editor-file-list') >= 0;
             // 轮播图（Banner）
@@ -6644,7 +7014,7 @@
             c.push('.markdown-body img{max-width:100%;box-sizing:border-box;}.markdown-body img[align=right]{padding-left:20px;}.markdown-body img[align=left]{padding-right:20px;}');
             c.push('.markdown-body hr{height:0.25em;padding:0;margin:24px 0;background-color:#e1e4e8;border:0;}');
             // 表格
-            // ★ v1.17.40: 表格（与编辑器预览区一致 — 参照 table_demo 示例）
+            // ★ v2.0.0: 表格（与编辑器预览区一致 — 参照 table_demo 示例）
             c.push('.markdown-body table{display:table;width:100%;max-width:100%;margin:16px 0;border-collapse:separate;border-spacing:0;font-size:14px;line-height:1.6;font-variant-numeric:tabular-nums;border:1px solid #c6d5e2;border-radius:8px;overflow:hidden;background:#fff;box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 6px 18px -6px rgba(11,38,58,.18),0 2px 6px -2px rgba(11,38,58,.08);}');
             c.push('.markdown-body table thead tr{background:linear-gradient(180deg,#1d4159 0%,#12303f 100%);border-bottom:2px solid #0b2230;}.markdown-body table thead th{font-weight:600;font-size:.78rem;color:#eaf3fa;text-align:left;white-space:nowrap;letter-spacing:.6px;text-transform:uppercase;padding:.85rem 1.1rem!important;border:0!important;border-right:1px solid rgba(255,255,255,.08)!important;border-bottom:2px solid #0b2230!important;text-shadow:0 1px 1px rgba(0,0,0,.35);}.markdown-body table thead th:last-child{border-right:none!important;}');
             c.push('.markdown-body table tbody td{padding:.78rem 1.1rem!important;color:#16293a;font-size:13.5px;background-color:#fff;border:0!important;border-right:1px solid #f0f5fa!important;border-bottom:1px solid #eaf1f7!important;vertical-align:middle;}.markdown-body table tbody td:last-child{border-right:none!important;}.markdown-body table tbody td:first-child{font-weight:600;color:#0f2b3d;}');
@@ -6726,9 +7096,16 @@
             if (f.video) {
                 c.push('.xf_editor-video-player{display:block;max-width:100%;border-radius:4px;background:#000;margin:10px 0;}');
             }
+            // --- audio 音频播放器 ---
+            if (f.audio) {
+                c.push('.xf_editor-audio-player-wrap{margin:12px 0;padding:10px 14px;display:flex;align-items:center;gap:10px;background:linear-gradient(180deg,#f7f9fc 0%,#eef2f7 100%);border:1px solid #dbe3ec;border-radius:10px;box-shadow:0 1px 2px rgba(16,42,67,.06),0 4px 14px -8px rgba(16,42,67,.18);}');
+                c.push('.xf_editor-audio-player-wrap::before{content:"";flex:0 0 auto;width:34px;height:34px;border-radius:50%;background:#2C7EEA url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23fff\'><path d=\'M8 5v14l11-7z\'/></svg>") center/18px no-repeat;box-shadow:0 2px 6px rgba(44,126,234,.4);}');
+                c.push('.xf_editor-audio-player{width:100%;max-width:100%;height:38px;outline:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,.06));}');
+                c.push('.xf_editor-audio-player:focus{outline:2px solid #2C7EEA;outline-offset:2px;border-radius:4px;}');
+            }
             // --- fileList 文件列表 ---
             if (f.fileList) {
-                // ★ v1.17.39：补齐亮色基础外观（背景/内边距/边框/圆角/过渡），
+                // ★ v2.0.0：补齐亮色基础外观（背景/内边距/边框/圆角/过渡），
                 //   并同时覆盖 .xf_editor-attachment-link 类名选择器。
                 //   改动须与 scss/xf_editor.preview.scss 中的亮色定义保持一致，
                 //   否则「编辑器预览」与「导出 HTML」的附件列表外观会不一致。
@@ -6870,7 +7247,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 c.push('.xf_editor-html-preview .pln{color:#e6edf3}.xf_editor-html-preview .str,.xf_editor-html-preview .atv{color:#ce9178}.xf_editor-html-preview .kwd,.xf_editor-html-preview .tag{color:#569cd6}.xf_editor-html-preview .com{color:#6a9955;font-style:italic}.xf_editor-html-preview .typ{color:#4ec9b0}.xf_editor-html-preview .lit{color:#b5cea8}.xf_editor-html-preview .pun,.xf_editor-html-preview .opn,.xf_editor-html-preview .clo{color:#d4d4d4}.xf_editor-html-preview .atn{color:#9cdcfe}.xf_editor-html-preview .dec,.xf_editor-html-preview .var{color:#9cdcfe}.xf_editor-html-preview .fun{color:#dcdcaa}');
             }
             // ═══ [data-theme="dark"] 暗色主题支持 ═══
-            // ★ v1.17.30: 独立 HTML 预览暗色主题 — 当父元素设置 data-theme="dark" 时自动适用
+            // ★ v2.0.0: 独立 HTML 预览暗色主题 — 当父元素设置 data-theme="dark" 时自动适用
             // 用法：<html data-theme="dark"> / <body data-theme="dark"> / <div data-theme="dark">
             // 覆盖：容器背景、代码块、表格、脚注、流程图、时序图、Tabs、TOC、Badge 等
             c.push('[data-theme="dark"] .xf_editor-html-preview{color:#cbd5e1;background-color:#0f172a;}');
@@ -6889,7 +7266,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             c.push('[data-theme="dark"] .xf_editor-html-preview table{border:1px solid #2d3a52!important;border-radius:8px;overflow:hidden;background:#0f172a;font-variant-numeric:tabular-nums;box-shadow:0 6px 18px -6px rgba(0,0,0,.5),0 2px 6px -2px rgba(0,0,0,.4);}[data-theme="dark"] .xf_editor-html-preview table thead tr{background:linear-gradient(180deg,#243b55 0%,#16243a 100%)!important;border-bottom:2px solid #3b4f6d!important;}[data-theme="dark"] .xf_editor-html-preview table thead th{color:#e2e8f0;font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.6px;text-align:left;white-space:nowrap;padding:.85rem 1.1rem!important;border:0!important;border-right:1px solid rgba(255,255,255,.06)!important;border-bottom:2px solid #3b4f6d!important;text-shadow:0 1px 1px rgba(0,0,0,.4);}[data-theme="dark"] .xf_editor-html-preview table thead th:last-child{border-right:none!important;}[data-theme="dark"] .xf_editor-html-preview table tbody td{padding:.78rem 1.1rem!important;color:#cbd5e1;font-size:13.5px;background-color:#0f172a;border:0!important;border-right:1px solid #1e2d42!important;border-bottom:1px solid #1e2d42!important;vertical-align:middle;}[data-theme="dark"] .xf_editor-html-preview table tbody td:last-child{border-right:none!important;}[data-theme="dark"] .xf_editor-html-preview table tbody td:first-child{font-weight:600;color:#e2e8f0;}[data-theme="dark"] .xf_editor-html-preview table tbody tr:nth-child(even) td{background-color:#131d2d;}[data-theme="dark"] .xf_editor-html-preview table tbody tr:nth-child(odd) td{background-color:#0f172a;}[data-theme="dark"] .xf_editor-html-preview table tbody tr:hover td{background-color:#1a2a4a!important;color:#f1f5f9!important;border-bottom-color:#3b4f6d!important;}[data-theme="dark"] .xf_editor-html-preview table tbody tr:hover td:first-child{box-shadow:inset 4px 0 0 #60a5fa!important;}[data-theme="dark"] .xf_editor-html-preview table tbody tr:last-child td{border-bottom:none!important;}');
             // ★ Prettify 代码高亮色
             c.push('[data-theme="dark"] .xf_editor-html-preview .str,[data-theme="dark"] .xf_editor-html-preview .atv{color:#a5d6ff}[data-theme="dark"] .xf_editor-html-preview .kwd,[data-theme="dark"] .xf_editor-html-preview .tag{color:#93c5fd}[data-theme="dark"] .xf_editor-html-preview .com{color:#64748b}[data-theme="dark"] .xf_editor-html-preview .typ{color:#7dd3fc}[data-theme="dark"] .xf_editor-html-preview .lit{color:#c4b5fd}[data-theme="dark"] .xf_editor-html-preview .pun,[data-theme="dark"] .xf_editor-html-preview .opn,[data-theme="dark"] .xf_editor-html-preview .clo{color:#94a3b8}[data-theme="dark"] .xf_editor-html-preview .atn{color:#7dd3fc}[data-theme="dark"] .xf_editor-html-preview .dec,[data-theme="dark"] .xf_editor-html-preview .var{color:#67e8f9}[data-theme="dark"] .xf_editor-html-preview .fun{color:#fde68a}');
-            // ★ Footnote（★ v1.17.32: 嵌套修复 + 完整覆盖 — 脚注暗色全面适配）
+            // ★ Footnote（★ v2.0.0: 嵌套修复 + 完整覆盖 — 脚注暗色全面适配）
             c.push('[data-theme="dark"] .xf_editor-footnotes-section{border-top-color:#2d3a52;}[data-theme="dark"] .xf_editor-footnotes-section .xf_editor-footnote-title{color:#f1f5f9;border-bottom-color:#2d3a52;}');
             c.push('[data-theme="dark"] .xf_editor-footnotes-section .xf_editor-footnote-list{color:#cbd5e1;background:transparent;}');
             c.push('[data-theme="dark"] .xf_editor-footnotes-section .xf_editor-footnote-list .xf_editor-footnote-item{color:#cbd5e1;background:#1e293b;border-color:#2d3a52;}');
@@ -6909,7 +7286,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             c.push('[data-theme="dark"] .xf_editor-footnote-ref-wrapper a{color:#60a5fa;}[data-theme="dark"] .xf_editor-footnote-ref-wrapper a:hover{color:#fff;background:#60a5fa;}[data-theme="dark"] .xf_editor-footnote-ref-wrapper a:visited{color:#c4b5fd;}');
             // ★ Footnote highlight in dark（程序触发的滚动高亮）
             c.push('[data-theme="dark"] .xf_editor-footnotes-section .xf_editor-footnote-list .xf_editor-footnote-item.xf_editor-footnote-highlight{background:#2d2a1a!important;border-color:#f59e0b!important;box-shadow:0 0 12px rgba(245,158,11,0.25)!important;}');
-            // ★ Flowchart & Sequence diagram (v1.17.31 全面升级)
+            // ★ Flowchart & Sequence diagram (v2.0.0 全面升级)
             // Flowchart: 节点类型区分 + SVG背景
             c.push('[data-theme="dark"] .xf_editor-html-preview .flowchart{background:#0f1a2e;border-radius:4px;padding:8px;}[data-theme="dark"] .xf_editor-html-preview .flowchart svg{background:#0f1a2e;}');
             // ★ v1.18: 选择器对齐 flowchart.js 真实输出 —— 扁平 SVG，节点 shape 自带
@@ -6949,7 +7326,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             c.push('[data-theme="dark"] .xf_editor-html-preview .sequence-diagram .loop rect,[data-theme="dark"] .xf_editor-html-preview .sequence-diagram .alt rect,[data-theme="dark"] .xf_editor-html-preview .sequence-diagram .opt rect{fill:transparent;stroke:#3b4f6d;}');
             c.push('[data-theme="dark"] .xf_editor-html-preview .sequence-diagram .divider line,[data-theme="dark"] .xf_editor-html-preview .sequence-diagram .divider path{stroke:#2d3a52;}');
             c.push('[data-theme="dark"] .xf_editor-html-preview .sequence-diagram text{fill:#fff;}[data-theme="dark"] .xf_editor-html-preview .sequence-diagram rect,[data-theme="dark"] .xf_editor-html-preview .sequence-diagram path{fill:#64D1CB;stroke:#64D1CB;}');
-            // ★ Page Block (纸张) — v1.17.31 全面实现
+            // ★ Page Block (纸张) — v2.0.0 全面实现
             c.push('[data-theme="dark"] .xf_editor-page-block{background:#1e293b;border-color:#2d3a52;box-shadow:0 2px 16px rgba(0,0,0,0.4),0 1px 4px rgba(0,0,0,0.2);}');
             c.push('[data-theme="dark"] .xf_editor-page-block:hover{box-shadow:0 4px 24px rgba(0,0,0,0.5),0 2px 8px rgba(0,0,0,0.3);}');
             c.push('[data-theme="dark"] .xf_editor-page-content{color:#cbd5e1;}[data-theme="dark"] .xf_editor-page-content table th,[data-theme="dark"] .xf_editor-page-content table td{border-color:#2d3a52;}[data-theme="dark"] .xf_editor-page-content table tr{background:transparent;border-top-color:#2d3a52;}[data-theme="dark"] .xf_editor-page-content table tr:nth-child(2n){background:#233044;}');
@@ -6990,12 +7367,12 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 c.push('.xf_editor-copybook-row-justified{justify-content:space-between !important;gap:0 !important;}.xf_editor-copybook-row-justified .xf_editor-copybook-pinyin-cell{flex:1 1 0;min-width:36px;max-width:80px;}.xf_editor-copybook-row-justified .xf_editor-copybook-pinyin-cell:not(:last-child){margin-right:2px;}');
                 // ★ 字帖组级宽度容器（花括号/圆括号语法 + (!width:NNN)）
                 c.push('.xf_editor-copybook-group{display:inline-flex!important;flex-wrap:nowrap;align-items:stretch;vertical-align:top;overflow:hidden!important;}');
-                // ★ v1.17.27: group-pinyin 使用 center+gap 代替 space-evenly，cell 固定 52px 保证正方形
+                // ★ v2.0.0: group-pinyin 使用 center+gap 代替 space-evenly，cell 固定 52px 保证正方形
                 c.push('.xf_editor-copybook-group-pinyin{display:inline-flex!important;flex-wrap:nowrap;align-items:stretch;justify-content:center;gap:2px;overflow:hidden!important;}');
                 c.push('.xf_editor-copybook-group-pinyin>.xf_editor-copybook-pinyin-cell{flex:0 0 auto!important;min-width:0!important;width:52px!important;max-width:52px!important;overflow:hidden!important;}');
                 c.push('.xf_editor-copybook-group-grid{display:inline-flex!important;flex-wrap:nowrap;align-items:stretch;overflow:hidden!important;}');
                 c.push('.xf_editor-copybook-group-grid>.xf_editor-copybook-grid-cell{flex:1 1 0!important;min-width:0!important;width:auto!important;max-width:none!important;overflow:hidden!important;}');
-                // ★ v1.17.26: 行级宽容器 — 组可收缩以适应屏幕宽度，非组单元格均分剩余空间
+                // ★ v2.0.0: 行级宽容器 — 组可收缩以适应屏幕宽度，非组单元格均分剩余空间
                 c.push('.xf_editor-copybook-row-wide{display:flex!important;flex-wrap:wrap;justify-content:center;gap:4px 8px!important;}');
                 c.push('.xf_editor-copybook-row-wide>.xf_editor-copybook-cell{flex:1 1 0;min-width:0;max-width:68px;}');
                 // ★ 组元素可收缩响应式布局，max-width 确保不超出容器
@@ -7003,7 +7380,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             }
 
             // ==================================================================
-            // ★ v1.17.39 补齐：Page Block（纸张页面）亮色基础样式
+            // ★ v2.0.0 补齐：Page Block（纸张页面）亮色基础样式
             // ------------------------------------------------------------------
             // 此前 _getCoreStyles 只输出了 `[data-theme=dark] .xf_editor-page-block`
             // 的暗色补充样式，却**缺少亮色基础定义**（导出为独立 HTML 时没有
@@ -7033,7 +7410,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             }
 
             // ==================================================================
-            // ★ v1.17.39 新增：导出版「宿主样式隔离层」
+            // ★ v2.0.0 新增：导出版「宿主样式隔离层」
             // ------------------------------------------------------------------
             // getHTML() 产出的独立 HTML 常被嵌入第三方页面（文档系统/CMS/后台），
             // 宿主的 `* {margin:0;padding:0}`、`i{font-style:normal}`、
@@ -7049,13 +7426,35 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             c.push('.markdown-body.xf_editor-preview-container h1,.markdown-body.xf_editor-html-preview h1,.markdown-body.xf_editor-preview-container h2,.markdown-body.xf_editor-html-preview h2,.markdown-body.xf_editor-preview-container h3,.markdown-body.xf_editor-html-preview h3,.markdown-body.xf_editor-preview-container h4,.markdown-body.xf_editor-html-preview h4,.markdown-body.xf_editor-preview-container h5,.markdown-body.xf_editor-html-preview h5,.markdown-body.xf_editor-preview-container h6,.markdown-body.xf_editor-html-preview h6{font-weight:700;line-height:1.35;text-align:left;}');
             c.push('.markdown-body.xf_editor-preview-container blockquote,.markdown-body.xf_editor-html-preview blockquote{font-style:normal;}');
             c.push('.markdown-body.xf_editor-preview-container table th,.markdown-body.xf_editor-html-preview table th,.markdown-body.xf_editor-preview-container table td,.markdown-body.xf_editor-html-preview table td{background-color:transparent;}');
+
+            // ★ v2.0.1 补齐：宿主最常污染的其余点（标题字号分级 / 段落间距 / 列表符号 / 表格折叠 / 链接 / 代码字体）
+            //   典型污染：h1~h6{font-size:inherit}、ul{list-style:none;padding:0}、
+            //   p{margin:0}、table{border-collapse:separate}、a{all:unset}、code{font-family:inherit}
+            var _isoPre  = '.markdown-body.xf_editor-preview-container ';
+            var _isoHtml = '.markdown-body.xf_editor-html-preview ';
+            var _isoBoth = function(sel, decl) { c.push(_isoPre + sel + ',' + _isoHtml + sel + '{' + decl + '}'); };
+            var _isoLv = [['h1', '2em'], ['h2', '1.5em'], ['h3', '1.25em'], ['h4', '1.1em'], ['h5', '1em'], ['h6', '.92em']];
+            for (var _ili = 0; _ili < _isoLv.length; _ili++) {
+                _isoBoth(_isoLv[_ili][0], 'font-size:' + _isoLv[_ili][1] + ';font-weight:600;line-height:1.35;margin:1.05em 0 .55em;');
+            }
+            _isoBoth('p', 'margin:0 0 1em;line-height:1.7;');
+            _isoBoth('ul', 'margin:0 0 1em;padding-left:2em;list-style-type:disc;');
+            _isoBoth('ol', 'margin:0 0 1em;padding-left:2em;list-style-type:decimal;');
+            _isoBoth('li', 'list-style-position:outside;');
+            _isoBoth('table', 'border-collapse:collapse;border-spacing:0;');
+            _isoBoth('a', 'cursor:pointer;');
+            _isoBoth('hr', 'height:1px;border:0 none;margin:1.6em 0;');
+            _isoBoth('code', 'font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,Courier,monospace;font-variant-ligatures:none;');
+            _isoBoth('pre', 'margin:0 0 1.1em;font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,Courier,monospace;font-variant-ligatures:none;');
+            _isoBoth('blockquote', 'margin:0 0 1.1em;padding-left:1em;');
+
             // 纸张内部元素同样做宿主污染防护
             c.push('.xf_editor-page-content h1,.xf_editor-page-content h2,.xf_editor-page-content h3,.xf_editor-page-content h4,.xf_editor-page-content h5,.xf_editor-page-content h6{font-weight:700;line-height:1.35;text-align:left;}');
             c.push('.xf_editor-page-content p{margin:0 0 12px;}.xf_editor-page-content ul,.xf_editor-page-content ol{margin:0 0 12px;padding-left:2em;}.xf_editor-page-content li{margin-bottom:4px;}');
             c.push('.xf_editor-page-content blockquote{font-style:normal;margin:12px 0;}.xf_editor-page-content hr{border:0;border-top:1px solid #e1e4e8;margin:20px 0;}');
             c.push('.xf_editor-page-content img,.xf_editor-page-content video,.xf_editor-page-content iframe{margin:0;border:0;border-radius:0;box-shadow:none;vertical-align:middle;max-width:100%;height:auto;}');
 
-            // ★ v1.17.32: 作用域隔离 — 将 .markdown-body 选择器限制在 .xf_editor 容器内，
+            // ★ v2.0.0: 作用域隔离 — 将 .markdown-body 选择器限制在 .xf_editor 容器内，
             // 确保 getHTML() 输出的内联样式不会泄漏到宿主页面的其他元素
             return c.join('\n').replace(/\.markdown-body/g, '.xf_editor.markdown-body');
         },
@@ -7243,7 +7642,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             s.push('    var oldBtns=cloned.querySelectorAll(".xf_editor-code-copy-btn");');
             s.push('    for(var bi=0;bi<oldBtns.length;bi++){oldBtns[bi].parentNode.removeChild(oldBtns[bi]);}');
             s.push('    // ★ 收集 ALL <code> 元素的内容 — 优先用 textContent（保留原始空白），innerText 作为降级');
-            s.push('    // ★ v1.17.16: 使用 innerHTML 提取，保留原始缩进/空格/换行');
+            s.push('    // ★ v2.0.0: 使用 innerHTML 提取，保留原始缩进/空格/换行');
             s.push('    var codeEls=cloned.querySelectorAll("code");');
             s.push('    if(codeEls.length>0){');
             s.push('      var parts=[];for(var ci=0;ci<codeEls.length;ci++){');
@@ -7272,7 +7671,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             s.push('      var targetPre=self._preRef||self.parentElement;');
             s.push('      var code=targetPre._originalCode;');
             s.push('      if(!code||!code.trim()){');
-            s.push('        // ★ v1.17.16 fallback: innerHTML 提取保留原始格式');
+            s.push('        // ★ v2.0.0 fallback: innerHTML 提取保留原始格式');
             s.push('        var cp=targetPre.cloneNode(true);');
             s.push('        var cbs=cp.querySelectorAll(".xf_editor-code-copy-btn");');
             s.push('        for(var cj=0;cj<cbs.length;cj++){cbs[cj].parentNode.removeChild(cbs[cj]);}');
@@ -7436,7 +7835,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             s.push('      if(tooltipType==="html"){');
             s.push('        tooltipContent=base64Decode(getAttr(trigger,"data-tooltip-html")||"");');
             s.push('        if(!tooltipContent)return;');
-            s.push('        // ★ v1.17.18 XSS 防护：使用 textContent 而非 innerHTML 注入安全文本内容');
+            s.push('        // ★ v2.0.0 XSS 防护：使用 textContent 而非 innerHTML 注入安全文本内容');
             s.push('        // 如果确实需要 HTML，则通过 filterHTMLTags 过滤危险标签');
             s.push('        var tmpDiv=document.createElement("div");tmpDiv.innerHTML=tooltipContent;');
             s.push('        tooltipContent=tmpDiv.textContent||tmpDiv.innerText||"";');
@@ -7460,7 +7859,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             s.push('              // ★ 收集 ALL <code> 元素，确保多组代码块全部提取');
             s.push('              var ces=preEl.querySelectorAll("code");');
             s.push('              var rawCode;');
-            s.push('              // ★ v1.17.17: 使用 innerHTML 提取原始代码（保留缩进/换行/空格）');
+            s.push('              // ★ v2.0.0: 使用 innerHTML 提取原始代码（保留缩进/换行/空格）');
             s.push('              if(ces.length>0){');
             s.push('                var rp=[];for(var ri=0;ri<ces.length;ri++){');
             s.push('                  var hi=ces[ri].innerHTML;if(!hi){rp.push("");continue;}');
@@ -7586,7 +7985,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             s.push('          var tgt=_doc.querySelector(tooltipContent);');
             s.push('          if(tgt){');
             s.push('            var clone=tgt.cloneNode(true);');
-            s.push('            // ★ v1.17.22 XSS 防护：移除所有内联事件处理器 (on*) 属性');
+            s.push('            // ★ v2.0.0 XSS 防护：移除所有内联事件处理器 (on*) 属性');
             s.push('            (function stripEvents(el){');
             s.push('              var attrs=el.attributes;');
             s.push('              for(var a=attrs.length-1;a>=0;a--){');
@@ -7684,9 +8083,34 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
          * @param {Boolean} [options.rawMarkdown=false] 是否返回原始 Markdown 文本而非渲染后的 HTML
          * @returns {String} 预览区 HTML 源码（纯内容，无包裹）
          */
+        /**
+         * 获取预览区渲染后的 HTML
+         * Get previewed HTML
+         *
+         * ★ v2.1.0 增强：新增可选自包含能力，使返回值也能携带「各种语法所需的交互与事件处理逻辑」。
+         *   - 默认（向后兼容）：返回预览区原始片段 HTML（不含样式/脚本），行为与旧版本完全一致；
+         *   - includeStyles  : true → 追加内联样式，保证脱离编辑器 CSS 后外观一致；
+         *   - includeScripts : true → 追加内联初始化脚本，使 Tabs / Tooltip / 代码复制 /
+         *                             ECharts / 流程图 / 时序图 / 页脚 / 涂鸦等交互与事件仍然可用；
+         *   - wrap           : true → 进一步封装为可直接保存打开的完整 HTML 文档。
+         *
+         * @param   {Object}   [options]                配置项
+         * @param   {Boolean}  [options.rawMarkdown=false]  为 true 时直接返回 Markdown 源码
+         * @param   {Boolean}  [options.includeStyles=false] 是否内联样式（Toc/图表/提示等外观）
+         * @param   {Boolean}  [options.includeScripts=false] 是否内联交互脚本（事件与交互逻辑）
+         * @param   {Boolean}  [options.wrap=false]       是否封装为完整 HTML 文档
+         * @param   {String}   [options.title]           wrap 时的文档标题
+         * @param   {String}   [options.theme]           'dark'|'slate' 时可输出暗色主题
+         * @returns {String}                              HTML 字符串
+         */
         getPreviewedHTML : function(options) {
             var opts = Object.assign({
-                rawMarkdown : false
+                rawMarkdown    : false,
+                includeStyles  : false,
+                includeScripts : false,
+                wrap           : false,
+                title          : 'xfEditor Preview',
+                theme          : ''
             }, options || {});
 
             if (opts.rawMarkdown) {
@@ -7697,7 +8121,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             var markdownText = this.getMarkdown();
             var settings = this.settings;
             
-            // ★ v1.17.25: 优化为单次 .html() 调用
+            // ★ v2.0.0: 优化为单次 .html() 调用
             if (this.previewContainer) {
                 var currentHtml = this.previewContainer.html();
                 if (currentHtml && currentHtml.trim() !== '') {
@@ -7715,8 +8139,70 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 rawHTML = xfEditor._renderMarkdownPipeline(markdownText, markedOptions, rendererOptions, settings);
             }
 
-            // 直接返回预览区中 .xf_editor-preview-container 内的原始 HTML，不做任何包裹
-            return rawHTML || "";
+            rawHTML = rawHTML || "";
+
+            // 默认路径：直接返回预览区原始 HTML，不做任何包裹（严格向后兼容）
+            // ★ 只有当「未开启任何增强项」时才走原始返回；一旦显式指定 theme 也算增强。
+            if (!opts.includeStyles && !opts.includeScripts && !opts.wrap && !opts.theme) {
+                return rawHTML;
+            }
+
+            // === 自包含增强模式 ===
+            // 清理由编辑器运行时写入的「已初始化」标记，确保独立页面中的脚本会重新绑定事件；
+            // 这是保证 Tabs / Tooltip / 代码复制 等交互在导出/独立使用时仍然可用的关键。
+            rawHTML = rawHTML
+                .replace(/\sdata-tooltip-initialized="true"/g, '')
+                .replace(/\sdata-initialized="true"/g, '')
+                .replace(/\sdata-resize-bound="true"/g, '')
+                .replace(/\sdata-fc-initialized="true"/g, '')
+                .replace(/\sdata-sd-initialized="true"/g, '')
+                .replace(/\sdata-xfe-initialized="true"/g, '')
+                .replace(/\sdata-_copyBtnReady="true"/g, '')
+                .replace(/\sdata-_originalCode="[^"]*"/g, '');
+
+            var featureFlags = (opts.includeStyles || opts.includeScripts)
+                ? (this._detectFeatures ? this._detectFeatures(rawHTML) : {})
+                : {};
+
+            var nl = '\n';
+            var isDark = opts.theme === 'dark' || opts.theme === 'slate';
+            var cls = 'xf_editor markdown-body xf_editor-html-preview';
+            if (isDark) { cls += ' xf_editor-preview-theme-dark'; }
+
+            var body = '';
+            if (opts.includeStyles && !opts.wrap) {
+                var css = this._getCoreStyles ? this._getCoreStyles(rawHTML, featureFlags) : '';
+                if (css) { body += '<style>' + nl + css + nl + '</style>' + nl; }
+            }
+            body += '<div class="' + cls + '">' + nl + rawHTML + nl + '</div>' + nl;
+            if (opts.includeScripts && !opts.wrap) {
+                var js = this._getInitScripts ? this._getInitScripts(rawHTML, featureFlags) : '';
+                if (js) { body += '<script>' + nl + js + nl + '<\/script>' + nl; }
+            }
+
+            if (!opts.wrap) {
+                return isDark ? ('<div data-theme="dark">' + nl + body + '</div>' + nl) : body;
+            }
+
+            // 完整文档模式：内联样式进 head、脚本置于 body 末尾
+            var head = '<!DOCTYPE html>' + nl
+                + '<html lang="zh-CN"' + (isDark ? ' data-theme="dark"' : '') + '>' + nl
+                + '<head>' + nl
+                + '  <meta charset="UTF-8">' + nl
+                + '  <meta name="viewport" content="width=device-width, initial-scale=1.0">' + nl
+                + '  <title>' + xfEditor.escapeHtml(opts.title) + '</title>' + nl;
+            if (opts.includeStyles) {
+                var cssFull = this._getCoreStyles ? this._getCoreStyles(rawHTML, featureFlags) : '';
+                if (cssFull) { head += '  <style>' + nl + cssFull + nl + '</style>' + nl; }
+            }
+            head += '</head>' + nl + '<body>' + nl;
+            var tail = '';
+            if (opts.includeScripts) {
+                var jsFull = this._getInitScripts ? this._getInitScripts(rawHTML, featureFlags) : '';
+                if (jsFull) { tail = '<script>' + nl + jsFull + nl + '<\/script>' + nl; }
+            }
+            tail += '</body>' + nl + '</html>';
+            return head + body + tail;
         },
         
         /**
@@ -7805,7 +8291,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         },
         
         /**
-         * ★ v1.17.4: 共享标题锚点映射构建函数（增强：文本验证 + 层级匹配）
+         * ★ v2.0.0: 共享标题锚点映射构建函数（增强：文本验证 + 层级匹配）
          * 解析 CM 源码提取标题行号 + 查询预览 DOM 标题元素 → 智能配对
          * 供 bindSyncScroll 和 scrollToLineNum 共用
          * 
@@ -7820,7 +8306,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 var mdSource = cm.getValue();
                 var lines = mdSource.split('\n');
                 
-                // ★ v1.17.4: 只在非代码区域提取标题
+                // ★ v2.0.0: 只在非代码区域提取标题
                 var mdHeadingRegex = /^(#{1,6})\s+(.+?)(?:\s+#+)?\s*$/;
                 var inCodeBlock = false;
                 var editorHeadings = [];
@@ -7835,7 +8321,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     
                     var m = line.match(mdHeadingRegex);
                     if (m) {
-                        // ★ v1.17.26: 防御 m[2] 可能为 undefined
+                        // ★ v2.0.0: 防御 m[2] 可能为 undefined
                         editorHeadings.push({
                             line: i,
                             level: m[1].length,
@@ -7862,7 +8348,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     }
                 }
                 
-                // ★ v1.17.4: 智能配对 — 优先文本+层级匹配，回退到顺序匹配
+                // ★ v2.0.0: 智能配对 — 优先文本+层级匹配，回退到顺序匹配
                 var anchors = [];
                 var usedPreview = {};
                 
@@ -7932,7 +8418,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         },
         
         /**
-         * ★ v1.17.4: 绑定编辑区与预览区同步滚动（彻底重写）
+         * ★ v2.0.0: 绑定编辑区与预览区同步滚动（彻底重写）
          * 
          * 彻底修复：
          *   1. **程序化滚动识别**：使用 _syncState.programmaticScroll 标记区分
@@ -7964,19 +8450,19 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         bindSyncScroll : function() {
             var _this    = this;
             var settings = this.settings;
-            
+
             if (!settings.syncScroll || this._scrollSyncBound) {
                 return this;
             }
-            
+
             var cm      = this.cm;
-            // previewDom = previewContainer 内层 (.xf_editor-preview-container) — DOM 查询用
-            // scrollEl   = 外层 .xf_editor-preview — 实际滚动、scrollTop、getBoundingClientRect 用
+            // previewDom = 内层 (.xf_editor-preview-container) — DOM 查询用
+            // scrollEl   = 外层 .xf_editor-preview — 实际产生滚动
             var previewDom = this.previewContainer;
             var scrollEl   = this.preview && this.preview[0];
             var editor     = this.editor;
-            
-            // ★ v1.17.8: 初始化/校验 syncState — 增加主控区追踪
+
+            // ★ 同步状态：新增「期望值记账」用于自愈式防回环
             if (!this._syncState) {
                 this._syncState = {
                     lastEditorSyncTime: 0,
@@ -7991,480 +8477,646 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 };
             }
             var state = this._syncState;
-            
+            // 期望值记账：即使动画被打断也不会死锁，超时自动自愈
+            state.expectPreviewTop = null;
+            state.expectEditorTop  = null;
+            state.expectPreviewTs  = 0;
+            state.expectEditorTs   = 0;
+
             if (!cm || !previewDom || !previewDom.length || !scrollEl || !editor || !editor.length) {
                 return this;
             }
-            
+
             var cmScrollEl = cm.getScrollerElement();
             var cmScroll  = dom(cmScrollEl);
-            
+
             previewDom.css("overflow", "hidden");
-            
-            var SYNC_DEBOUNCE = 16;
-            
-            // ★★★ v1.17.8: 主控区追踪 — 基于 wheel 事件而非鼠标位置 ★★★
-            // 核心原则：用户操作的那一侧是主控区，另一侧跟随；主控区绝不被动滚动
-            var _masterZone = null;           // "editor" | "preview" | null
-            var _masterZoneClearTimer = null;
-            var MASTER_CLEAR_DELAY = 400;    // wheel 停止后 400ms 清除主控区追踪
-            
-            var _setMasterZone = function(zone) {
-                if (_masterZoneClearTimer) clearTimeout(_masterZoneClearTimer);
-                _masterZone = zone;
-                _masterZoneClearTimer = setTimeout(function() {
-                    _masterZone = null;
-                }, MASTER_CLEAR_DELAY);
+
+            // ============================================================
+            // 基础设施：rAF 节流 / 计时
+            // ============================================================
+            var _hasRAF = (typeof requestAnimationFrame === "function");
+            var _now = (typeof performance !== "undefined" && performance.now)
+                ? function() { return performance.now(); }
+                : function() { return Date.now(); };
+
+            var _rafThrottle = function(fn) {
+                var pending = false;
+                var runner = function() {
+                    pending = false;
+                    try { fn(); } catch(e) {}
+                };
+                return function() {
+                    if (pending) return;
+                    pending = true;
+                    if (_hasRAF) requestAnimationFrame(runner);
+                    else setTimeout(runner, 16);
+                };
             };
-            
-            // ★★ Wheel 事件追踪 — 谁在用鼠标滚轮滚动，谁就是主控区 ★★
-            dom(cmScrollEl).off("wheel.xf_editor-master").on("wheel.xf_editor-master", function(e) {
-                if (state.programmaticScroll) return;
-                _setMasterZone("editor");
-            });
-            dom(scrollEl).off("wheel.xf_editor-master").on("wheel.xf_editor-master", function(e) {
-                if (state.programmaticScroll) return;
-                _setMasterZone("preview");
-            });
-            
-            // ★★ mouseenter/mouseleave — 辅助维护鼠标所在区域（用于没有 wheel 的情况，如点击跳转） ★★
-            editor.off("mouseenter.xf_editor-sync mouseleave.xf_editor-sync")
-                .on("mouseenter.xf_editor-sync", function() {
-                    state.mouseTarget = "editor";
-                    // ★ v1.17.9 fix: 鼠标进入编辑区立即清除反向主控区，防止旧 masterZone 阻断同步
-                    if (_masterZone === "preview") {
-                        if (_masterZoneClearTimer) clearTimeout(_masterZoneClearTimer);
-                        _masterZone = null;
-                    }
-                }).on("mouseleave.xf_editor-sync", function() {
-                    if (state.mouseTarget === "editor") state.mouseTarget = null;
-                });
-            dom(scrollEl).off("mouseenter.xf_editor-sync mouseleave.xf_editor-sync")
-                .on("mouseenter.xf_editor-sync", function() {
-                    state.mouseTarget = "preview";
-                    // ★ v1.17.9 fix: 鼠标进入预览区立即清除反向主控区，防止旧 masterZone 阻断同步
-                    if (_masterZone === "editor") {
-                        if (_masterZoneClearTimer) clearTimeout(_masterZoneClearTimer);
-                        _masterZone = null;
-                    }
-                }).on("mouseleave.xf_editor-sync", function() {
-                    if (state.mouseTarget === "preview") state.mouseTarget = null;
-                });
-            
-            // ★★ v1.17.9 fix: 编辑器获得焦点时（如点击），清除反向主控区追踪 ★★
-            cm.off("focus.xf_editor-sync");
-            cm.on("focus.xf_editor-sync", function() {
-                state.mouseTarget = "editor";
-                if (_masterZone === "preview") {
-                    if (_masterZoneClearTimer) clearTimeout(_masterZoneClearTimer);
-                    _masterZone = null;
+
+            // ============================================================
+            // ★ 主控区（sticky，不超时过期）
+            //   谁最后产生「用户滚动意图」谁是主控；另一侧始终跟随。
+            //   程序化滚动（同步产生）不更新主控区 —— 由 self-trigger 检测拦截。
+            // ============================================================
+            var _masterZone = null;   // "editor" | "preview" | null
+
+            var _isSelfPreviewScroll = function() {
+                if (state.expectPreviewTop == null) return false;
+                if (_now() - state.expectPreviewTs > 400) { state.expectPreviewTop = null; return false; }
+                // 命中期望位置视为自身触发；随后清除记账，放行后续用户滚动
+                if (Math.abs(scrollEl.scrollTop - state.expectPreviewTop) <= 2) {
+                    if (_now() - state.expectPreviewTs > 60) state.expectPreviewTop = null;
+                    return true;
                 }
-            });
-            
-            // ★★ v1.17.8: 位置映射 — 基于全部 data-sign 块的精细映射表 ★★
-            var _positionMap = null;       // [{editorLine, previewY}] — previewY 是相对于 scrollEl 内容顶部的偏移
-            var _positionMapCacheKey = null;
-            
+                return false;
+            };
+            var _isSelfEditorScroll = function() {
+                if (state.expectEditorTop == null) return false;
+                if (_now() - state.expectEditorTs > 400) { state.expectEditorTop = null; return false; }
+                var top = 0;
+                try { top = cm.getScrollInfo().top; } catch(e) { return false; }
+                if (Math.abs(top - state.expectEditorTop) <= 2) return true;
+                return false;
+            };
+
+            // ============================================================
+            // 编辑区行 <-> 像素（行高不等高，必须逐行换算）
+            // mdPos 为「连续型行位置」：mdPos = line + 行内高度比例(0~1)
+            // ============================================================
+            var _lineCount = function() {
+                try { return cm.lineCount(); } catch(e) { return 0; }
+            };
+            var _lineTop = function(line) {
+                var n = _lineCount();
+                if (n <= 0) return 0;
+                try { return cm.heightAtLine(Math.max(0, Math.min(n - 1, line)), "local"); } catch(e) { return 0; }
+            };
+            // ★ 防御加固：_defaultLineHeight 必须在 _lineHeight 之前完成赋值。
+            //   二者均为 var 函数表达式（不提升到赋值），当前调用时机虽在赋值之后不会出错，
+            //   但一旦将来有同步调用插入到两者之间，就会抛出
+            //   TypeError: _defaultLineHeight is not a function。此处显式前置，彻底消除隐患。
+            var _defaultLineHeight = function() {
+                try { if (typeof cm.defaultTextHeight === "function") return cm.defaultTextHeight(); } catch(e) {}
+                return 20;
+            };
+            var _lineHeight = function(line) {
+                var n = _lineCount();
+                if (n <= 1) return _defaultLineHeight();
+                if (line >= n - 1) {
+                    var h = _lineTop(n - 1) - _lineTop(n - 2);
+                    return h > 0 ? h : _defaultLineHeight();
+                }
+                var h2 = _lineTop(line + 1) - _lineTop(line);
+                return h2 > 0 ? h2 : _defaultLineHeight();
+            };
+
+            // mdPos(连续行位置) -> 编辑器 scrollTop
+            var _mdPosToEditorTop = function(mdPos) {
+                var n = _lineCount();
+                if (n <= 0) return 0;
+                mdPos = Math.max(0, Math.min(n - 1, mdPos));
+                var line = Math.floor(mdPos);
+                var frac = mdPos - line;
+                return _lineTop(line) + frac * _lineHeight(line);
+            };
+
+            // 编辑器 scrollTop -> mdPos(连续行位置)
+            var _editorTopToMdPos = function(top) {
+                var n = _lineCount();
+                if (n <= 0) return 0;
+                top = Math.max(0, top);
+                var line = 0;
+                try { line = cm.lineAtHeight(top, "local"); } catch(e) { line = 0; }
+                line = Math.max(0, Math.min(n - 1, line));
+                var lt = _lineTop(line);
+                var lh = _lineHeight(line);
+                var frac = lh > 0 ? (top - lt) / lh : 0;
+                frac = Math.max(0, Math.min(1, frac));
+                return line + frac;
+            };
+
+            // ============================================================
+            // ★ 标题锚点：两侧序列抽取 + 「同 key 第 n 个配第 n 个」消歧
+            //   这是处理「文档中存在多个相同标题」的正确方案。
+            // ============================================================
+            var _plainText = function(s) {
+                if (s == null) return "";
+                return String(s)
+                    .replace(/`+([^`]*)`+/g, "$1")                 // 行内代码
+                    .replace(/!\[[^\]]*\]\([^)]*\)/g, "")           // 图片
+                    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")        // 链接
+                    .replace(/<[^>]+>/g, "")                        // 内联 HTML
+                    .replace(/(\*\*|__|\*|_|~~)/g, "")              // 强调
+                    .replace(/\\([\\`*_{}\[\]()#+\-.!])/g, "$1")    // 转义
+                    .replace(/[\s\u00a0\u200b\ufeff]+/g, " ")       // 空白/零宽
+                    .trim();
+            };
+
+            // 抽取编辑器标题（ATX + Setext），跳过代码块/行内代码围栏与 HTML 注释
+            var _collectEditorHeadings = function() {
+                var src = "";
+                try { src = cm.getValue(); } catch(e) { return []; }
+                var lines = src.split("\n");
+                var out = [];
+                var fenceOpen = false, fenceMark = "";
+                for (var i = 0; i < lines.length; i++) {
+                    var raw = lines[i];
+                    var t   = raw.replace(/\s+$/, "");
+                    var indented = /^ {4,}/.test(raw);
+
+                    // 代码块围栏 ``` 或 ~~~（>=3）
+                    var fence = raw.match(/^\s*(`{3,}|~{3,})/);
+                    if (fence) {
+                        var mark = fence[1].charAt(0);
+                        if (!fenceOpen) { fenceOpen = true; fenceMark = mark; }
+                        else if (mark === fenceMark) { fenceOpen = false; fenceMark = ""; }
+                        continue;
+                    }
+                    if (fenceOpen || indented) continue;
+                    if (/^\s*<!--/.test(raw)) { out.__skip = true; }
+
+                    // ATX
+                    var m = t.match(/^\s{0,3}(#{1,6})\s+(.*?)\s*#*\s*$/);
+                    if (m) {
+                        out.push({ line: i, level: m[1].length, key: _plainText(m[2]) });
+                        continue;
+                    }
+                    // Setext（下一行为 === 或 ---）
+                    if (i + 1 < lines.length && /^\s{0,3}(=+|-{2,})\s*$/.test(lines[i + 1]) && t.trim().length) {
+                        // 前置分隔线 --- 会误判为空行分隔，需保证本行非空且不是列表符号开头
+                        if (!/^\s*([-*+]|\d+\.)\s/.test(t)) {
+                            var lv = /^\s*=/.test(lines[i + 1]) ? 1 : 2;
+                            out.push({ line: i, level: lv, key: _plainText(t) });
+                            continue;
+                        }
+                    }
+                }
+                return out;
+            };
+
+            // 抽取预览 DOM 标题及其内容坐标 top（相对 scrollEl 内容顶部）
+            var _collectPreviewHeadings = function(seTop) {
+                var hs = [];
+                try {
+                    hs = previewDom[0].querySelectorAll("h1,h2,h3,h4,h5,h6");
+                } catch(e) { return []; }
+                var arr = [];
+                for (var i = 0; i < hs.length; i++) {
+                    var el = hs[i];
+                    // 跳过 TOC 容器内部的标题（不参与正文映射，避免数量错位）
+                    var p = el.parentElement, isToc = false;
+                    while (p && p !== previewDom[0]) {
+                        var cls = p.className || "";
+                        if (typeof cls === "string" && /markdown-toc|\btoc\b|xf_editor-toc/i.test(cls)) { isToc = true; break; }
+                        p = p.parentElement;
+                    }
+                    if (isToc) continue;
+                    var r = el.getBoundingClientRect();
+                    arr.push({
+                        y: Math.max(0, scrollEl.scrollTop + (r.top - seTop)),
+                        level: parseInt(el.tagName.charAt(1), 10),
+                        key: _plainText(el.textContent || ""),
+                        node: el
+                    });
+                }
+                return arr;
+            };
+
+            // 同 key 按出现次序一一配对 —— 相同标题消歧的核心
+            var _alignHeadings = function(eHeads, pHeads) {
+                var pairs = [];
+                if (!eHeads.length || !pHeads.length) return pairs;
+
+                var eMap = {}, i, k;
+                for (i = 0; i < eHeads.length; i++) {
+                    k = eHeads[i].level + "|" + eHeads[i].key;
+                    (eMap[k] = eMap[k] || []).push(i);
+                }
+                var pMap = {};
+                for (i = 0; i < pHeads.length; i++) {
+                    k = pHeads[i].level + "|" + pHeads[i].key;
+                    (pMap[k] = pMap[k] || []).push(i);
+                }
+
+                var usedP = {};
+                for (k in eMap) {
+                    if (!pMap[k]) continue;
+                    var cnt = Math.min(eMap[k].length, pMap[k].length);
+                    for (var j = 0; j < cnt; j++) {
+                        usedP[pMap[k][j]] = true;
+                        pairs.push({ mdPos: eHeads[eMap[k][j]].line, previewY: pHeads[pMap[k][j]].y });
+                    }
+                }
+                pairs.sort(function(a, b) { return a.mdPos - b.mdPos; });
+
+                // ★ 兜底：一个都没配上（标题文本渲染差异大）时，退化为「序列等比对齐」
+                if (pairs.length === 0 && Math.abs(eHeads.length - pHeads.length) <= Math.max(2, eHeads.length * 0.3)) {
+                    for (var q = 0; q < eHeads.length; q++) {
+                        var pIdx = Math.min(pHeads.length - 1, Math.round(q * (pHeads.length - 1) / Math.max(1, eHeads.length - 1)));
+                        pairs.push({ mdPos: eHeads[q].line, previewY: pHeads[pIdx].y });
+                    }
+                    pairs.sort(function(a, b) { return a.mdPos - b.mdPos; });
+                }
+                return pairs;
+            };
+
+            // 收集预览中的块级元素（去嵌套，取最外层），一次性读取 rect
+            var _collectPreviewBlocks = function(seTop) {
+                var nodes = null;
+                try {
+                    nodes = previewDom[0].querySelectorAll('[data-sign]');
+                    if (!nodes || !nodes.length) {
+                        nodes = previewDom[0].querySelectorAll('h1,h2,h3,h4,h5,h6,p,pre,blockquote,ul,ol,table,dl,hr');
+                    }
+                } catch(e) { return []; }
+                if (!nodes || !nodes.length) return [];
+
+                var MAXB = 1200;                 // ★ 大文档采样上限，避免构建耗时随文档平方增长
+                var arr = [], kept = {};
+                var lim = Math.min(nodes.length, MAXB);
+                for (var i = 0; i < lim; i++) {
+                    var el = nodes[i];
+                    // 去嵌套：祖先已在集合中则跳过
+                    var p = el.parentElement, nested = false;
+                    while (p && p !== previewDom[0]) {
+                        if (kept[p.__xfSyncId]) { nested = true; break; }
+                        p = p.parentElement;
+                    }
+                    if (nested) continue;
+                    el.__xfSyncId = i + 1;
+                    kept[el.__xfSyncId] = true;
+                    var r = el.getBoundingClientRect();
+                    arr.push({
+                        y: Math.max(0, scrollEl.scrollTop + (r.top - seTop)),
+                        bottom: Math.max(0, scrollEl.scrollTop + (r.bottom - seTop)),
+                        h: r.height,
+                        isHead: /^H[1-6]$/.test(el.tagName),
+                        node: el
+                    });
+                }
+                return arr;
+            };
+
+            // ============================================================
+            // ★ 位置映射表：[{mdPos, previewY}] 单调递增双射
+            //   1) 标题为硬锚点（左右强对齐 → 语义级对应）
+            //   2) 章节内的块按「预览渲染高度比例」分配 mdPos → 长章节按比例
+            //   3) 端点 0↔0、末行↔最大滚动，保证顶/底同步
+            // ============================================================
+            var _positionMap = null;
+            var _positionMapKey = null;
+
+            var _hash = function(str) {
+                var h = 5381, i, n = str.length;
+                for (i = 0; i < n; i++) { h = ((h << 5) + h + str.charCodeAt(i)) >>> 0; }
+                return h >>> 0;
+            };
+
             var _buildPositionMap = function() {
                 try {
-                    // ★ v1.17.9: 两层回退 — data-sign 块 → 全部块级元素 → 简单分段
-                    var blocks = previewDom[0].querySelectorAll('[data-sign]');
-                    if (!blocks || !blocks.length) {
-                        // 回退：查找任意块级元素作为位置锚点
-                        blocks = previewDom[0].querySelectorAll('h1,h2,h3,h4,h5,h6,p,pre,blockquote,ul,ol,table,dl,hr,li');
-                    }
-                    if (!blocks || !blocks.length) {
-                        // 最终回退：至少使用 previewDom 自身作为单个锚点
-                        _positionMap = [];
-                        if (previewDom[0]) {
-                            var totalLinesFallback = cm.lineCount();
-                            if (totalLinesFallback > 1) {
-                                _positionMap = [
-                                    { editorLine: 0, previewY: 0 },
-                                    { editorLine: totalLinesFallback - 1, previewY: scrollEl.scrollHeight || 1000 }
-                                ];
-                            }
-                        }
+                    var nLines = _lineCount();
+                    if (nLines <= 1) { _positionMap = []; return; }
+
+                    // ★ 一次性读取 scrollEl 的 rect，杜绝循环内反复触发 layout
+                    var seRect = scrollEl.getBoundingClientRect ? scrollEl.getBoundingClientRect() : { top: 0, height: 0 };
+                    var seTop  = seRect.top;
+                    var maxPreviewTop = Math.max(0, (scrollEl.scrollHeight || 0) - (scrollEl.clientHeight || seRect.height || 0));
+
+                    var md = "";
+                    try { md = cm.getValue(); } catch(e) {}
+                    var eHeads = _collectEditorHeadings();
+                    var pHeads = _collectPreviewHeadings(seTop);
+                    var pairs  = _alignHeadings(eHeads, pHeads);
+
+                    var map = [];
+
+                    if (pairs.length === 0) {
+                        // 无任何标题：端点等比（0↔0，可达终点↔预览底部）
+                        var FallBackEnd = nLines - 1;
+                        try {
+                            var fbInfo = cm.getScrollInfo();
+                            var fbMax = Math.max(0, fbInfo.height - fbInfo.clientHeight);
+                            if (fbMax > 0) FallBackEnd = _editorTopToMdPos(fbMax);
+                        } catch(e) {}
+                        _positionMap = [
+                            { mdPos: 0, previewY: 0 },
+                            { mdPos: Math.max(0.001, Math.min(nLines - 1, FallBackEnd)), previewY: maxPreviewTop }
+                        ];
                         return;
                     }
-                    
-                    var totalLines = cm.lineCount();
-                    if (totalLines <= 1) { _positionMap = []; return; }
-                    
-                    // ★ v1.17.8: 先构建标题锚点列表（精确的 editorLine→blockIndex 映射）
-                    var mdSource = cm.getValue();
-                    var lines = mdSource.split('\n');
-                    var headingRegex = /^(#{1,6})\s+(.+?)(?:\s+#+)?\s*$/;
-                    var inCodeBlock = false;
-                    var editorHeadings = [];
-                    for (var i = 0; i < lines.length; i++) {
-                        var line = lines[i];
-                        if (/^\s*```/.test(line)) { inCodeBlock = !inCodeBlock; continue; }
-                        if (inCodeBlock) continue;
-                        var m = line.match(headingRegex);
-                        if (m) {
-                            // ★ v1.17.26: 防御 m[2] 可能为 undefined
-                            editorHeadings.push({
-                                line: i,
-                                text: (m[2] || '').replace(/\{#[^\}]*\}/g, '').trim()
-                            });
-                        }
-                    }
-                    
-                    // 提取预览DOM中的标题元素
-                    var previewHeadings = [];
-                    for (var b = 0; b < blocks.length; b++) {
-                        if (/^H[1-6]$/.test(blocks[b].tagName)) {
-                            previewHeadings.push({
-                                index: b,
-                                text: (blocks[b].textContent || '').replace(/[\s\u00a0\u200b]+/g, ' ').trim()
-                            });
-                        }
-                    }
-                    
-                    // 配对：文本匹配
-                    var headingMap = []; // [{editorLine, blockIndex}]
-                    var usedPH = {};
-                    for (var ei = 0; ei < editorHeadings.length; ei++) {
-                        for (var pi = 0; pi < previewHeadings.length; pi++) {
-                            if (usedPH[pi]) continue;
-                            if (editorHeadings[ei].text === previewHeadings[pi].text) {
-                                headingMap.push({ editorLine: editorHeadings[ei].line, blockIndex: previewHeadings[pi].index });
-                                usedPH[pi] = true;
-                                break;
-                            }
-                        }
-                    }
-                    headingMap.sort(function(a, b) { return a.editorLine - b.editorLine; });
-                    
-                    // ★ v1.17.8: 构建完整位置映射表 — 标题锚点精确对齐 + 块间比例分配
-                    _positionMap = [];
-                    var scrollElRect = scrollEl.getBoundingClientRect ? scrollEl.getBoundingClientRect() : { top: 0 };
-                    
-                    if (headingMap.length < 2) {
-                        // 标题不够：用块在预览高度中的占比映射 editorLine（比"块序号均匀"更贴合真实滚动比例）
-                        var seRect = scrollEl.getBoundingClientRect();
-                        var totalPreviewH = Math.max(1, scrollEl.scrollHeight || (seRect.bottom - seRect.top));
+
+                    // 头部对齐 0 ↔ 0
+                    map.push({ mdPos: 0, previewY: 0 });
+
+                    var blocks = null;
+                    for (var pi = 0; pi < pairs.length; pi++) {
+                        map.push({ mdPos: pairs[pi].mdPos, previewY: pairs[pi].previewY });
+
+                        // ★ 章节内部：在两个硬锚点之间按渲染高度比例插入块级插值点
+                        var nextPair = pairs[pi + 1];
+                        if (!nextPair) continue;
+                        var mdSpan = nextPair.mdPos - pairs[pi].mdPos;
+                        if (mdSpan < 4) continue;                       // 短章节无需细分
+                        var ySpan   = nextPair.previewY - pairs[pi].previewY;
+                        if (ySpan <= 2) continue;
+
+                        if (blocks === null) blocks = _collectPreviewBlocks(seTop);
+                        if (!blocks.length) continue;
+
+                        // 取落在该章节预览高度区间内的块
+                        var lo = pairs[pi].previewY, hi = nextPair.previewY;
+                        var picked = [], totalH = 0;
                         for (var bi = 0; bi < blocks.length; bi++) {
-                            var bRect = blocks[bi].getBoundingClientRect();
-                            var py = scrollEl.scrollTop + (bRect.top - seRect.top);
-                            var el = Math.round(Math.max(0, Math.min(1, py / totalPreviewH)) * (totalLines - 1));
-                            _positionMap.push({ editorLine: el, previewY: Math.max(0, py) });
+                            var b = blocks[bi];
+                            if (b.y <= lo + 1 || b.y >= hi - 1) continue;
+                            if (b.h <= 0) continue;
+                            picked.push(b);
+                            totalH += b.h;
                         }
-                    } else {
-                        // 有足量标题锚点：标题间按 editorLine 比例分配块
-                        var prevH = headingMap[0];
-                        _positionMap.push({ editorLine: 0, previewY: 0 });
-                        
-                        // 每个标题映射到精确位置
-                        for (var hi = 0; hi < headingMap.length; hi++) {
-                            var bh = headingMap[hi];
-                            try {
-                                var bR = blocks[bh.blockIndex].getBoundingClientRect();
-                                var pY = scrollEl.scrollTop + (bR.top - scrollEl.getBoundingClientRect().top);
-                                _positionMap.push({ editorLine: bh.editorLine, previewY: Math.max(0, pY) });
-                            } catch(e) {}
-                        }
-                        
-                        // 最后一个块
-                        var lastBlock = blocks[blocks.length - 1];
-                        try {
-                            var lbR = lastBlock.getBoundingClientRect();
-                            var lbY = scrollEl.scrollTop + (lbR.bottom - scrollEl.getBoundingClientRect().top);
-                            _positionMap.push({ editorLine: totalLines - 1, previewY: Math.max(0, lbY) });
-                        } catch(e) {
-                            _positionMap.push({ editorLine: totalLines - 1, previewY: scrollEl.scrollHeight });
+                        if (picked.length < 2 || totalH <= 0) continue;
+
+                        var accH = 0;
+                        for (var ci = 0; ci < picked.length - 1; ci++) {
+                            accH += picked[ci].h;
+                            // 高度比例 → mdPos（贴合真实排版密度，远优于「块数均分」）
+                            var frac = accH / totalH;
+                            map.push({
+                                mdPos: pairs[pi].mdPos + frac * mdSpan,
+                                previewY: picked[ci + 1].y
+                            });
                         }
                     }
-                    
-                    // 去重 + 排序
-                    _positionMap.sort(function(a, b) { return a.editorLine - b.editorLine || a.previewY - b.previewY; });
+
+                    // 强制单调递增（mdPos 与 previewY 均非递减），保证双射可逆
+                    map.sort(function(a, b) { return a.mdPos - b.mdPos; });
+                    var clean = [map[0]];
+                    for (var i2 = 1; i2 < map.length; i2++) {
+                        var last = clean[clean.length - 1];
+                        if (map[i2].mdPos - last.mdPos < 1e-6) {
+                            // mdPos 相撞：保留 previewY 较大者（更靠后的视觉位置）
+                            last.previewY = Math.max(last.previewY, map[i2].previewY);
+                            continue;
+                        }
+                        if (map[i2].previewY < last.previewY) map[i2].previewY = last.previewY;
+                        clean.push(map[i2]);
+                    }
+
+                    // ★ 尾部锚点用「Emax 对应的 mdPos」而非「最后一行」：
+                    //   编辑区存在最大滚动量，最后一行永远无法滚到视口顶部；
+                    //   若以最后一行作锚点，t=Emax 时反查会偏离预览底部。
+                    //   改用可达终点 Emax→mdPos，使 map 端点天然为 (0,0) 与 (Emax,Pmax)，
+                    //   从而同时满足：严格互逆 + 端点对齐 + 标题精确对应，无需全局缩放。
+                    var maxEditorTopF = 0;
+                    try {
+                        var infoEnd = cm.getScrollInfo();
+                        maxEditorTopF = Math.max(0, infoEnd.height - infoEnd.clientHeight);
+                    } catch(e) {}
+                    var mdPosEnd = (maxEditorTopF > 0) ? _editorTopToMdPos(maxEditorTopF) : (nLines - 1);
+                    mdPosEnd = Math.max(0, Math.min(nLines - 1, mdPosEnd));
+
+                    // mdPos 超出可达终点的锚点永远不会被查到，剔除以免拖尾误差
+                    clean = clean.filter(function(it) { return it.mdPos < mdPosEnd - 1e-6; });
+                    if (!clean.length) clean.push({ mdPos: 0, previewY: 0 });
+                    if (clean[clean.length - 1].mdPos < mdPosEnd) {
+                        clean.push({ mdPos: mdPosEnd, previewY: maxPreviewTop });
+                    } else {
+                        clean[clean.length - 1].previewY = maxPreviewTop;
+                    }
+                    _positionMap = clean;
                 } catch(e) {
                     _positionMap = [];
                 }
             };
-            
+
             var _getPositionMap = function() {
-                // ★ v1.17.9: 用内容长度+行数作为缓存键，内容变化时更可靠地失效
-                var key = cm.getValue().length + '_' + cm.lineCount();
-                if (_positionMapCacheKey !== key) {
+                var md = "";
+                try { md = cm.getValue(); } catch(e) {}
+                // ★ 缓存键含内容哈希 + 行数 + 预览/编辑器可视高度，等长替换或视口变化都能正确失效
+                var key = _hash(md) + "_" + md.length + "_" + _lineCount() + "_" + (scrollEl.scrollHeight || 0)
+                        + "_" + (scrollEl.clientHeight || 0) + "_" + (cm.getScrollInfo ? cm.getScrollInfo().clientHeight : 0);
+                if (_positionMapKey !== key || !_positionMap) {
                     _buildPositionMap();
-                    _positionMapCacheKey = key;
+                    _positionMapKey = key;
                 }
                 return _positionMap;
             };
-            
+
             var _invalidatePositionMap = function() {
                 _positionMap = null;
-                _positionMapCacheKey = null;
-            };
-    
-            // ================================================================
-            // ★ v1.17.8: 滚动动画 — 使用外层 scrollEl
-            // ================================================================
-            var _animCounter = 0;
-            var _scrollAnimationTo = function(targetScrollTop) {
-                if (Math.abs(scrollEl.scrollTop - targetScrollTop) < 3) return;
-                
-                if (state.editorAnimTimer) {
-                    cancelAnimationFrame(state.editorAnimTimer);
-                    state.editorAnimTimer = null;
-                }
-                
-                var animId = ++_animCounter;
-                state.disablePreviewListener = true;
-                state.programmaticScroll = true;
-                
-                var startTop = scrollEl.scrollTop;
-                var startTime = performance.now();
-                var duration = 200;
-                
-                var animationHandler = function(timestamp) {
-                    if (animId !== _animCounter) return;
-                    var elapsed = timestamp - startTime;
-                    var progress = Math.min(1, elapsed / duration);
-                    var easing = progress < 0.5
-                        ? 4 * progress * progress * progress
-                        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
-                    var newTop = startTop + (targetScrollTop - startTop) * easing;
-                    scrollEl.scrollTop = Math.max(0, newTop);
-                    
-                    if (progress < 1) {
-                        state.editorAnimTimer = requestAnimationFrame(animationHandler);
-                    } else {
-                        scrollEl.scrollTop = Math.max(0, targetScrollTop);
-                        state.editorAnimTimer = null;
-                        state.disablePreviewListener = false;
-                        requestAnimationFrame(function() {
-                            requestAnimationFrame(function() {
-                                state.programmaticScroll = false;
-                            });
-                        });
-                    }
-                };
-                state.editorAnimTimer = requestAnimationFrame(animationHandler);
-            };
-            
-            // ★ 方向二对称缓动：滚动编辑器到目标行（与 _scrollAnimationTo 体验一致，避免瞬时跳变）
-            var _scrollEditorToLineAnim = function(targetLine) {
-                try {
-                    var cmInfo = cm.getScrollInfo();
-                    if (cmInfo.clientHeight <= 0) return;
-                    var totalLines = cm.lineCount();
-                    targetLine = Math.max(0, Math.min(totalLines - 1, targetLine || 0));
-                    var editorMaxScroll = cmInfo.height - cmInfo.clientHeight;
-                    if (editorMaxScroll <= 0) return;
-                    
-                    var lineCoords = cm.charCoords({line: targetLine, ch: 0}, "local");
-                    var targetEditorTop = lineCoords.top - Math.round(cmInfo.clientHeight / 3);
-                    targetEditorTop = Math.max(0, Math.min(editorMaxScroll, targetEditorTop));
-                    
-                    if (Math.abs(cmInfo.top - targetEditorTop) < 3) return;
-                    
-                    if (state.editorCmAnimTimer) {
-                        cancelAnimationFrame(state.editorCmAnimTimer);
-                        state.editorCmAnimTimer = null;
-                    }
-                    
-                    var animId = ++_animCounter;
-                    state.disableEditorListener = true;
-                    state.programmaticScroll = true;
-                    
-                    var startTop = cmInfo.top;
-                    var startTime = performance.now();
-                    var duration = 200;
-                    
-                    var animHandler = function(timestamp) {
-                        if (animId !== _animCounter) return;
-                        var elapsed = timestamp - startTime;
-                        var t = Math.min(1, elapsed / duration);
-                        var eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-                        var cur = startTop + (targetEditorTop - startTop) * eased;
-                        cm.scrollTo(0, cur);
-                        if (t < 1) {
-                            state.editorCmAnimTimer = requestAnimationFrame(animHandler);
-                        } else {
-                            state.editorCmAnimTimer = null;
-                            cm.scrollTo(0, targetEditorTop);
-                            requestAnimationFrame(function() {
-                                requestAnimationFrame(function() {
-                                    state.disableEditorListener = false;
-                                    state.programmaticScroll = false;
-                                });
-                            });
-                        }
-                    };
-                    state.editorCmAnimTimer = requestAnimationFrame(animHandler);
-                } catch(e) {}
+                _positionMapKey = null;
             };
 
-            // ★ v1.17.8: 暴露内部方法到 state 对象供外部调用
-            state._invalidateAnchors = _invalidatePositionMap;
-            state._refreshSync = function(centerLine) {
+            // 单调表线性插值
+            var _lookup = function(map, fromKey, toKey, x) {
+                var len = map.length;
+                if (len === 0) return null;
+                if (x <= map[0][fromKey]) return map[0][toKey];
+                if (x >= map[len - 1][fromKey]) return map[len - 1][toKey];
+                var lo = 0, hi = len - 1;
+                while (lo < hi) {
+                    var mid = (lo + hi + 1) >> 1;
+                    if (map[mid][fromKey] <= x) lo = mid; else hi = mid - 1;
+                }
+                if (lo >= len - 1) return map[len - 1][toKey];
+                var a = map[lo], b = map[lo + 1];
+                var d = b[fromKey] - a[fromKey];
+                if (d <= 0) return a[toKey];
+                var t = Math.max(0, Math.min(1, (x - a[fromKey]) / d));
+                return a[toKey] + (b[toKey] - a[toKey]) * t;
+            };
+
+            // ★ 两个方向严格互逆的核心
+            var _mdPosToPreviewY = function(mdPos) {
+                var map = _getPositionMap();
+                var v = _lookup(map, "mdPos", "previewY", mdPos);
+                return v == null ? null : Math.max(0, v);
+            };
+            var _previewYToMdPos = function(previewY) {
+                var map = _getPositionMap();
+                if (!map || !map.length) return null;
+                return _lookup(map, "previewY", "mdPos", previewY);
+            };
+
+            // ============================================================
+            // 方向一：编辑器 scrollTop → 预览 scrollTop
+            // ============================================================
+            var _editorTopToPreviewTop = function(editorTop) {
+                var map = _getPositionMap();
+                if (!map || map.length === 0) return null;
                 try {
-                    _invalidatePositionMap();
-                    if (typeof centerLine === 'number') {
-                        var targetScrollTop = _editorLineToPreviewScroll(centerLine);
-                        if (targetScrollTop !== null) {
-                            _scrollAnimationTo(targetScrollTop);
-                        }
+                    var info = cm.getScrollInfo();
+                    var maxEditorTop = Math.max(0, info.height - info.clientHeight);
+                    var maxPreviewTop = Math.max(0, (scrollEl.scrollHeight || 0) - (scrollEl.clientHeight || 0));
+                    if (maxEditorTop <= 0) return 0;
+
+                    // ★ 端点吸附：保证顶对顶、底对底，消除累计误差
+                    if (editorTop <= 1) return 0;
+                    if (editorTop >= maxEditorTop - 1) return maxPreviewTop;
+
+                    // mdPos → previewY（map 端点已校准为 (0,0)/(Emax,Pmax)，
+                    // 全程严格单调且无需任何缩放，因此与方向二天然互逆）
+                    var mdPos = _editorTopToMdPos(editorTop);
+                    var y = _mdPosToPreviewY(mdPos);
+                    if (y == null) return null;
+                    return Math.max(0, Math.min(maxPreviewTop, y));
+                } catch(e) { return null; }
+            };
+
+            // ============================================================
+            // 方向二：预览 scrollTop → 编辑器 scrollTop
+            // ============================================================
+            var _previewTopToEditorTop = function(previewTop) {
+                var map = _getPositionMap();
+                if (!map || map.length === 0) return null;
+                try {
+                    var info = cm.getScrollInfo();
+                    var maxEditorTop = Math.max(0, info.height - info.clientHeight);
+                    var maxPreviewTop = Math.max(0, (scrollEl.scrollHeight || 0) - (scrollEl.clientHeight || 0));
+                    if (maxEditorTop <= 0) return null;
+
+                    if (previewTop <= 1) return 0;
+                    if (maxPreviewTop > 0 && previewTop >= maxPreviewTop - 1) return maxEditorTop;
+
+                    var mdPos = _previewYToMdPos(previewTop);
+                    if (mdPos == null) return null;
+                    var top = _mdPosToEditorTop(mdPos);
+                    return Math.max(0, Math.min(maxEditorTop, top));
+                } catch(e) { return null; }
+            };
+
+            // ============================================================
+            // 应用滚动（默认瞬时跟随 —— 原生手感的严格 1:1 同步；可选缓动）
+            //   瞬时 + rAF 合帧：既流畅又永不错位/漂移，彻底消除回环死锁。
+            // ============================================================
+            var _smoothDur = (settings && settings.syncScrollSmooth) ? 180 : 0;
+
+            var _applyPreviewTop = function(target) {
+                target = Math.max(0, target);
+                state.expectPreviewTop = target;
+                state.expectPreviewTs  = _now();
+                state.programmaticScroll = true;
+                try {
+                    if (!_smoothDur) {
+                        scrollEl.scrollTop = target;
+                    } else {
+                        var startTop = scrollEl.scrollTop, startT = _now();
+                        var step = function() {
+                            var p = Math.min(1, (_now() - startT) / _smoothDur);
+                            var e = p < 0.5 ? 4*p*p*p : 1 - Math.pow(-2*p + 2, 3) / 2;
+                            scrollEl.scrollTop = startTop + (target - startTop) * e;
+                            state.expectPreviewTop = scrollEl.scrollTop;
+                            state.expectPreviewTs  = _now();
+                            if (p < 1) requestAnimationFrame(step);
+                            else { scrollEl.scrollTop = target; state.programmaticScroll = false; }
+                        };
+                        requestAnimationFrame(step);
                     }
                 } catch(e) {}
+                requestAnimationFrame(function() {
+                    requestAnimationFrame(function() { state.programmaticScroll = false; });
+                });
             };
-    
-            // ================================================================
-            // ★★★ v1.17.8: 方向一 — 编辑区行号→预览区滚动位置 ★★★
-            // 使用位置映射表（所有 data-sign 块）进行精确定位
-            // ================================================================
-            var _editorLineToPreviewScroll = function(editorLine) {
+
+            var _applyEditorTop = function(target) {
+                target = Math.max(0, target);
+                state.expectEditorTop = target;
+                state.expectEditorTs  = _now();
+                state.programmaticScroll = true;
                 try {
-                    var map = _getPositionMap();
-                    var totalLines = cm.lineCount();
-                    
-                    if (!map || map.length === 0) {
-                        // ★ v1.17.9: 与 _buildPositionMap 保持一致的回退 — 先用 data-sign，再找任意块级元素
-                        var blocks = previewDom[0].querySelectorAll('[data-sign]');
-                        if (!blocks.length) {
-                            blocks = previewDom[0].querySelectorAll('h1,h2,h3,h4,h5,h6,p,pre,blockquote,ul,ol,table,dl,hr,li');
-                        }
-                        if (!blocks.length) return null;
-                        var ratio = Math.max(0, Math.min(1, editorLine / Math.max(1, totalLines - 1)));
-                        var tIdx = Math.round(ratio * (blocks.length - 1));
-                        tIdx = Math.min(blocks.length - 1, Math.max(0, tIdx));
-                        var targetBlock = blocks[tIdx];
-                        var seRect = scrollEl.getBoundingClientRect();
-                        var bRect = targetBlock.getBoundingClientRect();
-                        return Math.max(0, scrollEl.scrollTop + (bRect.top - seRect.top));
+                    if (!_smoothDur) {
+                        cm.scrollTo(0, target);
+                    } else {
+                        var startTop = cm.getScrollInfo().top, startT = _now();
+                        var step = function() {
+                            var p = Math.min(1, (_now() - startT) / _smoothDur);
+                            var e = p < 0.5 ? 4*p*p*p : 1 - Math.pow(-2*p + 2, 3) / 2;
+                            cm.scrollTo(0, startTop + (target - startTop) * e);
+                            state.expectEditorTop = cm.getScrollInfo().top;
+                            state.expectEditorTs  = _now();
+                            if (p < 1) requestAnimationFrame(step);
+                            else { cm.scrollTo(0, target); state.programmaticScroll = false; }
+                        };
+                        requestAnimationFrame(step);
                     }
-                    
-                    var lo = 0, hi = map.length - 1;
-                    while (lo < hi) {
-                        var mid = (lo + hi + 1) >> 1;
-                        if (map[mid].editorLine <= editorLine) {
-                            lo = mid;
-                        } else {
-                            hi = mid - 1;
-                        }
-                    }
-                    
-                    if (lo >= map.length - 1) return map[map.length - 1].previewY;
-                    
-                    var prev = map[lo];
-                    var next = map[lo + 1];
-                    var lineDist = next.editorLine - prev.editorLine;
-                    if (lineDist <= 0) return prev.previewY;
-                    
-                    var t = Math.max(0, Math.min(1, (editorLine - prev.editorLine) / lineDist));
-                    return prev.previewY + (next.previewY - prev.previewY) * t;
-                } catch(e) {
-                    return null;
-                }
+                } catch(e) {}
+                requestAnimationFrame(function() {
+                    requestAnimationFrame(function() { state.programmaticScroll = false; });
+                });
             };
-    
-            // ================================================================
-            // ★★★ v1.17.8: 方向二 — 预览区滚动位置→编辑区行号 ★★★
-            // ================================================================
-            var _previewScrollToEditorLine = function() {
-                try {
-                    var map = _getPositionMap();
-                    var totalLines = cm.lineCount();
-                    if (totalLines <= 0) return null;
-                    
-                    if (!map || map.length === 0) {
-                        // ★ v1.17.9: 与 _buildPositionMap 保持一致的回退 — 先用 data-sign，再找任意块级元素
-                        var blocks = previewDom[0].querySelectorAll('[data-sign]');
-                        if (!blocks.length) {
-                            blocks = previewDom[0].querySelectorAll('h1,h2,h3,h4,h5,h6,p,pre,blockquote,ul,ol,table,dl,hr,li');
-                        }
-                        if (!blocks.length) return null;
-                        
-                        var seRect = scrollEl.getBoundingClientRect();
-                        var vpCenter = (seRect.top + seRect.bottom) / 2;
-                        
-                        var lo = 0, hi = blocks.length - 1, foundIdx = -1;
-                        while (lo <= hi) {
-                            var mid = (lo + hi) >> 1;
-                            var r = blocks[mid].getBoundingClientRect();
-                            if (r.bottom > vpCenter) {
-                                foundIdx = mid;
-                                hi = mid - 1;
-                            } else {
-                                lo = mid + 1;
-                            }
-                        }
-                        if (foundIdx < 0) foundIdx = blocks.length - 1;
-                        
-                        var ratio = blocks.length > 1 ? foundIdx / (blocks.length - 1) : 0;
-                        return Math.round(ratio * (totalLines - 1));
-                    }
-                    
-                    var seRect = scrollEl.getBoundingClientRect();
-                    var viewportCenterY = scrollEl.scrollTop + (seRect.bottom - seRect.top) / 2;
-                    
-                    var lo = 0, hi = map.length - 1;
-                    while (lo < hi) {
-                        var mid = (lo + hi + 1) >> 1;
-                        if (map[mid].previewY <= viewportCenterY) {
-                            lo = mid;
-                        } else {
-                            hi = mid - 1;
-                        }
-                    }
-                    
-                    if (lo >= map.length - 1) return totalLines - 1;
-                    
-                    var prev = map[lo];
-                    var next = map[lo + 1];
-                    var yDist = next.previewY - prev.previewY;
-                    if (yDist <= 0) return prev.editorLine;
-                    
-                    var t = Math.max(0, Math.min(1, (viewportCenterY - prev.previewY) / yDist));
-                    return Math.round(prev.editorLine + (next.editorLine - prev.editorLine) * t);
-                } catch(e) {
-                    return null;
-                }
-            };
-    
-            // ================================================================
-            // ★ v1.17.8: 方向一：编辑区滚动 → 同步预览区
-            //   门控：_masterZone !== "preview" 才允许（用户正在操作预览区时禁止）
-            // ================================================================
+
+            // ============================================================
+            // 方向一处理器
+            // ============================================================
             var _editorSyncToPreview = function() {
                 if (state.suppressAllSync) return;
-                if (state.programmaticScroll) return;
-                if (state.disableEditorListener) return;
                 if (_this._applyingDomChanges) return;
                 if (_masterZone === "preview") return;
-                if (!_masterZone && state.mouseTarget === "preview") return;
-                
-                var now = Date.now();
-                if (now - state.lastEditorSyncTime < SYNC_DEBOUNCE) return;
-                state.lastEditorSyncTime = now;
-                
+                if (_isSelfEditorScroll()) return;
                 try {
-                    var cmInfo = cm.getScrollInfo();
-                    var cmMaxScroll = Math.max(0, cmInfo.height - cmInfo.clientHeight);
-                    if (cmMaxScroll <= 0) return;
-                    
-                    var scrollRatio = cmMaxScroll > 0 ? cmInfo.top / cmMaxScroll : 0;
-                    var totalLines = cm.lineCount();
-                    var centerLine = Math.round(scrollRatio * (totalLines - 1));
-                    
-                    var firstVisibleLine = cm.lineAtHeight(cmInfo.top, "local");
-                    var lastVisibleLine = cm.lineAtHeight(cmInfo.top + cmInfo.clientHeight, "local");
-                    var visibleCenter = firstVisibleLine + (lastVisibleLine - firstVisibleLine) / 2;
-                    centerLine = Math.round((centerLine + visibleCenter) / 2);
-                    
-                    var targetScrollTop = _editorLineToPreviewScroll(centerLine);
-                    if (targetScrollTop !== null) {
-                        _scrollAnimationTo(targetScrollTop);
-                    }
+                    var info = cm.getScrollInfo();
+                    var target = _editorTopToPreviewTop(info.top);
+                    if (target === null) return;
+                    _applyPreviewTop(target);
                 } catch(e) {}
             };
-            
-            cmScroll.off("scroll.xf_editor-sync").on("scroll.xf_editor-sync", _editorSyncToPreview);
-            
+            var _editorSyncRAF = _rafThrottle(_editorSyncToPreview);
+
             var _editorChangeTimer = null;
+            cmScroll.off("scroll.xf_editor-sync").on("scroll.xf_editor-sync", function() {
+                if (_isSelfEditorScroll()) return;
+                _masterZone = "editor";
+                _editorSyncRAF();
+            });
+
+            // ============================================================
+            // 方向二处理器
+            // ============================================================
+            var _previewSyncToEditor = function() {
+                if (state.suppressAllSync) return;
+                if (_this._applyingDomChanges) return;
+                if (_masterZone === "editor") return;
+                if (_isSelfPreviewScroll()) return;
+                try {
+                    var target = _previewTopToEditorTop(scrollEl.scrollTop);
+                    if (target === null) return;
+                    _applyEditorTop(target);
+                } catch(e) {}
+            };
+            var _previewSyncRAF = _rafThrottle(_previewSyncToEditor);
+
+            dom(scrollEl).off("scroll.xf_editor-sync-v3").on("scroll.xf_editor-sync-v3", function() {
+                if (_isSelfPreviewScroll()) return;
+                _masterZone = "preview";
+                _previewSyncRAF();
+            });
+
+            // ============================================================
+            // 主控区：由真实用户交互确定（wheel / touch / 键盘 / 拖动滚动条）
+            // ============================================================
+            var _bindMaster = function(el, zone) {
+                if (!el) return;
+                dom(el).off("wheel.xf_editor-master touchstart.xf_editor-master touchmove.xf_editor-master mousedown.xf_editor-master")
+                    .on("wheel.xf_editor-master touchstart.xf_editor-master touchmove.xf_editor-master mousedown.xf_editor-master", function() {
+                        _masterZone = zone;
+                    });
+            };
+            _bindMaster(cmScrollEl, "editor");
+            _bindMaster(scrollEl,   "preview");
+
+            try {
+                cm.off("focus.xf_editor-sync");
+                cm.on("focus.xf_editor-sync", function() { _masterZone = "editor"; });
+            } catch(e) {}
+
+            editor.off("mouseenter.xf_editor-sync mouseleave.xf_editor-sync")
+                .on("mouseenter.xf_editor-sync", function() { state.mouseTarget = "editor"; })
+                .on("mouseleave.xf_editor-sync", function() { if (state.mouseTarget === "editor") state.mouseTarget = null; });
+            dom(scrollEl).off("mouseenter.xf_editor-sync mouseleave.xf_editor-sync")
+                .on("mouseenter.xf_editor-sync", function() { state.mouseTarget = "preview"; })
+                .on("mouseleave.xf_editor-sync", function() { if (state.mouseTarget === "preview") state.mouseTarget = null; });
+
+            // 内容变更 → 失效映射 + 重新对齐
             cm.off("changes.xfsync");
             cm.on("changes.xfsync", function() {
                 clearTimeout(_editorChangeTimer);
@@ -8476,93 +9128,26 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     }
                 }, 50);
             });
-            
+
             cm.off("cursorActivity.xfsync");
             cm.on("cursorActivity.xfsync", function() {
                 if (state.suppressAllSync) return;
                 if (_this._applyingDomChanges) return;
                 if (_masterZone === "preview") return;
-                
-                var cursor = cm.getCursor();
-                var cmInfo = cm.getScrollInfo();
-                var cursorTop = cm.charCoords(cursor, "local").top;
-                if (cursorTop < cmInfo.top || cursorTop > cmInfo.top + cmInfo.clientHeight) {
-                    _invalidatePositionMap();
-                    _editorSyncToPreview();
-                }
-            });
-    
-            // ================================================================
-            // ★ v1.17.8: 方向二：预览区滚动 → 同步编辑区
-            //   门控：_masterZone !== "editor" 才允许（编辑区是主控区时禁止）
-            // ================================================================
-            var _previewScrollHandler = function(e) {
-                if (state.suppressAllSync) return;
-                if (state.programmaticScroll) return;
-                if (state.disablePreviewListener) return;
-                if (_this._applyingDomChanges) return;
-                if (_masterZone === "editor") return;
-                if (!_masterZone && state.mouseTarget === "editor") return;
-                
-                var now = Date.now();
-                if (now - state.lastPreviewSyncTime < SYNC_DEBOUNCE) return;
-                state.lastPreviewSyncTime = now;
-                
                 try {
-                    var targetLine = _previewScrollToEditorLine();
-                    if (targetLine === null) return;
-                    
-                    var cmInfo = cm.getScrollInfo();
-                    if (cmInfo.clientHeight <= 0) return;
-                    
-                    var totalLines = cm.lineCount();
-                    targetLine = Math.max(0, Math.min(totalLines - 1, targetLine));
-                    
-                    // ★ 改用缓动动画滚动编辑器，与方向一（预览动画）体验一致，避免瞬时跳变抖动
-                    _scrollEditorToLineAnim(targetLine);
-                } catch(e) {}
-            };
-    
-            dom(scrollEl).off("scroll.xf_editor-sync-v3").on("scroll.xf_editor-sync-v3", _previewScrollHandler);
-            
-            dom(scrollEl).off("wheel.xf_editor-anim").on("wheel.xf_editor-anim", function() {
-                if (state.editorAnimTimer) {
-                    cancelAnimationFrame(state.editorAnimTimer);
-                    state.editorAnimTimer = null;
-                }
-                // ★ v1.17.9 fix: 动画中断时重置防回环标志，否则永久死锁
-                state.disablePreviewListener = false;
-                state.programmaticScroll = false;
-                _invalidatePositionMap();
-            });
-            dom(cmScrollEl).off("wheel.xf_editor-anim").on("wheel.xf_editor-anim", function() {
-                if (state.editorAnimTimer) {
-                    cancelAnimationFrame(state.editorAnimTimer);
-                    state.editorAnimTimer = null;
-                }
-                // ★ v1.17.9 fix: 动画中断时重置防回环标志，否则永久死锁
-                state.disablePreviewListener = false;
-                state.programmaticScroll = false;
-                _invalidatePositionMap();
-            });
-            
-            dom(scrollEl).off("mousedown.xf_editor-sync").on("mousedown.xf_editor-sync", function(e) {
-                var sw = scrollEl.offsetWidth - scrollEl.clientWidth;
-                if (sw > 0 && e.offsetX > scrollEl.clientWidth) {
-                    if (state.editorAnimTimer) {
-                        cancelAnimationFrame(state.editorAnimTimer);
-                        state.editorAnimTimer = null;
+                    var cur = cm.getCursor();
+                    var info = cm.getScrollInfo();
+                    var top = cm.charCoords(cur, "local").top;
+                    if (top < info.top || top > info.top + info.clientHeight) {
+                        _invalidatePositionMap();
+                        _editorSyncToPreview();
                     }
-                    // ★ v1.17.9 fix: scrollbar拖拽也必须重置防回环标志
-                    state.disablePreviewListener = false;
-                    state.programmaticScroll = false;
-                }
-                _invalidatePositionMap();
+                } catch(e) {}
             });
-    
-            // ================================================================
-            // ★ v1.17.8: TOC 链接点击处理
-            // ================================================================
+
+            // ============================================================
+            // TOC 链接点击
+            // ============================================================
             previewDom.off("click.xf_editor-toc").on("click.xf_editor-toc", ".markdown-toc-list a[href^='#']", function(e) {
                 var href = dom(this).attr("href");
                 if (!href || href === "#") return;
@@ -8578,27 +9163,19 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     e.stopPropagation();
                     var seRect = scrollEl.getBoundingClientRect();
                     var tRect = targetEl.getBoundingClientRect();
-                    var targetScrollTop = scrollEl.scrollTop + (tRect.top - seRect.top) - 30;
-                    targetScrollTop = Math.max(0, targetScrollTop);
+                    var targetScrollTop = Math.max(0, scrollEl.scrollTop + (tRect.top - seRect.top) - 30);
                     _invalidatePositionMap();
-                    _setMasterZone("preview");
-                    state.programmaticScroll = true;
-                    scrollEl.scrollTo({ top: targetScrollTop, behavior: "smooth" });
-                    requestAnimationFrame(function() {
-                        requestAnimationFrame(function() {
-                            state.programmaticScroll = false;
-                        });
-                    });
+                    _masterZone = "preview";
+                    _applyPreviewTop(targetScrollTop);
                 }
             });
-            
-            // ================================================================
-            // ★ v1.17.8: 脚注引用链接点击处理
-            // ================================================================
+
+            // ============================================================
+            // 脚注引用链接点击
+            // ============================================================
             previewDom.off("click.xf_editor-footnote").on("click.xf_editor-footnote", ".xf_editor-footnote-ref-wrapper a[href^='#xf_editor-fn-'], .xf_editor-copybook-footnote a[href^='#xf_editor-fn-'], .xf_editor-footnote-backref[href^='#xf_editor-fnref-']", function(e) {
                 var href = dom(this).attr("href");
                 if (!href || href === "#") return;
-                
                 var targetId = decodeURIComponent(href.substring(1));
                 var targetEl = null;
                 try {
@@ -8606,132 +9183,136 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 } catch(_) {
                     targetEl = previewDom[0].querySelector('[id="' + targetId.replace(/"/g, '\\"') + '"]');
                 }
-                
                 if (targetEl && previewDom[0].contains(targetEl)) {
                     e.preventDefault();
                     e.stopPropagation();
-                    
                     var tRect = targetEl.getBoundingClientRect();
-                    var targetScrollTop = scrollEl.scrollTop + (tRect.top - scrollEl.getBoundingClientRect().top) - 40;
-                    targetScrollTop = Math.max(0, targetScrollTop);
-                    
-                    _setMasterZone("preview");
-                    state.programmaticScroll = true;
-                    scrollEl.scrollTo({ top: targetScrollTop, behavior: "smooth" });
-                    
+                    var targetScrollTop = Math.max(0, scrollEl.scrollTop + (tRect.top - scrollEl.getBoundingClientRect().top) - 40);
+                    _masterZone = "preview";
+                    _applyPreviewTop(targetScrollTop);
                     var target = dom(targetEl);
                     target.addClass("xf_editor-footnote-highlight");
-                    setTimeout(function() {
-                        target.removeClass("xf_editor-footnote-highlight");
-                    }, 2000);
-                    
-                    requestAnimationFrame(function() {
-                        requestAnimationFrame(function() {
-                            state.programmaticScroll = false;
-                        });
-                    });
+                    setTimeout(function() { target.removeClass("xf_editor-footnote-highlight"); }, 2000);
                 }
             });
-            
+
             var _resizeTimer = null;
             dom(window).off("resize.xf_editor-sync").on("resize.xf_editor-sync", function() {
                 clearTimeout(_resizeTimer);
                 _resizeTimer = setTimeout(function() {
                     _invalidatePositionMap();
-                    _editorSyncToPreview();
+                    if (_masterZone !== "preview") _editorSyncToPreview();
                 }, 200);
             });
-    
-            // ================================================================
-            // ★ 增强：异步内容（图片/KaTeX/图表）加载完成后自动重算映射
-            //   预览区高度在图片/字体/图表渲染后才会稳定，否则映射基于临时高度会偏差
-            // ================================================================
+
+            // ============================================================
+            // 异步资源（图片/KaTeX/图表/字体）加载完成后重算，避免基于临时高度
+            // ============================================================
             var _imgResyncTimer = null;
             var _scheduleImgResync = function() {
                 if (_imgResyncTimer) clearTimeout(_imgResyncTimer);
                 _imgResyncTimer = setTimeout(function() {
                     _imgResyncTimer = null;
                     _invalidatePositionMap();
-                    // 若用户当前主控编辑区（或尚未选定），则重新对齐预览；主控预览区则不反向打扰
                     if (_masterZone === "editor" || (!_masterZone && state.mouseTarget !== "preview")) {
                         _editorSyncToPreview();
                     }
                 }, 150);
             };
-            // 监听预览内图片加载完成（含后续动态插入的图片，事件委托）
-            previewDom.off("load.xf_editor-sync-img").on("load.xf_editor-sync-img", "img", function() {
-                _scheduleImgResync();
-            });
-            // 对初始尚未加载完的图片补监听
+            previewDom.off("load.xf_editor-sync-img").on("load.xf_editor-sync-img", "img", function() { _scheduleImgResync(); });
             try {
                 var _imgs0 = previewDom[0].querySelectorAll("img");
                 Array.prototype.forEach.call(_imgs0, function(img) {
                     if (!img.complete) {
-                        dom(img).off("load.xf_editor-sync-img2").on("load.xf_editor-sync-img2", function() {
-                            _scheduleImgResync();
-                        });
+                        dom(img).off("load.xf_editor-sync-img2").on("load.xf_editor-sync-img2", function() { _scheduleImgResync(); });
                     }
                 });
             } catch(e) {}
-    
-            // ================================================================
-            // ★ v1.17.9: 外部接口 — 预览区交互时暂停/恢复同步
-            // ================================================================
+
+            try {
+                var _onPreviewMediaLoad = function(ev) {
+                    var t = ev && ev.target;
+                    if (t && (t.tagName === "IMG" || t.tagName === "VIDEO" || t.tagName === "AUDIO")) {
+                        _invalidatePositionMap();
+                    }
+                };
+                previewDom[0].addEventListener("load", _onPreviewMediaLoad, true);
+                state._previewMediaLoadHandler = _onPreviewMediaLoad;
+            } catch(e) {}
+
+            dom(window).off("resize.xf_editor-sync-media");
+            dom(window).on("resize.xf_editor-sync-media", function() { _invalidatePositionMap(); });
+
+            try {
+                if (typeof document !== "undefined" && document.fonts && document.fonts.ready && document.fonts.ready.then) {
+                    document.fonts.ready.then(function() {
+                        try {
+                            _invalidatePositionMap();
+                            if (_masterZone !== "preview" && !state.suppressAllSync && !_this._applyingDomChanges) {
+                                _editorSyncToPreview();
+                            }
+                        } catch(e) {}
+                    });
+                }
+            } catch(e) {}
+            dom(window).off("load.xf_editor-sync-fonts").on("load.xf_editor-sync-fonts", function() { _invalidatePositionMap(); });
+
+            // ============================================================
+            // 外部接口
+            // ============================================================
+            state._invalidateAnchors = _invalidatePositionMap;
+            state._getAnchorTable    = _getPositionMap;
+            state._editorToPreview   = _editorTopToPreviewTop;
+            state._previewToEditor   = _previewTopToEditorTop;
+            state._mdPosToEditorTop  = _mdPosToEditorTop;
+            state._refreshSync = function(lineNum) {
+                try {
+                    _invalidatePositionMap();
+                    if (typeof lineNum === "number") {
+                        var top = _mdPosToEditorTop(lineNum);
+                        var target = _editorTopToPreviewTop(top);
+                        if (target !== null) _applyPreviewTop(target);
+                    } else {
+                        _editorSyncToPreview();
+                    }
+                } catch(e) {}
+            };
+
             this.suspendSyncScroll = function() {
                 state.suppressAllSync = true;
-                // 清除所有待处理的同步定时器，防止覆盖手动滚动恢复
                 clearTimeout(_editorChangeTimer);
                 _editorChangeTimer = null;
-                if (_this.__lastSyncTimer) {
-                    clearTimeout(_this.__lastSyncTimer);
-                    _this.__lastSyncTimer = null;
-                }
-                // 取消正在进行的动画
-                if (state.editorAnimTimer) {
-                    cancelAnimationFrame(state.editorAnimTimer);
-                    state.editorAnimTimer = null;
-                    state.disablePreviewListener = false;
-                    state.programmaticScroll = false;
-                }
+                if (_this.__lastSyncTimer) { clearTimeout(_this.__lastSyncTimer); _this.__lastSyncTimer = null; }
+                state.expectPreviewTop = null;
+                state.expectEditorTop  = null;
+                state.programmaticScroll = false;
             };
             this.resumeSyncScroll = function() {
                 state.suppressAllSync = false;
-                // ★ v1.17.9: 清除 save() 创建的延迟同步定时器，防止覆盖手动滚动恢复
-                if (_this.__lastSyncTimer) {
-                    clearTimeout(_this.__lastSyncTimer);
-                    _this.__lastSyncTimer = null;
-                }
+                if (_this.__lastSyncTimer) { clearTimeout(_this.__lastSyncTimer); _this.__lastSyncTimer = null; }
                 _invalidatePositionMap();
             };
-    
+
             this._scrollSyncBound = true;
             _invalidatePositionMap();
-            
+
+            // 初始对齐
             setTimeout(function() {
                 if (state.suppressAllSync) return;
                 if (_this._applyingDomChanges) return;
                 try {
-                    var cmInfo = cm.getScrollInfo();
-                    var cmMaxScroll = Math.max(0, cmInfo.height - cmInfo.clientHeight);
-                    if (cmMaxScroll <= 0) return;
-                    var scrollRatio = cmMaxScroll > 0 ? cmInfo.top / cmMaxScroll : 0;
-                    var totalLines = cm.lineCount();
-                    var centerLine = Math.round(scrollRatio * (totalLines - 1));
-                    var firstVisibleLine = cm.lineAtHeight(cmInfo.top, "local");
-                    var lastVisibleLine = cm.lineAtHeight(cmInfo.top + cmInfo.clientHeight, "local");
-                    centerLine = Math.round((centerLine + firstVisibleLine + (lastVisibleLine - firstVisibleLine) / 2) / 2);
-                    var targetScrollTop = _editorLineToPreviewScroll(centerLine);
-                    if (targetScrollTop !== null) {
-                        _scrollAnimationTo(targetScrollTop);
-                    }
+                    var info = cm.getScrollInfo();
+                    if (Math.max(0, info.height - info.clientHeight) <= 0) return;
+                    var target = _editorTopToPreviewTop(info.top);
+                    if (target !== null) _applyPreviewTop(target);
                 } catch(e) {}
             }, 300);
-            
+
             return this;
         },
         
         /**
-         * ★ v1.17.1: 解除同步滚动绑定
+         * ★ v2.0.0: 解除同步滚动绑定
          * Unbind editor-preview sync scrolling
          * 
          * @returns {xfEditor}
@@ -8763,6 +9344,14 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 }
                 if (this.previewContainer) {
                     this.previewContainer.off("click.xf_editor-toc click.xf_editor-footnote");
+                    // ★ v2.0.0 fix: 移除媒体加载监听（与 bindSyncScroll 中的捕获监听配对）
+                    if (this._syncState && this._syncState._previewMediaLoadHandler) {
+                        try {
+                            this.previewContainer[0].removeEventListener("load", this._syncState._previewMediaLoadHandler, true);
+                        } catch (e) {}
+                        this._syncState._previewMediaLoadHandler = null;
+                    }
+                    dom(window).off("resize.xf_editor-sync-media");
                 }
                 if (this.editor) {
                     this.editor.off("mouseenter.xf_editor-sync mouseleave.xf_editor-sync");
@@ -8798,7 +9387,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         },
         
         /**
-         * ★ v1.17.2-FIX: 滚动预览区到指定编辑区行号（标题锚点 + 插值）
+         * ★ v2.0.0-FIX: 滚动预览区到指定编辑区行号（标题锚点 + 插值）
          * 
          * 参照 cherry-markdown scrollToLineNum(lineNum, linePercent)，
          * 使用标题锚点映射替代简单比例算法，定位精准。
@@ -8815,7 +9404,19 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             var scrollEl = this.preview ? this.preview[0] : null;
             if (!previewDom || !previewDom[0] || !scrollEl) return this;
             var state = this._syncState;
-            
+
+            // ★ 优先复用重写后的同步引擎：与其完全同源的映射，避免新旧两套逻辑定位不一致
+            if (state && state._mdPosToEditorTop && state._editorToPreview) {
+                try {
+                    state._invalidateAnchors();
+                    var y = state._editorToPreview(state._mdPosToEditorTop(targetLine));
+                    if (y !== null) {
+                        scrollEl.scrollTop = Math.max(0, y);
+                        return this;
+                    }
+                } catch(e) {}
+            }
+
             try {
                 var totalLines = this.cm ? this.cm.lineCount() : 1;
                 var anchors = this._buildHeadingAnchorMap();
@@ -9165,7 +9766,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         },
         
         /**
-         * ★ v1.17.6: 内联链接对话框，不依赖插件异步加载
+         * ★ v2.0.0: 内联链接对话框，不依赖插件异步加载
          * Inline link dialog - supports [text](url){target=_blank} syntax
          */
         linkDialog : function() {
@@ -9239,7 +9840,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                                 return false;
                             }
                             
-                            // ★ v1.17.6: 构建带 target 的链接标记
+                            // ★ v2.0.0: 构建带 target 的链接标记
                             var str;
                             if (target) {
                                 // 使用扩展语法: [text](url){target=_blank}
@@ -9252,7 +9853,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                                 }
                             }
 
-                            // ★ v1.17.6-FIX4: 使用 _this.cm 获取最新 CodeMirror 引用
+                            // ★ v2.0.0-FIX4: 使用 _this.cm 获取最新 CodeMirror 引用
                             var editCm = _this.cm;
                             if (editCm && typeof editCm.replaceSelection === "function") {
                                 editCm.focus();
@@ -9273,7 +9874,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         },
         
         /**
-         * ★ v1.17.6: 内联引用链接对话框
+         * ★ v2.0.0: 内联引用链接对话框
          * Inline reference link dialog
          */
         referenceLinkDialog : function() {
@@ -9342,7 +9943,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                             }
                             linkStr += ")";
 
-                            // ★ v1.17.6-FIX4: 使用 _this.cm 获取最新 CodeMirror 引用
+                            // ★ v2.0.0-FIX4: 使用 _this.cm 获取最新 CodeMirror 引用
                             var editCm = _this.cm;
                             if (editCm && typeof editCm.replaceSelection === "function") {
                                 editCm.focus();
@@ -9391,7 +9992,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             var cm       = this.cm;
             var settings = this.settings;
             
-            // ★ v1.17.2: 统一插件调用方式，优先直接调用已注册的插件方法
+            // ★ v2.0.0: 统一插件调用方式，优先直接调用已注册的插件方法
             // 无论 AMD 或非 AMD 模式，只要 this[name] 是函数就直接调用
             if (typeof this[name] === "function") {
                 try {
@@ -9408,7 +10009,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             // 插件未注册到实例上，尝试动态加载
             path = settings.pluginPath + path;
             
-            // ★ v1.17.6: 确保 pluginPath 以 / 结尾，避免路径拼接错误
+            // ★ v2.0.0: 确保 pluginPath 以 / 结尾，避免路径拼接错误
             if (!/\.js$/.test(path)) {
                 path += ".js";
             }
@@ -9700,10 +10301,10 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             dom(window).off(".xf_editor-auto");  // 匹配 xf_editor-auto 命名空间的元素级事件
 
             // 3b. 销毁所有 ECharts 实例并解绑其 resize 事件
-            // ★ v1.17.27: 修复 _echarts_instance 属性名不匹配导致 dispose 不生效
+            // ★ v2.0.0: 修复 _echarts_instance 属性名不匹配导致 dispose 不生效
             if (this.previewContainer && typeof echarts !== "undefined") {
                 this.previewContainer.find(".xf_editor-echarts").each(function() {
-                    // ★ v1.17.38: 先断开 ResizeObserver 再 dispose（避免内存泄漏）
+                    // ★ v2.0.0: 先断开 ResizeObserver 再 dispose（避免内存泄漏）
                     if (this._ro && this._ro.disconnect) { this._ro.disconnect(); this._ro = null; }
                     // echarts 4.x 在 DOM 上存储实例的属性为 _echarts_instance_（尾下划线）
                     if (echarts.getInstanceByDom && echarts.getInstanceByDom(this)) {
@@ -10643,7 +11244,526 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             } catch (e) {
                 cb(e);
             }
-        }
+        },
+
+        /**
+         * 将拖入/粘贴的文件按类型分类并插入编辑器。
+         * 支持图片（上传或离线 base64 涂鸦块）、视频、音频、普通附件（上传后回插 markdown）。
+         * @param {FileList|Array} files   文件列表
+         * @param {Object} cm              CodeMirror 实例
+         * @param {Number} [clientX]       拖放坐标 X（用于定位光标）
+         * @param {Number} [clientY]       拖放坐标 Y
+         * @returns {Boolean} 是否处理了文件
+         */
+        _handleDroppedFiles: function(files, cm, clientX, clientY) {
+            var self = this;
+            if (!files || !files.length) return false;
+            var settings = this.settings;
+            var classPrefix = this.classPrefix;
+
+            var extOf = function(name) {
+                var m = /\.([^.\/]+)$/.exec(name || "");
+                return m ? m[1].toLowerCase() : "";
+            };
+            var categorize = function(file) {
+                var type = (file.type || "").toLowerCase();
+                var ext  = extOf(file.name);
+                if (type.indexOf("image/") === 0 || ["jpg","jpeg","gif","png","bmp","webp","svg"].indexOf(ext) >= 0) return "image";
+                if (type.indexOf("video/") === 0 || ["mp4","webm","ogv","mov","mkv","flv","avi"].indexOf(ext) >= 0) return "video";
+                if (type.indexOf("audio/") === 0 || ["mp3","wav","ogg","m4a","aac","flac"].indexOf(ext) >= 0) return "audio";
+                return "file";
+            };
+            var uploadTypeOf = function(type) { return (type === "audio") ? "file" : type; };
+            var urlOf = function(type) {
+                if (type === "image") return settings.imageUploadURL;
+                if (type === "video") return settings.videoUploadURL;
+                return settings.fileUploadURL; // file / audio 共用附件上传地址
+            };
+            var formatsOf = function(type) {
+                if (type === "image") return settings.imageFormats;
+                if (type === "video") return settings.videoFormats;
+                return settings.fileFormats;
+            };
+            var isAllowed = function(type, name) {
+                var ext = extOf(name);
+                var fmts = formatsOf(type) || [];
+                for (var i = 0; i < fmts.length; i++) {
+                    if (String(fmts[i]).toLowerCase() === ext) return true;
+                }
+                return false;
+            };
+
+            // 在指定位置（拖放坐标）或当前光标处插入内容
+            var insertAt = function(md) {
+                var editorCm = cm || self.cm;
+                if (!editorCm || typeof editorCm.replaceSelection !== "function") return;
+                if (typeof clientX === "number" && editorCm.coordsChar) {
+                    try {
+                        var pos = editorCm.coordsChar({ left: clientX, top: clientY }, "page");
+                        if (pos && typeof pos.line === "number") editorCm.setCursor(pos);
+                    } catch (e) {}
+                }
+                editorCm.focus();
+                editorCm.replaceSelection("\n" + md + "\n");
+            };
+
+            var processOne = function(file, done) {
+                var type  = categorize(file);
+                var upType = uploadTypeOf(type);
+                var url   = urlOf(upType);
+                var label = file.name || type;
+
+                if (!isAllowed(type, file.name || "")) {
+                    xfEditor.notify("不支持的文件格式：" + label, "warning", 4000);
+                    return done();
+                }
+
+                // 无上传地址：图片可离线转 base64 涂鸦块；其余类型需配置上传接口
+                if (!url || String(url).trim() === "") {
+                    if (type === "image") {
+                        self.fileToDataURL(file, function(err, dataUri) {
+                            if (!err && dataUri) {
+                                insertAt(self._buildCanvasBlock(dataUri, "center", file.name || ""));
+                            } else {
+                                xfEditor.notify("图片读取失败。", "error", 5000);
+                            }
+                            done();
+                        });
+                    } else {
+                        xfEditor.notify("「" + label + "」需要配置对应的上传接口（imageUploadURL / videoUploadURL / fileUploadURL）后才能上传。", "warning", 5000);
+                        done();
+                    }
+                    return;
+                }
+
+                // 有上传地址：通过 XHR 上传（字段名与对话框表单保持一致）
+                self._uploadFileByXhr(file, url, classPrefix + upType + "-file", function(err, json) {
+                    // ★ 统一使用 _parseUploadResult 解析上传结果（兼容 success:true/code:0/errno:0/url 字段别名等）
+                    var parsed = (self._parseUploadResult && self._parseUploadResult(json)) || { success: false, url: "", message: (json && json.message) || "" };
+                    if (err || !parsed.success) {
+                        xfEditor.notify(parsed.message || "上传失败，请检查上传接口。", "error", 5000);
+                        return done();
+                    }
+                    var u = parsed.url;
+                    if (!u) {
+                        xfEditor.notify("上传成功，但服务端未返回文件地址。", "error", 5000);
+                        return done();
+                    }
+                    // 登记已上传文件，便于后续删除时通知服务端清理（防僵尸文件）
+                    try { self._trackUploadedFile({ type: type, url: u, name: file.name || "" }); } catch (e) {}
+                    if (type === "image") {
+                        insertAt("![" + xfEditor.escapeAttr(file.name || "") + "](" + xfEditor.escapeAttr(u) + ")");
+                    } else if (type === "video") {
+                        insertAt('<div class="xfEditor-video-wrapper" style="text-align:center;"><video src="' + xfEditor.escapeAttr(u) + '" controls preload="metadata">' + xfEditor.escapeHtml(file.name || "Video") + '</video></div>');
+                    } else {
+                        // 音频 / 附件统一回插为可点击的下载链接
+                        insertAt("[" + xfEditor.escapeHtml(file.name || u) + "](" + xfEditor.escapeAttr(u) + ")");
+                    }
+                    done();
+                });
+            };
+
+            // 串行处理，避免多文件并发插入顺序错乱
+            var queue = Array.prototype.slice.call(files);
+            var idx = 0;
+            var step = function() {
+                if (idx >= queue.length) return;
+                var f = queue[idx++];
+                processOne(f, function() { step(); });
+            };
+            step();
+            return true;
+        },
+
+        /**
+         * 通过 XHR(FormData) 上传单个文件，回调 (err, json)。
+         * 字段名与对话框表单保持一致（classPrefix + type + "-file"）。
+         * @param {File} file
+         * @param {String} url
+         * @param {String} fieldName
+         * @param {Function} callback
+         */
+        _uploadFileByXhr: function(file, url, fieldName, callback) {
+            callback = callback || function() {};
+            try {
+                var formData = new FormData();
+                formData.append(fieldName, file, file.name || "file");
+                var xhr = new XMLHttpRequest();
+                xhr.open("POST", url, true);
+                // ★ CSRF 防护：XHR 上传请求携带 X-CSRF-TOKEN 请求头，避免遭遇 CSRF 拦截
+                var _csrf = (this._getCsrfToken && this._getCsrfToken()) || "";
+                if (_csrf) { try { xhr.setRequestHeader("X-CSRF-TOKEN", _csrf); } catch (e) {} }
+                xhr.onload = function() {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        var raw = xhr.responseText || "";
+                        var json;
+                        try {
+                            json = (typeof JSON !== "undefined" && JSON.parse) ? JSON.parse(raw) : eval("(" + raw + ")");
+                        } catch (e) {
+                            callback(new Error("parse-error"));
+                            return;
+                        }
+                        callback(null, json);
+                    } else {
+                        callback(new Error("http-" + xhr.status));
+                    }
+                };
+                xhr.onerror = function() { callback(new Error("network-error")); };
+                xhr.send(formData);
+            } catch (e) {
+                callback(e);
+            }
+        },
+
+        /**
+         * 统一绑定上传 iframe 的 onload，解析服务器返回（JSON）后回调。
+         * 由三个上传对话框（图片/视频/附件）共用，消除重复逻辑、提升内聚。
+         * @param {String}   iframeName  隐藏 iframe 的 id
+         * @param {Object}   options     { crossDomain, loading, onSuccess(json), onError(err, raw) }
+         */
+        _bindServerUpload: function(iframeName, options) {
+            options = options || {};
+            var loading = (typeof options.loading === "function") ? options.loading : function() {};
+            var uploadIframe = document.getElementById(iframeName);
+            if (!uploadIframe || uploadIframe._xfBound) return;
+            uploadIframe._xfBound = true;
+            uploadIframe.onload = function() {
+                var doc  = uploadIframe.contentWindow
+                    ? uploadIframe.contentWindow.document
+                    : ((uploadIframe.contentDocument || {}).document);
+                var body = doc ? doc.body : null;
+                var raw  = body ? (body.innerText || body.textContent || "") : "";
+                loading(false);
+                if (!raw.trim()) return;               // 忽略初始空白加载（about:blank）
+                if (options.crossDomain) return;        // 跨域上传由服务端回调页处理，本处不解析
+                var json;
+                try {
+                    json = (typeof JSON !== "undefined" && JSON.parse) ? JSON.parse(raw) : eval("(" + raw + ")");
+                } catch (err) {
+                    if (options.onError) options.onError(err, raw);
+                    return;
+                }
+                if (options.onSuccess) options.onSuccess(json);
+            };
+        },
+
+        /**
+         * 解析服务端上传接口返回的结果，兼容多种常见约定格式。
+         * 目标：无论服务端以 success:1 / true、code:0、errno:0、error:0、status:1/true、
+         *       state:"SUCCESS" 还是直接在响应中携带 url/link/src/path 字段，都能正确判定成功并提取文件地址。
+         *       同时兼容 url 位于 data.* 或 result.* 嵌套结构中的情况，避免“上传已成功却仍走错误分支（红色提示）”的问题。
+         * @param {Object} json 服务端返回的 JSON 对象
+         * @returns {Object} { success:Boolean, url:String, message:String, name:String }
+         */
+        _parseUploadResult: function(json) {
+            json = json || {};
+            var success =
+                json.success === 1  || json.success === true  || json.success === "1"  ||
+                json.code   === 0   || json.code   === "0"    ||
+                json.errno  === 0   || json.errno  === "0"    ||
+                json.error  === 0   || json.error  === "0"    ||
+                json.status === 1   || json.status === true   ||
+                json.state  === 1   || json.state  === "SUCCESS" || json.state === "success" ||
+                (typeof json.url   !== "undefined" && json.url)   ||
+                (typeof json.link  !== "undefined" && json.link)  ||
+                (typeof json.src   !== "undefined" && json.src)   ||
+                (typeof json.path  !== "undefined" && json.path);
+            var url = json.url || json.link || json.src || json.path || json.fileUrl ||
+                      json.file || json.location || json.attachment || json.filePath || "";
+            if (!url && json.data) {
+                url = json.data.url || json.data.link || json.data.src || json.data.path || json.data.fileUrl || "";
+            }
+            if (!url && json.result) {
+                url = json.result.url || json.result.link || json.result.src || json.result.path || "";
+            }
+            return {
+                success : !!(success && url),
+                url     : url,
+                message : json.message || json.msg || json.info || "",
+                name    : json.name || json.fileName || json.filename || (json.data && json.data.name) || ""
+            };
+        },
+
+        /**
+         * 登记一个已成功上传到服务器的文件。
+         * 仅当服务端返回可用 URL 时调用，base64 内联图片不会被登记（它们不是服务端文件）。
+         * 首次登记会触发 settings.onFileUploaded 回调。
+         * @param {Object} info { type:"image|video|audio|file", url, name }
+         */
+        _trackUploadedFile: function(info) {
+            if (!info || !info.url) return;
+            if (!this._uploadedFiles) this._uploadedFiles = {};
+            var existed = this._uploadedFiles[info.url];
+            this._uploadedFiles[info.url] = info;
+            // 仅在首次登记（或类型变更）时触发上传成功回调，避免重复触发
+            if (!existed) {
+                try {
+                    if (this.settings.onFileUploaded && typeof this.settings.onFileUploaded === "function") {
+                        this.settings.onFileUploaded.call(this, info);
+                    }
+                } catch (e) { /* 用户回调异常不应影响主流程 */ }
+            }
+        },
+
+        /**
+         * 触发文件删除的服务端通知，并触发 settings.onFileDeleted 回调。
+         * 按类型选择对应删除接口（image/video/audio 优先，最后回退 fileDeleteURL）。
+         * @param {Object} info { type, url, name }
+         */
+        _notifyFileDeleted: function(info) {
+            if (!info || !info.url) return;
+            // 说明：面向开发者的“删除事件”由资源删除检测系统统一触发（onImageDeleted / onVideoDeleted /
+            //       onAudioDeleted / onFileDeleted），此处仅负责把“已上传到服务器的文件”通知服务端清理
+            //       （防僵尸文件）。为避免同一删除被多处回调重复通知，这里不再触发回调，只做服务端清理。
+            var s = this.settings || {};
+            var url = "";
+            if (info.type === "image" && s.imageDeleteURL) url = s.imageDeleteURL;
+            else if (info.type === "video" && s.videoDeleteURL) url = s.videoDeleteURL;
+            else if (info.type === "audio" && s.audioDeleteURL) url = s.audioDeleteURL;
+            else if (s.fileDeleteURL) url = s.fileDeleteURL;
+
+            if (!url || String(url).trim() === "") return; // 未配置删除接口则仅本地记录/回调
+
+            try {
+                var fd = new FormData();
+                fd.append("url", info.url || "");
+                fd.append("type", info.type || "");
+                fd.append("name", info.name || "");
+                var xhr = new XMLHttpRequest();
+                xhr.open("POST", url, true);
+                // ★ CSRF 防护：删除通知请求同样携带 X-CSRF-TOKEN 请求头
+                var _csrf = (this._getCsrfToken && this._getCsrfToken()) || "";
+                if (_csrf) { try { xhr.setRequestHeader("X-CSRF-TOKEN", _csrf); } catch (e) {} }
+                xhr.onload  = function() {};
+                xhr.onerror = function() {};
+                xhr.send(fd);
+            } catch (e) { /* 网络异常静默失败，僵尸文件清理由服务端兜底策略处理 */ }
+        },
+
+        /**
+         * 比对当前文档内容与被追踪的已上传文件集合：
+         * 凡是已登记、但不再出现在正文中的文件，视为已被用户删除/替换，
+         * 调用服务端删除通知并触发回调，随后从追踪表中移除。
+         * 通过 editor 内容变化（cm change）防抖调用，确保低耦合、不阻塞编辑。
+         */
+        _syncUploadedFiles: function() {
+            if (!this._uploadedFiles) return;
+            var self = this;
+            var md = (typeof this.getMarkdown === "function") ? (this.getMarkdown() || "") : "";
+            var pending = [];
+            for (var url in this._uploadedFiles) {
+                if (!this._uploadedFiles.hasOwnProperty(url)) continue;
+                var info = this._uploadedFiles[url];
+                if (md.indexOf(url) !== -1) {
+                    info._seenInDoc = true;   // 至少被插入到正文中一次
+                    continue;
+                }
+                // 仅当曾经出现在正文中、现在消失，才判定为被用户删除/替换，避免误删「已上传但未插入」的文件
+                if (info._seenInDoc) {
+                    pending.push(info);
+                }
+            }
+            pending.forEach(function(info) {
+                if (self._uploadedFiles) delete self._uploadedFiles[info.url];
+                self._notifyFileDeleted(info);
+            });
+        },
+
+        /**
+         * 读取 CSRF Token，用于上传/删除请求防 CSRF 攻击。
+         * 读取优先级：settings.csrfToken → <meta name="csrf-token"> → window.csrfToken
+         *            → window.Laravel.csrfToken → window.XSRF_TOKEN
+         * @returns {String} token 字符串（无则返回 ""）
+         */
+        _getCsrfToken : function() {
+            var s = this.settings || {};
+            if (s.csrfToken) return String(s.csrfToken);
+            try {
+                var meta = document.querySelector && document.querySelector('meta[name="csrf-token"]');
+                if (meta && meta.getAttribute("content")) return String(meta.getAttribute("content"));
+            } catch (e) {}
+            try { if (typeof window !== "undefined" && window.csrfToken) return String(window.csrfToken); } catch (e) {}
+            try { if (typeof window !== "undefined" && window.Laravel && window.Laravel.csrfToken) return String(window.Laravel.csrfToken); } catch (e) {}
+            try { if (typeof window !== "undefined" && window.XSRF_TOKEN) return String(window.XSRF_TOKEN); } catch (e) {}
+            return "";
+        },
+
+        /**
+         * 生成 CSRF 隐藏域（用于隐藏 iframe 表单上传场景，因为表单提交无法自定义请求头）。
+         * 服务端通常读取 POST 字段（默认 _token，可用 settings.csrfFieldName 覆盖）。
+         * @returns {String} <input type="hidden"> HTML 片段（无 token 时返回空串）
+         */
+        _csrfHiddenInput : function() {
+            var token = this._getCsrfToken();
+            if (!token) return "";
+            var name = (this.settings && this.settings.csrfFieldName) || "_token";
+            return '<input type="hidden" name="' + xfEditor.escapeAttr(token) + '" value="' + xfEditor.escapeAttr(token) + '" />';
+        },
+
+        /**
+         * 扫描编辑器 Markdown 内容，提取图片/视频/音频/附件四类资源的引用地址。
+         * 分类规则：先按语法（<img>/<video>/<audio>/<source> 标签、![...](...) 图片、[...](...) 链接），
+         * 再按扩展名归入 image/video/audio/file 四类；data: 内联资源会被忽略（非服务端文件）。
+         * @param {String} md Markdown 源
+         * @returns {Object} { image:[urls], video:[urls], audio:[urls], file:[urls] }（每项均为去重后的地址数组）
+         */
+        _scanResourceRefs : function(md) {
+            md = md || "";
+            var s = this.settings || {};
+            var imageExt = (s.imageFormats && s.imageFormats.join("|")) || "jpg|jpeg|gif|png|bmp|webp";
+            var videoExt = (s.videoFormats && s.videoFormats.join("|")) || "mp4|webm|ogv|mov|mkv|flv|avi";
+            var audioExt = (s.audioFormats && s.audioFormats.join("|")) || "mp3|wav|ogg|m4a|aac|flac";
+            // 附件（文档类）扩展名：仅这些扩展名才归类为“附件”，避免把普通网页链接误判为附件删除
+            var fileExt  = (s.fileFormats && s.fileFormats.join("|")) || "pdf|doc|docx|xls|xlsx|ppt|pptx|zip|rar|7z|txt|md|csv|json|xml|html|htm";
+            var classify = function(u) {
+                var m = /\.([a-z0-9]+)(?:[#?]|$)/i.exec(u || "");
+                var e = m ? m[1].toLowerCase() : "";
+                if (!e) return null; // 无扩展名（如纯网页链接）不纳入删除检测，避免误报
+                if (new RegExp("^(?:" + imageExt + ")$", "i").test(e)) return "image";
+                if (new RegExp("^(?:" + videoExt + ")$", "i").test(e)) return "video";
+                if (new RegExp("^(?:" + audioExt + ")$", "i").test(e)) return "audio";
+                if (new RegExp("^(?:" + fileExt + ")$", "i").test(e)) return "file";
+                return null; // 无扩展名（如纯网页链接）不纳入删除检测，避免误报
+            };
+            var set = { image:{}, video:{}, audio:{}, file:{} };
+            var add = function(type, u) { if (u && u.indexOf("data:") !== 0) set[type][u] = 1; };
+            var m, t, u;
+            // 1) HTML 标签：<img src>、<video src>、<audio src>、<source src>
+            var htmlRe = /<(img|video|audio|source)\b[^>]*\bsrc=["']([^"'<>]+)["']/gi;
+            while ((m = htmlRe.exec(md))) {
+                t = m[1].toLowerCase(); u = m[2];
+                if (t === "img") add("image", u);
+                else if (t === "video") add("video", u);
+                else add("audio", u); // audio / source
+            }
+            // 2) Markdown 图片 ![alt](url)
+            var imgRe = /!\[[^\]]*\]\(([^)\s]+)/g;
+            while ((m = imgRe.exec(md))) { add("image", m[1]); }
+            // 3) Markdown 链接 [text](url)（排除图片链接），按扩展名归入对应类型；无扩展名的纯网页链接忽略
+            var linkRe = /(^|[^!])\[[^\]]*\]\(([^)\s]+)/g;
+            while ((m = linkRe.exec(md))) { u = m[2]; var lt = classify(u); if (lt) add(lt, u); }
+            // 4) 块级语法 [[video]]...[[/video]] / [[file]]...[[/file]]：
+            //    每个非空白行格式为「url」或「url|标题」，提取首个 | 前的部分作为资源地址。
+            //    ★ 修复：此前仅扫描 [text](url) 链接与 HTML 标签，导致 [[video]] 裸 URL 块被删除时不触发删除事件。
+            var blockScan = function(openRe, closeRe, type) {
+                var bm, inner;
+                var re = new RegExp(openRe.source + "[\\s\\S]*?" + closeRe.source, "g");
+                while ((bm = re.exec(md))) {
+                    inner = bm[0].replace(openRe, "").replace(closeRe, "");
+                    var blines = inner.split("\n");
+                    for (var bi = 0; bi < blines.length; bi++) {
+                        var bline = blines[bi].trim();
+                        if (!bline) continue;
+                        if (/^<!--xf_editor-/.test(bline)) continue; // 跳过已渲染占位符
+                        var burl = bline.split("|")[0].trim();
+                        if (!burl || burl.indexOf("data:") === 0) continue;
+                        // 仅当扩展名可归类为对应类型时才登记（与链接逻辑一致，避免误报）
+                        if (classify(burl) === type) add(type, burl);
+                    }
+                }
+            };
+            blockScan(/\[\[video\]\]/g, /\[\[\/video\]\]/g, "video");
+            blockScan(/\[\[file\]\]/g, /\[\[\/file\]\]/g, "file");
+            var out = { image:[], video:[], audio:[], file:[] };
+            for (var k in set) { if (set.hasOwnProperty(k)) out[k] = Object.keys(set[k]); }
+            return out;
+        },
+
+        /**
+         * 比对前后两次资源引用扫描结果，计算被移除的引用（删除/替换）。
+         * @param {Object} prev 上次扫描结果
+         * @param {Object} curr 当前扫描结果
+         * @returns {Array} [{ type, url }]
+         */
+        _detectResourceDeletions : function(prev, curr) {
+            prev = prev || { image:[], video:[], audio:[], file:[] };
+            curr = curr || { image:[], video:[], audio:[], file:[] };
+            var types = ["image", "video", "audio", "file"];
+            var removed = [];
+            for (var i = 0; i < types.length; i++) {
+                var t = types[i];
+                var map = {};
+                (prev[t] || []).forEach(function(u) { map[u] = 1; });
+                (curr[t] || []).forEach(function(u) { if (map[u]) delete map[u]; });
+                for (var u in map) { if (map.hasOwnProperty(u)) removed.push({ type: t, url: u }); }
+            }
+            return removed;
+        },
+
+        /**
+         * 从资源地址中提取文件名（用于删除事件中的文件信息）。
+         * @param {String} url 资源地址
+         * @returns {String} 文件名
+         */
+        _fileNameOfUrl : function(url) {
+            if (!url) return "";
+            var u = String(url).split(/[?#]/)[0];
+            var parts = u.split("/");
+            return parts[parts.length - 1] || u;
+        },
+
+        /**
+         * 资源引用删除检测主流程：扫描当前文档，与上次扫描基线比对，
+         * 凡是被移除的图片/视频/音频/附件引用，触发对应类型的删除事件回调
+         *（onImageDeleted / onVideoDeleted / onAudioDeleted / onFileDeleted）。
+         * 事件载荷包含：type、url、name（文件名）、stillUsed（当前正文是否仍含该地址）、event:"delete"。
+         * 同时刷新基线，供下次比对。
+         */
+        _scanAndFireResourceDeletions : function() {
+            var md = (typeof this.getMarkdown === "function") ? (this.getMarkdown() || "") : "";
+            var curr = this._scanResourceRefs(md);
+            if (!this._xfPrevResourceRefs) {
+                // 首次扫描仅建立基线，不触发删除事件
+                this._xfPrevResourceRefs = curr;
+                return;
+            }
+            var prev = this._xfPrevResourceRefs;
+            // ★ v2.0.0: 合并「滚动基线」与「变更前快照」两路检测结果，杜绝任何遗漏。
+            //   - 滚动基线：覆盖自上次扫描以来所有累计删除；
+            //   - 变更前快照（beforeChange 捕获）：精准捕获最近一次编辑的删除，
+            //     即使基线因异常偶发偏离也能兜底。
+            var removed = this._detectResourceDeletions(prev, curr);
+            if (this._xfBeforeChangeMarkdown != null) {
+                try {
+                    var snapPrev = this._scanResourceRefs(this._xfBeforeChangeMarkdown);
+                    var snapRemoved = this._detectResourceDeletions(snapPrev, curr);
+                    var seen = {};
+                    removed.forEach(function(it) { seen[it.type + "::" + it.url] = true; });
+                    snapRemoved.forEach(function(it) {
+                        var k = it.type + "::" + it.url;
+                        if (!seen[k]) { seen[k] = true; removed.push(it); }
+                    });
+                } catch (e) { /* 快照比对失败不影响主流程 */ }
+                this._xfBeforeChangeMarkdown = null;
+            }
+            this._xfPrevResourceRefs = curr;
+            if (!removed.length) return;
+            var self = this;
+            removed.forEach(function(item) {
+                var stillUsed = md.indexOf(item.url) !== -1; // 当前正文中是否仍包含该地址（任何语法）
+                var info = {
+                    type      : item.type,
+                    url       : item.url,
+                    name      : self._fileNameOfUrl(item.url),
+                    stillUsed : stillUsed,
+                    event     : "delete"
+                };
+                var cbName = "on" + item.type.charAt(0).toUpperCase() + item.type.slice(1) + "Deleted";
+                try {
+                    if (self.settings && self.settings[cbName] && typeof self.settings[cbName] === "function") {
+                        self.settings[cbName].call(self, info);
+                    }
+                } catch (e) { /* 用户回调异常不应影响主流程 */ }
+            });
+        },
+
+        /**
+         * 重置资源引用扫描基线（程序化替换内容后调用，避免误触发删除事件）。
+         */
+        _resetResourceScan : function() {
+            var md = (typeof this.getMarkdown === "function") ? (this.getMarkdown() || "") : "";
+            this._xfPrevResourceRefs = this._scanResourceRefs(md);
+        },
     };
     xfEditor.fn.init.prototype = xfEditor.fn; 
    
@@ -11758,6 +12878,39 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             var selection = cm.getSelection() || "在这里输入页面内容";
             cm.replaceSelection("\n[[page:A4]]\n" + selection + "\n[[/page]]\n");
             cm.setCursor(cursor.line + 2, 0);
+        },
+
+        /**
+         * 导出 PDF 文件：打开新窗口写入完整可打印文档并调用浏览器打印（可另存为 PDF）
+         * 
+         * ★ v2.0.0-FIX: 文件名统一由实例方法 this.getExportFileName() 推导。
+         *   旧实现调用的 this._defaultExportName() 只存在于 xfEditor.toolbarHandlers 上，
+         *   而 handler 执行时 this 指向编辑器实例（prototype 上没有该方法），
+         *   因此必然抛出 TypeError: this._defaultExportName is not a function。
+         */
+        "export-pdf" : function() {
+            this.exportFile(this.getExportFileName(), "pdf");
+        },
+
+        /**
+         * 导出 Word 文件：生成带 Office 命名空间的 HTML 文档（.doc）
+         */
+        "export-word" : function() {
+            this.exportFile(this.getExportFileName(), "word");
+        },
+
+        /**
+         * 导出 Markdown 文件：导出编辑器原始 Markdown 源码（.md）
+         */
+        "export-markdown" : function() {
+            this.exportFile(this.getExportFileName(), "markdown");
+        },
+
+        /**
+         * 导出 HTML 文件：导出自包含、含内联样式与交互脚本的完整 HTML 文档（.html）
+         */
+        "export-html" : function() {
+            this.exportFile(this.getExportFileName(), "html");
         }
     };
 
@@ -11921,13 +13074,13 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         emailLink     : /(mailto:)?([\w\.\+\-]+)@([\w\-]+)\.([\w\-]{2,})\.?(\w+)?/g,
 
         pageBreak     : /^\[[=]{8,}\]$/,
-        // ★ v1.17.7: 支持 {text|pinyin}(!width:NNN) 可选的组级宽度参数
+        // ★ v2.0.0: 支持 {text|pinyin}(!width:NNN) 可选的组级宽度参数
         pinyin        : /\{([^|{}]+)\s*\|\s*([^|{}]+)\}(?:\s*\(!width:(\d+)\))?/g,
         unicodeAlignCenter : /⁑([\s\S]*?)⁑/g,
         unicodeAlignLeft   : /⁑⁖([\s\S]*?)⁖⁑/g,
         unicodeAlignRight  : /⠪([\s\S]*?)⠪/g,
         imageSizeNew    : /!\[([^\]]*)\]\(([^)]+)\)<(\d+),\s*(\d+)>/g,
-        // ★ [DEPRECATED v1.17.13] 以下 tabs/tabItem/columns 正则已被内联 findBalancedBlocks 替代，
+        // ★ [DEPRECATED v2.0.0] 以下 tabs/tabItem/columns 正则已被内联 findBalancedBlocks 替代，
         //   保留仅用于向后兼容（外部代码可能引用 xfEditor.regexs.tabs 等）。
         tabs            : /\[\[tabs\]\]([\s\S]*?)\[\[\/tabs\]\]/g,
         tabItem       : /\[\[tab:([^\]]+)\]\]([\s\S]*?)\[\[\/tab\]\]/g,
@@ -11938,7 +13091,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         copybookTianEnd   : /\[\[\/copybookTian\]\]/g,
         copybookMiEnd     : /\[\[\/copybookMi\]\]/g,
         copybookPinyinEnd : /\[\[\/copybookPinyin\]\]/g,
-        // ★ [DEPRECATED v1.17.13] videoBlock/fileBlock 正则已被内联 findBalancedBlocks 替代
+        // ★ [DEPRECATED v2.0.0] videoBlock/fileBlock 正则已被内联 findBalancedBlocks 替代
         videoBlock    : /\[\[video\]\]\s*\n?([\s\S]*?)\n?\s*\[\[\/video\]\]/g,
         fileBlock     : /\[\[file\]\]\s*\n?([\s\S]*?)\n?\s*\[\[\/file\]\]/g,
         tooltipLink   : /\[([^\]]+)\]\(tooltip:([^)]+)\)/gi,
@@ -11963,8 +13116,11 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         // 脚注定义标记：[^脚注名称]:  -- 用于按行定位定义位置
         footnoteDefAnchor : /^\[\^([^\]]+)\]:/gm,
         
-        // ★ v1.17.24: 视频文件扩展名检测，避免多处重复定义
-        videoExts : /\.(mp4|webm|ogv|mov)(\?.*)?$/i
+        // ★ v2.0.0: 视频文件扩展名检测，避免多处重复定义
+        videoExts : /\.(mp4|webm|ogv|mov)(\?.*)?$/i,
+
+        // ★ v2.0.0: 音频文件扩展名检测（与 settings.audioFormats 保持一致，供链接/图片渲染器识别音频）
+        audioExts : /\.(mp3|wav|ogg|oga|m4a|aac|flac|opus)(\?.*)?$/i
     };
 
     /**
@@ -11987,7 +13143,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         // Protect remaining $...$ inline formulas
         // 只匹配包含 TeX 命令（以反斜杠开头）或 TeX 特殊字符（^、_、{、}等）的内容
         // 避免误匹配货币符号（如 $5.00 或 Cost: $100）
-        // ★ v1.17.13: 增加数字起始检测，$100 后不跟 LaTeX 标记直接跳过
+        // ★ v2.0.0: 增加数字起始检测，$100 后不跟 LaTeX 标记直接跳过
         markdown = markdown.replace(/\$(?=[^$\n\r]{1,200}\$)([^$\n\r]+?)\$/g, function(match, tex) {
             // 货币检测：如果内容以数字开头且不包含 LaTeX 命令，视为货币跳过
             if (/^\d/.test(tex) && !/[\\{}_^]/.test(tex)) {
@@ -12006,7 +13162,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
 
     xfEditor.restoreTeXSyntax = function(html) {
         if (!html) return html;
-        // ★ v1.17.9-FIX: 先还原 ^，再还原 \，确保 \^ 等组合字符正确还原
+        // ★ v2.0.0-FIX: 先还原 ^，再还原 \，确保 \^ 等组合字符正确还原
         return html.split(TEX_CARET_PLACEHOLDER).join("^")
                    .split(TEX_BSLASH_PLACEHOLDER).join("\\");
     };
@@ -12086,7 +13242,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
     xfEditor.postProcessTaskLists = function(html) {
         if (!html) return html;
         
-        // ★ v1.17.13: 如果 HTML 中已有 task-list-item-checkbox（listitem renderer 已处理），
+        // ★ v2.0.0: 如果 HTML 中已有 task-list-item-checkbox（listitem renderer 已处理），
         //   跳过后处理以避免重复渲染。
         if (html.indexOf('task-list-item-checkbox') !== -1) return html;
 
@@ -12118,7 +13274,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
     };
 
     /**
-     * ★ v1.17.1: 为预览区 HTML 注入 data-sign 块签名，用于同步滚动行号映射
+     * ★ v2.0.0: 为预览区 HTML 注入 data-sign 块签名，用于同步滚动行号映射
      * 
      * 参照 cherry-markdown 的设计思路，为每个块级元素添加 data-sign 属性，
      * 使编辑区行号和预览区块之间可以相互映射，从而实现精准的同步滚动。
@@ -12135,7 +13291,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         
         var blockIdx = 0;
         
-        // ★ v1.17.2: 增强块签名注入，覆盖更多块级元素
+        // ★ v2.0.0: 增强块签名注入，覆盖更多块级元素
         // 支持的标签：h1-h6, p, pre, blockquote, ul, ol, table, dl, hr, 
         //              div.xf_editor-*, section, article, header, footer, nav, main, aside
         //              li (list items for finer granularity)
@@ -12161,7 +13317,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
     };
 
     /**
-     * ★ v1.17.2: 预处理链接 target 语法
+     * ★ v2.0.0: 预处理链接 target 语法
      * 将 [text](url){target=_blank} 转换为 [text](url "target=_blank")
      * 使 marked.js 能够将 target 信息传入 link renderer 的 title 参数
      * 
@@ -12171,7 +13327,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
     xfEditor.preprocessLinkTarget = function(markdown) {
         if (!markdown || typeof markdown !== "string") return markdown || "";
         
-        // ★ v1.17.6-FIX1: 先保护代码块，防止代码块内的 [text](url){target=_blank} 被误转换
+        // ★ v2.0.0-FIX1: 先保护代码块，防止代码块内的 [text](url){target=_blank} 被误转换
         // 因为 preprocessLinkTarget 在 protectCodeBlocks 之前运行，必须自行保护代码区域
         var codePlaceholders = [];
         var cid = 0;
@@ -12188,7 +13344,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         );
         
         // 2) 保护行内代码（支持单反引号和多反引号，不跨行）
-        // ★ v1.17.13: 增加多反引号行内代码保护，避免 ``[text](url){target=blank}`` 被误处理
+        // ★ v2.0.0: 增加多反引号行内代码保护，避免 ``[text](url){target=blank}`` 被误处理
         // 先处理多反引号（2+ 个反引号），再处理单反引号
         markdown = markdown.replace(/(`{2,})([\s\S]*?)\1/g, function(match, fence, content) {
             // 行内代码不能包含换行符；跨行的是围栏代码块（已在步骤1处理）
@@ -12245,7 +13401,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             return { markdown: markdown || "", placeholders: [] };
         }
         
-        // ★ v1.17.6: 安全防护 — 确保 $marked 可用
+        // ★ v2.0.0: 安全防护 — 确保 $marked 可用
         if (typeof xfEditor.marked !== "function") {
             if (typeof console !== "undefined" && console.warn) {
                 console.warn("[xfEditor] xfEditor.marked is not available — markdown parsing will be skipped");
@@ -12306,7 +13462,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
              * 规则：开标签是 3 个或更多 ` 或 ~，闭标签必须与开标签相同数量的相同字符
              * 支持代码块内包含任意内容（包括嵌套的 [[tabs]]、[[columns]] 等）
              */
-            // ★ v1.17.5-FIX3: 围栏必须位于行首（CommonMark 规范要求）
+            // ★ v2.0.0-FIX3: 围栏必须位于行首（CommonMark 规范要求）
             // 之前缺少行首锚点，导致文本中 "```(hidden.class#id) ` 语法" 这类
             // 作为示例展示的围栏语法被误识别为真正的代码块，吞噬后续大段内容
             // 新正则添加 (^|\n) 前缀，确保围栏开标签和闭标签都必须在行首
@@ -12444,7 +13600,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 text = text.substring(0, maxProcessLength);
             }
 
-            // ★ v1.17.6: 安全限制 — 最大处理块数量，防止病态输入导致浏览器卡死
+            // ★ v2.0.0: 安全限制 — 最大处理块数量，防止病态输入导致浏览器卡死
             var maxBlocks = 500;
             var maxTotalIterations = 50000;
             var _totalIterations = 0;
@@ -12574,13 +13730,13 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             return "<!--" + id + "-->";
         });
 
-        // ========== ★ v1.17.9-FIX: 脚注处理移到最前（tabs/columns/grid 之前）==========
+        // ========== ★ v2.0.0-FIX: 脚注处理移到最前（tabs/columns/grid 之前）==========
         // 根因：脚注在 tabs/columns/row 之后处理时，每次递归调用 preprocessMarkdownBlocks
         // 都将 footnoteIndex 重置为 0，导致多个 tab 中产生编号重复的 [1] 脚注。
         // 修复：在块级语法处理之前，从原始 markdown 一次性处理所有脚注，全局唯一编号。
         // 同时构建共享映射供字帖系统使用。
         //
-        // ★ v1.17.9-FIX4: _wasRootFootnotesCall 确保脚注列表只在最外层调用中添加
+        // ★ v2.0.0-FIX4: _wasRootFootnotesCall 确保脚注列表只在最外层调用中添加
         // 防止递归 preprocessMarkdownBlocks（tabs/columns 内）把脚注列表插入到嵌套内容末尾
         var _wasRootFootnotesCall = false;
         if (!options._footnotesProcessed) {
@@ -12606,7 +13762,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 }
                 
                 // Step 2: 计算每个定义的内容范围
-                // ★ v1.17.34-FIX: 增强脚注内容边界检测
+                // ★ v2.0.0-FIX: 增强脚注内容边界检测
                 // 1. 使用正则替代 indexOf('\n\n')，兼容 \r\n 行尾和零宽字符
                 // 2. 增加块级标记安全边界检查，防止 [[/col]]、[[col:N]]、#### 等语法泄漏到脚注内容中
                 for (var _sdi = 0; _sdi < _sharedDefMatches.length; _sdi++) {
@@ -12617,7 +13773,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     if (_sleadingWs) _scontentStart += _sleadingWs[0].length;
                     
                     var _scontentEnd;
-                    // ★ v1.17.34: 使用正则查找第一个空行，同时兼容 \n\n、\r\n\r\n、\r\r
+                    // ★ v2.0.0: 使用正则查找第一个空行，同时兼容 \n\n、\r\n\r\n、\r\r
                     var _sblankSearch = markdown.substring(_scontentStart).search(/[\r\n]{2,}/);
                     var _sblankLineIdx = _sblankSearch !== -1 ? _scontentStart + _sblankSearch : -1;
                     var _snextDefIdx = (_sdi + 1 < _sharedDefMatches.length) ? _sharedDefMatches[_sdi + 1].start : -1;
@@ -12631,7 +13787,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     if (_scontentEnd > markdown.length) _scontentEnd = markdown.length;
                     if (_scontentEnd < _scontentStart) _scontentEnd = _scontentStart;
                     
-                    // ★ v1.17.34-FIX: 安全边界 — 防止脚注内容溢出到块级语法标记
+                    // ★ v2.0.0-FIX: 安全边界 — 防止脚注内容溢出到块级语法标记
                     // 如果脚注内容中包含 [[/col]]、[[/row]]、[[/tabs]]、[[/tab]]、
                     // ####、###、##、#、---、``` 等块级标记，说明边界检测异常，
                     // 从第一个异常标记处截断内容
@@ -12670,7 +13826,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     markdown = markdown.substring(0, _sdm.start) + markdown.substring(_sdm.contentEnd);
                 }
                 
-                // ★ v1.17.9-FIX2: Step 5 之前计算字帖块范围，替换时跳过字帖内的 [^name]
+                // ★ v2.0.0-FIX2: Step 5 之前计算字帖块范围，替换时跳过字帖内的 [^name]
                 // 字帖内部有独立的 parseCharsWithFN 解析 [^name]，需要保留原始语法
                 var _copybookRanges = [];
                 var _copybookTypes = [
@@ -12719,7 +13875,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             options._sharedDefMatches = _sharedDefMatches;
         }
         
-        // ★ v1.17.9-FIX5: tab-context-aware tabs 块扫描器
+        // ★ v2.0.0-FIX5: tab-context-aware tabs 块扫描器
         // 解决表格单元格中文本 [[tabs]]/[[row]][[col]] 被 hasMatchingPair 误判为
         // 真实标签导致 findBalancedBlocks 返回错误块的问题。
         // 核心思路：扫描时同时追踪 [[tab:xxx]]/[[/tab]] 上下文深度，
@@ -12789,7 +13945,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         // 注意：必须逆序处理（从后往前），否则前面的 block 被替换后，
         // 后续 block 的位置（基于原始文本）会错误地偏移
         if (options.tabs !== false) {
-            // ★ v1.17.9-FIX5: 使用 tab-context-aware 扫描器替换 findBalancedBlocks
+            // ★ v2.0.0-FIX5: 使用 tab-context-aware 扫描器替换 findBalancedBlocks
             // 防止表格内文本 [[tabs]] 干扰真实 tabs 块的匹配
             var tabBlocks = findTabsBlocksAware(markdown);
             for (var bi = tabBlocks.length - 1; bi >= 0; bi--) {
@@ -12807,7 +13963,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 var hasTabs = false;
                 var tabMarkedOptions = createMarkedOptions(options, true);
 
-                // ★ v1.17.9-FIX5: 提取嵌套 tab 项（tab-context-aware 版本）
+                // ★ v2.0.0-FIX5: 提取嵌套 tab 项（tab-context-aware 版本）
                 // 两步走：
                 // 1. 扫描找到顶层 [[tab:xxx]] 项
                 // 2. 对每个 tab 项的内容，使用 findTabsBlocksAware 仅查找实数内嵌 [[tabs]] 块
@@ -13026,7 +14182,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         //   - [[col:N]](1≤N≤10)  → 占 N×10% 宽度
         //   - [[col]]            → 按行内 col 个数平分 100% 宽度
         if (options.grid !== false) {
-            // ★ v1.17.33: 使用增强版 row 匹配器，防止表格/文本中的 [[row]] 误匹配
+            // ★ v2.0.0: 使用增强版 row 匹配器，防止表格/文本中的 [[row]] 误匹配
             var rowBlocks = findBalancedBlocks(markdown, /\[\[row\]\]/g, /\[\[\/row\]\]/g);
             for (var ri = rowBlocks.length - 1; ri >= 0; ri--) {
                 var rowBlock = rowBlocks[ri];
@@ -13037,13 +14193,13 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 var rowMarkedOptions = createMarkedOptions(options, true);
 
                 try {
-                    // ★ v1.17.33-FIX: 增强版 col 提取器
+                    // ★ v2.0.0-FIX: 增强版 col 提取器
                     // - 修复 [[col]] 无数字列在嵌套场景中不能正确提取的 bug
                     // - 修复分号/脚注等特殊内容导致 [[/col]] 边界识别失败的问题
                     // - 增强嵌套 col 深度追踪可靠性
                     function extractColBlocks(rowContent) {
                         var colBlocks = [];
-                        // ★ v1.17.33: 同时使用两种 col 标签模式
+                        // ★ v2.0.0: 同时使用两种 col 标签模式
                         // 使用捕获组分别识别 [[col:N]] 和 [[col]]
                         var colOpenRe2 = /\[\[col(?::(\d+))?\]\]/g;
                         var colCloseRe2 = /\[\[\/col\]\]/g;
@@ -13065,7 +14221,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                                 cm = colCloseRe2.exec(rowContent);
                                 if (!cm) break;
                                 
-                                // ★ v1.17.33-FIX: 可靠地检查闭标签前的嵌套开标签
+                                // ★ v2.0.0-FIX: 可靠地检查闭标签前的嵌套开标签
                                 colOpenRe2.lastIndex = sp;
                                 var nm;
                                 while ((nm = colOpenRe2.exec(rowContent)) !== null && nm.index < cm.index) {
@@ -13074,7 +14230,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                                 }
                                 depth--;
                                 if (depth > 0) {
-                                    // ★ v1.17.33-FIX: 同步 colCloseRe2 搜索起点
+                                    // ★ v2.0.0-FIX: 同步 colCloseRe2 搜索起点
                                     sp = cm.index + cm[0].length;
                                     colCloseRe2.lastIndex = sp;
                                 }
@@ -13088,7 +14244,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                                     colNum: om[1] ? parseInt(om[1], 10) : -1
                                 });
                             } else {
-                                // ★ v1.17.33: 未能匹配的 [[col]] 跳过整个标签，避免无限循环
+                                // ★ v2.0.0: 未能匹配的 [[col]] 跳过整个标签，避免无限循环
                                 break;
                             }
                         }
@@ -13097,7 +14253,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     
                     var colBlocks = extractColBlocks(rowContent);
                     
-                    // ★ v1.17.0: 空 row 警告
+                    // ★ v2.0.0: 空 row 警告
                     if (colBlocks.length === 0) {
                         if (typeof console !== "undefined" && console.warn) {
                             console.warn("[xfEditor] Empty row block (no [[col]] found), row will be rendered as empty container.");
@@ -13109,7 +14265,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                         continue;
                     }
                     
-                    // ★ v1.17.33-FIX: 使用预提取的 colNum 计算宽度，避免重复正则匹配
+                    // ★ v2.0.0-FIX: 使用预提取的 colNum 计算宽度，避免重复正则匹配
                     var autoCount = 0;
                     var totalDefined = 0;
                     var colWidths = [];
@@ -13136,7 +14292,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                         if (w === -1) {
                             w = autoWidth + (autoRemainder-- > 0 ? 1 : 0);
                         }
-                        // ★ v1.17.0: 最小宽度 1%，防止 0% 宽度列不可见
+                        // ★ v2.0.0: 最小宽度 1%，防止 0% 宽度列不可见
                         w = Math.max(1, Math.min(100, w));
                         
                         var colContentRaw = colBlocks[cj].content;
@@ -13171,7 +14327,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             var isMi = (type === 'mi');
             var isPinyin = (type === 'pinyin');
             
-            // ★ v1.17.6-FIX3: 解析字符和脚注 — 使用全局脚注映射 _copybookFootnoteMap
+            // ★ v2.0.0-FIX3: 解析字符和脚注 — 使用全局脚注映射 _copybookFootnoteMap
             // 生成与全局脚注系统一致的 ID：xf_editor-fnref-{N} 和 xf_editor-fn-{N}
             var parseCharsWithFN = function(text) {
                 var result = [];
@@ -13200,7 +14356,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 var line = lines[li].trim();
                 if (!line) continue;
 
-                // ★ v1.17.7: 支持 {content|pinyin}(!width:NNN) 花括号语法（含可选宽度参数）
+                // ★ v2.0.0: 支持 {content|pinyin}(!width:NNN) 花括号语法（含可选宽度参数）
                 // 同时兼容原有的 (content|pinyin) 圆括号语法
                 var groups = [];
                 
@@ -13234,7 +14390,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 
                 if (groups.length === 0) continue;
 
-                // ★ v1.17.7: 检测是否有任何 group 指定了宽度 — 决定行容器样式
+                // ★ v2.0.0: 检测是否有任何 group 指定了宽度 — 决定行容器样式
                 var hasAnyWidth = false;
                 for (var gi = 0; gi < groups.length; gi++) {
                     if (groups[gi].width) { hasAnyWidth = true; break; }
@@ -13258,7 +14414,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                         var charObjs = parseCharsWithFN(parts[0] || '');
                         var pinyins = (parts[1] || '').trim().split(/\s+/);
                         
-                        // ★ v1.17.7: 每个字符独立单元格，拼音在上、汉字在下
+                        // ★ v2.0.0: 每个字符独立单元格，拼音在上、汉字在下
                         // 脚注标记 [^fn] 不产生独立单元格，附加在前一个汉字上
                         // 支持 (!width:NNN) — 组宽度作用于容器，各单元格按比例分配
 
@@ -13296,7 +14452,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                             groupCellHtml += '</div>';
                         }
 
-                        // ★ v1.17.7: 组级宽度包装 — 当 group 指定了 (!width:NNN)
+                        // ★ v2.0.0: 组级宽度包装 — 当 group 指定了 (!width:NNN)
                         if (groupWidth) {
                             groupCellHtml = '<div class="xf_editor-copybook-group xf_editor-copybook-group-pinyin" style="width:' + groupWidth + 'px;">' +
                                 groupCellHtml + '</div>';
@@ -13327,7 +14483,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                             gridCellHtml += '</div>';
                         }
 
-                        // ★ v1.17.7: tian/mi 字帖也支持组级宽度
+                        // ★ v2.0.0: tian/mi 字帖也支持组级宽度
                         if (groupWidth) {
                             gridCellHtml = '<div class="xf_editor-copybook-group xf_editor-copybook-group-grid" style="width:' + groupWidth + 'px;">' +
                                 gridCellHtml + '</div>';
@@ -13374,7 +14530,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             }
         }
 
-        // ★ v1.17.9-FIX: 使用共享脚注映射（已在 tabs 之前从原始 markdown 构建）
+        // ★ v2.0.0-FIX: 使用共享脚注映射（已在 tabs 之前从原始 markdown 构建）
         // 确保字帖脚注 ID 与全局脚注系统使用相同的编号
         var _copybookFootnoteMap = {};
         if (options._sharedFootnoteMap) {
@@ -13388,7 +14544,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
 
         // 处理字帖语法：[[copybookTian]]...[[/copybookTian]]、[[copybookMi]]...[[/copybookMi]]、[[copybookPinyin]]...[[/copybookPinyin]]
         // 各种字帖类型可以彼此嵌套，也可以嵌套在 tabs/columns 内使用
-        // ★ v1.17.6-FIX2: 传递脚注映射使字帖脚注 ID 与全局系统一致
+        // ★ v2.0.0-FIX2: 传递脚注映射使字帖脚注 ID 与全局系统一致
         if (options.copybook !== false) {
             try {
                 processCopybookBlocks(findBalancedBlocks(markdown, xfEditor.regexs.copybookTian, xfEditor.regexs.copybookTianEnd), 'tian');
@@ -13454,7 +14610,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
 
                     // 构建页面HTML，包含页头、页脚区域
                     var headerHtml = pageHeader ? '<div class="xf_editor-page-header">' + pageHeader.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;") + '</div>' : '';
-                    // ★ v1.17.9-FIX1: 直接渲染页脚初始内容（{page}/{total} 暂用 1/1）
+                    // ★ v2.0.0-FIX1: 直接渲染页脚初始内容（{page}/{total} 暂用 1/1）
                     // data-footer-template 属性保留供 initPages() 分页时更新
                     // 解决 markdownToHTML 模式下 footer 不显示的问题
                     var footerContent = pageFooter ? xfEditor.escapeHtml(pageFooter.replace(/{page}/gi, '1').replace(/{total}/gi, '1')) : '';
@@ -13478,7 +14634,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         }
 
         // 处理视频列表语法：[[video]]...[[/video]]
-        // ★ v1.17.10-FIX: 使用 findBalancedBlocks 替代简单正则，支持嵌套和与其他块级语法的交叉嵌套
+        // ★ v2.0.0-FIX: 使用 findBalancedBlocks 替代简单正则，支持嵌套和与其他块级语法的交叉嵌套
         if (options.video !== false) {
             var videoBlocks = findBalancedBlocks(markdown, /\[\[video\]\]/g, /\[\[\/video\]\]/g);
             for (var vi = videoBlocks.length - 1; vi >= 0; vi--) {
@@ -13522,7 +14678,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         }
 
         // 处理文件列表语法：[[file]]...[[/file]]
-        // ★ v1.17.10-FIX: 使用 findBalancedBlocks 替代简单正则，支持嵌套和与其他块级语法的交叉嵌套
+        // ★ v2.0.0-FIX: 使用 findBalancedBlocks 替代简单正则，支持嵌套和与其他块级语法的交叉嵌套
         if (options.file !== false) {
             var fileBlocks = findBalancedBlocks(markdown, /\[\[file\]\]/g, /\[\[\/file\]\]/g);
             for (var fi = fileBlocks.length - 1; fi >= 0; fi--) {
@@ -13741,7 +14897,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         }
 
         // 处理字体大小语法：!数字 文本! → <span style="font-size:数字px">文本</span>
-        // ★ v1.17.6-FIX3: 修复 guard 条件 — 原 /\^\[/ 检测图片语法永远不触发(match 以 ! 开头)，
+        // ★ v2.0.0-FIX3: 修复 guard 条件 — 原 /\^\[/ 检测图片语法永远不触发(match 以 ! 开头)，
         //     改用检测 match 是否以 !数字形式开头；图片语法 ![alt] 的 [ 不是数字，不会被误匹配
         try {
             markdown = markdown.replace(xfEditor.regexs.fontSize, function(match, size, text) {
@@ -13787,7 +14943,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             });
         }
 
-        // ★ v1.17.9-FIX4: 仅在最外层调用追加脚注列表，防止递归调用插入到嵌套内容中
+        // ★ v2.0.0-FIX4: 仅在最外层调用追加脚注列表，防止递归调用插入到嵌套内容中
         if (_wasRootFootnotesCall && options._sharedFootnoteOrder && options._sharedFootnoteOrder.length > 0) {
             var footnoteHtml = '\n\n<div class="xf_editor-footnotes-section">';
             footnoteHtml += '<hr class="xf_editor-footnote-sep">';
@@ -13832,7 +14988,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
     };
 
     /**
-     * ★ v1.17.5-FIX: 多轮替换解决嵌套占位符问题
+     * ★ v2.0.0-FIX: 多轮替换解决嵌套占位符问题
      * 当占位符的 HTML 内容中包含其他占位符引用时（如 tabs 嵌套在 grid col 内），
      * 单次遍历无法恢复所有占位符。改用多轮循环直到无变化或达到安全上限(10轮)。
      * 使用 forEach 闭包隔离作用域，避免 uglify 变量名碰撞。
@@ -13948,7 +15104,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             }
             
             var pinyinReg = xfEditor.regexs.pinyin;
-            // ★ v1.17.9: 脚注引用 HTML 匹配正则（在 pinyin 处理前已被 marked 渲染）
+            // ★ v2.0.0: 脚注引用 HTML 匹配正则（在 pinyin 处理前已被 marked 渲染）
             var fnRefRegex = /<sup class="xf_editor-footnote-ref-wrapper">[\s\S]*?<\/sup>/g;
             
             text = text.replace(pinyinReg, function($1, $2, $3, $4) {
@@ -13958,18 +15114,18 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 var pyTrimmed = pyTextRaw.trim();
                 // 保存原始拼音中的空格（用 &nbsp; 替代），防止 HTML 折叠空白
                 var pyText = pyTextRaw.replace(/ /g, '&nbsp;');
-                // ★ v1.17.7: 可选的宽度参数 (!width:NNN)
+                // ★ v2.0.0: 可选的宽度参数 (!width:NNN)
                 var userWidth = $4 ? parseInt($4, 10) : null;
                 
                 // 检测拼音中是否包含空格（表示分组拼音如 "chuáng qián míng yuè guāng"）
                 var pyGroups = pyTrimmed.split(/\s+/).filter(function(g) { return g.length > 0; });
                 
-                // ★ v1.17.9: 检测 baseText 是否包含脚注 HTML（被 marked 渲染后的 footnotes）
+                // ★ v2.0.0: 检测 baseText 是否包含脚注 HTML（被 marked 渲染后的 footnotes）
                 var hasFootnotes = fnRefRegex.test(baseText);
                 fnRefRegex.lastIndex = 0;
                 
                 if (hasFootnotes && pyGroups.length > 1) {
-                    // ★ v1.17.9: 脚注嵌入模式 — 将 baseText 拆分为 tokens（文字字符 + 脚注HTML块）
+                    // ★ v2.0.0: 脚注嵌入模式 — 将 baseText 拆分为 tokens（文字字符 + 脚注HTML块）
                     var tokens = [];
                     var lastIdx = 0, fnMatch;
                     while ((fnMatch = fnRefRegex.exec(baseText)) !== null) {
@@ -14006,7 +15162,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                                 result += userWidth ? '<span class="xf_editor-pinyin-col">' + rubyHtml + '</span>' : rubyHtml;
                                 pyIdx++;
                             } else {
-                                // ★ v1.17.9: 脚注块：显示脚注标记，上方用 4 个 &nbsp; 空白占位保证对齐
+                                // ★ v2.0.0: 脚注块：显示脚注标记，上方用 4 个 &nbsp; 空白占位保证对齐
                                 var fnRuby = '<ruby class="xf_editor-pinyin xf_editor-pinyin-footnote"><rb>' + tok.content + '</rb><rt>&nbsp;&nbsp;&nbsp;&nbsp;</rt></ruby>';
                                 result += userWidth ? '<span class="xf_editor-pinyin-col">' + fnRuby + '</span>' : fnRuby;
                             }
@@ -14043,7 +15199,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                         var rubyHtml = '<ruby class="xf_editor-pinyin xf_editor-pinyin-matched"><rb>' + textChars[j] + '</rb><rt>' + pyGroups[j] + '</rt></ruby>';
                         result += userWidth ? '<span class="xf_editor-pinyin-col">' + rubyHtml + '</span>' : rubyHtml;
                     }
-                    // ★ v1.17.7: 指定宽度时用容器包裹并使子元素均分宽度
+                    // ★ v2.0.0: 指定宽度时用容器包裹并使子元素均分宽度
                     if (userWidth) {
                         result = '<span class="xf_editor-pinyin-wrap" style="display:inline-flex;width:' + userWidth + 'px;">' + result + '</span>';
                     }
@@ -14186,9 +15342,22 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             }
 
             var videoExts = xfEditor.regexs.videoExts;
+            var audioExts = xfEditor.regexs.audioExts;
             var imageExts = /\.(jpg|jpeg|png|gif|bmp|webp)(\?.*)?$/i;
-            
-            // ★ v1.17.25: 防御性检查 href
+
+            // ★ v2.0.0: 音频链接渲染为真正的 <audio> 播放器（支持播放/暂停/进度/音量），
+            //   而非普通下载链接，解决“音频组件无法播放”的问题。
+            if (href && audioExts.test(href)) {
+                var audioTitle = title ? xfEditor.escapeAttr(title) : (text ? xfEditor.escapeAttr(text) : "音频");
+                var audioOut = '<div class="xf_editor-audio-player-wrap">'
+                    + '<audio class="xf_editor-audio-player" controls preload="metadata" src="' + safeHref + '"'
+                    + ' title="' + audioTitle + '">'
+                    + '您的浏览器不支持 audio 标签，请<a href="' + safeHref + '" download class="xf_editor-attachment-link">下载音频</a>'
+                    + '</audio></div>';
+                return audioOut;
+            }
+
+            // ★ v2.0.0: 防御性检查 href
             if (href && videoExts.test(href)) {
                 var videoOut = '<video src="' + safeHref + '" controls preload="metadata" class="xf_editor-video-player"';
                 if (title) videoOut += ' title="' + xfEditor.escapeAttr(title) + '"';
@@ -14219,7 +15388,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 return out + "\">" + text.replace(/@/g, "&#64;") + "</a>";
             }
 
-            // ★ v1.17.2: 解析 title 中的 target 指令
+            // ★ v2.0.0: 解析 title 中的 target 指令
             var linkTarget = "_blank";  // 默认新窗口打开
             var linkRel    = "noopener noreferrer";
             var linkTitle  = title || "";
@@ -14249,13 +15418,23 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         };
         
         markedRenderer.image = function(href, title, text) {
-            // ★ v1.17.13: 对所有用户提供的属性值进行 HTML 属性转义，防止 XSS 属性注入攻击
+            // ★ v2.0.0: 对所有用户提供的属性值进行 HTML 属性转义，防止 XSS 属性注入攻击
             var safeHref  = xfEditor.escapeAttr(href || "");
             var safeText  = xfEditor.escapeAttr(text || "");
             var safeTitle = title ? xfEditor.escapeAttr(title) : "";
             
             var videoExts = xfEditor.regexs.videoExts;
-            // ★ v1.17.25: 防御性检查 href
+            var audioExts = xfEditor.regexs.audioExts;
+            // ★ v2.0.0: 音频图片语法（!(audio.mp3)）渲染为播放器而非破损的 <img>
+            if (href && audioExts.test(href)) {
+                var _audioTitle = title ? safeTitle : (text ? safeText : "音频");
+                return '<div class="xf_editor-audio-player-wrap">'
+                    + '<audio class="xf_editor-audio-player" controls preload="metadata" src="' + safeHref + '"'
+                    + ' title="' + _audioTitle + '">'
+                    + '您的浏览器不支持 audio 标签，请<a href="' + safeHref + '" download class="xf_editor-attachment-link">下载音频</a>'
+                    + '</audio></div>';
+            }
+            // ★ v2.0.0: 防御性检查 href
             if (href && videoExts.test(href)) {
                 var videoOut = "<video src=\"" + safeHref + "\" controls preload=\"metadata\"";
                 if (title) {
@@ -14298,7 +15477,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         };
         
         markedRenderer.heading = function(text, level, raw) {
-            // ★ v1.17.25: 防御 null/undefined text
+            // ★ v2.0.0: 防御 null/undefined text
             if (typeof text !== "string") text = "";
             if (raw == null) raw = "";
                     
@@ -14725,11 +15904,16 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 'time': ['datetime']
             },
             allowedSchemes: ['http', 'https', 'mailto', 'tel', 'ftp'],
-            dangerousAttributes: ['onerror', 'onload', 'onclick', 'onmouseover', 'onmouseout', 'onfocus', 'onblur', 'onchange', 'onsubmit', 'onkeydown', 'onkeyup', 'onkeypress', 'ondblclick', 'onmousedown', 'onmouseup', 'onmousemove', 'onmouseenter', 'onmouseleave', 'ontouchstart', 'ontouchend', 'ontouchmove', 'onscroll', 'onresize', 'onselect', 'onreset', 'onformchange', 'onforminput', 'ondrag', 'ondragend', 'ondragenter', 'ondragleave', 'ondragover', 'ondragstart', 'ondrop', 'onabort', 'oncanplay', 'oncanplaythrough', 'oncontextmenu', 'oncuechange', 'ondurationchange', 'onemptied', 'onended', 'oninput', 'oninvalid', 'onpause', 'onplay', 'onplaying', 'onprogress', 'onratechange', 'onreadystatechange', 'onseeked', 'onseeking', 'onstalled', 'onsuspend', 'ontimeupdate', 'onvolumechange', 'onwaiting', 'onwheel', 'oncopy', 'oncut', 'onpaste', 'onanimationend', 'onanimationiteration', 'onanimationstart', 'ontransitionend'],
-            dangerousTags: ['script', 'style', 'iframe', 'frame', 'frameset', 'object', 'embed', 'applet', 'base', 'basefont', 'link', 'meta', 'noscript', 'template', 'form', 'textarea', 'button', 'select', 'option', 'optgroup', 'datalist', 'fieldset', 'label', 'legend', 'meter', 'output', 'progress']
+            dangerousAttributes: ['onerror', 'onload', 'onclick', 'onmouseover', 'onmouseout', 'onfocus', 'onblur', 'onchange', 'onsubmit', 'onkeydown', 'onkeyup', 'onkeypress', 'ondblclick', 'onmousedown', 'onmouseup', 'onmousemove', 'onmouseenter', 'onmouseleave', 'ontouchstart', 'ontouchend', 'ontouchmove', 'onscroll', 'onresize', 'onselect', 'onreset', 'onformchange', 'onforminput', 'ondrag', 'ondragend', 'ondragenter', 'ondragleave', 'ondragover', 'ondragstart', 'ondrop', 'onabort', 'oncanplay', 'oncanplaythrough', 'oncontextmenu', 'oncuechange', 'ondurationchange', 'onemptied', 'onended', 'oninput', 'oninvalid', 'onpause', 'onplay', 'onplaying', 'onprogress', 'onratechange', 'onreadystatechange', 'onseeked', 'onseeking', 'onstalled', 'onsuspend', 'ontimeupdate', 'onvolumechange', 'onwaiting', 'onwheel', 'oncopy', 'oncut', 'onpaste', 'onanimationend', 'onanimationiteration', 'onanimationstart', 'ontransitionend', 'srcdoc', 'formaction',
+            // ★ v2.1.0 加固：新增 XSS 向量属性 —— formaction 可劫持表单提交目标；
+            // srcset/poster/background/xlink:href 可承载 javascript:/data:text-html 载荷绕过既有过滤。
+            'srcset', 'poster', 'background', 'xlink:href', 'autofocus', 'is'],
+            // ★ v2.1.0 加固：补充 svg / math / foreignObject  —— SVG 可内嵌 <script>、<foreignObject>
+            // 可被用作绕过标签黑名单的容器；数学标记宿主 XML 同理，统一按危险标签处理。
+            dangerousTags: ['script', 'style', 'iframe', 'frame', 'frameset', 'object', 'embed', 'applet', 'base', 'basefont', 'link', 'meta', 'noscript', 'template', 'form', 'textarea', 'button', 'select', 'option', 'optgroup', 'datalist', 'fieldset', 'label', 'legend', 'meter', 'output', 'progress', 'svg', 'math', 'foreignobject']
         };
         
-        // ★ v1.17.15-FIX: 保护 <pre> 和 <code> 块，防止代码示例中的 <script>/<style>/<iframe> 等标签被过滤误删
+        // ★ v2.0.0-FIX: 保护 <pre> 和 <code> 块，防止代码示例中的 <script>/<style>/<iframe> 等标签被过滤误删
         var xssProtectedBlocks = [];
         var xssProtectId = 0;
         html = html.replace(/(<(pre|code)\b[^>]*>)([\s\S]*?)(<\/\2>)/gi, function(match) {
@@ -14749,7 +15933,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         }
         
         // 清洗 href 和 src 属性，防止 javascript: 协议注入（始终执行）
-        // ★ v1.17.13: 增加 HTML 实体解码后再检测，防止 &#106;avascript: 等编码绕过
+        // ★ v2.0.0: 增加 HTML 实体解码后再检测，防止 &#106;avascript: 等编码绕过
         html = html.replace(/(href|src)\s*=\s*["']?([^"'>\s]*)["']?/gi, function(match, attr, url) {
             // 先进行基本清理：移除 null 字节和控制字符
             var cleanUrl = url.replace(/[\x00-\x1f\x7f]+/g, "");
@@ -14792,15 +15976,26 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         }
         
         // 移除 style 属性中的 expression 和 behavior（IE 特有的 XSS 向量，始终执行）
+        // ★ v2.1.0 加固：新增 url(javascript:)、url(data:text/html)、@import 等 CSS 载荷过滤。
+        //   这些写法可让 CSS 在解析阶段触发脚本/外链加载，常被用于绕过纯标签黑名单。
         html = html.replace(/style\s*=\s*["'][^"']*["']/gi, function(match) {
             var sanitized = match.replace(/expression\s*\(/gi, "expr-invalid(");
             sanitized = sanitized.replace(/behavior\s*:/gi, "behavior-invalid:");
             sanitized = sanitized.replace(/javascript\s*:/gi, "javascript-invalid:");
             sanitized = sanitized.replace(/vbscript\s*:/gi, "vbscript-invalid:");
+            sanitized = sanitized.replace(/livescript\s*:/gi, "livescript-invalid:");
+            sanitized = sanitized.replace(/mocha\s*:/gi, "mocha-invalid:");
+            // url() 内的 javascript:/vbscript:/data:text-html 载荷
+            sanitized = sanitized.replace(/url\s*\(\s*['"]?\s*(?:javascript|vbscript|livescript|data\s*:\s*text\/html)/gi, "url(invalid-blocked:");
+            // 外链 @import 注入
+            sanitized = sanitized.replace(/@import/gi, "at-import-invalid");
+            // IE 专有 -ms-behavior / binding（HTC 行为文件可执行脚本）
+            sanitized = sanitized.replace(/-ms-behavior\s*:/gi, "-ms-behavior-invalid:");
+            sanitized = sanitized.replace(/binding\s*:/gi, "binding-invalid:");
             return sanitized;
         });
 
-        // ★ v1.17.16-FIX: 还原被保护的 <pre>/<code> 块必须在早期返回之前（而不是之后）
+        // ★ v2.0.0-FIX: 还原被保护的 <pre>/<code> 块必须在早期返回之前（而不是之后）
         // 否则 htmlDecode: true/false（typeof !== "string"）时会跳过还原，导致代码块消失！
         for (var xpi = 0; xpi < xssProtectedBlocks.length; xpi++) {
             html = html.split("<!--" + xssProtectedBlocks[xpi].id + "-->").join(xssProtectedBlocks[xpi].html);
@@ -14815,7 +16010,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         var filterTags = expression[0].split(",");
         var attrs      = expression[1];
 
-        // ★ v1.17.28-FIX: 改用 DOM 解析进行标签/属性过滤，替代原有的扁平正则。
+        // ★ v2.0.0-FIX: 改用 DOM 解析进行标签/属性过滤，替代原有的扁平正则。
         //   旧实现使用 /\<(\w+)\s*([^\>]*)\>([^\>]*)\<\/(\w+)\>/ 这类扁平正则，
         //   只能匹配"单层"的 <tag>text</tag>，无法处理嵌套 HTML。遇到多层嵌套结构
         //   （例如隐藏的 tooltip 定义块 <div><div><h4/><p/><ul><li>...）时，回调以
@@ -14875,7 +16070,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
     };
 
     /**
-     * ★ v1.17.16: 从 &lt;code&gt; 元素可靠提取原始代码文本（保留缩进/空格/换行）
+     * ★ v2.0.0: 从 &lt;code&gt; 元素可靠提取原始代码文本（保留缩进/空格/换行）
      * 使用 innerHTML + 实体解码，比 textContent 更可靠（textContent 在 DOM 结构复杂时可能丢失空白）
      *
      * @param   {HTMLElement|XfDom} el  code 元素
@@ -14883,7 +16078,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
      */
     xfEditor.extractCodeText = function(el) {
         if (!el) return "";
-        // ★ v1.17.35: 支持 XfDom 多元素集合 — 逐个提取后合并
+        // ★ v2.0.0: 支持 XfDom 多元素集合 — 逐个提取后合并
         //     原检查 el.jquery 会漏掉 XfDom 实例（没有 .jquery），
         //     $pre.find("code") 返回 XfDom 时落入 else 分支后被当作 DOM 元素传给
         //     _extractSingleCodeText，导致 el.innerHTML=undefined→code 为空→iframe:pre 白屏。
@@ -14910,11 +16105,11 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         // 使用 innerHTML 获取原始 HTML，这保留了所有空格/换行/实体
         var raw = dom.innerHTML;
         if (!raw) return "";
-        // ★ v1.17.19: 先处理 <br> 转回换行
+        // ★ v2.0.0: 先处理 <br> 转回换行
         raw = raw.replace(/<br\s*\/?>/gi, "\n");
-        // ★ v1.17.19: 剥离所有 HTML 标签（必须在实体解码之前！否则解码后的 < > 会被贪婪式 <[^>]+> 消耗）
+        // ★ v2.0.0: 剥离所有 HTML 标签（必须在实体解码之前！否则解码后的 < > 会被贪婪式 <[^>]+> 消耗）
         raw = raw.replace(/<[^>]+>/g, "");
-        // ★ v1.17.19: 最后解码 HTML 实体 — &amp; 必须在 &lt;/&gt; 之前，避免 &amp;lt; 被错误拆解
+        // ★ v2.0.0: 最后解码 HTML 实体 — &amp; 必须在 &lt;/&gt; 之前，避免 &amp;lt; 被错误拆解
         raw = raw.replace(/&amp;/g, "&")
                  .replace(/&lt;/g, "<")
                  .replace(/&gt;/g, ">")
@@ -14927,7 +16122,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
     };
 
     /**
-     * ★ v1.17.20: 将提取的原始代码构建为完整的独立 HTML 页面
+     * ★ v2.0.0: 将提取的原始代码构建为完整的独立 HTML 页面
      * 用于 tooltip iframe:pre 类型悬浮预览 — 根据代码语言自动选择渲染方式
      * （JS → <script>、CSS → <style>、HTML → <body>、纯文本 → <pre>）
      *
@@ -14996,7 +16191,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 e.preventDefault();
                 if (btn.hasClass("copied") || btn.hasClass("failed")) return;
 
-                // ★ v1.17.16: 优先读取存储的原始代码，fallback 用 extractCodeText 保留完整格式
+                // ★ v2.0.0: 优先读取存储的原始代码，fallback 用 extractCodeText 保留完整格式
                 var code = pre.data("_originalCode");
                 if (!code) {
                     var codeEl = pre.find("code");
@@ -15061,7 +16256,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
     xfEditor.initTooltips = function(container) {
         if (!container || container.length === 0) return;
         
-        // ★ v1.17.35: 全局注册 pagehide 清理（仅一次）—— 确保页面切换/关闭时释放 Blob URL
+        // ★ v2.0.0: 全局注册 pagehide 清理（仅一次）—— 确保页面切换/关闭时释放 Blob URL
         if (!xfEditor.___tooltip_pagehide_registered) {
             xfEditor.___tooltip_pagehide_registered = true;
             // ★ 组合 pagehide + beforeunload 确保跨浏览器（Safari pagehide 不稳定）
@@ -15135,7 +16330,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     }
                     if (pre.length > 0) {
                         isPreContent = true;
-                        // ★ v1.17.20: 使用 extractCodeText 提取原始代码，再通过 buildIframeHTML 包裹为完整 HTML 页面
+                        // ★ v2.0.0: 使用 extractCodeText 提取原始代码，再通过 buildIframeHTML 包裹为完整 HTML 页面
                         // 这样 iframe 中的 JS/CSS 可以正常执行，纯文本也会在 <pre> 标签中正确显示
                         var rawCode = (pre.find("code").length > 0) ? xfEditor.extractCodeText(pre.find("code")) : xfEditor.extractCodeText(pre);
                         var langCls = pre[0].className || "";
@@ -15159,7 +16354,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     tooltipHtml = '<div class="xf_editor-tooltip-loading"><span>加载中...</span></div><iframe src="' + xfEditor.escapeAttr(tooltipContent) + '" frameborder="0" style="' + iframeStyle + '" onload="var p=this.previousElementSibling;if(p){p.style.display=\'none\';}this.style.display=\'\';var e=this;e.style.opacity=0;e.style.transition=\'opacity 200ms\';requestAnimationFrame(function(){e.style.opacity=1;});"></iframe>';
                 }
             } else if (tooltipType === "html") {
-                    // ★ v1.17.22 XSS 防护：将 HTML 内容转为纯文本后重新包裹，防止 XSS 注入
+                    // ★ v2.0.0 XSS 防护：将 HTML 内容转为纯文本后重新包裹，防止 XSS 注入
                     var safeHtml = xfEditor.escapeHTML(tooltipContent);
                     tooltipHtml = '<div class="xf_editor-tooltip-html-content">' + safeHtml + '</div>';
             } else if (tooltipType === "html-selector") {
@@ -15176,7 +16371,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 tooltip.attr("data-iframepre-code", _rawPreCode);
             }
             
-            // ★ v1.17.0: Tooltip 固定宽高时启用滚动条
+            // ★ v2.0.0: Tooltip 固定宽高时启用滚动条
             if (tooltipWidth) {
                 tooltip.css({width: tooltipWidth + "px", "max-width": tooltipWidth + "px"});
                 tooltip.find("img,iframe,div.xf_editor-tooltip-html-content,div.xf_editor-tooltip-text-content").css("max-width", tooltipWidth + "px");
@@ -15185,7 +16380,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 tooltip.css({height: tooltipHeight + "px", "max-height": tooltipHeight + "px"});
                 tooltip.find("img,iframe,div.xf_editor-tooltip-html-content,div.xf_editor-tooltip-text-content").css("max-height", tooltipHeight + "px");
             }
-            // ★ v1.17.0: 固定尺寸时自动溢出滚动
+            // ★ v2.0.0: 固定尺寸时自动溢出滚动
             if (tooltipWidth || tooltipHeight) {
                 var overflowX = tooltipWidth ? "auto" : "hidden";
                 var overflowY = tooltipHeight ? "auto" : "hidden";
@@ -15199,7 +16394,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 });
             }
             
-            // ★ v1.17.2: 为 image/iframe/html/html-selector 类型添加最大化和关闭按钮
+            // ★ v2.0.0: 为 image/iframe/html/html-selector 类型添加最大化和关闭按钮
             // 注意：text 文本类型不添加按钮（文字悬浮提示无需最大化）
             var maxBtn, closeBtn;
             var _origCss = {};
@@ -15215,7 +16410,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 tooltip.append(maxBtn).append(closeBtn);
             }
             
-            // ★ v1.17.2: 最大化/还原功能（image/iframe/html/html-selector 类型，自适应宽高）
+            // ★ v2.0.0: 最大化/还原功能（image/iframe/html/html-selector 类型，自适应宽高）
             if (maxBtn) {
                 maxBtn.on("click", function(e) {
                     e.stopPropagation();
@@ -15364,7 +16559,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                         var newBlobUrl = (window.URL || window.webkitURL).createObjectURL(newBlob);
                         tooltip.attr("data-blob-url", newBlobUrl);
                         // 显示 loading，隐藏 iframe，设置新 src 触发 onload
-                        // ★ v1.17.24: 用 .css() 代替 .show()/.hide() —— 避免 XfDom
+                        // ★ v2.0.0: 用 .css() 代替 .show()/.hide() —— 避免 XfDom
                         // olddisplay 缓存导致 loading div 的 flex 被错误恢复为 block
                         tooltip.find(".xf_editor-tooltip-loading").css("display", "flex");
                         tooltip.find("iframe").css("display", "none").attr("src", newBlobUrl);
@@ -15435,7 +16630,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                             overflow: 'auto'
                         });
                         
-                        // ★ v1.17.22 XSS 防护：移除克隆元素中所有内联事件处理器 (on*) 属性
+                        // ★ v2.0.0 XSS 防护：移除克隆元素中所有内联事件处理器 (on*) 属性
                         clone.find('*').addBack().each(function() {
                             var attrs = this.attributes;
                             if (attrs) {
@@ -15475,7 +16670,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 var triggerRect = trigger[0].getBoundingClientRect();
                 var tooltipW   = tooltip.outerWidth();
                 var tooltipH   = tooltip.outerHeight();
-                // ★ v1.17.24: image/iframe 类型在 onload 前 img/iframe 为 display:none，
+                // ★ v2.0.0: image/iframe 类型在 onload 前 img/iframe 为 display:none，
                 // 测量值仅含 loading 文本尺寸（极小），导致定位不准。
                 // 直接检查 img/iframe 的 inline style.display 是否仍为 "none"。
                 if (tooltipType === "image" || tooltipType === "iframe") {
@@ -15553,7 +16748,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 // 鼠标离开 popup：同样使用延迟隐藏，给用户回到 trigger 的机会
                 trigger.data("tooltip-timer", setTimeout(function() {
                     tooltip.removeClass("show");
-                    // ★ v1.17.22 释放 iframe:pre 类型的 Blob URL，避免内存泄漏
+                    // ★ v2.0.0 释放 iframe:pre 类型的 Blob URL，避免内存泄漏
                     var blobUrl2 = tooltip.attr("data-blob-url");
                     if (blobUrl2) {
                         try { (window.URL || window.webkitURL).revokeObjectURL(blobUrl2); } catch(ex) {}
@@ -15577,7 +16772,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
     };
 
     // ╔══════════════════════════════════════════════════════════════════════╗
-    // ║  ★ v1.17.23: 统一静态后处理方法 — 供编辑器预览和纯预览共用        ║
+    // ║  ★ v2.0.0: 统一静态后处理方法 — 供编辑器预览和纯预览共用        ║
     // ║  所有实例方法现简化为薄封装，markdownToHTML 直接调用静态方法       ║
     // ╚══════════════════════════════════════════════════════════════════════╝
     
@@ -15660,7 +16855,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
      * @param {Object} settings    设置对象
      */
     xfEditor._renderFlowChart = function(container, settings) {
-        // ★ v1.17.24: 移除已失效的 IE8 守卫
+        // ★ v2.0.0: 移除已失效的 IE8 守卫
         if (!container || !container.length) return;
         if (settings.flowChart) {
             container.find(".flowchart").each(function() {
@@ -15787,7 +16982,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         if (!editorTheme) {
             var themeParent = container.closest('[class*="theme-"]');
             if (themeParent.length) {
-                // ★ v1.17.25: 防御 attr("class") 返回 undefined
+                // ★ v2.0.0: 防御 attr("class") 返回 undefined
                 var cls = themeParent.attr("class") || "";
                 var m = cls.match(/(?:^|\s)theme-(\w+)/);
                 if (m) editorTheme = m[1];
@@ -15795,7 +16990,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         }
         container.find(".xf_editor-echarts").each(function() {
             var chart = dom(this);
-            // ★ v1.17.38: forceResize 模式 —— 对已初始化但尺寸可能因 tab 切换变化的图表重新 resize
+            // ★ v2.0.0: forceResize 模式 —— 对已初始化但尺寸可能因 tab 切换变化的图表重新 resize
             if (forceResize) {
                 if (chart.is(":hidden") || chart.width() === 0 || chart.height() === 0) return;
                 if (chart.attr("data-initialized") === "true") {
@@ -15999,7 +17194,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 // 悬停暂停自动播放
                 banner.on("mouseenter", stop).on("mouseleave", play);
                 // 触摸滑动切换（阈值 40px）
-                // ★ v1.17.38: 保存事件处理器引用，以便后续移除
+                // ★ v2.0.0: 保存事件处理器引用，以便后续移除
                 var startX = 0;
                 var bannerTouchStart = function(e) {
                     startX = e.touches[0].clientX; moved = false; stop();
@@ -16184,7 +17379,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
      * @returns {String} 渲染后的 HTML
      */
     xfEditor._renderMarkdownPipeline = function(markdown, markedOpts, rendererOpts, settings) {
-        // ★ v1.17.27: 添加 try/catch 防止 marked 解析失败导致整个渲染流程中断
+        // ★ v2.0.0: 添加 try/catch 防止 marked 解析失败导致整个渲染流程中断
         try {
             var mdProtected = xfEditor.protectTeXSyntax(markdown);
             mdProtected = xfEditor.preprocessLinkTarget(mdProtected);
@@ -16263,7 +17458,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             return;
         }
 
-        // ★ v1.17.18: 验证 target element 是否存在
+        // ★ v2.0.0: 验证 target element 是否存在
         var div           = dom("#" + id);
         if (div.length === 0) {
             if (typeof console !== "undefined" && console.error) {
@@ -16312,7 +17507,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         
         div.addClass("xf_editor markdown-body " + this.classPrefix + "html-preview").append(markdownParsed);
         
-        // ★ v1.17.9-FIX: markdownToHTML 模式下脚注点击跳转处理
+        // ★ v2.0.0-FIX: markdownToHTML 模式下脚注点击跳转处理
         // 编辑器模式下由 init() 中的事件委托处理，此处为纯预览模式添加
         div.off("click.xf_editor-md-footnote").on("click.xf_editor-md-footnote",
             ".xf_editor-footnote-ref-wrapper a[href^='#xf_editor-fn-'], " +
@@ -16365,15 +17560,18 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             }
         }
             
-        // ★ v1.17.23: 使用统一静态后处理方法，与编辑器预览模式完全一致
+        // ★ v2.0.0: 使用统一静态后处理方法，与编辑器预览模式完全一致
 
         // 1. 代码高亮 + 复制按钮
-        // ★ v1.17.32: markdownToHTML 需要加载 prettify.min.js 才能生成行号和语法高亮
+        // ★ v2.0.0: markdownToHTML 需要加载 prettify.min.js 才能生成行号和语法高亮
         if (settings.previewCodeHighlight && typeof prettyPrint === "undefined" && !xfEditor.prettyPrint) {
             var prettifyPath = (settings.path || xfEditor.defaults.path || "") + "prettify.min";
             var _div = div, _settings = settings;
             xfEditor.loadScript(prettifyPath, function() {
-                xfEditor.prettyPrint = prettyPrint;
+                // ★ 加固：脚本加载失败或未定义 prettyPrint 时直接赋值会抛 ReferenceError
+                if (typeof prettyPrint === "function") {
+                    xfEditor.prettyPrint = prettyPrint;
+                }
                 xfEditor._previewCodeHighlight(_div, _settings);
             });
         } else {
@@ -16432,7 +17630,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         // 4. ECharts 图表
         if (settings.echarts) {
             if (typeof echarts === "undefined") {
-                // ★ v1.17.38: 必须使用 settings.path（否则子目录部署时解析到错误目录 404）
+                // ★ v2.0.0: 必须使用 settings.path（否则子目录部署时解析到错误目录 404）
                 xfEditor.loadScript((settings.path || xfEditor.defaults.path || "") + "echarts.min", function() {
                     xfEditor._initECharts(div, settings);
                 });
@@ -16456,7 +17654,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             xfEditor._initBanners(div);
         }
 
-        // ★ v1.17.23: 新增 — 页面分页处理（与编辑器预览保持一致）
+        // ★ v2.0.0: 新增 — 页面分页处理（与编辑器预览保持一致）
         if (settings.pageBlock) {
             xfEditor._initPages(div);
         }
@@ -16538,10 +17736,10 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
      * @param {String}   [into="head"]         嵌入页面的位置
      */
     
-    // ★ v1.17.38: 待加载队列，防止同步重复调用未完成时的竞争条件
+    // ★ v2.0.0: 待加载队列，防止同步重复调用未完成时的竞争条件
     xfEditor.loadFiles.pendingCSS = [];
     xfEditor.loadFiles.pendingJS  = [];
-    // ★ v1.17.38: CSS 与 JS 必须使用独立的等待队列——
+    // ★ v2.0.0: CSS 与 JS 必须使用独立的等待队列——
     //   同一资源可能同时以 .css 与 .js 两种形式被请求（如 codemirror/codemirror.min），
     //   若共用一个队列，CSS 先加载完成会提前冲掉 JS 排队的回调（CodeMirror 尚未定义就回调）。
     xfEditor.loadFiles.pendingQueuesCSS = {};
@@ -16566,7 +17764,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         into       = into     || "head";        
         callback   = callback || function() {};
         
-        // ★ v1.17.38: 路径归一化用于去重检测
+        // ★ v2.0.0: 路径归一化用于去重检测
         var normalizedName = (fileName || "").replace(/^\.\//, "");
         
         if (xfEditor.loadFiles.css.indexOf(normalizedName) >= 0) {
@@ -16574,7 +17772,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             return;
         }
         
-        // ★ v1.17.38: 已在加载中（同步调用尚未完成 onload/onerror）→ 排队等待，加载完成后统一回调
+        // ★ v2.0.0: 已在加载中（同步调用尚未完成 onload/onerror）→ 排队等待，加载完成后统一回调
         //   修复竞态：原实现立即回调，会在资源真正加载完成前执行
         //   （如两处 markdownToHTML 同时 tex:true，katex 尚未定义就触发回调 → "katex is not defined"）
         if (xfEditor.loadFiles.pendingCSS.indexOf(normalizedName) >= 0) {
@@ -16589,7 +17787,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         css.rel    = "stylesheet";
         
         css.onload = function() {
-            // ★ v1.17.38: 检测 CSS 样式表是否真正可用（某些浏览器 404 也会触发 onload）
+            // ★ v2.0.0: 检测 CSS 样式表是否真正可用（某些浏览器 404 也会触发 onload）
             try {
                 if (css.sheet && css.sheet.cssRules) {
                     // 样式表可访问，确认已加载
@@ -16618,7 +17816,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             // 从待加载列表移除
             var pi = xfEditor.loadFiles.pendingCSS.indexOf(normalizedName);
             if (pi >= 0) xfEditor.loadFiles.pendingCSS.splice(pi, 1);
-            // ★ v1.17.38: 即使加载失败也统一刷新排队回调，避免加载链中断
+            // ★ v2.0.0: 即使加载失败也统一刷新排队回调，避免加载链中断
             xfEditor._flushLoadQueue(xfEditor.loadFiles.pendingQueuesCSS, normalizedName);
         };
 
@@ -16643,7 +17841,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         into          = into     || "head";
         callback      = callback || function() {};
         
-        // ★ v1.17.38: 路径归一化用于去重检测，避免 "./lib/a.js" 和 "lib/a.js" 被重复加载
+        // ★ v2.0.0: 路径归一化用于去重检测，避免 "./lib/a.js" 和 "lib/a.js" 被重复加载
         var normalizedName = (fileName || "").replace(/^\.\//, "");
         
         if (xfEditor.loadFiles.js.indexOf(normalizedName) >= 0) {
@@ -16651,7 +17849,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             return;
         }
         
-        // ★ v1.17.38: 已在加载中（同步调用尚未完成 onload/onerror）→ 排队等待，加载完成后统一回调
+        // ★ v2.0.0: 已在加载中（同步调用尚未完成 onload/onerror）→ 排队等待，加载完成后统一回调
         //   修复竞态：原实现立即回调，会在资源真正加载完成前执行
         //   （如两处 markdownToHTML 同时 tex:true，katex 尚未定义就触发回调 → "katex is not defined"）
         if (xfEditor.loadFiles.pendingJS.indexOf(normalizedName) >= 0) {
@@ -16984,7 +18182,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         {
             var footer = dialog.footer = dialog.find("." + classPrefix + "dialog-footer");
 
-            // ★ v1.17.6-FIX4: 使用 Object.keys().forEach() 替代 for...in 循环
+            // ★ v2.0.0-FIX4: 使用 Object.keys().forEach() 替代 for...in 循环
             //    for...in + var btn 存在经典闭包陷阱：所有事件处理器闭包共享同一个 btn 变量，
             //    循环结束后 btn 始终指向最后一个按钮，导致"确定"按钮实际执行"取消"的回调
             Object.keys(options.buttons).forEach(function(key) {

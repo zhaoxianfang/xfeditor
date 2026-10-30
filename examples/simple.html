@@ -2,7 +2,7 @@
 <html lang="zh">
     <head>
         <meta charset="utf-8" />
-        <title>xfEditor v1.17.27 — Simple example</title>
+        <title>xfEditor v2.0.0 — Simple example</title>
         <link rel="stylesheet" href="css/style.css" />
         <link rel="stylesheet" href="../css/xf_editor.min.css" />
         <link rel="shortcut icon" href="../images/favicon.ico" type="image/x-icon" />
@@ -10,7 +10,7 @@
     <body>
         <div id="layout">
             <header>
-                <h1>Simple example — xfEditor v1.17.27</h1>
+                <h1>Simple example — xfEditor v2.0.0</h1>
             </header>
             <form  method="post" id="formTest">
 
@@ -27,28 +27,30 @@
             var dom = window.xfEditor.dom;
 
             dom(function() {
-                // 从 md/simple.md 加载演示内容
+                // 从 md/simple.md 加载演示内容（演示「外部 .md 文件作为初始内容」的用法）
                 dom.get("md/simple.md", function(markdown) {
                     testEditor = xfEditor("test-xfEditor", {
-                        width       : "90%",
-                        height      : 640,
-                        path        : "../lib/",
-                        pluginPath  : "../plugins/",   // ★ 插件路径，工具栏弹窗功能必需
-                        markdown    : markdown,         // 从外部 .md 文件加载内容
+                        width       : "90%",             // 编辑器宽度（支持百分比或像素）
+                        height      : 640,               // 编辑器高度（像素）
+                        path        : "../lib/",         // 依赖模块目录（CodeMirror/marked/KaTeX 等）
+                        logoURL     : "../images/logo.png", // ★ v2.0.0：自定义编辑器 Logo 图片（留空则用内置图标字体）
+                        pluginPath  : "../plugins/",     // ★ 插件目录，工具栏弹窗（图片/视频/附件上传等）功能必需
+                        markdown    : markdown,           // 初始 Markdown 内容（也可来自 <textarea> 或后端返回）
                         // 启用扩展功能以获得更好的演示效果
-                        toc         : true,
-                        taskList    : true,
-                        tex         : true,
-                        htmlDecode  : true
+                        toc         : true,              // 目录（自动提取标题生成）
+                        taskList    : true,              // 任务列表（Github 风格复选框）
+                        tex         : true,              // KaTeX 科学公式（行内/块级）
+                        htmlDecode  : true                // 允许解析 HTML 标签（如自定义节点/iframe）
                     });
                 }).fail(function() {
-                    // 降级方案：使用内联内容
+                    // 降级方案：外部 .md 加载失败时，使用内联 Markdown 内容
                     testEditor = xfEditor("test-xfEditor", {
                         width       : "90%",
                         height      : 640,
                         path        : "../lib/",
+                        logoURL     : "../images/logo.png",
                         pluginPath  : "../plugins/",
-                        markdown    : "# xfEditor v1.17.27\n\n## 快速入门\n\nxfEditor 是一款功能强大的开源 Markdown 在线编辑器。\n\n- **实时预览** — 编辑与预览实时同步\n- **扩展语法** — KaTeX 公式、ECharts 图表、Tabs 标签页\n\n> 提示：这是一个最简配置示例。要使用扩展功能，请在初始化配置中添加对应选项。"
+                        markdown    : "# xfEditor v2.0.0\n\n## 快速入门\n\nxfEditor 是一款功能强大的开源 Markdown 在线编辑器。\n\n- **实时预览** — 编辑与预览实时同步\n- **扩展语法** — KaTeX 公式、ECharts 图表、Tabs 标签页\n\n> 提示：这是一个最简配置示例。要使用扩展功能，请在初始化配置中添加对应选项。"
                     });
                 });
                 

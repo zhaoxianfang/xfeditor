@@ -1,6 +1,6 @@
 # xfEditor 使用指南
 
-> xfEditor v1.17.27 完整使用手册
+> xfEditor v2.0.0 完整使用手册
 
 ---
 
@@ -64,7 +64,7 @@ xfEditor.markdownToHTML("preview-container", {
 
 ### 🚀 预览打包文件（推荐）
 
-v1.17.27 新增 `xf_editor.preview.min.js` 打包文件，合并了预览模式所有依赖：
+v2.0.0 新增 `xf_editor.preview.min.js` 打包文件，合并了预览模式所有依赖：
 
 ```html
 <!-- 方式一：推荐 — 单个打包文件（1 个 HTTP 请求） -->
@@ -104,7 +104,7 @@ v1.17.27 新增 `xf_editor.preview.min.js` 打包文件，合并了预览模式�
 | `watch` | `true` | 实时预览 |
 | `delay` | `80` | 解析延迟 (ms)，v1.16 起从 300ms 降至 80ms |
 | `previewCodeHighlight` | `true` | 预览区代码高亮 |
-| `syncScroll` | `true` | 编辑区与预览区双向精准同步滚动 🆕v1.17.27（标题锚点文本验证配对+程序化滚动识别+预览交互防护+门控体系） |
+| `syncScroll` | `true` | 编辑区与预览区双向精准同步滚动 🆕v2.0.0（标题锚点文本验证配对+程序化滚动识别+预览交互防护+门控体系） |
 
 ### 扩展语法
 
@@ -422,7 +422,7 @@ console.log("嵌套代码");
 - 每个汉字上方精确对应一个拼音音节
 - 参照 [拼音参照表](examples/pinyin-reference.html) 获取完整声母韵母列表
 
-**🆕 v1.17.27：拼音中嵌入脚注**：
+**🆕 v2.0.0：拼音中嵌入脚注**：
 ```markdown
 {疑[^yi]是地上[^shang]霜 | yí shì dì shàng shuāng}。
 
@@ -520,7 +520,7 @@ console.log("嵌套代码");
 [外部页面](tooltip:iframe:"https://example.com")<200,150>
 ```
 
-**iframe 控制按钮** 🆕v1.17.27：
+**iframe 控制按钮** 🆕v2.0.0：
 - iframe 类型 Tooltip 弹窗右上角自动显示「最大化」⛶ 和「关闭」✕ 按钮
 - **最大化**：将弹窗切换为全屏模式（96vw × 92vh），再次点击恢复原始尺寸
 - **关闭**：立即关闭 Tooltip 弹窗，无需等待延迟
@@ -661,7 +661,7 @@ function hello() {
 
 ### 10. 字帖 (`copybook: true`)
 
-字帖系统支持**田字格**、**米字格**、**拼音格**三种格型。v1.17.27 新增花括号语法、宽度参数和脚注支持。
+字帖系统支持**田字格**、**米字格**、**拼音格**三种格型。v2.0.0 新增花括号语法、宽度参数和脚注支持。
 
 **田字格**（支持 `[^name]` 脚注）：
 ```markdown
@@ -687,7 +687,7 @@ function hello() {
 [[/copybookPinyin]]
 ```
 
-**拼音格 — 花括号语法 + 宽度参数** 🆕v1.17.27：
+**拼音格 — 花括号语法 + 宽度参数** 🆕v2.0.0：
 推荐用于古诗文等场景，配合 `(!width:NNN)` 设置每行等宽两端对齐：
 ```markdown
 [[copybookPinyin]]
@@ -699,7 +699,7 @@ function hello() {
 ```
 > `(!width:NNN)` 为可选参数，设置行内拼音格宽度（px），内容两端对齐。
 
-**字帖内嵌脚注** 🆕v1.17.27：
+**字帖内嵌脚注** 🆕v2.0.0：
 字帖和拼音格内可使用 `[^name]` 脚注标记。拼音格中脚注上方不显示拼音，
 每个汉字上方对应自己的拼音，实现一对一展示：
 ```markdown
@@ -879,7 +879,7 @@ editor.getPreviewedHTML();     // 获取预览区 HTML（支持全页、片段�
 editor.getTextareaSavedHTML(); // 获取保存的 HTML（getHTML 的别名）
 ```
 
-**获取独立 HTML**：`getHTML(options)` — ⭐v1.17.36 增强，生成可直接独立展示的 HTML 文档或片段：
+**获取独立 HTML**：`getHTML(options)` — ⭐v2.0.0 增强，生成可直接独立展示的 HTML 文档或片段：
 ```javascript
 var html = editor.getHTML({
     wrap: true,                     // 是否包裹为完整 HTML 文档（含 DOCTYPE、html/head/body）
@@ -935,7 +935,7 @@ editor.initColumns();          // 初始化 Columns
 editor.initPages();            // 初始化纸张页面
 ```
 
-**同步滚动** 🆕v1.17.27：
+**同步滚动** 🆕v2.0.0：
 ```javascript
 // 配置项（默认启用）
 var editor = xfEditor("id", { syncScroll: true });
@@ -948,13 +948,13 @@ editor.unbindSyncScroll();     // 解绑同步滚动
 editor.scrollToLineNum(42);         // 滚动预览区到第 42 行
 editor.scrollToLineNum(42, 0.5);   // 滚动预览区到第 42 行中间位置
 
-// ★ v1.17.27: 预览交互保护（图片缩放/表格编辑时暂停同步）
+// ★ v2.0.0: 预览交互保护（图片缩放/表格编辑时暂停同步）
 editor.suspendSyncScroll();   // 暂停同步滚动
 // ... 预览区交互操作 ...
 editor.resumeSyncScroll();    // 恢复同步滚动
 ```
 
-> **v1.17.27 引擎原理**：解析 markdown 源码标题行号 + 预览 DOM 标题元素 → 文本+层级智能配对 → `editorLine ↔ previewElement` 锚点表 → 锚点间线性插值精准定位。门控体系（suppressAllSync → programmaticScroll → disablePreviewListener）确保各方向互不干扰。程序化滚动识别防止反馈循环。祖先链滚动监听不遗漏任何事件。
+> **v2.0.0 引擎原理**：解析 markdown 源码标题行号 + 预览 DOM 标题元素 → 文本+层级智能配对 → `editorLine ↔ previewElement` 锚点表 → 锚点间线性插值精准定位。门控体系（suppressAllSync → programmaticScroll → disablePreviewListener）确保各方向互不干扰。程序化滚动识别防止反馈循环。祖先链滚动监听不遗漏任何事件。
 
 **工具栏**：
 ```javascript
@@ -1201,5 +1201,5 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 
 ---
 
-**最后更新**: 2026-07-02
-**版本**: v1.17.27
+**最后更新**: 2026-10-29
+**版本**: v2.0.0

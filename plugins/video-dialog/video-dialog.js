@@ -39,15 +39,20 @@
             if (editor.find("." + dialogName).length < 1)
             {
                 var guid   = (new Date).getTime();
-                var action = settings.videoUploadURL + (settings.videoUploadURL.indexOf("?") >= 0 ? "&" : "?") + "guid=" + guid;
+                // ★ 上传地址门控：仅当 videoUpload 开启且 videoUploadURL 已配置才允许上传；
+                //   未配置地址时一律禁用本地上传（不保存文件到前端），与图片（base64 例外）区分
+                var hasVideoUploadURL = !!(settings.videoUpload && settings.videoUploadURL && String(settings.videoUploadURL).trim() !== "");
+                var action = hasVideoUploadURL ? (settings.videoUploadURL + (settings.videoUploadURL.indexOf("?") >= 0 ? "&" : "?") + "guid=" + guid) : "";
 
-                var dialogContent = ( (settings.videoUpload) ? "<form action=\"" + action +"\" target=\"" + iframeName + "\" method=\"post\" enctype=\"multipart/form-data\" class=\"" + classPrefix + "form\">" : "<div class=\"" + classPrefix + "form\">" ) +
-                                        ( (settings.videoUpload) ? "<iframe name=\"" + iframeName + "\" id=\"" + iframeName + "\" guid=\"" + guid + "\"></iframe>" : "" ) +
+                var dialogContent = ( (hasVideoUploadURL) ? "<form action=\"" + action +"\" target=\"" + iframeName + "\" method=\"post\" enctype=\"multipart/form-data\" class=\"" + classPrefix + "form\">" : "<div class=\"" + classPrefix + "form\">" ) +
+                                        ( (settings.videoUpload) ? "<iframe name=\"" + iframeName + "\" id=\"" + iframeName + "\" guid=\"" + guid + "\"></iframe>" + (_this._csrfHiddenInput ? _this._csrfHiddenInput() : "") : "" ) +
                                         "<label>" + videoLang.url + "</label>" +
                                         "<input type=\"text\" data-url />" + (function(){
-                                            return (settings.videoUpload) ? "<div class=\"" + classPrefix + "file-input\">" +
-                                                                                "<input type=\"file\" name=\"" + classPrefix + "video-file\" accept=\"video/*\" />" +
-                                                                                "<input type=\"submit\" value=\"" + videoLang.uploadButton + "\" />" +
+                                            return (hasVideoUploadURL) ? "<div class=\"" + classPrefix + "file-upload\" data-type=\"video\">" +
+                                                                                "<label class=\"" + classPrefix + "file-btn\" title=\"" + videoLang.uploadButton + "\">" +
+                                                                                    "<i class=\"fa fa-video-camera\"></i><span class=\"" + classPrefix + "file-btn-label\">" + videoLang.uploadButton + "</span>" +
+                                                                                    "<input type=\"file\" class=\"" + classPrefix + "file-input-el\" name=\"" + classPrefix + "video-file\" accept=\"video/*\" />" +
+                                                                                "</label>" +
                                                                             "</div>" : "";
                                         })() +
                                         "<br/>" +
@@ -64,11 +69,11 @@
                                             "<option value=\"right\">" + (videoLang.alignRight || "右对齐") + "</option>" +
                                         "</select>" +
                                         "<br/>" +
-                                    ( (settings.videoUpload) ? "</form>" : "</div>");
+                                    ( (hasVideoUploadURL) ? "</form>" : "</div>");
 
                 dialog = this.createDialog({
                     title      : videoLang.title,
-                    width      : (settings.videoUpload) ? 465 : 380,
+                    width      : (hasVideoUploadURL) ? 465 : 380,
                     height     : 300,
                     name       : dialogName,
                     content    : dialogContent,
@@ -135,9 +140,11 @@
 
                 dialog.attr("id", classPrefix + "video-dialog-" + guid);
 
-                // 上传功能仅在启用时设置，对话框始终显示
-                if (settings.videoUpload) {
+                // 上传功能仅在配置了上传地址时绑定（未配置则本地上传入口已被隐藏）
+                if (hasVideoUploadURL) {
                     var fileInput  = dialog.find("[name=\"" + classPrefix + "video-file\"]");
+
+                    // 统一的上传 iframe 解析逻辑见核心 _bindServerUpload（低耦合、三对话框复用）
 
                     fileInput.on("change", function() {
                         var fileName  = fileInput.val();
@@ -152,42 +159,35 @@
                         if (!isVideo.test(fileName))
                         {
                             xfEditor.notify(videoLang.formatNotAllowed + settings.videoFormats.join(", "), "warning");
+                            fileInput.val("");
                             return false;
                         }
 
+                        var file = fileInput.get(0).files[0];
+                        if (!file) return false;
+
+                        _this._bindServerUpload(iframeName, {
+                            loading: loading,
+                            onSuccess: function(json) {
+                                // 统一解析上传返回（兼容多种成功标识与 URL 字段），成功才回写地址并提示绿色成功
+                                var res = _this._parseUploadResult(json);
+                                if (res.success) {
+                                    dialog.find("[data-url]").val(res.url);
+                                    // 登记已上传文件，便于后续删除时通知服务端清理（防僵尸文件）
+                                    try { _this._trackUploadedFile({ type: "video", url: res.url, name: (res.name || fileInput.val() || "") }); } catch (e) {}
+                                    xfEditor.notify("上传成功", "success", 3000);
+                                } else {
+                                    xfEditor.notify(res.message || videoLang.uploadError, "error", 5000);
+                                }
+                            },
+                            onError: function(err, raw) {
+                                xfEditor.notify(videoLang.uploadError + " " + (raw || ""), "error", 5000);
+                            }
+                        });
                         loading(true);
-
-                        var submitHandler = function() {
-                            var uploadIframe = document.getElementById(iframeName);
-
-                            uploadIframe.onload = function() {
-                                loading(false);
-
-                                var body = (uploadIframe.contentWindow ? uploadIframe.contentWindow : uploadIframe.contentDocument).document.body;
-                                var json = (body.innerText) ? body.innerText : ( (body.textContent) ? body.textContent : null);
-
-                                try {
-                                    json = (typeof JSON.parse !== "undefined") ? JSON.parse(json) : eval("(" + json + ")");
-                                } catch(err) {
-                                    xfEditor.notify(videoLang.uploadError + " " + (json || ""), "error", 5000);
-                                    return false;
-                                }
-
-                                if (json.success === 1)
-                                {
-                                    dialog.find("[data-url]").val(json.url);
-                                }
-                                else
-                                {
-                                    xfEditor.notify(json.message || videoLang.uploadError, "error", 5000);
-                                }
-
-                                return false;
-                            };
-                        };
-
-                        // ★ v1.17.18: 先解绑旧 handler 再绑定，防止累积绑定导致多次上传
-                        dialog.find("[type=\"submit\"]").off("click", submitHandler).on("click", submitHandler).trigger("click");
+                        var form = dialog.find("form");
+                        if (form.length > 0) form[0].submit();
+                        return false;
                     });
                 }
             }

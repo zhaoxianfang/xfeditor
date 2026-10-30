@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>xfEditor 事件与回调参考手册（v2.0.0）</title>
+    <style>
+        :root{
+            --brand:#6c5ce7; --brand-2:#8e7bff; --ink:#1f2330; --muted:#6b7280;
+            --line:#e6e8ef; --code-bg:#f6f7fb; --ok:#0aa06e; --warn:#e0922f;
+        }
+        *{box-sizing:border-box;}
+        body{
+            margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+            color:var(--ink); background:#fbfbfe; line-height:1.7;
+        }
+        header{
+            background:linear-gradient(135deg,var(--brand),var(--brand-2)); color:#fff;
+            padding:34px 28px;
+        }
+        header h1{margin:0 0 6px; font-size:24px;}
+        header p{margin:0; opacity:.92; font-size:14px;}
+        .wrap{max-width:1080px; margin:0 auto; padding:26px 22px 80px;}
+        .toc{
+            background:#fff; border:1px solid var(--line); border-radius:12px; padding:18px 20px; margin:22px 0;
+        }
+        .toc h3{margin:0 0 10px; font-size:15px;}
+        .toc a{color:var(--brand); text-decoration:none; margin-right:18px; font-size:13px; white-space:nowrap;}
+        .toc a:hover{text-decoration:underline;}
+        section{
+            background:#fff; border:1px solid var(--line); border-radius:12px;
+            padding:22px 24px; margin:20px 0;
+        }
+        h2{font-size:19px; margin:0 0 14px; padding-bottom:10px; border-bottom:2px solid var(--brand); display:inline-block;}
+        h3{font-size:15px; color:var(--brand); margin:20px 0 8px;}
+        table{width:100%; border-collapse:collapse; margin:12px 0; font-size:13px;}
+        th,td{border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top;}
+        th{background:var(--code-bg); font-weight:600;}
+        code{background:var(--code-bg); padding:1px 6px; border-radius:5px; font-size:12.5px; color:#b83280; font-family:"SFMono-Regular",Consolas,Menlo,monospace;}
+        pre{background:#1f2330; color:#e6edf3; padding:14px 16px; border-radius:10px; overflow:auto; font-size:12.5px; line-height:1.6;}
+        pre code{background:transparent; color:inherit; padding:0;}
+        .tag{display:inline-block; font-size:11px; padding:1px 8px; border-radius:20px; margin-left:6px; vertical-align:middle;}
+        .tag.new{background:#eafaf3; color:var(--ok); border:1px solid #b6ecd6;}
+        .tag.note{background:#fff5e6; color:var(--warn); border:1px solid #f4d8a8;}
+        .kv{font-size:13px;}
+        .kv b{display:inline-block; min-width:120px; color:var(--muted);}
+        .callout{border-left:4px solid var(--brand); background:#f4f2ff; padding:10px 14px; border-radius:0 8px 8px 0; font-size:13px; margin:12px 0;}
+        footer{text-align:center; color:var(--muted); font-size:12px; padding:24px;}
+        a.back{color:var(--brand); text-decoration:none; font-size:13px;}
+    </style>
+</head>
+<body>
+<header>
+    <h1>xfEditor 事件与回调参考手册</h1>
+    <p>版本 v2.0.0 · 全面枚举编辑器暴露的所有事件、回调、配置项与接入方式，便于开发者按业务自定义管理</p>
+</header>
+
+<div class="wrap">
+    <div class="toc">
+        <h3>目录</h3>
+        <a href="#overview">一、总览</a>
+        <a href="#lifecycle">二、生命周期事件</a>
+        <a href="#interaction">三、交互与输入事件</a>
+        <a href="#preview">四、预览相关事件</a>
+        <a href="#file">五、文件上传/删除通知 ★新增</a>
+        <a href="#api">六、核心 API 方法</a>
+        <a href="#integrate">七、如何监听与接入</a>
+        <a href="#notes">八、注意事项</a>
+    </div>
+
+    <section id="overview">
+        <h2>一、总览</h2>
+        <p>xfEditor 在初始化配置对象（<code>xfEditor({ ... })</code>）中以回调函数的形式暴露事件；同时实例也提供一系列方法供运行时调用。所有回调的 <code>this</code> 均指向编辑器实例，可直接调用其 API。</p>
+        <div class="callout">回调统一格式：<code>onXxx: function(arg1, arg2) { /* this === 编辑器实例 */ }</code>。未配置的回调默认为空函数，不会报错。</div>
+    </section>
+
+    <section id="lifecycle">
+        <h2>二、生命周期事件</h2>
+        <table>
+            <thead><tr><th>回调</th><th>触发时机</th><th>参数</th><th>说明</th></tr></thead>
+            <tbody>
+                <tr><td><code>onEditorLoad</code></td><td>编辑器（含 CodeMirror）加载完成</td><td>—</td><td>适合执行依赖实例就绪的初始化逻辑</td></tr>
+                <tr><td><code>onload</code></td><td>编辑器整体加载完成</td><td>—</td><td>最常用入口，可在此操作编辑器实例</td></tr>
+                <tr><td><code>onPageLoad</code></td><td>当前网页加载完成</td><td>—</td><td>页面级资源就绪</td></tr>
+                <tr><td><code>onAllAsyncLoad</code></td><td>编辑器内所有异步依赖（KaTeX / FlowChart / SequenceDiagram / ECharts 等）加载完成</td><td>—</td><td>渲染图表/公式前确保依赖就绪</td></tr>
+                <tr><td><code>onPageAllLoad</code></td><td>网页所有异步加载完成</td><td>—</td><td></td></tr>
+                <tr><td><code>onresize</code></td><td>编辑器尺寸变化</td><td><code>(width, height)</code></td><td></td></tr>
+                <tr><td><code>onfullscreen</code></td><td>进入全屏</td><td>—</td><td></td></tr>
+                <tr><td><code>onfullscreenExit</code></td><td>退出全屏</td><td>—</td><td></td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section id="interaction">
+        <h2>三、交互与输入事件</h2>
+        <table>
+            <thead><tr><th>回调</th><th>触发时机</th><th>参数</th><th>说明</th></tr></thead>
+            <tbody>
+                <tr><td><code>onchange</code></td><td>内容变化并预览渲染后</td><td>—</td><td>可用于自动保存；注意与 <code>cm</code> 的 change 事件不同，此处发生在预览渲染完成后</td></tr>
+                <tr><td><code>onkeydown</code> / <code>onkeyup</code></td><td>编辑区键盘按下/抬起</td><td><code>(cm, event)</code></td><td></td></tr>
+                <tr><td><code>onmousedown</code> / <code>onmouseup</code></td><td>编辑区鼠标按下/抬起</td><td><code>(cm, event)</code></td><td></td></tr>
+                <tr><td><code>onfocus</code> / <code>onblur</code></td><td>编辑区获得/失去焦点</td><td><code>(cm, event)</code></td><td></td></tr>
+                <tr><td><code>oncursoractivity</code></td><td>光标活动</td><td><code>(cm)</code></td><td></td></tr>
+                <tr><td><code>onpaste</code></td><td>编辑区粘贴</td><td><code>(cm, event)</code></td><td>已内置：粘贴图片/文件会被自动识别并上传或离线处理</td></tr>
+                <tr><td><code>ondrop</code></td><td>编辑区拖放</td><td><code>(cm, event)</code></td><td>已内置：拖入图片/视频/音频/附件自动识别处理</td></tr>
+                <tr><td><code>oncopy</code> / <code>oncut</code></td><td>编辑区复制/剪切</td><td><code>(cm, event)</code></td><td></td></tr>
+                <tr><td><code>oninsert</code></td><td>插入内容</td><td><code>(value)</code></td><td></td></tr>
+                <tr><td><code>ontablechange</code></td><td>表格内容变化</td><td><code>(cm)</code></td><td></td></tr>
+                <tr><td><code>onimagechange</code></td><td>图片相关变化</td><td><code>(cm)</code></td><td></td></tr>
+                <tr><td><code>onbeforesave</code> / <code>onaftersave</code></td><td>保存前/后</td><td>—</td><td>配合 <code>saveHTMLToTextarea</code> 使用</td></tr>
+                <tr><td><code>onwatch</code> / <code>onunwatch</code></td><td>开启/关闭实时预览</td><td>—</td><td></td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section id="preview">
+        <h2>四、预览相关事件</h2>
+        <table>
+            <thead><tr><th>回调</th><th>触发时机</th><th>参数</th><th>说明</th></tr></thead>
+            <tbody>
+                <tr><td><code>onpreviewing</code></td><td>预览渲染开始前</td><td>—</td><td>可在渲染前拦截/修改数据源</td></tr>
+                <tr><td><code>onpreviewed</code></td><td>预览渲染完成后</td><td>—</td><td>适合在预览 DOM 上做后置处理（如绑定自定义交互）</td></tr>
+            </tbody>
+        </table>
+        <h3>同步滚动（编辑区 ⇄ 预览区）</h3>
+        <p>由配置 <code>syncScroll: true</code> 开启，双向精准同步。相关可调用方法：</p>
+        <ul>
+            <li><code>bindSyncScroll()</code> / <code>unbindSyncScroll()</code> — 手动绑定/解绑</li>
+            <li><code>scrollToLineNum(lineNum, linePercent)</code> — 滚动预览区到指定编辑行</li>
+        </ul>
+        <div class="callout">v2.0.0 增强：预览区图片/视频/音频加载完成会自动失效位置映射并重建，避免同步滚动跳转错位；图片缩放、表格编辑等预览交互期间会暂停同步，杜绝抖动与回环。</div>
+    </section>
+
+    <section id="file">
+        <h2>五、文件上传 / 删除通知 <span class="tag new">v2.0.0 新增</span></h2>
+        <p>为避免服务器存储「僵尸文件」，已上传到服务器的文件在编辑器内容中被删除或替换时，会自动通知服务端清理，并触发对应回调。</p>
+
+        <h3>配置项</h3>
+        <table>
+            <thead><tr><th>配置</th><th>类型</th><th>说明</th></tr></thead>
+            <tbody>
+                <tr><td><code>fileDeleteURL</code></td><td>String</td><td>统一删除通知接口（图片/视频/音频/附件共用的兜底地址）</td></tr>
+                <tr><td><code>imageDeleteURL</code></td><td>String</td><td>图片删除接口（优先级高于 <code>fileDeleteURL</code>）</td></tr>
+                <tr><td><code>videoDeleteURL</code></td><td>String</td><td>视频删除接口（优先级高于 <code>fileDeleteURL</code>）</td></tr>
+                <tr><td><code>audioDeleteURL</code></td><td>String</td><td>音频删除接口（优先级高于 <code>fileDeleteURL</code>）</td></tr>
+                <tr><td><code>onFileUploaded</code></td><td>Function</td><td>文件上传成功回调：<code>function(fileInfo)</code></td></tr>
+                <tr><td><code>onFileDeleted</code></td><td>Function</td><td>文件被移除并通知服务端回调：<code>function(fileInfo)</code></td></tr>
+            </tbody>
+        </table>
+
+        <h3>fileInfo 结构</h3>
+        <pre><code>{
+  type: "image" | "video" | "audio" | "file",  // 文件类型
+  url:  "https://...",                          // 服务端返回的可访问地址
+  name: "example.png"                           // 文件名（可选）
+}</code></pre>
+
+        <h3>触发流程</h3>
+        <ol>
+            <li>通过图片/视频/附件对话框或拖拽/粘贴上传成功 → 自动调用 <code>_trackUploadedFile(info)</code> 登记，并触发 <code>onFileUploaded</code>。</li>
+            <li>编辑器内容变化（防抖）时，比对正文引用与已登记文件：<strong>曾经出现在正文中、现在消失</strong>的文件，判定为被删除/替换。</li>
+            <li>调用对应删除接口（POST <code>FormData</code>，字段 <code>url/type/name</code>），并触发 <code>onFileDeleted</code>。</li>
+        </ol>
+        <div class="callout"><b>注意：</b>仅服务端返回可用 URL 的文件会被登记；base64 内联图片（离线模式）不会被登记，也不会触发删除通知。已上传但从未插入正文的文件不会被误删。</div>
+
+        <h3>服务端约定（建议）</h3>
+        <pre><code>// 请求：POST fileDeleteURL
+// Content-Type: multipart/form-data
+// 字段：url（必填）、type、name
+// 响应示例：
+{ "success": 1 }</code></pre>
+
+        <h3>实例方法</h3>
+        <table>
+            <thead><tr><th>方法</th><th>说明</th></tr></thead>
+            <tbody>
+                <tr><td><code>_trackUploadedFile(info)</code></td><td>登记已上传文件（上传成功时自动调用）</td></tr>
+                <tr><td><code>_notifyFileDeleted(info)</code></td><td>通知服务端删除并触发 <code>onFileDeleted</code></td></tr>
+                <tr><td><code>_syncUploadedFiles()</code></td><td>立即比对正文与已登记文件，清理被删除项</td></tr>
+            </tbody>
+        </table>
+
+        <h3>5.1 资源语法删除事件（内容变更通知 · 面向开发者）</h3>
+        <p>当用户在编辑区<strong>删除 / 替换</strong>一条图片、视频、音频或附件语法时（例如删除
+        <code>![Logo](../images/logo.png)&lt;180,180&gt;</code> 整行，或把视频链接改为其它地址），编辑器会实时检测并触发对应的“资源删除事件”，把该资源的 <code>url</code>、文件名以及“编辑区是否仍包含该地址”告知开发者。开发者可在回调中做埋点上报、二次确认、联动清理、撤销提示等。</p>
+        <div class="callout"><b>与 5 的区别：</b>第 5 节是「<i>已上传到服务器</i>的文件被删除 → 自动通知服务端清理」；而本小节是「<i>任意资源语法</i>（含未上传的纯引用、站内链接）从正文消失 → 通知开发者」，二者都通过 <code>onFileDeleted</code> 派发，用 <code>event:"delete"</code> 字段区分。</div>
+
+        <h4>配置项（回调）</h4>
+        <table>
+            <thead><tr><th>回调</th><th>触发时机</th></tr></thead>
+            <tbody>
+                <tr><td><code>onImageDeleted(info)</code></td><td>图片语法（Markdown <code>![alt](url)</code> 或 HTML <code>&lt;img&gt;</code>）从编辑区消失</td></tr>
+                <tr><td><code>onVideoDeleted(info)</code></td><td>视频语法（HTML <code>&lt;video&gt;</code> 或 <code>@video</code> / <code>.mp4</code> 链接）从编辑区消失</td></tr>
+                <tr><td><code>onAudioDeleted(info)</code></td><td>音频语法（HTML <code>&lt;audio&gt;</code> 或 <code>.mp3</code> 链接）从编辑区消失</td></tr>
+                <tr><td><code>onFileDeleted(info)</code></td><td>附件语法（<code>.pdf/.docx</code> 等文档链接）消失；<b>也</b>用于第 5 节的服务端清理通知</td></tr>
+            </tbody>
+        </table>
+
+        <h4>info 结构（资源删除事件）</h4>
+        <pre><code>{
+  type      : "image" | "video" | "audio" | "file",  // 资源类型
+  url       : "https://.../logo.png",                // 被删除资源的地址
+  name      : "logo.png",                            // 从地址中提取的文件名（文件信息）
+  stillUsed : true,                                  // 当前编辑区是否【仍】包含该地址（用于区分“真正删除”与“移动/复制后删原处”）
+  event     : "delete"                               // 固定值，用于与文件上传成功事件区分
+}</code></pre>
+
+        <h4>检测范围</h4>
+        <ul>
+            <li>Markdown 图片：<code>![alt](url)</code></li>
+            <li>HTML 标签：<code>&lt;img src&gt;</code> / <code>&lt;video src&gt;</code> / <code>&lt;audio src&gt;</code> / <code>&lt;source src&gt;</code></li>
+            <li>Markdown 链接：<code>[text](url)</code>，按扩展名归类（图片/视频/音频/附件）；<b>无扩展名的纯网页链接不会触发</b>，避免误报</li>
+        </ul>
+        <div class="callout"><b>提示：</b>程序化替换内容（<code>setValue</code> / <code>setMarkdown</code> / <code>clear</code> / <code>appendMarkdown</code>）会重置检测基线，不会误触发删除事件；初始化加载文档时已建立基线。</div>
+
+        <h3>5.2 CSRF 防护 <span class="tag new">v2.0.0 新增</span></h3>
+        <p>为防止跨站请求伪造（CSRF）攻击，上传（XHR）与删除（通知服务端）请求会自动携带 CSRF 凭证：</p>
+        <ul>
+            <li>XHR 上传 / 删除：请求头携带 <code>X-CSRF-TOKEN: &lt;token&gt;</code>；</li>
+            <li>隐藏 iframe 表单上传：表单内自动注入名为 <code>_token</code> 的隐藏域（字段名可用 <code>csrfFieldName</code> 覆盖）。</li>
+        </ul>
+        <h4>Token 读取优先级</h4>
+        <pre><code>settings.csrfToken                                   // ① 显式指定，优先级最高
+  → &lt;meta name="csrf-token" content="xxx"&gt;           // ② 页面 meta 标签
+  → window.csrfToken / window.Laravel.csrfToken        // ③ 全局变量
+  → window.XSRF_TOKEN                                  // ④ 备选全局变量</code></pre>
+        <h4>配置项</h4>
+        <table>
+            <thead><tr><th>配置</th><th>类型</th><th>说明</th></tr></thead>
+            <tbody>
+                <tr><td><code>csrfToken</code></td><td>String</td><td>显式指定 CSRF Token；留空则按上述优先级自动读取</td></tr>
+                <tr><td><code>csrfFieldName</code></td><td>String</td><td>隐藏 iframe 表单上传时写入的字段名，默认 <code>_token</code>（Laravel 约定）</td></tr>
+            </tbody>
+        </table>
+        <h4>接入示例</h4>
+        <pre><code>&lt;!-- 页面中放置 CSRF Token（如 Laravel Blade 模板） --&gt;
+&lt;meta name="csrf-token" content="{{ csrf_token() }}"&gt;
+
+&lt;script&gt;
+var editor = xfEditor({
+    id: "edit",
+    imageUploadURL : "/api/upload/image",
+    fileDeleteURL  : "/api/file/delete",
+    // 无需手动传 token：编辑器会自动读取 &lt;meta name="csrf-token"&gt;
+    // 如需显式指定：csrfToken: "xxxx", csrfFieldName: "_token"
+    onImageDeleted: function (info) {
+        console.log("图片语法被删除：", info.url, "仍被引用：", info.stillUsed);
+    }
+});
+&lt;/script&gt;</code></pre>
+    </section>
+
+    <section id="api">
+        <h2>六、核心 API 方法（常用）</h2>
+        <table>
+            <thead><tr><th>方法</th><th>说明</th></tr></thead>
+            <tbody>
+                <tr><td><code>getValue()</code> / <code>getMarkdown()</code></td><td>获取编辑区 Markdown 原文</td></tr>
+                <tr><td><code>setValue(md)</code></td><td>设置编辑区内容</td></tr>
+                <tr><td><code>getHTML()</code> / <code>getPreviewedHTML()</code></td><td>获取预览 HTML（自包含无外部依赖）</td></tr>
+                <tr><td><code>watch()</code> / <code>unwatch()</code></td><td>开启/关闭实时预览</td></tr>
+                <tr><td><code>resize()</code></td><td>重算布局</td></tr>
+                <tr><td><code>clear()</code></td><td>清空内容</td></tr>
+                <tr><td><code>imageDialog()</code> / <code>videoDialog()</code> / <code>fileDialog()</code></td><td>打开对应上传对话框</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section id="integrate">
+        <h2>七、如何监听与接入</h2>
+
+        <h3>方式一：初始化配置（推荐）</h3>
+        <pre><code>var editor = xfEditor({
+    id: "edit",
+    path: "../lib/",
+    syncScroll: true,
+
+    // 文件上传/删除通知
+    imageUploadURL: "/api/upload/image",
+    fileDeleteURL:  "/api/file/delete",
+    onFileUploaded: function (info) {
+        console.log("已上传：", info.type, info.url);
+    },
+    onFileDeleted: function (info) {
+        console.log("已通知服务端删除：", info.url);
+        // 可在此增加二次确认或上报
+    },
+
+    onchange: function () {
+        // 内容变化（预览渲染后）
+    },
+    onpreviewed: function () {
+        // 预览 DOM 就绪，可绑定自定义交互
+    }
+});</code></pre>
+
+        <h3>方式二：运行时调用实例方法</h3>
+        <pre><code>editor.on("load", function () { /* 或 onload 回调 */ });
+editor.setValue("# 新内容");
+editor.scrollToLineNum(12);          // 同步滚动到指定行
+editor._syncUploadedFiles();         // 主动触发一次删除比对</code></pre>
+
+        <h3>方式三：拖拽 / 粘贴自动处理</h3>
+        <p>无需额外代码：拖入或粘贴图片、视频、音频、附件到编辑区时，编辑器会按类型自动识别——配置了上传地址走 XHR 上传并回插对应 Markdown；未配置地址时，<b>图片</b>转为 base64 内联（唯一例外），视频/音频/附件则提示需配置上传接口。</p>
+    </section>
+
+    <section id="notes">
+        <h2>八、注意事项</h2>
+        <ul>
+            <li><b>上传地址门控：</b>视频/音频/附件若未配置对应上传地址，本地上传入口会被禁用，不会在浏览器侧保存文件；仅图片允许在无地址时以 base64 内联。</li>
+            <li><b>删除通知时机：</b>在内容编辑触发防抖后比对，正文不再引用即视为删除。已上传但从未插入的文件不会被误删。</li>
+            <li><b>跨域上传：</b>开启 <code>crossDomainUpload</code> 时需配合 <code>uploadCallbackURL</code>，删除通知仍走 <code>fileDeleteURL</code> 系列。</li>
+            <li><b>性能：</b>大量图片加载会触发位置映射重建（已防抖），建议服务端返回带尺寸的图片以减少回流。</li>
+            <li><b>this 指向：</b>所有回调内 <code>this</code> 均为编辑器实例，可直接调用 <code>this.getMarkdown()</code> 等方法。</li>
+        </ul>
+        <p style="margin-top:14px;"><a class="back" href="index.html">← 返回示例导航</a></p>
+    </section>
+</div>
+
+<footer>xfEditor v2.0.0 · 事件与回调参考手册 · 本页为离线静态文档，无需任何外部依赖</footer>
+</body>
+</html>

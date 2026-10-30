@@ -39,26 +39,31 @@
             if (editor.find("." + dialogName).length < 1)
             {
                 var guid   = (new Date).getTime();
-                var action = settings.fileUploadURL + (settings.fileUploadURL.indexOf("?") >= 0 ? "&" : "?") + "guid=" + guid;
+                // ★ 上传地址门控：仅当 fileUpload 开启且 fileUploadURL 已配置才允许上传；
+                //   未配置地址时一律禁用本地上传（不保存文件到前端），与图片（base64 例外）区分
+                var hasFileUploadURL = !!(settings.fileUpload && settings.fileUploadURL && String(settings.fileUploadURL).trim() !== "");
+                var action = hasFileUploadURL ? (settings.fileUploadURL + (settings.fileUploadURL.indexOf("?") >= 0 ? "&" : "?") + "guid=" + guid) : "";
 
-                var dialogContent = ( (settings.fileUpload) ? "<form action=\"" + action +"\" target=\"" + iframeName + "\" method=\"post\" enctype=\"multipart/form-data\" class=\"" + classPrefix + "form\">" : "<div class=\"" + classPrefix + "form\">" ) +
-                                        ( (settings.fileUpload) ? "<iframe name=\"" + iframeName + "\" id=\"" + iframeName + "\" guid=\"" + guid + "\"></iframe>" : "" ) +
+                var dialogContent = ( (hasFileUploadURL) ? "<form action=\"" + action +"\" target=\"" + iframeName + "\" method=\"post\" enctype=\"multipart/form-data\" class=\"" + classPrefix + "form\">" : "<div class=\"" + classPrefix + "form\">" ) +
+                                        ( (hasFileUploadURL) ? "<iframe name=\"" + iframeName + "\" id=\"" + iframeName + "\" guid=\"" + guid + "\"></iframe>" + (_this._csrfHiddenInput ? _this._csrfHiddenInput() : "") : "" ) +
                                         "<label>" + fileLang.url + "</label>" +
                                         "<input type=\"text\" data-url />" + (function(){
-                                            return (settings.fileUpload) ? "<div class=\"" + classPrefix + "file-input\">" +
-                                                                                "<input type=\"file\" name=\"" + classPrefix + "file-file\" />" +
-                                                                                "<input type=\"submit\" value=\"" + fileLang.uploadButton + "\" />" +
-                                                                            "</div>" : "";
+                                            return (hasFileUploadURL) ? "<div class=\"" + classPrefix + "file-upload\" data-type=\"file\">" +
+                                        "<label class=\"" + classPrefix + "file-btn\" title=\"" + fileLang.uploadButton + "\">" +
+                                            "<i class=\"fa fa-paperclip\"></i><span class=\"" + classPrefix + "file-btn-label\">" + fileLang.uploadButton + "</span>" +
+                                            "<input type=\"file\" class=\"" + classPrefix + "file-input-el\" name=\"" + classPrefix + "file-file\" />" +
+                                        "</label>" +
+                                    "</div>" : "";
                                         })() +
                                         "<br/>" +
                                         "<label>" + fileLang.alt + "</label>" +
                                         "<input type=\"text\" value=\"" + selection + "\" data-alt />" +
                                         "<br/>" +
-                                    ( (settings.fileUpload) ? "</form>" : "</div>");
+                                    ( (hasFileUploadURL) ? "</form>" : "</div>");
 
                 dialog = this.createDialog({
                     title      : fileLang.title,
-                    width      : (settings.fileUpload) ? 465 : 380,
+                    width      : (hasFileUploadURL) ? 465 : 380,
                     height     : 224,
                     name       : dialogName,
                     content    : dialogContent,
@@ -104,8 +109,8 @@
 
                 dialog.attr("id", classPrefix + "file-dialog-" + guid);
 
-                // 上传功能仅在启用时设置，对话框始终显示
-                if (settings.fileUpload) {
+                // 上传功能仅在配置了上传地址时绑定（未配置则本地上传入口已被隐藏）
+                if (hasFileUploadURL) {
                     var fileInput  = dialog.find("[name=\"" + classPrefix + "file-file\"]");
 
                     fileInput.on("change", function() {
@@ -121,43 +126,37 @@
                         if (!isAllowed.test(fileName))
                         {
                             xfEditor.notify(fileLang.formatNotAllowed + settings.fileFormats.join(", "), "warning");
+                            fileInput.val("");
                             return false;
                         }
 
+                        var file = fileInput.get(0).files[0];
+                        if (!file) return false;
+
+                        // 统一的上传 iframe 解析逻辑见核心 _bindServerUpload（低耦合、三对话框复用）
+                        _this._bindServerUpload(iframeName, {
+                            loading: loading,
+                            onSuccess: function(json) {
+                                // 统一解析上传返回（兼容多种成功标识与 URL 字段），成功才回写地址并提示绿色成功
+                                var res = _this._parseUploadResult(json);
+                                if (res.success) {
+                                    dialog.find("[data-url]").val(res.url);
+                                    dialog.find("[data-alt]").val(res.name || "");
+                                    // 登记已上传文件，便于后续删除时通知服务端清理（防僵尸文件）
+                                    try { _this._trackUploadedFile({ type: "file", url: res.url, name: (res.name || fileInput.val() || "") }); } catch (e) {}
+                                    xfEditor.notify("上传成功", "success", 3000);
+                                } else {
+                                    xfEditor.notify(res.message || fileLang.uploadError, "error", 5000);
+                                }
+                            },
+                            onError: function(err, raw) {
+                                xfEditor.notify(fileLang.uploadError + " " + (raw || ""), "error", 5000);
+                            }
+                        });
                         loading(true);
-
-                        var submitHandler = function() {
-                            var uploadIframe = document.getElementById(iframeName);
-
-                            uploadIframe.onload = function() {
-                                loading(false);
-
-                                var body = (uploadIframe.contentWindow ? uploadIframe.contentWindow : uploadIframe.contentDocument).document.body;
-                                var json = (body.innerText) ? body.innerText : ( (body.textContent) ? body.textContent : null);
-
-                                try {
-                                    json = (typeof JSON.parse !== "undefined") ? JSON.parse(json) : eval("(" + json + ")");
-                                } catch (err) {
-                                    xfEditor.notify(fileLang.uploadError + " " + (json || ""), "error", 5000);
-                                    return false;
-                                }
-
-                                if (json.success === 1)
-                                {
-                                    dialog.find("[data-url]").val(json.url);
-                                    dialog.find("[data-alt]").val(json.name || "");
-                                }
-                                else
-                                {
-                                    xfEditor.notify(json.message || fileLang.uploadError, "error", 5000);
-                                }
-
-                                return false;
-                            };
-                        };
-
-                        // ★ v1.17.18: 先解绑旧 handler 再绑定，防止累积绑定导致多次上传
-                        dialog.find("[type=\"submit\"]").off("click", submitHandler).on("click", submitHandler).trigger("click");
+                        var form = dialog.find("form");
+                        if (form.length > 0) form[0].submit();
+                        return false;
                     });
                 }
             }

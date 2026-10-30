@@ -3,7 +3,7 @@
 <head>
     <link rel="shortcut icon" href="../images/favicon.ico" type="image/x-icon">
     <meta charset="utf-8" />
-    <title>xfEditor v1.17.38 — Examples</title>
+    <title>xfEditor v2.0.0 — Examples</title>
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="../css/xf_editor.min.css" />
     <style>
@@ -60,6 +60,7 @@
         #header > * { position: relative; z-index: 1; }
 
         #header .logo-wrap { margin-bottom: 10px; opacity: 0.88; }
+        #header .logo-wrap .xf_editor-logo-img { height: 56px; width: auto; display: inline-block; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.25); }
         #header h1 { font-size: 40px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; }
         #header .subtitle { font-size: 16px; opacity: 0.72; font-weight: 400; margin-bottom: 4px; max-width: 600px; margin-left: auto; margin-right: auto; }
         #header .version { font-size: 13px; opacity: 0.45; margin-top: 6px; letter-spacing: 0.8px; font-weight: 300; }
@@ -271,20 +272,20 @@
 <div id="layout">
     <!-- ═══════════════ HEADER ═══════════════ -->
     <div id="header">
-        <div class="logo-wrap"><i class="xf_editor-logo xf_editor-logo-3x"></i></div>
+        <div class="logo-wrap"><img class="xf_editor-logo-img" src="../images/logo.png" alt="xfEditor Logo" /></div>
         <h1>xfEditor Examples</h1>
         <p class="subtitle">更适合教育、教学、网页演示、数据呈现、内容排版的现代化 Markdown 在线编辑器</p>
-        <p class="version">v1.17.38 — 全面优化：AMD/Require.js 加载链路修复、tooltip 单引号编码破图修复、预览包去重、示例页零 jQuery 依赖</p>
+        <p class="version">v2.0.0 — 全面优化：AMD/Require.js 加载链路修复、tooltip 单引号编码破图修复、预览包去重、示例页零 jQuery 依赖</p>
         <div class="stats-bar">
             <div class="stat-item"><span class="stat-icon">📁</span><span class="stat-num" id="total-count">-</span>Example Demos</div>
-            <div class="stat-item"><span class="stat-icon">✨</span><span class="stat-num" id="new-count">-</span>v1.17.38 新特性</div>
+            <div class="stat-item"><span class="stat-icon">✨</span><span class="stat-num" id="new-count">-</span>v2.0.0 新特性</div>
             <div class="stat-item"><span class="stat-icon">🧩</span><span class="stat-num" id="syntax-count">-</span>扩展语法</div>
             <div class="stat-item"><span class="stat-icon">🛠</span><span class="stat-num" id="custom-count">-</span>自定义扩展</div>
         </div>
         <div class="nav-wrap">
             <a href="#start">快速上手</a>
             <a href="#all-features">全部功能</a>
-            <a href="#v179">v1.17.38</a>
+            <a href="#v179">v2.0.0</a>
             <a href="#v170">v1.7.0</a>
             <a href="#markdown">扩展语法</a>
             <a href="#customs">自定义扩展</a>
@@ -330,10 +331,10 @@
         </ul>
         </div>
 
-        <!-- ═══════════════ v1.17.38 全新功能 ═══════════════ -->
+        <!-- ═══════════════ v2.0.0 全新功能 ═══════════════ -->
         <div class="category-section" data-category="v179">
         <h2 class="category">
-            <span class="cat-title"><span>🌟</span><a name="v179"></a>v1.17.38 全新功能 <span class="badge badge-hot">LATEST</span><span class="cat-count">18</span></span>
+            <span class="cat-title"><span>🌟</span><a name="v179"></a>v2.0.0 全新功能 <span class="badge badge-hot">LATEST</span><span class="cat-count">18</span></span>
             <a href="#top">TOP ↑</a>
         </h2>
         <ul class="example-list">
@@ -342,7 +343,7 @@
             <li class="featured"><a href="./footnote.html"><strong>📌 脚注全面增强</strong> <span>🆕 [^name] 引用+定义，文末自动汇总；字帖/拼音格内引用，拼音中嵌入脚注标记；点击跳转+高亮动画</span></a></li>
             <li class="featured"><a href="./tooltip.html"><strong>🖱 Tooltip 增强</strong> <span>🆕 iframe 弹窗最大化⛶/关闭✕按钮 + 固定尺寸自动滚动条 + iframe:pre 类型 Blob URL 悬浮渲染</span></a></li>
             <li class="featured"><a href="./toc.html"><strong>📑 同步滚动修复</strong> <span>🔥 编辑区↔预览区双向同步滚动(Bug修复/data-sign格式/预览点击/键盘导航)；TOC 目录链接滚动容器修正</span></a></li>
-            <li><a href="./echarts.html"><strong>📊 树图主题自适应</strong> <span>v1.17.38：树图支持 light/dark 主题自动跟随，不再硬编码深色主题色</span></a></li>
+            <li><a href="./echarts.html"><strong>📊 树图主题自适应</strong> <span>v2.0.0：树图支持 light/dark 主题自动跟随，不再硬编码深色主题色</span></a></li>
             <li><a href="./code-attr.html"><strong>🎨 代码块属性扩展</strong> <span>```(.className) / ```(#idName) / ```(hidden) 组合支持</span></a></li>
             <li><a href="./table-fix.html"><strong>📊 表格空单元格修复</strong> <span>表格最后一列为空时单元格不再丢失，自动补全</span></a></li>
             <li><a href="./formula.html">📐 公式插入面板 <span>11 分类、100+LaTeX公式、Tab切换、一键插入</span></a></li>

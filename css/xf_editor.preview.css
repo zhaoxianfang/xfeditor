@@ -5389,21 +5389,21 @@ a.xf_editor-banner-link::after {
   display: inline-block;
   margin: 3px 6px 3px 0;
   padding: 4px 10px;
-  border: 1px solid #ddd;
+  /* ★ v2.1.0: 取消边框，改用柔和底色 chip，预览更简洁美观 */
+  border: 0 none;
   border-radius: 3px;
-  background: #fff;
+  background: #f6f8fa;
   color: #333;
   font-size: 13px;
   text-decoration: none;
-  -webkit-transition: background-color 150ms ease, border-color 150ms ease;
-  -moz-transition: background-color 150ms ease, border-color 150ms ease;
-  transition: background-color 150ms ease, border-color 150ms ease;
+  -webkit-transition: background-color 150ms ease, color 150ms ease;
+  -moz-transition: background-color 150ms ease, color 150ms ease;
+  transition: background-color 150ms ease, color 150ms ease;
 }
 
 .xf_editor-file-list a:hover,
 .xf_editor-attachment-link:hover {
-  background: #f0f0f0;
-  border-color: #c9c9c9;
+  background: #eaeef2;
   color: #111;
 }
 
@@ -5466,18 +5466,23 @@ a.xf_editor-banner-link::after {
   border-color: #f85149;
   background: #2b1215;
 }
+/* ★ v2.1.0: 暗色主题下行内 code（未被 pre 包裹）样式美化 —
+   提升可读性：更亮的文本、柔和高亮底、去除投影改为贴合底色，hover 反馈更明显 */
 .xf_editor-preview-theme-dark .xf_editor-preview-container code:not(pre code) {
-  color: #f1f5f9;
-  background: #1a2a4a;
-  border: 1px solid #2d3a52;
+  color: #e8eef7;
+  background: #22344f;
+  border: 1px solid #33456a;
   border-radius: 5px;
   padding: 2px 7px;
-  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.08);
+  font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.92em;
+  line-height: 1.5;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 .xf_editor-preview-theme-dark .xf_editor-preview-container code:not(pre code):hover {
-  background: #243b63;
-  border-color: #3b4f6d;
+  color: #fff;
+  background: #2d4470;
+  border-color: #4a628f;
 }
 .xf_editor-preview-theme-dark .xf_editor-preview-container blockquote {
   color: #94a3b8;
@@ -6071,12 +6076,11 @@ a.xf_editor-banner-link::after {
 .xf_editor-preview-theme-dark .xf_editor-attachment-link {
   color: #60a5fa;
   background: #1e293b;
-  border-color: #2d3a52;
+  border: 0 none;
 }
 .xf_editor-preview-theme-dark .xf_editor-attachment-link:hover {
   color: #fff;
   background: #60a5fa;
-  border-color: #60a5fa;
 }
 .xf_editor-preview-theme-dark {
   /* ── 脚注暗色适配（★ v1.17.32: 嵌套修复 — 特异性匹配 base 的 3 层深度） ── */
@@ -6397,18 +6401,22 @@ a.xf_editor-banner-link::after {
 [data-theme=dark] .xf_editor-html-preview pre::-webkit-scrollbar-thumb:hover {
   background: #6e7681 !important;
 }
+/* ★ v2.1.0: 暗色主题下行内 code（未被 pre 包裹）样式美化（导出独立 HTML 版本） */
 [data-theme=dark] .xf_editor-html-preview code:not(pre code) {
-  color: #f1f5f9;
-  background: #1a2a4a;
-  border: 1px solid #2d3a52;
+  color: #e8eef7;
+  background: #22344f;
+  border: 1px solid #33456a;
   border-radius: 5px;
   padding: 2px 7px;
-  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.08);
+  font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.92em;
+  line-height: 1.5;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 [data-theme=dark] .xf_editor-html-preview code:not(pre code):hover {
-  background: #243b63;
-  border-color: #3b4f6d;
+  color: #fff;
+  background: #2d4470;
+  border-color: #4a628f;
 }
 [data-theme=dark] .xf_editor-html-preview blockquote {
   color: #94a3b8;
@@ -6851,12 +6859,11 @@ a.xf_editor-banner-link::after {
 [data-theme=dark] .xf_editor-html-preview .xf_editor-attachment-link {
   color: #60a5fa;
   background: #1e293b;
-  border-color: #2d3a52;
+  border: 0 none;
 }
 [data-theme=dark] .xf_editor-html-preview .xf_editor-attachment-link:hover {
   color: #fff;
   background: #60a5fa;
-  border-color: #60a5fa;
 }
 [data-theme=dark] .xf_editor-html-preview .xf_editor-copybook {
   background: #1a2332;
@@ -7251,4 +7258,134 @@ a.xf_editor-banner-link::after {
   color: #64748b;
   background: #0f172a;
   border-color: #2d3a52;
+}
+
+/* ═══════════════ v2.0.0：超链接 / 音频播放器 / 文本对齐 美化（与 xf_editor.css 保持一致） ═══════════════ */
+.xf_editor .markdown-body a{color:#2C7EEA;text-decoration:none;border-bottom:1px solid transparent;transition:color .15s ease,border-color .15s ease,background-color .15s ease}
+.xf_editor .markdown-body a:hover{color:#1a5fc4;border-bottom-color:#1a5fc4}
+.xf_editor .markdown-body a:visited{color:#8250df}
+.xf_editor .markdown-body a:visited:hover{color:#5a32a3;border-bottom-color:#5a32a3}
+.xf_editor .markdown-body a:focus{outline:2px solid #2C7EEA;outline-offset:2px;border-radius:2px}
+.xf_editor .markdown-body a:active{color:#0246a2}
+.xf_editor .markdown-body a[href^="http"]:not([href*="javascript:"])::after,.xf_editor .markdown-body a[target="_blank"]::after{content:"↗";display:inline-block;margin-left:2px;font-size:.75em;line-height:1;opacity:.6;vertical-align:top}
+.xf_editor .markdown-body .xf_editor-audio-player-wrap{margin:12px 0;padding:10px 14px;display:flex;align-items:center;gap:10px;background:linear-gradient(180deg,#f7f9fc,#eef2f7);border:1px solid #dbe3ec;border-radius:10px;box-shadow:0 1px 2px rgba(16,42,67,.06),0 4px 14px -8px rgba(16,42,67,.18)}
+.xf_editor .markdown-body .xf_editor-audio-player-wrap::before{content:"";flex:0 0 auto;width:34px;height:34px;border-radius:50%;background:#2C7EEA url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'><path d='M8 5v14l11-7z'/></svg>") center/18px no-repeat;box-shadow:0 2px 6px rgba(44,126,234,.4)}
+.xf_editor .markdown-body .xf_editor-audio-player{width:100%;max-width:100%;height:38px;outline:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,.06))}
+.xf_editor .markdown-body .xf_editor-audio-player:focus{outline:2px solid #2C7EEA;outline-offset:2px;border-radius:4px}
+.xf_editor-theme-dark .markdown-body .xf_editor-audio-player-wrap{background:linear-gradient(180deg,#1b2433,#141b27);border-color:#2b3950}
+.xf_editor .markdown-body .xf_editor-text-align{display:block;margin:.5em 0}
+.xf_editor .markdown-body .xf_editor-text-align-center{text-align:center!important}
+.xf_editor .markdown-body .xf_editor-text-align-left{text-align:left!important}
+.xf_editor .markdown-body .xf_editor-text-align-right{text-align:right!important}
+.xf_editor .markdown-body span.xf_editor-text-align{display:inline-block;width:100%}
+
+/* ==========================================================================
+   ★ 外部 CSS 干扰防护层（Anti Host-Style Pollution）
+   宿主页面常见的全局规则（ *{} 通配、标签选择器、第三方 UI 库 reset、主题框架 ）
+   会污染编辑器与预览区的排版，典型症状：
+     · box-sizing 被改成 content-box        → 布局尺寸全线崩溃
+     · ul/ol 被 list-style:none + padding:0 → 列表符号与缩进消失
+     · h1~h6 被 font-size:inherit/font-weight:inherit → 标题层级丢失
+     · p/pre/blockquote 的 margin 被清零     → 段落、代码块粘连
+     · a 被 all:unset / text-decoration:none → 链接不可辨识
+     · table 的 border-collapse 被改         → 表格边框错乱
+     · img 被 max-width:none                 → 大图撑破容器
+   此处对最易被污染的关键属性做显式重置。
+   ⚠ 这里的 !important 是刻意为之：目的就是让宿主样式无法覆盖。
+     仅限本隔离层使用，其余业务样式仍保持可覆盖。
+   ========================================================================== */
+
+/* ① 盒模型：防 “* { box-sizing: content-box }” */
+.xf_editor,
+.xf_editor *,
+.xf_editor-preview,
+.xf_editor-preview *,
+.xf_editor-html-preview,
+.xf_editor-html-preview * {
+  box-sizing: border-box;
+}
+
+/* ② 标题层级还原 */
+.xf_editor-preview .markdown-body h1,
+.xf_editor-html-preview .markdown-body h1 { font-size: 2em !important;    font-weight: 600 !important; line-height: 1.3 !important; margin: 1.2em 0 .6em !important; }
+.xf_editor-preview .markdown-body h2,
+.xf_editor-html-preview .markdown-body h2 { font-size: 1.5em !important;  font-weight: 600 !important; line-height: 1.35 !important; margin: 1.15em 0 .55em !important; }
+.xf_editor-preview .markdown-body h3,
+.xf_editor-html-preview .markdown-body h3 { font-size: 1.25em !important; font-weight: 600 !important; line-height: 1.4 !important;  margin: 1.1em 0 .5em !important; }
+.xf_editor-preview .markdown-body h4,
+.xf_editor-html-preview .markdown-body h4 { font-size: 1.1em !important;  font-weight: 600 !important; line-height: 1.45 !important; margin: 1.05em 0 .5em !important; }
+.xf_editor-preview .markdown-body h5,
+.xf_editor-html-preview .markdown-body h5 { font-size: 1em !important;    font-weight: 600 !important; line-height: 1.5 !important;  margin: 1em 0 .5em !important; }
+.xf_editor-preview .markdown-body h6,
+.xf_editor-html-preview .markdown-body h6 { font-size: .92em !important;  font-weight: 600 !important; line-height: 1.5 !important;  margin: 1em 0 .5em !important; }
+
+/* ③ 段落/引用/代码块间距还原 */
+.xf_editor-preview .markdown-body p,
+.xf_editor-html-preview .markdown-body p { margin: 0 0 1em !important; line-height: 1.7 !important; }
+.xf_editor-preview .markdown-body pre,
+.xf_editor-html-preview .markdown-body pre { margin: 0 0 1.1em !important; }
+.xf_editor-preview .markdown-body blockquote,
+.xf_editor-html-preview .markdown-body blockquote { margin: 0 0 1.1em !important; padding-left: 1em !important; }
+
+/* ④ 列表：防宿主 list-style/padding reset */
+.xf_editor-preview .markdown-body ul,
+.xf_editor-html-preview .markdown-body ul,
+.xf_editor-preview .markdown-body ol,
+.xf_editor-html-preview .markdown-body ol {
+  margin: 0 0 1em !important;
+  padding-left: 2em !important;
+}
+.xf_editor-preview .markdown-body ul,
+.xf_editor-html-preview .markdown-body ul { list-style-type: disc !important; }
+.xf_editor-preview .markdown-body ol,
+.xf_editor-html-preview .markdown-body ol { list-style-type: decimal !important; }
+.xf_editor-preview .markdown-body li,
+.xf_editor-html-preview .markdown-body li { list-style-position: outside !important; }
+
+/* ⑤ 表格：防 border-collapse/border-spacing 被改 */
+.xf_editor-preview .markdown-body table,
+.xf_editor-html-preview .markdown-body table {
+  border-collapse: collapse !important;
+  border-spacing: 0 !important;
+  width: auto;
+  max-width: 100%;
+}
+
+/* ⑥ 图片/媒体：防 max-width:none 撑破容器 */
+.xf_editor-preview .markdown-body img,
+.xf_editor-html-preview .markdown-body img,
+.xf_editor-preview .markdown-body video,
+.xf_editor-html-preview .markdown-body video,
+.xf_editor-preview .markdown-body canvas,
+.xf_editor-html-preview .markdown-body canvas {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+/* ⑦ 链接：防 all:unset / text-decoration:none / color:inherit */
+.xf_editor-preview .markdown-body a,
+.xf_editor-html-preview .markdown-body a {
+  cursor: pointer;
+  text-decoration: none;
+}
+
+/* ⑧ 分隔线与代码字体 */
+.xf_editor-preview .markdown-body hr,
+.xf_editor-html-preview .markdown-body hr {
+  height: 1px !important;
+  border: 0 none !important;
+  margin: 1.6em 0 !important;
+}
+.xf_editor-preview .markdown-body code,
+.xf_editor-html-preview .markdown-body code,
+.xf_editor-preview .markdown-body pre,
+.xf_editor-html-preview .markdown-body pre {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace !important;
+  font-variant-ligatures: none !important;
+}
+
+/* ⑨ 过渡/动画保护：防宿主 “* { transition: all }” 造成全量重绘卡顿 */
+.xf_editor-preview .markdown-body *,
+.xf_editor-html-preview .markdown-body * {
+  -webkit-font-smoothing: antialiased;
 }

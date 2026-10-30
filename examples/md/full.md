@@ -1,6 +1,6 @@
 [TOC]
 
-# 🎯 xfEditor v1.17.27 全部功能完整演示
+# 🎯 xfEditor v2.0.0 全部功能完整演示
 
 > Open source online Markdown editor — 更适合教育、教学、网页演示、数据呈现、内容排版的现代化 Markdown 在线编辑器。
 
@@ -119,7 +119,7 @@ HTML 实体：&copy; &reg; &trade; &mdash; &ndash; &hellip; &laquo; &raquo; &deg
 | 06 | ECharts 图表 | v1.7.0 | ✅ | 支持 6 种图表类型 |
 | 07 | Tabs 标签页 | v1.7.0 | ✅ | 标签页组件，支持任意嵌套 |
 | 08 | Columns 多列 | v1.7.0 | ✅ | 报纸式多栏排版 |
-| 09 | Grid 栅格布局 | v1.17.27 | ✅ | 10栏栅格系统，自动平分 |
+| 09 | Grid 栅格布局 | v2.0.0 | ✅ | 10栏栅格系统，自动平分 |
 | 10 | Tooltip 悬浮提示 | v1.7.0 | ✅ | 5 种提示类型 |
 
 ### 2.2 表格对齐方式
@@ -670,20 +670,19 @@ xfEditor 是一款开源的、可嵌入的 Markdown 在线编辑器。
 [[/tab]]
 
 [[tab:更新日志]]
-### v1.17.27（最新）
+### v2.0.0（最新）
 
 - 🔄 同步滚动引擎全面重写（双向精确同步）
 - 🎯 预览→编辑方向完全修复
 - 🛡 预览交互防护（防止意外链接/表单提交）
 - 🔗 标题锚点智能配对
 - 🐛 编辑器内存泄漏修复
-
-### v1.17.27
-
 - 🌳 Tree图/脑图
 - 🙈 Hidden 隐藏代码块 + iframe:pre 悬浮预览
 - 🎨 TOC 目录全面美化
-- 🛡 内存泄漏修复
+- 📤 导出下拉菜单（PDF / Word / Markdown / HTML）
+- 📝 导出文件名自动推导（标题 → 正文首个 H1/H2）
+- 🔒 XSS 过滤与宿主 CSS 干扰防护层增强
 
 ### v1.7.0
 
@@ -1011,7 +1010,7 @@ console.log(demo.greet());
 
 ⁑⁖开源、简洁、强大，支持实时预览与扩展语法⁖⁑
 
-⠪版本号：v1.17.27 | 许可证：MIT⠪
+⠪版本号：v2.0.0 | 许可证：MIT⠪
 
 > **📌 文本对齐语法说明**
 > - **三组 Unicode 标记**（可用「工具栏 → 文本对齐」插入）：`⁑...⁑` 居中、`⁑⁖...⁖⁑` 两端对齐、`⠪...⠪` 右对齐；
@@ -1398,7 +1397,7 @@ presentation.pptx | 产品演示幻灯片
 
 ### A4 纸张（含页头页脚）
 
-[[page:A4 header="xfEditor v1.17.27 — 开源 Markdown 在线编辑器" footer="第 {page} 页 / 共 {total} 页"]]
+[[page:A4 header="xfEditor v2.0.0 — 开源 Markdown 在线编辑器" footer="第 {page} 页 / 共 {total} 页"]]
 ### xfEditor — 开源 Markdown 编辑器
 
 xfEditor 是一款功能强大的开源 Markdown 在线编辑器，基于 CodeMirror、Marked 构建，内置零依赖 micro-DOM（XfDom），不依赖 jQuery。
@@ -1424,7 +1423,7 @@ xfEditor 是一款功能强大的开源 Markdown 在线编辑器，基于 CodeMi
 
 | 技术 | 版本 | 用途 |
 |------|------|------|
-| xfEditor | v1.17.27 | Markdown 编辑渲染引擎 |
+| xfEditor | v2.0.0 | Markdown 编辑渲染引擎 |
 | ECharts | v5.4 | 交互式图表 |
 | KaTeX | v0.16 | 数学公式渲染 |
 | CodeMirror | v5.65 | 代码编辑器 |
@@ -1443,7 +1442,7 @@ xfEditor 是一款功能强大的开源 Markdown 在线编辑器，基于 CodeMi
 
 **日期**：2024年12月
 
-**议题**：xfEditor v1.17.27 发布计划
+**议题**：xfEditor v2.0.0 发布计划
 
 **决议**：全票通过，立即执行
 [[/page]]
@@ -1637,7 +1636,7 @@ xfEditor[^editor-footnote] 是一款强大的开源 Markdown 在线编辑器，�
 
 现代 Markdown 编辑器应具备丰富的扩展能力和良好的用户体验。
 
-[^about]: 本文档演示了 xfEditor v1.17.27 的全部功能。更多文档请参阅 `USAGE_GUIDE.md` 和 `README.md`。
+[^about]: 本文档演示了 xfEditor v2.0.0 的全部功能。更多文档请参阅 `USAGE_GUIDE.md` 和 `README.md`。
 
 ### 25.4 多脚注连续引用
 

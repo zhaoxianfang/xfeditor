@@ -191,7 +191,7 @@
   border-color: #2d3a52;
 }
 .xf_editor-preview-theme-dark .markdown-body {
-  /* ── v1.17.40: 表格暗色增强（结合编辑器 Slate 暗色主题 + table_demo 示例）── */
+  /* ── v2.0.0: 表格暗色增强（结合编辑器 Slate 暗色主题 + table_demo 示例）── */
 }
 .xf_editor-preview-theme-dark .markdown-body table {
   border: 1px solid #2d3a52 !important;
@@ -260,7 +260,7 @@
   border-bottom: none !important;
 }
 .xf_editor-preview-theme-dark {
-  /* v1.17.33: 单独作用于预览容器内的表格 */
+  /* v2.0.0: 单独作用于预览容器内的表格 */
 }
 .xf_editor-preview-theme-dark .xf_editor-preview-container table thead tr {
   background: linear-gradient(180deg, #243b55 0%, #16243a 100%) !important;
@@ -295,7 +295,7 @@
   color: #60a5fa;
 }
 .xf_editor-preview-theme-dark {
-  /* ── 时序图暗色（★ v1.17.31 全面升级） ── */
+  /* ── 时序图暗色（★ v2.0.0 全面升级） ── */
 }
 .xf_editor-preview-theme-dark .sequence-diagram {
   background: #0f1a2e;
@@ -383,7 +383,7 @@
   fill: #fff;
 }
 .xf_editor-preview-theme-dark {
-  /* ── 流程图暗色（★ v1.17.37 修复：fc-type-* 注入到 <g> 组 + operation 双矩形） ── */
+  /* ── 流程图暗色（★ v2.0.0 修复：fc-type-* 注入到 <g> 组 + operation 双矩形） ── */
 }
 .xf_editor-preview-theme-dark .flowchart {
   background: #0f1a2e;
@@ -652,7 +652,7 @@
   border-color: #60a5fa;
 }
 .xf_editor-preview-theme-dark {
-  /* ── 脚注暗色适配（★ v1.17.32: 嵌套修复 — 特异性匹配 base 的 3 层深度） ── */
+  /* ── 脚注暗色适配（★ v2.0.0: 嵌套修复 — 特异性匹配 base 的 3 层深度） ── */
 }
 .xf_editor-preview-theme-dark .xf_editor-footnotes-section {
   border-top-color: #2d3a52;
@@ -788,7 +788,7 @@
   background: rgba(26, 42, 74, 0.95);
 }
 .xf_editor-preview-theme-dark {
-  /* ── Page Block 纸张暗色（★ v1.17.31 全面升级） ── */
+  /* ── Page Block 纸张暗色（★ v2.0.0 全面升级） ── */
 }
 .xf_editor-preview-theme-dark .xf_editor-page-block {
   background: #1e293b;

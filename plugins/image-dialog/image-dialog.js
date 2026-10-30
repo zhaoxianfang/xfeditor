@@ -41,8 +41,9 @@
                 var guid   = (new Date).getTime();
                 // 是否有可用的上传地址：imageUpload 已开启且 imageUploadURL 非空
                 var hasUploadURL = !!(settings.imageUpload && settings.imageUploadURL && String(settings.imageUploadURL).trim() !== "");
-                // 本地上传按钮始终在 imageUpload 开启时显示（不受 imageUploadURL 是否配置约束）
-                var showLocalUpload = !!settings.imageUpload;
+                // 本地上传按钮默认显示（除非显式关闭 imageUpload:false）；
+                // 即便没有配置上传地址，本地选择图片也会读取为 base64 涂鸦块插入，开箱即用
+                var showLocalUpload = (settings.imageUpload !== false);
 
                 var action = "";
                 if (hasUploadURL)
@@ -55,12 +56,14 @@
                 }
 
                 var dialogContent = ( (hasUploadURL) ? "<form action=\"" + action +"\" target=\"" + iframeName + "\" method=\"post\" enctype=\"multipart/form-data\" class=\"" + classPrefix + "form\">" : "<div class=\"" + classPrefix + "form\">" ) +
-                                        ( (hasUploadURL) ? "<iframe name=\"" + iframeName + "\" id=\"" + iframeName + "\" guid=\"" + guid + "\"></iframe>" : "" ) +
+                                        ( (hasUploadURL) ? "<iframe name=\"" + iframeName + "\" id=\"" + iframeName + "\" guid=\"" + guid + "\"></iframe>" + (_this._csrfHiddenInput ? _this._csrfHiddenInput() : "") : "" ) +
                                         "<label>" + imageLang.url + "</label>" +
                                         "<input type=\"text\" data-url />" + (function(){
-                                            return (showLocalUpload) ? "<div class=\"" + classPrefix + "file-input\">" +
-                                                                                "<input type=\"file\" name=\"" + classPrefix + "image-file\" accept=\"image/*\" />" +
-                                                                                "<input type=\"button\" value=\"" + imageLang.uploadButton + "\" />" +
+                                            return (showLocalUpload) ? "<div class=\"" + classPrefix + "file-upload\" data-type=\"image\">" +
+                                                                                "<label class=\"" + classPrefix + "file-btn\" title=\"" + imageLang.uploadButton + "\">" +
+                                                                                    "<i class=\"fa fa-image\"></i><span class=\"" + classPrefix + "file-btn-label\">" + imageLang.uploadButton + "</span>" +
+                                                                                    "<input type=\"file\" class=\"" + classPrefix + "file-input-el\" name=\"" + classPrefix + "image-file\" accept=\"image/*\" />" +
+                                                                                "</label>" +
                                                                             "</div>" : "";
                                         })() +
                                         "<br/>" +
@@ -184,24 +187,29 @@
 
                 dialog.attr("id", classPrefix + "image-dialog-" + guid);
 
-                // 上传功能仅在启用时设置，对话框始终显示
-                if (settings.imageUpload) {
+                // 本地上传组件（文件选择/粘贴）始终绑定：showLocalUpload 为 true 时即使未配置 imageUpload，
+                // 也会走 base64 离线插入；配置了 imageUploadURL 则走表单上传
+                if (showLocalUpload) {
                     var fileInput  = dialog.find("[name=\"" + classPrefix + "image-file\"]");
 
-                    // Paste upload support
-                    dialog.on("paste", function(e) {
-                        var items = (e.clipboardData || e.originalEvent.clipboardData).items;
-                        if (!items || items.length === 0) return;
+                    // 统一的上传 iframe 解析逻辑见核心 _bindServerUpload（低耦合、三对话框复用）
 
-                        for (var i = 0; i < items.length; i++) {
-                            if (items[i].type.indexOf("image") !== -1) {
-                                var blob = items[i].getAsFile();
-                                var fileObj = new File([blob], "pasted-image-" + Date.now() + ".png", { type: "image/png" });
-                                var dataTransfer = new DataTransfer();
-                                dataTransfer.items.add(fileObj);
-                                fileInput[0].files = dataTransfer.files;
-                                fileInput.trigger("change");
-                                e.preventDefault();
+                    // 粘贴板图片直接写入文件选择框（仅当未配置上传地址时走 base64 分支）
+                    dialog.on("paste", function(e) {
+                        var cd = e.clipboardData || (e.originalEvent && e.originalEvent.clipboardData);
+                        if (!cd || !cd.items || cd.items.length === 0) return;
+                        for (var i = 0; i < cd.items.length; i++) {
+                            if (cd.items[i].type && cd.items[i].type.indexOf("image") !== -1) {
+                                var blob = cd.items[i].getAsFile();
+                                if (!blob) return;
+                                try {
+                                    var fileObj = new File([blob], "pasted-image-" + Date.now() + ".png", { type: "image/png" });
+                                    var dataTransfer = new DataTransfer();
+                                    dataTransfer.items.add(fileObj);
+                                    fileInput[0].files = dataTransfer.files;
+                                    fileInput.trigger("change");
+                                    e.preventDefault();
+                                } catch (err) { /* 浏览器不支持则忽略 */ }
                                 return;
                             }
                         }
@@ -221,16 +229,18 @@
                         if (!isImage.test(fileName))
                         {
                             xfEditor.notify(imageLang.formatNotAllowed + settings.imageFormats.join(", "), "warning");
+                            fileInput.val("");
 
                             return false;
                         }
+
+                        var file = fileInput.get(0).files[0];
+                        if (!file) return false;
 
                         // ★ 无上传地址：将本地图片读取为 base64 填入地址框（图片名称写入 alt），
                         //   由「确认」按钮统一转换并插入涂鸦块；粘贴/选择文件均走此分支
                         if (!hasUploadURL)
                         {
-                            var file = fileInput.get(0).files[0];
-                            if (!file) return false;
                             loading(true);
                             _this.fileToDataURL(file, function(err, dataUri) {
                                 loading(false);
@@ -248,44 +258,30 @@
                             return false;
                         }
 
+                        // ★ 有上传地址：提交表单到隐藏 iframe（修复旧版 type=button 无法触发表单提交的缺陷）
+                        _this._bindServerUpload(iframeName, {
+                            crossDomain: settings.crossDomainUpload,
+                            loading: loading,
+                            onSuccess: function(json) {
+                                // 统一解析上传返回（兼容多种成功标识与 URL 字段），成功才回写地址并提示绿色成功
+                                var res = _this._parseUploadResult(json);
+                                if (res.success) {
+                                    dialog.find("[data-url]").val(res.url);
+                                    // 登记已上传文件，便于后续删除时通知服务端清理（防僵尸文件）
+                                    try { _this._trackUploadedFile({ type: "image", url: res.url, name: (res.name || fileInput.val() || "") }); } catch (e) {}
+                                    xfEditor.notify("上传成功", "success", 3000);
+                                } else {
+                                    xfEditor.notify(res.message || "上传失败，未知错误。", "error", 5000);
+                                }
+                            },
+                            onError: function() {
+                                xfEditor.notify("上传响应解析失败，请检查服务器返回格式。", "error", 5000);
+                            }
+                        });
                         loading(true);
-
-                        var submitHandler = function() {
-
-                            var uploadIframe = document.getElementById(iframeName);
-
-                            uploadIframe.onload = function() {
-
-                                loading(false);
-
-                                var body = (uploadIframe.contentWindow ? uploadIframe.contentWindow : uploadIframe.contentDocument).document.body;
-                                var json = (body.innerText) ? body.innerText : ( (body.textContent) ? body.textContent : null);
-
-                                try {
-                                    json = (typeof JSON.parse !== "undefined") ? JSON.parse(json) : eval("(" + json + ")");
-                                } catch(err) {
-                                    xfEditor.notify("上传响应解析失败，请检查服务器返回格式。", "error", 5000);
-                                    return false;
-                                }
-
-                                if(!settings.crossDomainUpload)
-                                {
-                                  if (json.success === 1)
-                                  {
-                                      dialog.find("[data-url]").val(json.url);
-                                  }
-                                  else
-                                  {
-                                      xfEditor.notify(json.message || "上传失败，未知错误。", "error", 5000);
-                                  }
-                                }
-
-                                return false;
-                            };
-                        };
-
-                        // ★ v1.17.18: 先解绑旧 handler 再绑定，防止累积绑定导致多次上传
-                        dialog.find("[type=\"submit\"]").off("click", submitHandler).on("click", submitHandler).trigger("click");
+                        var form = dialog.find("form");
+                        if (form.length > 0) form[0].submit();
+                        return false;
                     });
                 }
             }

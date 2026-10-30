@@ -7,6 +7,7 @@
 
 var fs = require('fs');
 var path = require('path');
+var pkg = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf8'));
 
 // ★ 无 jQuery 依赖：xf_editor.min.js 已内置 micro-DOM 与 flowChart/sequenceDiagram 插件
 var previewFiles = [
@@ -39,7 +40,7 @@ previewFiles.forEach(function(f) {
     console.log('  OK ' + f.path + ' (' + (stat.size / 1024).toFixed(1) + ' KB)');
 });
 
-var header = '/** xfEditor Preview Bundle v1.17.38 | ' + new Date().toISOString().slice(0,10) + ' | KaTeX fonts embedded (offline) */\n';
+var header = '/** xfEditor Preview Bundle v' + pkg.version + ' | ' + new Date().toISOString().slice(0,10) + ' | KaTeX fonts embedded (offline) */\n';
 var bundle = header;
 previewFiles.forEach(function(f) {
     var fullPath = path.join(__dirname, f.path);

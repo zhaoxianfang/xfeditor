@@ -3,7 +3,7 @@
 <head>
     <link rel="shortcut icon" href="../images/favicon.ico" type="image/x-icon">
     <meta charset="utf-8" />
-    <title>xfEditor v1.17.28 — 全部功能完整演示</title>
+    <title>xfEditor v2.0.0 — 全部功能完整演示</title>
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="../css/xf_editor.min.css" />
     <link rel="stylesheet" href="../css/xf_editor.preview.min.css" />
@@ -41,12 +41,12 @@
 <body>
     <div id="layout">
         <header>
-            <h1>xfEditor v1.17.28 全部功能完整演示</h1>
+            <h1>xfEditor v2.0.0 全部功能完整演示</h1>
             <p>Complete All-Features Demo — 涵盖所有 Markdown 语法、扩展特性与 API 交互</p>
         </header>
 
         <div class="feature-intro">
-            <h2>v1.17.28 新增功能速览 <span class="badge badge-new">NEW</span></h2>
+            <h2>v2.0.0 新增功能速览 <span class="badge badge-new">NEW</span></h2>
             <ul>
                 
                 <li><strong>🙈 Hidden 隐藏代码块</strong>：<code>```(hidden)</code> <code>```(hidden.class#id)</code> 语法，渲染为 display:none!important 的隐藏 pre 标签，配合 iframe:pre 可「阅后即焚」式预览</li>
@@ -96,11 +96,25 @@
             <button id="theme-dark-btn" style="background:#333;color:#fff;border-color:#555;">暗色主题</button>
             <button id="canvas-btn">打开涂鸦面板</button>
         </div>
+        <div class="feature-btns">
+            <button id="insert-img-btn">＋插入示例图片语法</button>
+            <button id="insert-video-btn">＋插入示例视频语法</button>
+            <button id="insert-audio-btn">＋插入示例音频语法</button>
+            <button id="insert-file-btn">＋插入示例附件语法</button>
+        </div>
+        <div class="feature-intro">
+            <h2>资源删除事件（onImageDeleted / onVideoDeleted / onAudioDeleted / onFileDeleted）</h2>
+            <p>点击上方按钮在编辑区末尾插入一条示例资源语法，然后<strong>删除该行内容</strong>，即可在浏览器控制台（F12 → Console）看到对应的删除事件被触发并打印出
+            <code>{ type, url, name, stillUsed, event }</code> 信息。例如删除 <code>![Logo 180×180](../images/logo.png)&lt;180,180&gt;</code> 这样的图片语法行，会触发
+            <code>onImageDeleted</code>；<code>stillUsed</code> 表示编辑区是否仍包含该地址（用于区分“真正删除”与“移动 / 复制后删原处”）。</p>
+            <p><strong>CSRF 防护：</strong>若页面存在 <code>&lt;meta name="csrf-token" content="xxx"&gt;</code>，则所有上传 / 删除请求会自动在 XHR 请求头携带
+            <code>X-CSRF-TOKEN</code>，并在隐藏 iframe 表单中注入 <code>_token</code> 隐藏域，防止跨站请求伪造攻击。</p>
+        </div>
 <form  method="post" id="formTest">
         <div id="test-xfEditor">
             <textarea style="display:none;">[TOC]
 
-# xfEditor v1.17.27 全部功能演示
+# xfEditor v2.0.0 全部功能演示
 
 ---
 
@@ -300,7 +314,7 @@ func main() {
 
 ---
 
-## 三·五、🎠 Banner 轮播图 <span class="badge badge-new">NEW v1.17.28</span>
+## 三·五、🎠 Banner 轮播图 <span class="badge badge-new">NEW v2.0.0</span>
 
 > 使用 `[[banner]] ... [[/banner]]` 插入轮播图，支持自动播放、箭头、圆点、触摸滑动，图片始终铺满容器。
 > 完整示例见 `md/full.md`（本页通过 HTTP 访问时会自动加载该文件）。
@@ -311,7 +325,7 @@ func main() {
 {url:"https://picsum.photos/id/1018/1200/500",title:"雪山湖泊",desc:"雪山倒映湖面"}
 [[/banner]]
 
-## 四、代码块属性扩展 <span class="badge badge-new">NEW v1.17.27</span>
+## 四、代码块属性扩展 <span class="badge badge-new">NEW v2.0.0</span>
 
 ### 4.1 自定义 class/id 属性
 
@@ -341,7 +355,7 @@ class ApiClient {
 
 上述代码块可配合 iframe:pre 使用（见下方 Tooltip 9.4 节）。
 
-### 4.2 Hidden 隐藏代码块 <span class="badge badge-new">NEW v1.17.27</span>
+### 4.2 Hidden 隐藏代码块 <span class="badge badge-new">NEW v2.0.0</span>
 
 使用 `(hidden)` 标记可将代码块渲染为 **不可见** 的 `<pre style="display:none!important">` 标签。  
 隐藏的代码块在页面中不占用任何空间，但仍然存在于 DOM 中，可通过 JS 读取或配合 `tooltip:iframe:pre` 实现「阅后即焚」式悬浮预览。
@@ -500,7 +514,7 @@ print(fibonacci(15))
 }
 ```
 
-### 5.6 树图/脑图 <span class="badge badge-new">NEW v1.17.27</span>
+### 5.6 树图/脑图 <span class="badge badge-new">NEW v2.0.0</span>
 
 使用 `"type": "tree"` 配合 `layout: "orthogonal"` 和 `orient: "LR"` 可创建从左到右的组织架构树图。  
 主题自动跟随编辑器，无需手动设置 `"theme"`；点击节点圆圈可折叠/展开子分支。
@@ -593,7 +607,7 @@ xfEditor 是一款开源的、可嵌入的 Markdown 在线编辑器（组件）�
 [[/tab]]
 
 [[tab:更新日志]]
-### v1.17.27（最新）
+### v2.0.0（最新）
 - 🔒 **XSS 安全修复**：image renderer 属性转义、filterHTMLTags 实体解码检测、5 项安全加固
 - 🌐 **ES5 兼容性修复**：移除 `(?<!!)` ES2018 负向后瞻，确保 IE11 和老版 Safari 正常运行
 - 🐛 **多反引号行内代码保护**：preprocessLinkTarget 正确保护 `` `…` `` 格式
@@ -602,13 +616,13 @@ xfEditor 是一款开源的、可嵌入的 Markdown 在线编辑器（组件）�
 - 🧹 **死代码 + 正则有向无环图标记**：6 个未使用正则标记为 DEPRECATED
 - 📦 **全面重构构建**：所有 `.js` / `.css` / `.min.js` / `.min.css` / `preview.min.js` 同步构建
 
-### v1.17.27
+### v2.0.0
 - 🔄 **同步滚动引擎全面重写**：统一 `_syncState` 状态管理 + 门控优先级体系 + 程序化滚动识别 + 预览交互防护
 - 🎯 **预览→编辑方向完全修复**：祖先链滚动监听确保不遗漏事件，`disablePreviewListener` 精确控制
 - 🛡 **预览交互防护**：图片拖拽缩放/表格编辑时自动暂停同步，防止内容更新导致滚动跳转
 - 🔗 **标题锚点智能配对**：文本+层级二维验证匹配 + 代码块过滤
 
-### v1.17.27
+### v2.0.0
 - 🌳 **Tree图/脑图**：`"type": "tree"` 支持，工具栏新增「树图/脑图」按钮，支持 theme 主题切换、折叠/展开
 - 🙈 **Hidden 隐藏代码块**：` ```(hidden) ` ` ```(hidden.class#id) ` 语法，渲染为 display:none!important
 - 🎯 Hidden 配合 iframe:pre 实现「阅后即焚」式悬浮预览，initCodeCopy 自动跳过隐藏 pre
@@ -620,22 +634,22 @@ xfEditor 是一款开源的、可嵌入的 Markdown 在线编辑器（组件）�
 - 📏 ECharts 自定义高度：config.height 设置图表容器高度
 - 🔧 Gulp 3.x → 直接 UglifyJS/CleanCSS 构建，兼容 Node 22+
 
-### v1.17.27
+### v2.0.0
 - 🔧 Tooltip 尺寸限制修复：图片/iframe 显式宽高 + object-fit:contain，max-width 放宽至 90vw
 - 📄 getHTML/getPreviewedHTML 增强：完整内联样式，不依赖外部 CSS/JS
 
-### v1.17.27
+### v2.0.0
 - TOC 目录点击跳转修复（精确 ID + 文本回退匹配）
 - 公式弹窗自动加载 KaTeX（无需 tex: true 也能使用公式面板）
 - 表格/图片编辑后编辑区滚动位置保持修复
 - UI 细节优化与多语言完善
 
-### v1.17.27
+### v2.0.0
 - 新增组合上下标语法 <<下标>^<上标>> 同时显示上下角标
 - 修复渲染管线不一致（getPreviewedHTML/markdownToHTML 缺失步骤）
 - 全面代码审计、正则优化、事件泄漏修复
 
-### v1.17.27
+### v2.0.0
 - 工具栏图片/视频/文件按钮失效修复、弹窗全面美化
 - XSS 安全加固（6 项注入漏洞修复）、ECharts 内存泄漏修复
 - 上标 ^^、下标 ^^^^、字体大小 !字!、脚注 [^name] 新语法
@@ -960,7 +974,7 @@ console.log(grid);
 - [小窗口 100x60](tooltip:iframe:./simple.html)<100,60>
 - [中窗口 200x120](tooltip:iframe:./simple.html)<200,120>
 
-### 9.4 iframe:pre 代码块悬浮预览 <span class="badge badge-new">NEW v1.17.27</span>
+### 9.4 iframe:pre 代码块悬浮预览 <span class="badge badge-new">NEW v2.0.0</span>
 
 **配合代码块属性扩展使用**，先给代码块设置 id 或 class，再用悬浮提示引用。  
 **原理**：提取 `<pre id="xxx">` 内部原始内容，通过 Blob URL 创建 iframe 页面进行悬浮预览。  
@@ -1107,7 +1121,7 @@ def merge(left, right):
 
 ⁑⁖开源、简洁、强大，支持实时预览与扩展语法⁖⁑
 
-⠪版本号：v1.17.27 | 许可证：MIT⠪
+⠪版本号：v2.0.0 | 许可证：MIT⠪
 
 ### 标题中的对齐
 
@@ -1304,7 +1318,7 @@ report.xlsx | 2024年度数据报表
 (夜来风雨声|yè lái fēng yǔ shēng)(花落知多少|huā luò zhī duō shǎo)
 [[/copybookPinyin]]
 
-### 22.5 字帖内嵌入脚注 <span class="badge badge-new">NEW v1.17.27</span>
+### 22.5 字帖内嵌入脚注 <span class="badge badge-new">NEW v2.0.0</span>
 
 字帖和拼音格内可使用 `[^name]` 脚注标记，点击可跳转到对应脚注内容。
 拼音格中脚注标记上方不会显示拼音，保证拼音与汉字一对一展示：
@@ -1438,7 +1452,7 @@ xfEditor[^editor-footnote] 是一款强大的开源 Markdown 在线编辑器。
 
 #### 关于本编辑器[^about]
 
-[^about]: 本文档演示了 xfEditor v1.17.27 的全部功能，包括 Markdown 基础语法、扩展语法和 API 交互。更多功能请查阅 `USAGE_GUIDE.md` 和 `README.md`。
+[^about]: 本文档演示了 xfEditor v2.0.0 的全部功能，包括 Markdown 基础语法、扩展语法和 API 交互。更多功能请查阅 `USAGE_GUIDE.md` 和 `README.md`。
 
 ### 25.4 多个脚注
 
@@ -1597,7 +1611,7 @@ xfEditor 持续迭代，致力于为开发者和内容创作者提供最优秀�
                 video               : true,             // 启用 [[video]] 视频列表语法，默认 true
                 file                : true,             // 启用 [[file]] 文件列表语法，默认 true
                 previewCodeHighlight: true,             // 启用预览区代码高亮，默认 true
-                syncScroll          : true,             // 启用编辑区与预览区同步滚动，默认 true（v1.17.27 全面重写）
+                syncScroll          : true,             // 启用编辑区与预览区同步滚动，默认 true（v2.0.0 全面重写）
                 previewOnly         : false,            // 纯预览模式（禁用表格编辑、图片缩放等交互），默认 false
 
                 // ═══ 工具栏配置 ═══
@@ -1658,7 +1672,7 @@ xfEditor 持续迭代，致力于为开发者和内容创作者提供最优秀�
 
                 // ═══ 事件回调 ═══
                 onload              : function() {      // 编辑器加载完成回调，默认 function(){}
-                    console.log("✅ xfEditor v1.17.28 全部功能完整演示已加载");
+                    console.log("✅ xfEditor v2.0.0 全部功能完整演示已加载");
                 },
                 onchange            : function() {      // 编辑器内容变化回调，默认 function(){}
                     // 内容变化时触发
@@ -1691,7 +1705,32 @@ xfEditor 持续迭代，致力于为开发者和内容创作者提供最优秀�
                 oncursoractivity    : function() {},    // 光标活动回调，默认 function(){}
                 onEditorLoad        : function() {},    // 编辑器加载完成（包括 CodeMirror 初始化），默认 function(){}
                 onPageLoad          : function() {},    // 当前网页加载完成回调，默认 function(){}
-                onPageAllLoad       : function() {}     // 网页所有异步加载完成回调，默认 function(){}
+                onPageAllLoad       : function() {},    // 网页所有异步加载完成回调，默认 function(){}
+
+                // ═══ 文件上传 / 删除事件回调（防僵尸文件 + 开发者通知） ═══
+                // 上传成功：登记文件并返回接口 URL（同时回写弹窗地址输入框）
+                onFileUploaded      : function(info) {  // 文件上传成功回调：function(info){}，info={type,url,name}
+                    console.log("📤 [onFileUploaded] 上传成功：", info.type, info.url, (info.name || ""));
+                },
+                // 资源语法在编辑区被“删除 / 替换”时触发（图片 / 视频 / 音频 / 附件四类）。
+                // 载荷 info = { type, url, name, stillUsed, event:"delete" }
+                //   - type      ：资源类型 image | video | audio | file
+                //   - url       ：被删除资源的地址
+                //   - name      ：从地址中提取的文件名（文件信息）
+                //   - stillUsed ：当前编辑区是否仍包含该地址（用于判断是“真正删除”还是“移动 / 复制后删原处”）
+                //   - event     ：固定 "delete"
+                onImageDeleted      : function(info) {
+                    console.log("🖼️  [onImageDeleted] 图片语法已删除：", info);
+                },
+                onVideoDeleted      : function(info) {
+                    console.log("🎬 [onVideoDeleted] 视频语法已删除：", info);
+                },
+                onAudioDeleted      : function(info) {
+                    console.log("🎵 [onAudioDeleted] 音频语法已删除：", info);
+                },
+                onFileDeleted       : function(info) {
+                    console.log("📎 [onFileDeleted] 附件语法已删除：", info);
+                }
             });
             }
 
@@ -1805,6 +1844,31 @@ xfEditor 持续迭代，致力于为开发者和内容创作者提供最优秀�
                 testEditor.setTheme("dark");
                 console.log("主题已切换为暗色");
             });
+            // ＝＝ 资源删除事件演示：插入示例语法，删除该行即可在控制台看到对应删除事件 ＝＝
+            function insertSampleSyntax(snippet, typeName) {
+                testEditor.appendMarkdown(snippet);
+                // 光标移动到文档末尾并聚焦，便于用户直接删除该行触发删除事件
+                if (testEditor.cm) {
+                    var lastLine = testEditor.cm.lastLine();
+                    var lastCh   = testEditor.cm.getLine(lastLine).length;
+                    testEditor.cm.setCursor({ line: lastLine, ch: lastCh });
+                    testEditor.cm.focus();
+                }
+                console.log("已在编辑区末尾插入示例" + typeName + "语法，请删除该行内容以触发对应的 on" + typeName + "Deleted 事件（见控制台）");
+            }
+            dom("#insert-img-btn").on("click", function() {
+                insertSampleSyntax("\n![示例图片 Logo 180x180](../images/logo.png)<180,180>\n", "Image");
+            });
+            dom("#insert-video-btn").on("click", function() {
+                insertSampleSyntax("\n@[video](https://www.example.com/sample.mp4)\n", "Video");
+            });
+            dom("#insert-audio-btn").on("click", function() {
+                insertSampleSyntax("\n@[audio](https://www.example.com/sample.mp3)\n", "Audio");
+            });
+            dom("#insert-file-btn").on("click", function() {
+                insertSampleSyntax("\n[下载示例文档 report.pdf](https://www.example.com/report.pdf)\n", "File");
+            });
+
             dom("#canvas-btn").on("click", function() {
                 testEditor.canvasDialog();
             });
