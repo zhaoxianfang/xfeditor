@@ -42,7 +42,9 @@
                 // ★ 上传地址门控：仅当 fileUpload 开启且 fileUploadURL 已配置才允许上传；
                 //   未配置地址时一律禁用本地上传（不保存文件到前端），与图片（base64 例外）区分
                 var hasFileUploadURL = !!(settings.fileUpload && settings.fileUploadURL && String(settings.fileUploadURL).trim() !== "");
-                var action = hasFileUploadURL ? (settings.fileUploadURL + (settings.fileUploadURL.indexOf("?") >= 0 ? "&" : "?") + "guid=" + guid) : "";
+                // ★ CSRF 防护：iframe 表单无法自定义请求头，故将 _token 直接拼接到 action URL（同源）
+                var _csrf = (_this._getCsrfToken && _this._getCsrfToken()) || "";
+                var action = hasFileUploadURL ? (settings.fileUploadURL + (settings.fileUploadURL.indexOf("?") >= 0 ? "&" : "?") + "guid=" + guid + (_csrf ? "&_token=" + encodeURIComponent(_csrf) : "")) : "";
 
                 var dialogContent = ( (hasFileUploadURL) ? "<form action=\"" + action +"\" target=\"" + iframeName + "\" method=\"post\" enctype=\"multipart/form-data\" class=\"" + classPrefix + "form\">" : "<div class=\"" + classPrefix + "form\">" ) +
                                         ( (hasFileUploadURL) ? "<iframe name=\"" + iframeName + "\" id=\"" + iframeName + "\" guid=\"" + guid + "\"></iframe>" + (_this._csrfHiddenInput ? _this._csrfHiddenInput() : "") : "" ) +

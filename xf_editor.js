@@ -161,9 +161,37 @@
     /**
      * 原生 fetch 封装 - 替代传统 jQuery 的 ajax / get / post / getJSON
      */
+    // ★ CSRF 防护：读取 <meta name="csrf-token"> 的 Token，并按需附加到请求头。
+    //   仅在「同源」请求时附加 X-CSRF-TOKEN，避免跨域 GET（如远程图片抓取）触发 CORS 预检而失败。
+    function xfCsrfHeader(url) {
+        try {
+            if (url && typeof window !== "undefined" && window.location && window.location.host) {
+                var a = document.createElement("a");
+                a.href = url;
+                if (a.host && a.host !== window.location.host) return {}; // 跨域：不加头，避免 CORS 预检
+            }
+            var meta = document.querySelector && document.querySelector('meta[name="csrf-token"]');
+            var t = meta && meta.getAttribute("content");
+            if (!t) {
+                t = (window.csrfToken) || (window.Laravel && window.Laravel.csrfToken) || window.XSRF_TOKEN || "";
+            }
+            return t ? { "X-CSRF-TOKEN": String(t) } : {};
+        } catch (e) { return {}; }
+    }
+    // 合并请求头：仅在未显式提供 X-CSRF-TOKEN 时附加
+    function mergeCsrfHeader(url, headers) {
+        var h = headers || {};
+        if (!h["X-CSRF-TOKEN"] && !h["x-csrf-token"]) {
+            var c = xfCsrfHeader(url);
+            for (var k in c) { if (c.hasOwnProperty(k)) h[k] = c[k]; }
+        }
+        return h;
+    }
+
     var nativeFetch = (function() {
         function fetchJSON(method, url, data, _opts) {
             var opts = Object.assign({ method: method, headers: { "Content-Type": "application/json" }, credentials: "same-origin" }, _opts || {});
+            opts.headers = mergeCsrfHeader(url, opts.headers);
             if (data) opts.body = JSON.stringify(data);
             return fetch(url, opts).then(function(r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
         }
@@ -171,11 +199,14 @@
             get: function(url, data, opts) { return fetchJSON("GET", url, data, opts); },
             post: function(url, data, opts) { return fetchJSON("POST", url, data, opts); },
             getJSON: function(url, opts) {
-                return fetch(url, Object.assign({ method: "GET", credentials: "same-origin" }, opts || {})).then(function(r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
+                var o = Object.assign({ method: "GET", credentials: "same-origin" }, opts || {});
+                o.headers = mergeCsrfHeader(url, o.headers || {});
+                return fetch(url, o).then(function(r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
             },
             ajax: function(opts) {
                 var o = Object.assign({ method: "GET", headers: {}, credentials: "same-origin", cache: true }, opts || {});
                 if (!o.cache) o.headers["Cache-Control"] = "no-cache";
+                o.headers = mergeCsrfHeader(o.url, o.headers);
                 if (o.data) o.body = typeof o.data === "string" ? o.data : JSON.stringify(o.data);
                 return fetch(o.url, o).then(function(r) {
                     if (!r.ok) throw new Error("HTTP " + r.status);
@@ -1442,6 +1473,13 @@
             } else if (opts.contentType) {
                 xhr.setRequestHeader("Content-Type", opts.contentType);
             }
+            // ★ CSRF 防护：同源请求自动附加 X-CSRF-TOKEN 头（跨域跳过，避免 CORS 预检）；已显式提供则不覆盖
+            var _csrfHeaders = xfCsrfHeader(url);
+            for (var _ck in _csrfHeaders) if (Object.prototype.hasOwnProperty.call(_csrfHeaders, _ck)) {
+                if (!opts.headers || !opts.headers[_ck]) {
+                    try { xhr.setRequestHeader(_ck, _csrfHeaders[_ck]); } catch (e) {}
+                }
+            }
             if (opts.headers) {
                 for (var h in opts.headers) if (Object.prototype.hasOwnProperty.call(opts.headers, h)) {
                     xhr.setRequestHeader(h, opts.headers[h]);
@@ -2391,7 +2429,15 @@
             };
             
             settings.pluginPath = (settings.pluginPath === "") ? settings.path + "../plugins/" : settings.pluginPath; 
-            
+
+            // 确保 path / pluginPath 以 / 结尾，避免与子路径拼接时缺失分隔符导致 404。
+            if (settings.path && settings.path.charAt(settings.path.length - 1) !== "/") {
+                settings.path += "/";
+            }
+            if (settings.pluginPath && settings.pluginPath.charAt(settings.pluginPath.length - 1) !== "/") {
+                settings.pluginPath += "/";
+            }
+
             this.state.watching = (settings.watch) ? true : false;
             
             if ( !editor.hasClass("xf_editor") ) {
@@ -11596,8 +11642,10 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         _csrfHiddenInput : function() {
             var token = this._getCsrfToken();
             if (!token) return "";
+            // ★ 关键修复：字段名必须是 csrfFieldName（默认 _token），而非 token 本身，
+            //   否则服务端 VerifyCsrfToken 找不到 _token 字段 → "CSRF token mismatch."
             var name = (this.settings && this.settings.csrfFieldName) || "_token";
-            return '<input type="hidden" name="' + xfEditor.escapeAttr(token) + '" value="' + xfEditor.escapeAttr(token) + '" />';
+            return '<input type="hidden" name="' + xfEditor.escapeAttr(name) + '" value="' + xfEditor.escapeAttr(token) + '" />';
         },
 
         /**

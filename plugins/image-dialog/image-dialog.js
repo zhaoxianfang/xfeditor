@@ -46,9 +46,11 @@
                 var showLocalUpload = (settings.imageUpload !== false);
 
                 var action = "";
+                // ★ CSRF 防护：iframe 表单无法自定义请求头，故将 _token 直接拼接到 action URL（同源）
+                var _csrf = (_this._getCsrfToken && _this._getCsrfToken()) || "";
                 if (hasUploadURL)
                 {
-                    action = settings.imageUploadURL + (settings.imageUploadURL.indexOf("?") >= 0 ? "&" : "?") + "guid=" + guid;
+                    action = settings.imageUploadURL + (settings.imageUploadURL.indexOf("?") >= 0 ? "&" : "?") + "guid=" + guid + (_csrf ? "&_token=" + encodeURIComponent(_csrf) : "");
                     if (settings.crossDomainUpload)
                     {
                         action += "&callback=" + settings.uploadCallbackURL + "&dialog_id=xfEditor-image-dialog-" + guid;
