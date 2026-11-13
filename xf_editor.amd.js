@@ -210,9 +210,37 @@
     /**
      * 原生 fetch 封装 - 替代传统 jQuery 的 ajax / get / post / getJSON
      */
+    // ★ CSRF 防护：读取 <meta name="csrf-token"> 的 Token，并按需附加到请求头。
+    //   仅在「同源」请求时附加 X-CSRF-TOKEN，避免跨域 GET（如远程图片抓取）触发 CORS 预检而失败。
+    function xfCsrfHeader(url) {
+        try {
+            if (url && typeof window !== "undefined" && window.location && window.location.host) {
+                var a = document.createElement("a");
+                a.href = url;
+                if (a.host && a.host !== window.location.host) return {}; // 跨域：不加头，避免 CORS 预检
+            }
+            var meta = document.querySelector && document.querySelector('meta[name="csrf-token"]');
+            var t = meta && meta.getAttribute("content");
+            if (!t) {
+                t = (window.csrfToken) || (window.Laravel && window.Laravel.csrfToken) || window.XSRF_TOKEN || "";
+            }
+            return t ? { "X-CSRF-TOKEN": String(t) } : {};
+        } catch (e) { return {}; }
+    }
+    // 合并请求头：仅在未显式提供 X-CSRF-TOKEN 时附加
+    function mergeCsrfHeader(url, headers) {
+        var h = headers || {};
+        if (!h["X-CSRF-TOKEN"] && !h["x-csrf-token"]) {
+            var c = xfCsrfHeader(url);
+            for (var k in c) { if (c.hasOwnProperty(k)) h[k] = c[k]; }
+        }
+        return h;
+    }
+
     var nativeFetch = (function() {
         function fetchJSON(method, url, data, _opts) {
             var opts = Object.assign({ method: method, headers: { "Content-Type": "application/json" }, credentials: "same-origin" }, _opts || {});
+            opts.headers = mergeCsrfHeader(url, opts.headers);
             if (data) opts.body = JSON.stringify(data);
             return fetch(url, opts).then(function(r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
         }
@@ -220,11 +248,14 @@
             get: function(url, data, opts) { return fetchJSON("GET", url, data, opts); },
             post: function(url, data, opts) { return fetchJSON("POST", url, data, opts); },
             getJSON: function(url, opts) {
-                return fetch(url, Object.assign({ method: "GET", credentials: "same-origin" }, opts || {})).then(function(r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
+                var o = Object.assign({ method: "GET", credentials: "same-origin" }, opts || {});
+                o.headers = mergeCsrfHeader(url, o.headers || {});
+                return fetch(url, o).then(function(r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
             },
             ajax: function(opts) {
                 var o = Object.assign({ method: "GET", headers: {}, credentials: "same-origin", cache: true }, opts || {});
                 if (!o.cache) o.headers["Cache-Control"] = "no-cache";
+                o.headers = mergeCsrfHeader(o.url, o.headers);
                 if (o.data) o.body = typeof o.data === "string" ? o.data : JSON.stringify(o.data);
                 return fetch(o.url, o).then(function(r) {
                     if (!r.ok) throw new Error("HTTP " + r.status);
@@ -1491,6 +1522,13 @@
             } else if (opts.contentType) {
                 xhr.setRequestHeader("Content-Type", opts.contentType);
             }
+            // ★ CSRF 防护：同源请求自动附加 X-CSRF-TOKEN 头（跨域跳过，避免 CORS 预检）；已显式提供则不覆盖
+            var _csrfHeaders = xfCsrfHeader(url);
+            for (var _ck in _csrfHeaders) if (Object.prototype.hasOwnProperty.call(_csrfHeaders, _ck)) {
+                if (!opts.headers || !opts.headers[_ck]) {
+                    try { xhr.setRequestHeader(_ck, _csrfHeaders[_ck]); } catch (e) {}
+                }
+            }
             if (opts.headers) {
                 for (var h in opts.headers) if (Object.prototype.hasOwnProperty.call(opts.headers, h)) {
                     xhr.setRequestHeader(h, opts.headers[h]);
@@ -2440,7 +2478,15 @@
             };
             
             settings.pluginPath = (settings.pluginPath === "") ? settings.path + "../plugins/" : settings.pluginPath; 
-            
+
+            // 确保 path / pluginPath 以 / 结尾，避免与子路径拼接时缺失分隔符导致 404。
+            if (settings.path && settings.path.charAt(settings.path.length - 1) !== "/") {
+                settings.path += "/";
+            }
+            if (settings.pluginPath && settings.pluginPath.charAt(settings.pluginPath.length - 1) !== "/") {
+                settings.pluginPath += "/";
+            }
+
             this.state.watching = (settings.watch) ? true : false;
             
             if ( !editor.hasClass("xf_editor") ) {
@@ -11645,8 +11691,10 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         _csrfHiddenInput : function() {
             var token = this._getCsrfToken();
             if (!token) return "";
+            // ★ 关键修复：字段名必须是 csrfFieldName（默认 _token），而非 token 本身，
+            //   否则服务端 VerifyCsrfToken 找不到 _token 字段 → "CSRF token mismatch."
             var name = (this.settings && this.settings.csrfFieldName) || "_token";
-            return '<input type="hidden" name="' + xfEditor.escapeAttr(token) + '" value="' + xfEditor.escapeAttr(token) + '" />';
+            return '<input type="hidden" name="' + xfEditor.escapeAttr(name) + '" value="' + xfEditor.escapeAttr(token) + '" />';
         },
 
         /**
@@ -13442,6 +13490,209 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
     };
 
     /**
+     * ★ v2.0.0: 表格嵌套语法增强 —— 接管表格渲染
+     *
+     * 背景：marked v0.3.3 在解析 GFM 表格时，会按竖线 `|` 简单切分单元格，
+     * 完全不考虑竖线是否处于「受保护的区域」内：
+     *   - 行内代码 `a | b` 中的 `|` 会被当成列分隔符，导致表格结构错乱；
+     *   - 公式 `$..$` / `$$..$$` 内若含 `|`（如 \begin{vmatrix}）、转义竖线 `\|`、
+     *     拼音语法 `{文 | yin}` 中的 `|` 同样会破坏表格；
+     *   - 同时 marked 的 tablecell 渲染器未做 TeX / 拼音等内联处理，导致
+     *     单元格内的公式无法渲染。
+     *
+     * 方案：在 marked 解析前识别所有 GFM / nptable 表格，逐行按「受保护区域感知」的
+     * 方式切分单元格（跳过代码 / 公式 / 拼音 / 转义竖线内部的 `|`），再将每个单元格
+     * 内容交由完整内联管线（公式 / 拼音 / 对齐 / atLink + 标准内联语法）独立渲染，
+     * 最后拼装为最终 <table> HTML，并以占位符交还给 marked，待 restorePlaceholders 还原。
+     *
+     * 这样既修复了「表格无法嵌套语法」的结构性缺陷，又让单元格内所有内联语法与原段落一致。
+     *
+     * @param   {String}   markdown           待处理的 Markdown 源码
+     * @param   {Object}   options            renderer 选项（tex / pinyin / textAlign ...）
+     * @param   {Object}   codeProtection     protectCodeBlocks 的结果（含代码占位符，用于单元格内还原）
+     * @param   {Function} createMarkedOptions 构造 marked 选项的工厂（来自 preprocessMarkdownBlocks 内部）
+     * @returns {Object}   { markdown, placeholders }
+     */
+    xfEditor._processTables = function(markdown, options, codeProtection, createMarkedOptions) {
+        if (!markdown || typeof markdown !== "string") {
+            return { markdown: markdown || "", placeholders: [] };
+        }
+
+        // 受保护区域内部竖线保留为「字面量竖线」，列分隔符使用不可见分隔符标记
+        function isTableSeparatorRow(line) {
+            if (typeof line !== "string") return false;
+            var s = line.trim();
+            if (s === "") return false;
+            // 必须含有竖线（GFM / nptable 分隔行均含 |），借此排除 setext 标题的 `---`
+            if (s.indexOf("|") === -1) return false;
+            // 不能含字母 / 数字（避免误判普通文本行）
+            if (/[a-zA-Z0-9]/.test(s)) return false;
+            // 每个单元格由 ≥2 个连字符组成，可带首尾冒号（对齐）
+            return /^\s*\|?\s*:?-{2,}:?\s*(?:\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(s);
+        }
+
+        function detectTableStart(lines, i) {
+            if (i < 0 || i >= lines.length) return false;
+            var header = lines[i];
+            if (typeof header !== "string" || header.trim() === "") return false;
+            // 表头必须含竖线，且不能是分隔行本身
+            if (header.indexOf("|") === -1) return false;
+            if (isTableSeparatorRow(header)) return false;
+            // 排除块引用 / 列表项误判
+            if (/^\s*[>*\-+]\s/.test(header)) return false;
+            if (i + 1 >= lines.length) return false;
+            return isTableSeparatorRow(lines[i + 1]);
+        }
+
+        // 受保护区域感知的单元格切分：跳过代码(已被 codeProtection 替换为占位符，内部无 |)、
+        // 公式 $..$ / $$..$$、拼音 {..|..} 内部的竖线；转义竖线 \| 还原为字面 |。
+        // 直接以数组累积单元格内容，遇到真正的列分隔符时切分，避免引入占位字符。
+        function splitTableRow(row) {
+            if (typeof row !== "string") return [];
+            var i = 0, n = row.length;
+            var inMath = false;
+            var inPinyin = 0;
+            var cells = [];
+            var cur = "";
+            function pushCell() {
+                cells.push(cur.replace(/^\s+/, "").replace(/\s+$/, ""));
+                cur = "";
+            }
+            while (i < n) {
+                var ch = row.charAt(i);
+                // 转义竖线 \|
+                if (ch === "\\" && row.charAt(i + 1) === "|") {
+                    cur += "|";
+                    i += 2;
+                    continue;
+                }
+                // 数学模式切换（支持 $ 与 $$）
+                if (ch === "$") {
+                    var dollarCount = 0;
+                    while (i + dollarCount < n && row.charAt(i + dollarCount) === "$") dollarCount++;
+                    cur += row.substr(i, dollarCount);
+                    i += dollarCount;
+                    inMath = !inMath;
+                    continue;
+                }
+                if (!inMath && ch === "{") { inPinyin++; cur += ch; i++; continue; }
+                if (!inMath && ch === "}") { if (inPinyin > 0) inPinyin--; cur += ch; i++; continue; }
+                if (ch === "|" && !inMath && inPinyin === 0) {
+                    pushCell();
+                    i++;
+                    continue;
+                }
+                cur += ch;
+                i++;
+            }
+            pushCell();
+            // 去除 GFM 行首 / 行尾竖线产生的空单元格
+            while (cells.length > 1 && cells[0] === "") cells.shift();
+            while (cells.length > 1 && cells[cells.length - 1] === "") cells.pop();
+            return cells;
+        }
+
+        function renderCell(content, cellOpts) {
+            if (content === "") return "";
+            var html = xfEditor.marked(content, cellOpts);
+            // 单元格为行内内容，剥离 marked 自动包裹的 <p>
+            html = html.replace(/^<p(\s[^>]*)?>/, "").replace(/<\/p>\s*$/, "");
+            // 还原单元格内被保护的代码占位符（如 `a | b`）。
+            // 注意：此处必须将代码占位符「渲染为 HTML」（而非还原为原始 Markdown），
+            // 因为单元格已经过 marked 渲染，主流程的 restorePlaceholders 不会再二次解析；
+            // 若仅还原为原始 Markdown，代码会作为字面反引号文本输出，无法渲染为 <code>/<pre>。
+            if (codeProtection && codeProtection.placeholders && codeProtection.placeholders.length) {
+                for (var p = 0; p < codeProtection.placeholders.length; p++) {
+                    var cp = codeProtection.placeholders[p];
+                    if (cp && cp.id) {
+                        var codeHtml = xfEditor.marked(cp.html || "", cellOpts);
+                        codeHtml = codeHtml.replace(/^<p(\s[^>]*)?>/, "").replace(/<\/p>\s*$/, "");
+                        html = html.split("<!--" + cp.id + "-->").join(codeHtml);
+                    }
+                }
+            }
+            return html;
+        }
+
+        function renderTableBlock(tblLines, opts, cellOptsFactory) {
+            var headerCells = splitTableRow(tblLines[0]);
+            var sepCells = splitTableRow(tblLines[1]);
+            var aligns = [];
+            for (var a = 0; a < sepCells.length; a++) {
+                var sc = sepCells[a].trim();
+                if (/^:-+:?$/.test(sc)) aligns.push("center");
+                else if (/^:-+$/.test(sc)) aligns.push("left");
+                else if (/^-+:$/.test(sc)) aligns.push("right");
+                else aligns.push("");
+            }
+            var colCount = headerCells.length;
+            var cellOpts = cellOptsFactory(opts, false);
+
+            var thead = "<thead><tr>";
+            for (var h = 0; h < headerCells.length; h++) {
+                var ha = aligns[h] ? ' style="text-align:' + aligns[h] + '"' : "";
+                thead += "<th" + ha + ">" + renderCell(headerCells[h], cellOpts) + "</th>";
+            }
+            thead += "</tr></thead>";
+
+            var tbody = "<tbody>";
+            for (var r = 2; r < tblLines.length; r++) {
+                var cells = splitTableRow(tblLines[r]);
+                if (cells.length < colCount) {
+                    while (cells.length < colCount) cells.push("");
+                } else if (cells.length > colCount) {
+                    cells = cells.slice(0, colCount);
+                }
+                tbody += "<tr>";
+                for (var cc = 0; cc < colCount; cc++) {
+                    var ca = aligns[cc] ? ' style="text-align:' + aligns[cc] + '"' : "";
+                    tbody += "<td" + ca + ">" + renderCell(cells[cc], cellOpts) + "</td>";
+                }
+                tbody += "</tr>";
+            }
+            tbody += "</tbody>";
+            return "<table>\n" + thead + "\n" + tbody + "</table>";
+        }
+
+        var tablePlaceholders = [];
+        var tpid = 0;
+        var lines = markdown.split("\n");
+        var out = [];
+        var k = 0;
+        while (k < lines.length) {
+            if (detectTableStart(lines, k)) {
+                var tblLines = [lines[k], lines[k + 1]];
+                // GFM 表格（表头以 | 开头）要求数据行也以 | 开头；
+                // nptable（表头不以 | 开头）数据行只需包含 |。
+                // 与 marked 规则保持一致：空行或不符合行格式的行即结束表格。
+                var hasLeadingPipe = /^\s*\|/.test(tblLines[0]);
+                var m = k + 2;
+                while (m < lines.length) {
+                    var dataLine = lines[m];
+                    if (dataLine.trim() === "") break;
+                    if (hasLeadingPipe) {
+                        if (!/^\s*\|/.test(dataLine)) break;
+                    } else {
+                        if (dataLine.indexOf("|") === -1) break;
+                    }
+                    tblLines.push(dataLine);
+                    m++;
+                }
+                var tableHtml = renderTableBlock(tblLines, options, createMarkedOptions);
+                var phId = "xf_editor-tbl-" + (++tpid);
+                tablePlaceholders.push({ id: phId, html: tableHtml });
+                out.push("<!--" + phId + "-->");
+                k = m;
+            } else {
+                out.push(lines[k]);
+                k++;
+            }
+        }
+
+        return { markdown: out.join("\n"), placeholders: tablePlaceholders };
+    };
+
+    /**
      * Preprocess markdown to extract custom block-level syntax (tabs, columns, align)
      * before passing to marked. This prevents conflicts with fenced code blocks.
      */
@@ -13564,6 +13815,18 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         // 在处理块级语法之前先保护代码区域
         var codeProtection = protectCodeBlocks(markdown);
         markdown = codeProtection.text;
+
+        // ★ v2.0.0: 表格嵌套语法增强
+        // 在 marked 解析前接管表格渲染，逐单元格调用完整内联管线（公式 / 拼音 / 对齐 / atLink + 标准内联），
+        // 并保护单元格内的竖线（代码、公式 $..$ / $$..$$、拼音 {..|..}、转义 \|），
+        // 避免 marked 原生按竖线分列时破坏表格结构、且单元格内无法嵌套语法的问题。
+        var xfTblResult = xfEditor._processTables(markdown, options, codeProtection, createMarkedOptions);
+        markdown = xfTblResult.markdown;
+        if (xfTblResult.placeholders && xfTblResult.placeholders.length) {
+            for (var _xfTblI = 0; _xfTblI < xfTblResult.placeholders.length; _xfTblI++) {
+                placeholders.push(xfTblResult.placeholders[_xfTblI]);
+            }
+        }
 
         /**
          * 在文本中查找所有平衡块（支持嵌套）
@@ -15761,7 +16024,22 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         markedRenderer.tablecell = function(content, flags) {
             var type = (flags.header) ? "th" : "td";
             var tag  = (flags.align)  ? "<" + type +" style=\"text-align:" + flags.align + "\">" : "<" + type + ">";
-            
+
+            // ★ v2.0.0: 单元格内联语法补全 —— 与 paragraph 渲染器对齐，支持公式($..$ / $$..$$)渲染。
+            // 注：接管表格渲染后(xfEditor._processTables)单元格已逐格走完整内联管线，
+            // 此处作为兜底，确保任何未走接管路径的表格（如直接 marked 调用）也能渲染公式。
+            if (settings.tex) {
+                var restoreTeXBreaks = function(texText) {
+                    return texText.replace(/<br\s*\/?>\s*/gi, " ");
+                };
+                content = content.replace(/\$\$([^$]+?)\$\$/g, function(match, c) {
+                    return '<span class="' + xfEditor.classNames.tex + '" style="display:block;text-align:center;">' + restoreTeXBreaks(c.trim()) + '</span>';
+                });
+                content = content.replace(/\$(?!\$)([^$]+?)\$(?!\$)/g, function(match, c) {
+                    return '<span class="' + xfEditor.classNames.tex + '">' + restoreTeXBreaks(c) + '</span>';
+                });
+            }
+
             return tag + this.postProcessInline(this.atLink(content)) + "</" + type + ">\n";
         };
 

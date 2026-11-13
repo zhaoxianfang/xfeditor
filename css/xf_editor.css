@@ -1846,8 +1846,8 @@
 .xf_editor-logo-7x:before,
 .xf_editor-logo-8x:before {
   content: "󡦇";
-  /* 
-  HTML Entity &#xe1987; 
+  /*
+  HTML Entity &#xe1987;
   example: <span class="xf_editor-logo">&#xe1987;</span>
   */
 }
@@ -5046,7 +5046,7 @@
   position: relative;
   border: 1px solid #30363d;
   background: #0d1117;
-  padding: 44px 20px 20px 20px;
+  padding: 44px 20px 4px 20px;
   margin-bottom: 20px;
   margin-top: 20px;
   overflow: hidden;

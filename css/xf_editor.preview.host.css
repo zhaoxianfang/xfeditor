@@ -1,0 +1,153 @@
+@charset "UTF-8";
+
+/* ==========================================================================
+ * xfEditor · 纯预览「宿主样式防御加强层」(Host Isolation Boost)
+ * --------------------------------------------------------------------------
+ * 归属：public/static/libs/xfeditor/css/ —— 属于编辑器自身样式资产，
+ *       由集成方（如在线文档 Docs 模块）在宿主全局样式**之后**显式引入。
+ *
+ * 【为什么需要本层】
+ *   xf_editor.preview(.min).css 的基础排版来自 github-markdown，它只显式声明
+ *   「编辑器设计值」（字号、行距、颜色、边框等），大量属性依赖浏览器默认值；
+ *   一旦预览区被嵌入第三方业务页面，宿主的全局复位就会反向渗透：
+ *     · * , *::before, *::after { box-sizing:border-box; margin:0; padding:0 }
+ *     · ul { list-style:none }                       —— 列表项目符号消失
+ *     · img { display:block }                        —— 行内图片被撑成独占一行
+ *     · h1,h2,h3,h4 { text-wrap:balance }            —— 标题被强制平衡折行
+ *     · p,li,dd,blockquote { text-wrap:pretty }      —— 段落被强制美化折行
+ *     · code,kbd,pre,samp { font-variant-ligatures:none }
+ *     · a { color:inherit; text-decoration:none; transition:... }
+ *     · button { font-family:inherit; font-size:inherit; ... }
+ *   这些属性 preview.css 大多**没有声明**，因此无论 preview.css 加载多早/多晚，
+ *   宿主规则都会生效，导致「同一份 Markdown 在独立预览页与业务页效果不一致」。
+ *
+ * 【为什么不能改 preview.css 里已有的两层防御规则】
+ *   preview.css 中有一组形如
+ *     .xf_editor-html-preview .markdown-body ul { list-style-type:disc!important }
+ *   的规则，它要求「外层 .xf_editor-html-preview > 内层 .markdown-body」两层 DOM。
+ *   而 xfEditor.markdownToHTML() 的纯预览契约是**同一个元素**同时带
+ *     .xf_editor .markdown-body .xf_editor-html-preview
+ *   （见 xf_editor.js: div.addClass("xf_editor markdown-body " + classPrefix + "html-preview")），
+ *   这组规则永远不命中；且它们把 h1 定为 2em/600、p 定为 1.7 行距，与纯预览模式
+ *   由 github-markdown 产生的设计值并不相同，直接单层化反而会破坏预览效果。
+ *   因此本层**不复刻那组规则**，只补齐「宿主污染、preview 未声明」的默认值。
+ *
+ * 【特指度约定】
+ *   · 统一以 .xf_editor.markdown-body 为作用域，绝不出现裸元素 / 通配 / :root 规则，
+ *     因此不会影响宿主的顶栏、侧栏、页脚等 chrome；
+ *   · 后代部分尽量使用 :where() 降低特指度，保证 preview.css 中嵌套列表
+ *     (lower-roman / lower-alpha)、任务列表、自动目录、代码块行号等
+ *     特指度更高的规则仍然优先；
+ *   · 不使用 !important，保留集成方覆盖能力；靠「作用域 + 最后加载」取胜。
+ *
+ * 【加载顺序（重要）】
+ *   本文件必须在宿主全局 CSS 之后加载，否则宿主的裸元素规则仍会抢先。
+ *   推荐集成方式：宿主布局提供 head 末尾的扩展点，依次引入
+ *     1) xf_editor.preview.min.css    （编辑器设计样式）
+ *     2) xf_editor.preview.host.min.css（本层，最终裁决）
+ *
+ * 【维护约定】
+ *   只声明「宿主可能污染」的属性，禁止在此重新定义编辑器设计样式；
+ *   新增属性若需暗色差异，必须使用 [data-theme="dark"] 显式补充。
+ * ========================================================================== */
+
+/* --------------------------------------------------------------------------
+ * 1. 容器自持：纯预览容器不依赖宿主的字体 / 字号 / 颜色 / 盒模型继承
+ *    注：font-size、line-height、color、padding、background 等设计值由
+ *    preview.css 声明，此处不重复定义，避免与主题规则打架。
+ * -------------------------------------------------------------------------- */
+.xf_editor.markdown-body.xf_editor-html-preview,
+.xf_editor.markdown-body.xf_editor-preview-container {
+    box-sizing: border-box;
+    /* 与编辑器独立预览页 examples/full-preview.html 的容器留白一致：
+       该值原由 examples/css/style.css 的 `.xf_editor, .xf_editor-html-preview`
+       提供；宿主 `*{margin:0}` 会抹掉它，故在此显式归入编辑器侧样式。 */
+    margin: 0 auto 40px;
+    text-align: left;
+    text-wrap: wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* --------------------------------------------------------------------------
+ * 2. 盒模型：宿主 `*{box-sizing:border-box}` 会改变预览区内所有元素的尺寸计算，
+ *    与「无宿主复位」的独立预览页不一致。这里用 :where() 把整条规则的特指度
+ *    降为 0：既能压过宿主同样为 0 的通配复位（本层最后加载），又不会盖掉
+ *    preview.css 中任何显式的 box-sizing 声明（如 page-block / 纸张组件）。
+ * -------------------------------------------------------------------------- */
+:where(.xf_editor.markdown-body.xf_editor-html-preview *),
+:where(.xf_editor.markdown-body.xf_editor-html-preview *::before),
+:where(.xf_editor.markdown-body.xf_editor-html-preview *::after),
+:where(.xf_editor.markdown-body.xf_editor-preview-container *),
+:where(.xf_editor.markdown-body.xf_editor-preview-container *::before),
+:where(.xf_editor.markdown-body.xf_editor-preview-container *::after) {
+    box-sizing: content-box;
+}
+
+/* --------------------------------------------------------------------------
+ * 3. 列表项目符号：宿主 `ul{list-style:none}` 会让正文列表全部失去圆点。
+ *    只匹配「无 class 的普通列表」——自动目录(.markdown-toc-list)、标签页
+ *    (.xf_editor-tab-nav)、脚注列表、任务列表等带类容器继续由 preview.css 接管。
+ *    :where(:not([class])) 不增加特指度，嵌套列表的 lower-roman / lower-alpha
+ *    (0,2,2) 仍高于本规则 (0,2,1)，不会被误伤。
+ * -------------------------------------------------------------------------- */
+.xf_editor.markdown-body ul:where(:not([class])) {
+    list-style-type: disc;
+}
+.xf_editor.markdown-body ol:where(:not([class])) {
+    list-style-type: decimal;
+}
+.xf_editor.markdown-body li {
+    list-style-position: outside;
+}
+
+/* --------------------------------------------------------------------------
+ * 4. 媒体元素：宿主 `img{display:block}` 会把行内图片撑成独占一行的块级元素。
+ *    带 class 的编辑器专用图片（涂鸦、tooltip 预览、banner 等）仍由
+ *    preview.css 的 display:block 规则控制，本规则用 :not([class]) 主动让开。
+ * -------------------------------------------------------------------------- */
+.xf_editor.markdown-body img:where(:not([class])) {
+    display: inline;
+    vertical-align: middle;
+}
+
+/* --------------------------------------------------------------------------
+ * 5. 文本折行：宿主为标题设 text-wrap:balance、为正文设 text-wrap:pretty，
+ *    这两者都不属于 xfeditor 的预览排版，统一回落到浏览器默认 wrap。
+ * -------------------------------------------------------------------------- */
+.xf_editor.markdown-body :where(h1, h2, h3, h4, h5, h6, p, li, dd, blockquote) {
+    text-wrap: wrap;
+}
+
+/* --------------------------------------------------------------------------
+ * 6. 宿主平台注入元素的兜底清理（防御纵深）
+ *    某些文档平台会对全页 pre / 标题做二次增强，注入行号列、语言标签、锚点图标。
+ *    xfeditor 预览自带 linenums 行号、mac 头部、复制按钮与 header-link 锚点，
+ *    重复注入会造成「两套行号 / 两个锚点」并破坏 prettify 语法高亮 span。
+ *    正解是在平台侧跳过 .xf_editor 子树（见 docs_app.js），此处仅作兜底，
+ *    保证即使平台脚本为旧版本缓存也不会出现重复元素。
+ * -------------------------------------------------------------------------- */
+.xf_editor.markdown-body :where(.code-line-numbers, .code-lang-tag, .heading-anchor) {
+    display: none;
+}
+
+/* 宿主把 code 重写成 <span class="code-line"> 时会破坏语法高亮，
+   此处把字号 / 行高 / 颜色交还 preview.css，避免行与行之间忽大忽小。 */
+.xf_editor.markdown-body .code-line {
+    font-size: inherit;
+    line-height: inherit;
+    color: inherit;
+}
+
+/* --------------------------------------------------------------------------
+ * 7. 打印：预览区不继承宿主的打印复位
+ * -------------------------------------------------------------------------- */
+@media print {
+    .xf_editor.markdown-body.xf_editor-html-preview,
+    .xf_editor.markdown-body.xf_editor-preview-container {
+        background: transparent;
+        color: #000;
+    }
+}
