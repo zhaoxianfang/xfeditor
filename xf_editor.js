@@ -1777,11 +1777,17 @@
      */
     xfEditor.escapeHtml = function(str) {
         if (str == null || typeof str !== "string") return "";
+        // ★ v2.1.0-FIX: 同时转义 smartypants 产生的弯引号。
+        //   marked 的 smartypants 会把 ASCII " 转成弯引号 " "；若这里不转义，
+        //   后续 fixSmartypantsHTML() 把弯引号转回 ASCII " 时会在 HTML 属性中造成注入
+        //   （实测 # x" id="injected 可在 <a name="..."> 注入任意属性）。
         return str.replace(/&/g, "&amp;")
                   .replace(/</g, "&lt;")
                   .replace(/>/g, "&gt;")
                   .replace(/"/g, "&quot;")
-                  .replace(/'/g, "&#39;");
+                  .replace(/'/g, "&#39;")
+                  .replace(/[\u201c\u201d]/g, "&quot;")
+                  .replace(/[\u2018\u2019]/g, "&#39;");
     };
     
     // 别名：保持大写的 escapeHTML 与 escapeHtml 一致（历史代码中两处均有调用）
@@ -5245,7 +5251,15 @@
             for (var k = 0; k < colCount; k++) emptyCells.push(" ");
             var emptyRow = "|" + emptyCells.join("|") + "|";
 
-            lines.splice(insertLine, 0, emptyRow);
+            // ★ v2.1.0-FIX: 表头位置(hb=0)插入新行时，新行成为新表头，
+            //   必须在其后补一条分隔行，并把原表头降级为数据行；否则分隔行
+            //   被推到数据区，表格降级为段落。
+            if (hb === 0) {
+                var separator = lines[start + 1] || ("|" + emptyCells.map(function() { return "---"; }).join("|") + "|");
+                lines.splice(start, 0, emptyRow, separator);
+            } else {
+                lines.splice(insertLine, 0, emptyRow);
+            }
 
             this._writeBackMarkdown(lines, wrapper, start);
             this.settings.ontablechange.call(this, "add-row", hb, -1);
@@ -6571,12 +6585,32 @@
                 toBrowser        : ''
             }, options);
 
-            // ★ 规范化外部资源数组
-            if (typeof opts.externalStyles === 'string') { opts.externalStyles = [opts.externalStyles]; }
-            if (!Array.isArray(opts.externalStyles)) { opts.externalStyles = []; }
-            if (typeof opts.externalScripts === 'string') { opts.externalScripts = [opts.externalScripts]; }
-            if (!Array.isArray(opts.externalScripts)) { opts.externalScripts = []; }
-            if (typeof opts.customMeta !== 'object' || opts.customMeta === null) { opts.customMeta = {}; }
+            // ★ v2.1.0-FIX: 规范化外部资源数组，并对 URL 做协议白名单。
+            //   仅放行 http/https/协议相对//与根相对/路径；javascript:/data:/vbscript: 等
+            //   危险协议一律丢弃，避免 getHTML({wrap:true}) 导出的文档被注入可执行脚本。
+            var sanitizeAssetUrls = function(value) {
+                if (typeof value === 'string') { value = [value]; }
+                if (!Array.isArray(value)) { return []; }
+                var result = [];
+                for (var ui = 0; ui < value.length; ui++) {
+                    var url = value[ui];
+                    if (typeof url !== 'string') { continue; }
+                    var trimmed = url.trim();
+                    if (!trimmed) { continue; }
+                    // ★ v2.1.0-FIX: 浏览器解析 URL 时会剥离控制字符，
+                    //   "da\tta:" 会被还原为 "data:"。必须先删除所有控制字符再判定 scheme。
+                    var normalized = trimmed.replace(/[\u0000-\u0020\u007f]+/g, "").toLowerCase();
+                    if (/^(javascript|vbscript|data|blob|file|mocha|livescript):/.test(normalized)) { continue; }
+                    result.push(trimmed);
+                }
+                return result;
+            };
+            opts.externalStyles = sanitizeAssetUrls(opts.externalStyles);
+            opts.externalScripts = sanitizeAssetUrls(opts.externalScripts);
+            // ★ v2.1.0-FIX: 排除数组，避免 customMeta=['a'] 遍历出 "0" 索引 meta
+            if (typeof opts.customMeta !== 'object' || opts.customMeta === null || Array.isArray(opts.customMeta)) {
+                opts.customMeta = {};
+            }
 
             // ★ toBrowser（浏览器下载文件名）：为非空字符串时强制 wrap=true，确保导出的是「完整可保存文档」。
             //   （注意：布尔简写 getHTML(true/false) 仅控制 minify，不影响 wrap；如需完整文档请传对象 getHTML({wrap:true})）
@@ -6605,13 +6639,8 @@
             rawHTML = rawHTML || '';
             
             // 安全清理 HTML 中的内部初始化标记，确保独立使用时纯 JS 脚本可以重新初始化所有组件
-            rawHTML = rawHTML
-                .replace(/\sdata-tooltip-initialized="true"/g, '')
-                .replace(/\sdata-initialized="true"/g, '')
-                .replace(/\sdata-resize-bound="true"/g, '')
-                .replace(/\sdata-fc-initialized="true"/g, '')
-                .replace(/\sdata-sd-initialized="true"/g, '')
-                .replace(/\sdata-xfe-initialized="true"/g, '');
+            // ★ v2.1.0: 与 getPreviewedHTML 共用统一清理函数，避免两条导出路径行为不一致
+            rawHTML = xfEditor._cleanRuntimeMarkers(rawHTML);
             
             // ★ 文档级结构标签处理（关键：区分 wrap 两种形态）
             //   - wrap=false（默认，片段模式）：强制剥离 <html>/<head>/<body>/<meta> 等文档级标签，
@@ -6783,7 +6812,10 @@
                     .replace(/'(?:\\.|[^'\\])*'/g, stash)
                     .replace(/\/(?![*\/])(?:\\.|[^\n\/\\])+\/[gimuy]*/g, stash);
                 // 2) 移除注释（字符串/正则已保护；// 前排除冒号，避免误伤 http:// 协议）
-                js = js.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+                //    ★ v2.1.0-FIX: 块注释替换为单个空格而非空串。
+                //    若 `a()/*comment*/b()` 删除注释后变成 `a()b()`，会合并为非法 token；
+                //    保留一个空格可安全分隔两侧 token，同时不影响压缩效果。
+                js = js.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/.*$/gm, '$1');
                 // 3) ★ ASI 安全：保留换行，仅压缩行内空白、去缩进、删空行
                 js = js.split('\n').map(function(line) {
                     return line.replace(/^\s+/, '').replace(/\s+$/, '').replace(/\s+/g, ' ');
@@ -6803,13 +6835,18 @@
             
             var minifyHTML = function(h) {
                 var parts = [];
-                h = h.replace(/<(pre|textarea|script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, function(m) {
+                var stash = function(m) {
                     parts.push(m);
                     return '\x00HTML' + (parts.length - 1) + '\x00';
-                });
+                };
+                // ★ v2.1.0-FIX: 先保护 pre/textarea/script/style 整块，再保护所有带引号的
+                //   属性值。历史实现对全文做 \s+ → ' '，会把 title="hello  world" 压缩成
+                //   title="hello world"（破坏内容语义）或把换行压进属性导致解析异常。
+                h = h.replace(/<(pre|textarea|script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, stash);
+                h = h.replace(/="[^"]*"/g, stash).replace(/='[^']*'/g, stash);
                 h = h.replace(/\s+/g, ' ').replace(/>\s+</g, '><').trim();
                 h = h.replace(/\x00HTML(\d+)\x00/g, function(_, idx) {
-                    return parts[parseInt(idx, 10)];
+                    return parts[parseInt(idx, 10)] || '';
                 });
                 return h;
             };
@@ -6883,7 +6920,9 @@
 
                 var mk;
                 for (mk in opts.customMeta) {
-                    if (opts.customMeta.hasOwnProperty(mk)) {
+                    // ★ v2.1.0-FIX: 用 Object.prototype.hasOwnProperty.call，兼容
+                    //   Object.create(null) 等无原型对象，避免 hasOwnProperty is not a function
+                    if (Object.prototype.hasOwnProperty.call(opts.customMeta, mk)) {
                         html += sp + '<meta name="' + escapeAttr(mk) + '" content="' + escapeAttr(opts.customMeta[mk]) + '">' + nl;
                     }
                 }
@@ -6917,7 +6956,11 @@
                     if (typeof document !== 'undefined' && document.createElement && typeof Blob !== 'undefined' && typeof URL !== 'undefined') {
                         var _rawName = String(opts.toBrowser).trim();
                         var _dlName = _rawName;
-                        if (_dlName.toLowerCase().indexOf('.html') < 0 && _dlName.toLowerCase().indexOf('.htm') < 0) {
+                        // ★ v2.1.0-FIX: 只按【结尾】判断扩展名。历史用 indexOf，
+                        //   "my.html.notes" 这类文件名会被误认为已有 .html 后缀而不补，
+                        //   导致下载文件无网页扩展名。
+                        var _lowerName = _dlName.toLowerCase();
+                        if (!/\.html?$/.test(_lowerName)) {
                             _dlName += '.html';
                         }
                         var _blob = new Blob([finalHTML], { type: 'text/html;charset=utf-8' });
@@ -8156,8 +8199,20 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 includeScripts : false,
                 wrap           : false,
                 title          : 'xfEditor Preview',
-                theme          : ''
+                theme          : '',
+                // ★ v2.1.0: 与 getHTML 的文档头能力对齐，wrap=true 时可定制
+                lang           : 'zh-CN',
+                charset        : 'UTF-8',
+                description    : '',
+                keywords       : '',
+                author         : '',
+                customMeta     : {}
             }, options || {});
+
+            // ★ v2.1.0-FIX: 类型防御。customMeta 非对象或数组时归零，避免 for-in 遍历异常。
+            if (typeof opts.customMeta !== 'object' || opts.customMeta === null || Array.isArray(opts.customMeta)) {
+                opts.customMeta = {};
+            }
 
             if (opts.rawMarkdown) {
                 return this.getMarkdown();
@@ -8187,24 +8242,18 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
 
             rawHTML = rawHTML || "";
 
-            // 默认路径：直接返回预览区原始 HTML，不做任何包裹（严格向后兼容）
-            // ★ 只有当「未开启任何增强项」时才走原始返回；一旦显式指定 theme 也算增强。
+            // ★ v2.1.0: 统一清理编辑器运行时内部标记（两条路径共用，避免行为不一致）。
+            //   这些属性仅用于编辑器内部状态，导出后既无意义又暴露实现细节。
+            rawHTML = xfEditor._cleanRuntimeMarkers(rawHTML);
+
+            // 默认路径：返回清理后的预览 HTML，不做任何包裹（严格向后兼容片段语义）
+            // ★ 只有当「未开启任何增强项」时才走此路径；一旦显式指定 theme 也算增强。
             if (!opts.includeStyles && !opts.includeScripts && !opts.wrap && !opts.theme) {
                 return rawHTML;
             }
 
             // === 自包含增强模式 ===
-            // 清理由编辑器运行时写入的「已初始化」标记，确保独立页面中的脚本会重新绑定事件；
-            // 这是保证 Tabs / Tooltip / 代码复制 等交互在导出/独立使用时仍然可用的关键。
-            rawHTML = rawHTML
-                .replace(/\sdata-tooltip-initialized="true"/g, '')
-                .replace(/\sdata-initialized="true"/g, '')
-                .replace(/\sdata-resize-bound="true"/g, '')
-                .replace(/\sdata-fc-initialized="true"/g, '')
-                .replace(/\sdata-sd-initialized="true"/g, '')
-                .replace(/\sdata-xfe-initialized="true"/g, '')
-                .replace(/\sdata-_copyBtnReady="true"/g, '')
-                .replace(/\sdata-_originalCode="[^"]*"/g, '');
+            // 清理已在上文统一完成；这里继续组装内联样式 / 脚本 / 文档骨架。
 
             var featureFlags = (opts.includeStyles || opts.includeScripts)
                 ? (this._detectFeatures ? this._detectFeatures(rawHTML) : {})
@@ -8231,12 +8280,28 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             }
 
             // 完整文档模式：内联样式进 head、脚本置于 body 末尾
+            // ★ v2.1.0: lang/charset/title/description/keywords/author/customMeta 全部可定制，
+            //   与 getHTML 的 wrap 行为保持一致；所有值统一 escapeAttr 转义防属性注入。
             var head = '<!DOCTYPE html>' + nl
-                + '<html lang="zh-CN"' + (isDark ? ' data-theme="dark"' : '') + '>' + nl
+                + '<html lang="' + xfEditor.escapeAttr(opts.lang) + '"' + (isDark ? ' data-theme="dark"' : '') + '>' + nl
                 + '<head>' + nl
-                + '  <meta charset="UTF-8">' + nl
+                + '  <meta charset="' + xfEditor.escapeAttr(opts.charset) + '">' + nl
                 + '  <meta name="viewport" content="width=device-width, initial-scale=1.0">' + nl
                 + '  <title>' + xfEditor.escapeHtml(opts.title) + '</title>' + nl;
+            if (opts.description) {
+                head += '  <meta name="description" content="' + xfEditor.escapeAttr(opts.description) + '">' + nl;
+            }
+            if (opts.keywords) {
+                head += '  <meta name="keywords" content="' + xfEditor.escapeAttr(opts.keywords) + '">' + nl;
+            }
+            if (opts.author) {
+                head += '  <meta name="author" content="' + xfEditor.escapeAttr(opts.author) + '">' + nl;
+            }
+            for (var metaKey in opts.customMeta) {
+                if (Object.prototype.hasOwnProperty.call(opts.customMeta, metaKey)) {
+                    head += '  <meta name="' + xfEditor.escapeAttr(metaKey) + '" content="' + xfEditor.escapeAttr(opts.customMeta[metaKey]) + '">' + nl;
+                }
+            }
             if (opts.includeStyles) {
                 var cssFull = this._getCoreStyles ? this._getCoreStyles(rawHTML, featureFlags) : '';
                 if (cssFull) { head += '  <style>' + nl + cssFull + nl + '</style>' + nl; }
@@ -13662,9 +13727,13 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         
         var placeholders = [];
         var placeholderId = 0;
+        // ★ v2.1.0-FIX: 每次渲染生成随机 nonce，使占位符 id 不可预测。
+        //   历史实现 id 固定为 xf_editor-ph-1/2/3...，用户正文中手写同样的注释
+        //   会被 restorePlaceholders 误当作占位符还原，造成内容重复/错乱。
+        var placeholderNonce = "r" + Math.random().toString(36).slice(2, 10);
 
         function addPlaceholder(html) {
-            var id = "xf_editor-ph-" + (++placeholderId);
+            var id = "xf_editor-ph-" + placeholderNonce + "-" + (++placeholderId);
             placeholders.push({ id: id, html: html });
             return "<!--" + id + "-->";
         }
@@ -14180,7 +14249,10 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                         }
                         break;
                     case 'tabsClose':
-                        if (tabContextDepth === 0) {
+                        // ★ v2.1.0-FIX: 防止孤立闭合标签使 tabsDepth 变为负数——
+                        //   负深度会让后续所有 [[tabs]] 的 tabsDepth 永远无法回到 0，
+                        //   导致整个文档剩余的 tabs 块全部无法闭合、丢失渲染。
+                        if (tabContextDepth === 0 && tabsDepth > 0) {
                             tabsDepth--;
                             if (tabsDepth === 0 && currentStart >= 0) {
                                 blocks.push({
@@ -14964,8 +15036,10 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                         if (!url || url.length > 2000) continue;
                         
                         var name = parts[1] ? parts[1].trim() : url.split("/").pop();
-                        var ext = url.split(".").pop().toLowerCase();
-                        fresultHtml += '<a href="' + url.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;") + '" download class="xf_editor-attachment-link" data-ext="' + ext + '">' + name.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;") + '</a>';
+                        // ★ v2.1.0-FIX: data-ext 来自用户可控 URL，必须转义，否则
+                        //   a." onpointerover="alert(1) 这类输入可注入任意属性形成 XSS。
+                        var ext = url.split(".").pop().toLowerCase().replace(/[^a-z0-9]/g, "");
+                        fresultHtml += '<a href="' + url.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;") + '" download class="xf_editor-attachment-link" data-ext="' + xfEditor.escapeAttr(ext) + '">' + name.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;") + '</a>';
                         
                         // 安全限制：最多支持 100 个文件
                         if (i >= 99) {
@@ -15273,7 +15347,8 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         // 保留多轮处理以正确还原嵌套占位符（外层 html 可能包含内层占位符标记），
         // 但每轮改用单次正则替换（替代原先「每个占位符一次完整 split/join 字符串拷贝」），
         // 大幅减少对大文档的全串遍历开销。最多 10 轮确保收敛。
-        var markerRegex = /<!--xf_editor-[a-z]+-[0-9]+-->/g;
+        // ★ v2.1.0: 兼容带随机 nonce 的新格式（xf_editor-ph-rXXXX-1）与历史格式（xf_editor-ph-1）
+        var markerRegex = /<!--xf_editor-[a-z]+-(?:[a-z0-9]+-)?[0-9]+-->/g;
         var maxRounds = 10;
         while (maxRounds-- > 0) {
             var anyFound = false;
@@ -15624,63 +15699,89 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             if (href && videoExts.test(href)) {
                 var videoOut = '<video src="' + safeHref + '" controls preload="metadata" class="xf_editor-video-player"';
                 if (title) videoOut += ' title="' + xfEditor.escapeAttr(title) + '"';
-                videoOut += '>' + text + '</video>';
+                // ★ v2.1.0-FIX: 与 image 视频分支一致，text 必须转义后再放入 <video>
+                videoOut += '>' + xfEditor.escapeHtml(text || "") + '</video>';
                 return videoOut;
             }
             
+            // ★ v2.1.0-FIX: 普通 Markdown 链接一律表示网页跳转，禁止隐式添加 download 属性。
+            //   历史实现把「非图片扩展名」的链接都当成附件下载，导致
+            //   [核心概念](http://demo.com/docs/7/369) 渲染成点击即下载的 <a download>。
+            //   真正的附件下载请使用 [[file]]url|名称[[/file]] 块语法，
+            //   或在 title 中显式声明 [文本](url "download")。
             var out = "<a href=\"" + safeHref + "\"";
-            
-            if (href && !imageExts.test(href)) {
-                out += ' download class="xf_editor-attachment-link"';
-            }
-            
+
             // 重置 atLinkReg 的 lastIndex，避免全局正则的状态残留
             atLinkReg.lastIndex = 0;
             var titleHasAt = atLinkReg.test(title || "");
             atLinkReg.lastIndex = 0;
             var textHasAt = atLinkReg.test(text || "");
             atLinkReg.lastIndex = 0;
-            
-            if (titleHasAt || textHasAt)
-            {
-                if (title)
-                {
-                    out += " title=\"" + xfEditor.escapeAttr(title).replace(/@/g, "&#64;");
-                }
-                
-                return out + "\">" + text.replace(/@/g, "&#64;") + "</a>";
-            }
 
-            // ★ v2.0.0: 解析 title 中的 target 指令
-            var linkTarget = "_blank";  // 默认新窗口打开
-            var linkRel    = "noopener noreferrer";
-            var linkTitle  = title || "";
-            
+            // 解析 title 指令：target=_blank|_self|_parent|_top、download[:文件名]
+            var linkTarget     = "_blank";
+            var linkRel        = "noopener noreferrer";
+            var linkTitle      = title || "";
+            var linkDownload   = "";
+            var isDownloadLink = false;
+
             if (linkTitle) {
                 var targetMatch = linkTitle.match(/^target=(_blank|_self|_parent|_top)$/i);
                 if (targetMatch) {
                     linkTarget = targetMatch[1].toLowerCase();
-                    linkTitle = ""; // 清空 title，这是 target 指令不是真正的 title
+                    linkTitle = ""; // 这是 target 指令，不是真正的 title
                     if (linkTarget === "_self") {
-                        linkRel = ""; // 当前页面不需要 noopener
+                        linkRel = ""; // 当前页面打开不需要 noopener
+                    }
+                } else {
+                    var downloadMatch = linkTitle.match(/^download(?::([^\x00-\x1f"<>]*))?$/i);
+                    if (downloadMatch) {
+                        isDownloadLink = true;
+                        linkDownload = (downloadMatch[1] || "").trim();
+                        linkTitle = ""; // 这是 download 指令，不是真正的 title
                     }
                 }
             }
-            
+
             if (linkTitle) {
-                out += " title=\"" + xfEditor.escapeAttr(linkTitle) + "\"";
+                var safeLinkTitle = xfEditor.escapeAttr(linkTitle);
+                out += " title=\"" + (titleHasAt ? safeLinkTitle.replace(/@/g, "&#64;") : safeLinkTitle) + "\"";
             }
-            
+
+            // 仅显式 download 指令才添加 download 属性与附件样式类
+            if (isDownloadLink) {
+                out += " download" + (linkDownload ? "=\"" + xfEditor.escapeAttr(linkDownload) + "\"" : "");
+                out += " class=\"xf_editor-attachment-link\"";
+            }
+
             out += " target=\"" + linkTarget + "\"";
             if (linkRel) {
                 out += " rel=\"" + linkRel + "\"";
             }
-            out += ">" + text + "</a>";
+
+            // @ 符号转义保留，但不再提前 return，确保 target / rel / download 属性不丢失
+            var linkText = (text == null) ? "" : String(text);
+            if (titleHasAt || textHasAt) {
+                linkText = linkText.replace(/@/g, "&#64;");
+            }
+            out += ">" + linkText + "</a>";
 
             return out;
         };
         
         markedRenderer.image = function(href, title, text) {
+            // ★ v2.1.0-FIX: 与 link 渲染器保持一致，先拦截危险协议。
+            //   历史实现缺少协议校验，![x](javascript:alert(1)) 会输出可执行的 <img src="javascript:...">。
+            //   注意：data:image/(png|jpeg|gif|webp|bmp);base64 是涂鸦/离线图片的核心能力，必须放行；
+            //   但 data:image/svg+xml、data:text/html 可承载脚本，必须拦截。
+            if (href) {
+                var imgHrefTrimmed = String(href).trim();
+                if (/^\s*(javascript|vbscript):/i.test(imgHrefTrimmed)
+                    || (/^data:/i.test(imgHrefTrimmed) && !/^data:image\/(png|jpeg|jpg|gif|webp|bmp);base64,/i.test(imgHrefTrimmed))) {
+                    return xfEditor.escapeHtml(text || href || "");
+                }
+            }
+
             // ★ v2.0.0: 对所有用户提供的属性值进行 HTML 属性转义，防止 XSS 属性注入攻击
             var safeHref  = xfEditor.escapeAttr(href || "");
             var safeText  = xfEditor.escapeAttr(text || "");
@@ -15792,11 +15893,20 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
 
             markdownToC.push(toc);
             
-            var headingHTML = "<h" + level + " id=\"h"+ level + "-" + this.options.headerPrefix + id +"\">";
+            // ★ v2.1.0-FIX: 标题文本来自用户输入，写入 id/name 属性前必须转义，
+            //   否则 # x" id="injected 这类输入可注入任意属性（配合 on* 事件属性形成 XSS）。
+            var safePrefix = xfEditor.escapeAttr(String(this.options.headerPrefix || ""));
+            var safeId     = xfEditor.escapeAttr(String(id));
+            var safeToc    = xfEditor.escapeAttr(tocText);
+            var headingHTML = "<h" + level + " id=\"h" + level + "-" + safePrefix + safeId + "\">";
             
-            headingHTML    += "<a name=\"" + tocText + "\" class=\"reference-link\"></a>";
+            headingHTML    += "<a name=\"" + safeToc + "\" class=\"reference-link\"></a>";
             headingHTML    += "<span class=\"header-link octicon octicon-link\"></span>";
-            var displayText = (hasLinkReg.test(linkText)) ? this.atLink(linkText) : this.atLink(text);
+            // ★ v2.1.0-FIX: 标题含链接时，linkText 是拆解前的原始文本（可能含 <a href="...@foo">）。
+            //   直接整个传给 atLink 会让 /@([\w-]+)/ 匹配 URL 中的 @foo，把新 <a> 插进 href 属性内部，
+            //   破坏 HTML 结构。修复：含链接时跳过 atLink（链接文本已由 marked 的 link renderer 处理），
+            //   仅对纯文本标题调用 atLink。
+            var displayText = (hasLinkReg.test(linkText)) ? text : this.atLink(text);
             headingHTML    += this.postProcessInline(displayText);
             headingHTML    += "</h" + level + ">";
 
@@ -16149,6 +16259,31 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
     };
     
     /**
+     * 统一清理编辑器运行时写入的内部标记属性
+     *
+     * getHTML / getPreviewedHTML 共用，确保导出内容不含编辑器实现细节。
+     * 保留渲染所需的 class / style / data-tooltip（tooltip 内容）等，
+     * 仅移除「已初始化」标志、代码复制临时属性、同步滚动行号映射等内部状态。
+     *
+     * @param   {String}   html  预览区 HTML
+     * @returns {String}  清理后的 HTML
+     */
+    xfEditor._cleanRuntimeMarkers = function(html) {
+        if (typeof html !== 'string' || !html) { return html || ''; }
+        return html
+            .replace(/\sdata-tooltip-initialized="true"/g, '')
+            .replace(/\sdata-initialized="true"/g, '')
+            .replace(/\sdata-resize-bound="true"/g, '')
+            .replace(/\sdata-fc-initialized="true"/g, '')
+            .replace(/\sdata-sd-initialized="true"/g, '')
+            .replace(/\sdata-xfe-initialized="true"/g, '')
+            .replace(/\sdata-_copyBtnReady="true"/g, '')
+            .replace(/\sdata-_originalCode="[^"]*"/g, '')
+            .replace(/\sdata-sign="[^"]*"/g, '')
+            .replace(/\sdata-sign-count="[^"]*"/g, '');
+    };
+
+    /**
      * 简单地过滤指定的HTML标签
      * Filter custom html tags
      * 
@@ -16191,12 +16326,34 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             dangerousTags: ['script', 'style', 'iframe', 'frame', 'frameset', 'object', 'embed', 'applet', 'base', 'basefont', 'link', 'meta', 'noscript', 'template', 'form', 'textarea', 'button', 'select', 'option', 'optgroup', 'datalist', 'fieldset', 'label', 'legend', 'meter', 'output', 'progress', 'svg', 'math', 'foreignobject']
         };
         
-        // ★ v2.0.0-FIX: 保护 <pre> 和 <code> 块，防止代码示例中的 <script>/<style>/<iframe> 等标签被过滤误删
+        // ★ v2.1.0-FIX: 保护 <pre>/<code> 块，但【必须先净化块内内容】再保护。
+        //   历史实现把块内 HTML 原样暂存、在所有过滤之后还原，导致把 <script> 等
+        //   危险标签包进 <pre> 即可完全绕过全部 XSS 过滤（可直接执行脚本）。
+        //   现在先对块内容做定向净化：移除成对/单个危险标签、清除任意事件属性、
+        //   中和危险协议 URL；同时【保留】prettify 高亮用的 <span class="..."> 等安全标签，
+        //   避免破坏代码高亮。注意 marked 已把代码块中的 <script> 转义为 &lt;script&gt;，
+        //   这些是纯文本、不会被下面的正则误伤；只有真实注入的可执行标签才会被清除。
         var xssProtectedBlocks = [];
         var xssProtectId = 0;
-        html = html.replace(/(<(pre|code)\b[^>]*>)([\s\S]*?)(<\/\2>)/gi, function(match) {
-            var id = "xf_editor-xssp-" + (++xssProtectId);
-            xssProtectedBlocks.push({ id: id, html: match });
+        // ★ v2.1.0-FIX: 随机 nonce 使 xssp 占位符不可预测，防止用户正文手写
+        //   <!--xf_editor-xssp-1--> 被下方 split/join 误还原为伪造的代码块内容。
+        var xssProtectNonce = "x" + Math.random().toString(36).slice(2, 10);
+        var xssBlockDangerousTags = ['script', 'style', 'iframe', 'object', 'embed', 'applet', 'form', 'svg', 'math', 'template', 'frameset', 'portal', 'foreignobject'];
+        html = html.replace(/(<(pre|code)\b[^>]*>)([\s\S]*?)(<\/\2>)/gi, function(match, openTag, tagName, innerHtml, closeTag) {
+            var id = "xf_editor-xssp-" + xssProtectNonce + "-" + (++xssProtectId);
+            var safeInner = String(innerHtml);
+            // 1) 移除成对危险标签（含内容）
+            for (var dpi = 0; dpi < xssBlockDangerousTags.length; dpi++) {
+                var pairReg = new RegExp("<\\s*" + xssBlockDangerousTags[dpi] + "\\b[^>]*>[\\s\\S]*?<\\s*\\/\\s*" + xssBlockDangerousTags[dpi] + "\\s*>", "gi");
+                safeInner = safeInner.replace(pairReg, "");
+            }
+            // 2) 移除单个/自闭合危险标签
+            safeInner = safeInner.replace(/<\s*\/?\s*(?:script|style|iframe|object|embed|applet|form|svg|math|template|frameset|portal|foreignobject|link|meta|base)\b[^>]*>/gi, "");
+            // 3) 清除任意事件属性
+            safeInner = safeInner.replace(/\s+on[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "");
+            // 4) 中和危险协议 URL
+            safeInner = safeInner.replace(/(href|src)\s*=\s*["']?\s*(?:javascript|vbscript|data\s*:\s*text\/html|data\s*:\s*image\/svg)/gi, '$1="blocked"');
+            xssProtectedBlocks.push({ id: id, html: openTag + safeInner + closeTag });
             return "<!--" + id + "-->";
         });
         
@@ -16227,10 +16384,12 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             });
             // 移除 HTML 实体分号残留
             decoded = decoded.replace(/;/g, "");
-            // ★ 加固：解码后再次剔除控制字符（&#9; 等被解码为 tab 后需在检测前清除），再 trim 首尾空白。
-            //   浏览器会 trim URL 首部空白，攻击者可借 &#9;/空格/换行 绕过 scheme 检测（如 javascript:）
-            decoded = decoded.replace(/[\x00-\x1f\x7f]+/g, " ");
-            var sanitizedUrl = decoded.trim().toLowerCase();
+            // ★ v2.1.0-FIX: 解码后必须【删除】控制字符而非替换为空格。
+            //   浏览器解析 URL 时会剥离 scheme 内部/首尾的 tab、换行、空格：
+            //   javascr&#x09;ipt: → 浏览器实际执行 javascript:。若这里替换为空格则
+            //   javascr ipt: 不匹配 javascript:，危险 URL 原样写回造成绕过。
+            decoded = decoded.replace(/[\x00-\x1f\x7f\s]+/g, "");
+            var sanitizedUrl = decoded.toLowerCase();
             if (sanitizedUrl.indexOf("javascript:") === 0 || 
                 sanitizedUrl.indexOf("vbscript:") === 0 || 
                 sanitizedUrl.indexOf("data:text/html") === 0 ||
@@ -16252,6 +16411,12 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             var dAttrReg2 = new RegExp("\\s+" + dAttr + "\\s*=\\s*[^\\s>]*", "gi");
             html = html.replace(dAttrReg2, "");
         }
+
+        // ★ v2.1.0-FIX: 枚举黑名单无法穷尽所有事件属性（onpointerover / ontoggle /
+        //   onfocusin / onanimationcancel ... 层出不穷）。这里按 ^on[a-z]+ 通配兜底，
+        //   一次性移除任意事件处理器，彻底堵死事件属性 XSS 通道。
+        //   同时匹配带引号 / 不带引号 / 单引号三种属性值形式。
+        html = html.replace(/\s+on[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "");
         
         // 移除 style 属性中的 expression 和 behavior（IE 特有的 XSS 向量，始终执行）
         // ★ v2.1.0 加固：新增 url(javascript:)、url(data:text/html)、@import 等 CSS 载荷过滤。
@@ -16566,10 +16731,16 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 return;
             }
             
-            var tooltipType    = trigger.attr("data-tooltip-type") || "text";
+            // ★ v2.1.0-FIX: tooltipType 会被直接拼接进 className 与后续 HTML，必须限定枚举，
+            //   否则攻击者伪造 data-tooltip-type 可注入任意标签/属性（在 filterHTMLTags 之后的二次 sink）。
+            var rawTooltipType = trigger.attr("data-tooltip-type") || "text";
+            var tooltipType = /^(text|image|iframe|html|html-selector)$/.test(rawTooltipType) ? rawTooltipType : "text";
             var tooltipContent = trigger.attr("data-tooltip");
-            var tooltipWidth   = trigger.attr("data-tooltip-width") || "";
-            var tooltipHeight  = trigger.attr("data-tooltip-height") || "";
+            // ★ 宽高必须是纯数字，否则会注入 style/css 值
+            var rawTooltipWidth  = trigger.attr("data-tooltip-width") || "";
+            var rawTooltipHeight = trigger.attr("data-tooltip-height") || "";
+            var tooltipWidth  = /^\d{1,4}$/.test(rawTooltipWidth) ? rawTooltipWidth : "";
+            var tooltipHeight = /^\d{1,4}$/.test(rawTooltipHeight) ? rawTooltipHeight : "";
             
             if (tooltipType === "html") {
                 tooltipContent = xfEditor.base64Decode(trigger.attr("data-tooltip-html") || "");
@@ -17753,7 +17924,11 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             saveTo        = div.find("textarea");
         }        
         
-        var markdownDoc   = (settings.markdown === "") ? saveTo.val() : settings.markdown; 
+        // ★ v2.1.0-FIX: 安全字符串化。saveTo.val() 在空 textarea 时可能返回 null/undefined，
+        //   settings.markdown 也可能被显式传入 null；直接 new String(undefined) 会得到
+        //   "undefined" 文本并被渲染进正文。统一归一为字符串，空值即空文档。
+        var rawMarkdownDoc = (settings.markdown === "" || settings.markdown == null) ? saveTo.val() : settings.markdown;
+        var markdownDoc = (rawMarkdownDoc == null) ? "" : String(rawMarkdownDoc);
         var markdownToC   = [];
 
         // ★ 使用统一的 rendererOptions 构造函数和渲染管线
@@ -17774,13 +17949,17 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             smartypants : true
         };
         
-        markdownDoc = new String(markdownDoc);
+        // markdownDoc 已在上方归一为字符串，这里保持字符串形态交给渲染管线
         var markdownParsed = xfEditor._renderMarkdownPipeline(markdownDoc, markedOptions, rendererOptions, settings);
         
-        if (settings.markdownSourceCode) {
-            saveTo.text(markdownDoc);
-        } else {
-            saveTo.remove();
+        // ★ v2.1.0-FIX: 重复调用同一容器时必须先清空旧渲染结果，否则内容累积。
+        //   保存源文本 textarea 引用与值，清空后按需恢复，保证幂等性。
+        var saveSourceOn = !!settings.markdownSourceCode && saveTo.length > 0;
+        var savedSourceText = saveSourceOn ? saveTo.val() : "";
+        div.empty();
+        if (saveSourceOn) {
+            div.append("<textarea></textarea>");
+            div.find("textarea").val(savedSourceText == null ? "" : savedSourceText);
         }
         
         div.addClass("xf_editor markdown-body " + this.classPrefix + "html-preview").append(markdownParsed);
