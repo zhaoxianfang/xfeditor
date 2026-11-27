@@ -3,7 +3,7 @@
 <head>
     <link rel="shortcut icon" href="../images/favicon.ico" type="image/x-icon">
     <meta charset="utf-8" />
-    <title>xfEditor v2.0.0 — Examples</title>
+    <title>xfEditor v2.1.0 — Examples</title>
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="../css/xf_editor.min.css" />
     <style>
@@ -275,18 +275,17 @@
         <div class="logo-wrap"><img class="xf_editor-logo-img" src="../images/logo.png" alt="xfEditor Logo" /></div>
         <h1>xfEditor Examples</h1>
         <p class="subtitle">更适合教育、教学、网页演示、数据呈现、内容排版的现代化 Markdown 在线编辑器</p>
-        <p class="version">v2.0.0 — 全面优化：AMD/Require.js 加载链路修复、tooltip 单引号编码破图修复、预览包去重、示例页零 jQuery 依赖</p>
+        <p class="version">v2.1.0 — 实时双向同步滚动、零兼容零别名、安全加固与性能提升</p>
         <div class="stats-bar">
             <div class="stat-item"><span class="stat-icon">📁</span><span class="stat-num" id="total-count">-</span>Example Demos</div>
-            <div class="stat-item"><span class="stat-icon">✨</span><span class="stat-num" id="new-count">-</span>v2.0.0 新特性</div>
+            <div class="stat-item"><span class="stat-icon">✨</span><span class="stat-num" id="new-count">-</span>v2.1.0 新特性</div>
             <div class="stat-item"><span class="stat-icon">🧩</span><span class="stat-num" id="syntax-count">-</span>扩展语法</div>
             <div class="stat-item"><span class="stat-icon">🛠</span><span class="stat-num" id="custom-count">-</span>自定义扩展</div>
         </div>
         <div class="nav-wrap">
             <a href="#start">快速上手</a>
             <a href="#all-features">全部功能</a>
-            <a href="#v179">v2.0.0</a>
-            <a href="#v170">v1.7.0</a>
+            <a href="#v179">v2.1.0</a>
             <a href="#markdown">扩展语法</a>
             <a href="#customs">自定义扩展</a>
             <a href="#upload">文件上传</a>
@@ -307,12 +306,7 @@
         <h2 class="category"><span class="cat-title"><span>⚡</span><a name="start"></a>快速上手 Getting Started<span class="cat-count">8</span></span><a href="#top">TOP ↑</a></h2>
         <ul class="example-list">
             <li><a href="./simple.html">最简示例 <span>Simple example — 最快上手的入门演示</span></a></li>
-            <li><a href="./use-requirejs.html">Require.js 加载 <span>Using Require.js (AMD)</span></a></li>
-            <li><a href="./use-seajs.html">Sea.js 加载 <span>Using Sea.js (CMD)</span></a></li>
-            <li><a href="./use-zepto.html">无外部 DOM 库（内置 micro-DOM） <span>Zero external DOM lib — built-in micro-DOM</span></a></li>
-            <li><a href="./jquery-test.html">jQuery 兼容性测试 <span>jQuery 3.7 兼容性验证，基础 API 功能测试</span></a></li>
             <li><a href="./dynamic-create-xfEditor.html">动态创建编辑器 <span>Dynamic create xfEditor</span></a></li>
-            <li><a href="./manually-load-modules.html">手动加载依赖模块 <span>Manually loading dependent modules</span></a></li>
             <li><a href="./form-get-value.html">表单取值与提交 <span>Get/Send Markdown via form POST</span></a></li>
         </ul>
         </div>
@@ -331,10 +325,10 @@
         </ul>
         </div>
 
-        <!-- ═══════════════ v2.0.0 全新功能 ═══════════════ -->
+        <!-- ═══════════════ v2.1.0 全新功能 ═══════════════ -->
         <div class="category-section" data-category="v179">
         <h2 class="category">
-            <span class="cat-title"><span>🌟</span><a name="v179"></a>v2.0.0 全新功能 <span class="badge badge-hot">LATEST</span><span class="cat-count">18</span></span>
+            <span class="cat-title"><span>🌟</span><a name="v179"></a>v2.1.0 全新功能 <span class="badge badge-hot">LATEST</span><span class="cat-count">18</span></span>
             <a href="#top">TOP ↑</a>
         </h2>
         <ul class="example-list">
@@ -343,7 +337,7 @@
             <li class="featured"><a href="./footnote.html"><strong>📌 脚注全面增强</strong> <span>🆕 [^name] 引用+定义，文末自动汇总；字帖/拼音格内引用，拼音中嵌入脚注标记；点击跳转+高亮动画</span></a></li>
             <li class="featured"><a href="./tooltip.html"><strong>🖱 Tooltip 增强</strong> <span>🆕 iframe 弹窗最大化⛶/关闭✕按钮 + 固定尺寸自动滚动条 + iframe:pre 类型 Blob URL 悬浮渲染</span></a></li>
             <li class="featured"><a href="./toc.html"><strong>📑 同步滚动修复</strong> <span>🔥 编辑区↔预览区双向同步滚动(Bug修复/data-sign格式/预览点击/键盘导航)；TOC 目录链接滚动容器修正</span></a></li>
-            <li><a href="./echarts.html"><strong>📊 树图主题自适应</strong> <span>v2.0.0：树图支持 light/dark 主题自动跟随，不再硬编码深色主题色</span></a></li>
+            <li><a href="./echarts.html"><strong>📊 树图主题自适应</strong> <span>v2.1.0：树图支持 light/dark 主题自动跟随，不再硬编码深色主题色</span></a></li>
             <li><a href="./code-attr.html"><strong>🎨 代码块属性扩展</strong> <span>```(.className) / ```(#idName) / ```(hidden) 组合支持</span></a></li>
             <li><a href="./table-fix.html"><strong>📊 表格空单元格修复</strong> <span>表格最后一列为空时单元格不再丢失，自动补全</span></a></li>
             <li><a href="./formula.html">📐 公式插入面板 <span>11 分类、100+LaTeX公式、Tab切换、一键插入</span></a></li>
@@ -356,21 +350,6 @@
             <li><a href="./image-upload.html">🖼️ 图片上传 <span>本地/远程图片插入、粘贴上传、尺寸编辑</span></a></li>
             <li><a href="./file-upload.html">📎 文件/视频上传 <span>附件上传格式白名单；视频上传尺寸控制+对齐</span></a></li>
             <li><a href="./canvas-graffiti.html">🖌️ 画布涂鸦 Canvas Graffiti <span>手绘画布：画笔/橡皮/撤销恢复 · 缩放不丢内容 · 拖拽自动加宽加高 · 保存智能裁剪 + JPEG 压缩 · 弹窗最大化</span></a></li>
-        </ul>
-        </div>
-
-        <!-- ═══════════════ v1.7.0 增强功能 ═══════════════ -->
-        <div class="category-section" data-category="v170">
-        <h2 class="category">
-            <span class="cat-title"><span>🔧</span><a name="v170"></a>v1.7.0 增强功能<span class="cat-count">5</span></span>
-            <a href="#top">TOP ↑</a>
-        </h2>
-        <ul class="example-list">
-            <li><a href="./pinyin.html">拼音标注语法 <span>{汉字 | pīn yīn} 注音标记</span></a></li>
-            <li><a href="./text-align.html">文本对齐语法 <span>Unicode 行内对齐: 居中/左/右/两端</span></a></li>
-            <li><a href="./table-edit.html">表格行列编辑 <span>Table row/col insert and delete</span></a></li>
-            <li><a href="./image-resize.html">图片尺寸编辑 <span>拖拽调整 + 精确尺寸输入</span></a></li>
-            <li><a href="./pinyin-reference.html">📖 拼音参照表 <span>声母/韵母/声调完整列表</span></a></li>
         </ul>
         </div>
 
@@ -409,7 +388,6 @@
             <li><a href="./change-mode.html">变身为代码编辑器 <span>Change to code editor mode</span></a></li>
             <li><a href="./readonly.html">只读模式 <span>Read only mode</span></a></li>
             <li><a href="./multi-xfEditor.html">多个编辑器并存 <span>Multi xfEditor instances</span></a></li>
-            <li><a href="./delay-renderer-preview.html">延迟渲染 <span>Delay renderer and preview</span></a></li>
             <li><a href="./external-use.html">外部使用工具栏 <span>External use of toolbar handlers</span></a></li>
             <li><a href="./resettings.html">动态重配置 <span>loaded resettings</span></a></li>
             <li><a href="./toolbar-auto-fixed.html">工具栏自动固定 <span>Toolbar auto-fixed position</span></a></li>
@@ -469,7 +447,7 @@
 
 <script>
 (function() {
-    // ── Zero-dependency helpers（本页为纯静态目录页，无需 jQuery）──
+    // ── Zero-dependency helpers（本页为纯静态目录页，无需外部库）──
     function qsa(sel, ctx) { return Array.prototype.slice.call((ctx || document).querySelectorAll(sel)); }
     function qs(sel, ctx)   { return (ctx || document).querySelector(sel); }
 

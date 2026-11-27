@@ -920,14 +920,14 @@
     box-shadow: 0 2px 4px rgba(255, 71, 87, 0.3);
 }
 /* ═══════════════ 文件 / 图片 / 视频上传「本地上传」按钮 ═══════════════ */
-.#{$prefix}file-upload {
+#{$prefix}file-upload {
     display: inline-flex;
     align-items: center;
     margin: 6px 0;
     clear: both;
 }
 
-.#{$prefix}file-btn {
+#{$prefix}file-btn {
     position: relative;
     display: inline-flex;
     align-items: center;
@@ -964,12 +964,12 @@
     }
 }
 
-.#{$prefix}file-btn-label {
+#{$prefix}file-btn-label {
     display: inline-block;
 }
 
 /* 真实文件输入：绝对定位覆盖整颗按钮，保证整按钮可点击，视觉不可见 */
-.#{$prefix}file-input-el {
+#{$prefix}file-input-el {
     position: absolute;
     left: 0;
     top: 0;
@@ -982,7 +982,7 @@
     font-size: 0;
 }
 
-.#{$prefix}logo-img {
+#{$prefix}logo-img {
     height: 48px;
     width: auto;
     border-radius: 8px;

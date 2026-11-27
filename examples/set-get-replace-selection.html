@@ -28,7 +28,7 @@
 ```javascript
 var testEditormd;
 
-$(function() {
+xfEditor.dom(function() {
     testEditormd = xfEditor("test-xfEditor", {
         width: "90%",
         height: 640,
@@ -36,27 +36,27 @@ $(function() {
     });
 });
 
-$("#btn1").click(function(){
+xfEditor.dom("#btn1").click(function(){
     testEditormd.setCursor({line:1, ch:2});
 });
 
-$("#btn2").click(function(){
+xfEditor.dom("#btn2").click(function(){
     console.log("getCursor =>", testEditormd.getCursor());
 });
 
-$("#btn3").click(function(){
+xfEditor.dom("#btn3").click(function(){
     testEditormd.setSelection({line:1, ch:0}, {line:5, ch:100});
 });
 
-$("#btn4").click(function(){
+xfEditor.dom("#btn4").click(function(){
     console.log("getSelection =>", testEditormd.getSelection());
 });
 
-$("#btn5").click(function(){
+xfEditor.dom("#btn5").click(function(){
     testEditormd.replaceSelection("$$$$$$$$$");
 });
 
-$("#btn6").click(function(){
+xfEditor.dom("#btn6").click(function(){
     testEditormd.insertValue("????");
 });
 ```

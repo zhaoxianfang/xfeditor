@@ -1,6 +1,6 @@
-# xfEditor 使用指南
+# xfEditor 使用指南 v2.1.0
 
-> xfEditor v2.0.0 完整使用手册
+> xfEditor v2.1.0 完整使用手册
 
 ---
 
@@ -62,23 +62,18 @@ xfEditor.markdownToHTML("preview-container", {
 });
 ```
 
-### 🚀 预览打包文件（推荐）
-
-v2.0.0 新增 `xf_editor.preview.min.js` 打包文件，合并了预览模式所有依赖：
+### 🚀 预览打包文件（推荐） `xf_editor.preview.min.js` 打包文件，合并了预览模式所有依赖：
 
 ```html
-<!-- 方式一：推荐 — 单个打包文件（1 个 HTTP 请求） -->
+<!-- 单个打包文件（1 个 HTTP 请求） -->
 <script src="xf_editor.preview.min.js"></script>
-
-<!-- 方式二：兼容旧模式 — 分别引入（10 个 HTTP 请求） -->
-<script src="lib/marked.min.js"></script>
-...
-<script src="xf_editor.min.js"></script>
 ```
 
 **打包文件包含：** marked + prettify + raphael + underscore + sequence-diagram + flowchart + echarts + xfEditor
 
-> 无需 jQuery：编辑器已内置零依赖 micro-DOM。
+> 内置 micro-DOM，无需外部库：编辑器已内置零依赖 micro-DOM。
+
+**构建产物**：v2.1.0 仅提供浏览器全局脚本（`xf_editor.js`、`xf_editor.min.js`、`xf_editor.preview.min.js`）。插件与语言包通过 `window.xfEditor` 注册，无需模块加载器。
 
 ---
 
@@ -90,7 +85,7 @@ v2.0.0 新增 `xf_editor.preview.min.js` 打包文件，合并了预览模式所
 |------|--------|------|
 | `width` | `"100%"` | 编辑器宽度 |
 | `height` | `"100%"` | 编辑器高度 |
-| `path` | `"lib/"` | 依赖库路径（CodeMirror、marked 等） |
+| `path` | `"./lib/"` | 依赖库路径（CodeMirror、marked 等） |
 | `pluginPath` | `"../plugins/"` | ★ 插件路径，工具栏弹窗（图片、视频、表格等）依赖此路径加载 |
 | `theme` | `""` | 编辑器整体主题 |
 | `editorTheme` | `"default"` | CodeMirror 编辑区主题 |
@@ -102,9 +97,9 @@ v2.0.0 新增 `xf_editor.preview.min.js` 打包文件，合并了预览模式所
 | 选项 | 默认值 | 说明 |
 |------|--------|------|
 | `watch` | `true` | 实时预览 |
-| `delay` | `80` | 解析延迟 (ms)，v1.16 起从 300ms 降至 80ms |
+| `delay` | `80` | 解析延迟 (ms)，从 300ms 降至 80ms |
 | `previewCodeHighlight` | `true` | 预览区代码高亮 |
-| `syncScroll` | `true` | 编辑区与预览区双向精准同步滚动 🆕v2.0.0（标题锚点文本验证配对+程序化滚动识别+预览交互防护+门控体系） |
+| `syncScroll` | `true` | 编辑区与预览区双向精准同步滚动（源码行号锚点 + 单调可逆映射 + 实时双向同步） |
 
 ### 扩展语法
 
@@ -113,7 +108,7 @@ v2.0.0 新增 `xf_editor.preview.min.js` 打包文件，合并了预览模式所
 | `tex` | `false` | KaTeX 数学公式 |
 | `flowChart` | `false` | 流程图 |
 | `sequenceDiagram` | `false` | 时序图 |
-| `taskList` | `false` | 任务列表 |
+| `taskList` | `true` | 任务列表 |
 | `toc` | `true` | 目录生成 |
 | `atLink` | `true` | @链接 |
 | `emailLink` | `true` | 邮件链接 |
@@ -137,7 +132,7 @@ v2.0.0 新增 `xf_editor.preview.min.js` 打包文件，合并了预览模式所
 
 ### 1. ECharts 图表 (`echarts: true`)
 
-支持柱状图、折线图、饼图、雷达图、漏斗图、**树图/脑图**（v1.16.0 新增）：
+支持柱状图、折线图、饼图、雷达图、漏斗图、**树图/脑图**：
 
 #### 基础图表
 ````markdown
@@ -152,7 +147,7 @@ v2.0.0 新增 `xf_editor.preview.min.js` 打包文件，合并了预览模式所
 ```
 ````
 
-#### 树图/脑图（v1.16.0 新增）
+#### 树图/脑图
 ````markdown
 ```echarts
 {
@@ -198,7 +193,7 @@ v2.0.0 新增 `xf_editor.preview.min.js` 打包文件，合并了预览模式所
 
 所有图表类型均支持 `"theme"` 和 `"height"` 通用配置🎨
 
-### 2. 代码块属性扩展（v1.14.0 新增 / v1.16.0 增强）
+### 2. 代码块属性扩展
 
 代码块支持设置 `<pre>` 标签的 **class**、**id** 或 **hidden** 属性，用于自定义样式、DOM 操作或隐藏代码块。
 
@@ -220,7 +215,7 @@ Hello World
 Hello World
 ```
 
-# 隐藏代码块（v1.16.0 新增）
+# 隐藏代码块
 ```(hidden)
 这段代码块在页面上不可见
 ```
@@ -267,21 +262,11 @@ const x = 42;
 [[tab:产品介绍]]
 xfEditor 是一款开源 Markdown 编辑器...
 [[/tab]]
-[[tab:更新日志]]
-### v1.10.0
-- 工具栏图片/视频/文件按钮失效修复
-- 编辑模式弹窗全面美化（渐变标题栏、现代按钮、输入框优化）
-- XSS 安全加固（6 项注入漏洞修复）
-- ECharts resize 事件内存泄漏修复
-- Link 渲染器活跃安全协议阻断
+[[tab:功能特性]]
+支持实时预览、双向同步滚动与丰富扩展语法...
 [[/tab]]
 [[/tabs]]
 ```
-
-**嵌套支持**：
-- Tabs 内可嵌套 Columns
-- Tabs 内可嵌套代码块、表格、图表
-- 支持多级嵌套（最多 20 层）
 
 ### 4. 多列排版 (`columns: true`)
 
@@ -298,7 +283,7 @@ xfEditor 是一款开源 Markdown 编辑器...
 [[/columns]]
 ```
 
-### 5. 栅格化布局 (`grid: true`) <span class="badge badge-new">NEW v1.16.0</span>
+### 5. 栅格化布局 (`grid: true`) <span class="badge badge-new">NEW</span>
 
 实现类似 Bootstrap 的 10 栏栅格化布局系统，使用 `[[row]]...[[/row]]` 和 `[[col:N]]...[[/col]]` 语法。
 
@@ -422,7 +407,7 @@ console.log("嵌套代码");
 - 每个汉字上方精确对应一个拼音音节
 - 参照 [拼音参照表](examples/pinyin-reference.html) 获取完整声母韵母列表
 
-**🆕 v2.0.0：拼音中嵌入脚注**：
+**：拼音中嵌入脚注**：
 ```markdown
 {疑[^yi]是地上[^shang]霜 | yí shì dì shàng shuāng}。
 
@@ -446,7 +431,7 @@ console.log("嵌套代码");
 
 ### 9. 悬浮提示 (`tooltip: true`)
 
-**新版统一语法**（v1.14.0）：
+**新版统一语法**：
 
 ```markdown
 [触发文本](tooltip:类型:内容)<宽度,高度>
@@ -456,7 +441,7 @@ console.log("嵌套代码");
 - `text` - 文本内容
 - `image` - 图片URL
 - `iframe` - 页面URL
-- `iframe:pre` - 代码块内容（页面 `<pre>` 元素，配合代码块属性扩展使用）✨ v1.14.0 新增
+- `iframe:pre` - 代码块内容（页面 `<pre>` 元素，配合代码块属性扩展使用）
 - `html` - CSS选择器（引用页面DOM元素）
 
 ---
@@ -520,7 +505,7 @@ console.log("嵌套代码");
 [外部页面](tooltip:iframe:"https://example.com")<200,150>
 ```
 
-**iframe 控制按钮** 🆕v2.0.0：
+**iframe 控制按钮**：
 - iframe 类型 Tooltip 弹窗右上角自动显示「最大化」⛶ 和「关闭」✕ 按钮
 - **最大化**：将弹窗切换为全屏模式（96vw × 92vh），再次点击恢复原始尺寸
 - **关闭**：立即关闭 Tooltip 弹窗，无需等待延迟
@@ -572,7 +557,7 @@ console.log("嵌套代码");
 
 ---
 
-#### 8.5 iframe:pre 类型（代码块悬浮预览）✨ v1.14.0 新增
+#### 8.5 iframe:pre 类型（代码块悬浮预览）
 
 配合**代码块属性扩展**使用，可以将页面中指定 `<pre>` 元素的内容以悬浮 iframe 方式展示。
 
@@ -625,7 +610,7 @@ function hello() {
 2. 参数可选，不写时自动适应内容大小
 3. 必须同时写宽度和高度
 
-**v1.12.1 尺寸限制优化**：
+**尺寸限制优化**：
 - **图片类型**：设置宽高后，图片使用显式 `width`/`height` + `object-fit:contain` 精确限制尺寸，popup 容器同时设置 `max-width`/`max-height` 防止溢出
 - **iframe 类型**：popup 容器根据指定尺寸设置显式宽高和最大宽高限制
 - **CSS 约束解除**：Tooltip popup 的 `max-width` 已从 `360px` 放宽至 `90vw`，不再强制限制悬浮框最大宽度
@@ -661,7 +646,7 @@ function hello() {
 
 ### 10. 字帖 (`copybook: true`)
 
-字帖系统支持**田字格**、**米字格**、**拼音格**三种格型。v2.0.0 新增花括号语法、宽度参数和脚注支持。
+字帖系统支持**田字格**、**米字格**、**拼音格**三种格型。花括号语法、宽度参数和脚注支持。
 
 **田字格**（支持 `[^name]` 脚注）：
 ```markdown
@@ -679,15 +664,7 @@ function hello() {
 [[/copybookMi]]
 ```
 
-**拼音格 — 圆括号语法（兼容旧版）**：
-```markdown
-[[copybookPinyin]]
-(汉字1|拼音1)(汉字2|拼音2)
-(春眠不觉晓|chūn mián bù jué xiǎo)(处处闻啼鸟|chù chù wén tí niǎo)
-[[/copybookPinyin]]
-```
-
-**拼音格 — 花括号语法 + 宽度参数** 🆕v2.0.0：
+**拼音格 — 花括号语法 + 宽度参数**：
 推荐用于古诗文等场景，配合 `(!width:NNN)` 设置每行等宽两端对齐：
 ```markdown
 [[copybookPinyin]]
@@ -699,7 +676,7 @@ function hello() {
 ```
 > `(!width:NNN)` 为可选参数，设置行内拼音格宽度（px），内容两端对齐。
 
-**字帖内嵌脚注** 🆕v2.0.0：
+**字帖内嵌脚注**：
 字帖和拼音格内可使用 `[^name]` 脚注标记。拼音格中脚注上方不显示拼音，
 每个汉字上方对应自己的拼音，实现一对一展示：
 ```markdown
@@ -729,7 +706,7 @@ CO^^2^^（二氧化碳）
 log^^10^^(100) = 2
 ```
 
-**组合上下标** `<<下标>^<上标>>`（同时显示下标和上标）⭐v1.11 新增：
+**组合上下标** `<<下标>^<上标>>`（同时显示下标和上标） 新增：
 ```markdown
 X<<2>^<3>>（X₂³）
 U<<92>^<235>>（铀-235，92 是下标，235 是上标）
@@ -795,7 +772,7 @@ C^^6^^H^^12^^O^^6^^ + 6O^^2^^ → 6CO^^2^^ + 6H^^2^^O
 - 拖拽图片边角调整尺寸
 - 自动同步 Markdown 源码
 - 支持 Shift 等比缩放
-- ⭐v1.12 修复：精准追踪图片出现次数，拖拽第 N 个实例不会错误修改第一个
+- 修复：精准追踪图片出现次数，拖拽第 N 个实例不会错误修改第一个
 
 ### 15. 视频和文件列表
 
@@ -875,11 +852,10 @@ editor.setMarkdown(md);        // 设置 Markdown
 editor.getHTML();              // 获取片段或完整独立 HTML 文档（含 DOCTYPE、内联 CSS/JS，默认压缩）
 editor.getHTML(true);          // 强制压缩输出（与无参调用等效）
 editor.getHTML(false);         // 不压缩输出，保留格式化可读代码（适合调试）
-editor.getPreviewedHTML();     // 获取预览区 HTML（支持全页、片段、压缩模式）
-editor.getTextareaSavedHTML(); // 获取保存的 HTML（getHTML 的别名）
+editor.getPreviewedHTML();     // 获取预览区 HTML（支持片段、独立文档、SEO meta）
 ```
 
-**获取独立 HTML**：`getHTML(options)` — ⭐v2.0.0 增强，生成可直接独立展示的 HTML 文档或片段：
+**获取独立 HTML**：`getHTML(options)` —，生成可直接独立展示的 HTML 文档或片段：
 ```javascript
 var html = editor.getHTML({
     wrap: true,                     // 是否包裹为完整 HTML 文档（含 DOCTYPE、html/head/body）
@@ -903,17 +879,21 @@ var html = editor.getHTML({
 // var html = editor.getHTML({ toBrowser: "my-article" });
 ```
 
-**获取预览区 HTML**：`getPreviewedHTML(options)` — ⭐v1.12.1加强：
+**获取预览区 HTML**：`getPreviewedHTML(options)` —加强：
 ```javascript
 var html = editor.getPreviewedHTML({
     includeStyles: true,      // 内联核心 CSS
     includeScripts: true,     // 内联交互脚本
-    fullPage: false,          // 是否包裹为完整 HTML 页面
-    rawMarkdown: false,       // 是否返回原始 Markdown
-    title: "Preview",         // 页面标题（fullPage 模式）
-    includeTOC: false,        // 是否包含目录
-    includeLineNumbers: false,// 是否包含行号标记
-    minify: false             // 是否压缩输出
+    rawMarkdown: false,       // 是否返回原始 Markdown（优先级最高）
+    wrap: true,               // 是否包裹为完整 HTML 文档（含 DOCTYPE）
+    title: "Preview",         // 页面标题
+    theme: "dark",            // 预览主题（"" 为默认）
+    lang: "zh-CN",            // HTML lang 属性
+    charset: "UTF-8",         // 字符编码
+    description: "",          // SEO description
+    keywords: "",             // SEO keywords
+    author: "",               // SEO author
+    customMeta: {}            // 自定义 meta 标签（键名→内容）
 });
 ```
 
@@ -935,7 +915,7 @@ editor.initColumns();          // 初始化 Columns
 editor.initPages();            // 初始化纸张页面
 ```
 
-**同步滚动** 🆕v2.0.0：
+**同步滚动**：
 ```javascript
 // 配置项（默认启用）
 var editor = xfEditor("id", { syncScroll: true });
@@ -948,13 +928,13 @@ editor.unbindSyncScroll();     // 解绑同步滚动
 editor.scrollToLineNum(42);         // 滚动预览区到第 42 行
 editor.scrollToLineNum(42, 0.5);   // 滚动预览区到第 42 行中间位置
 
-// ★ v2.0.0: 预览交互保护（图片缩放/表格编辑时暂停同步）
+// ★: 预览交互保护（图片缩放/表格编辑时暂停同步）
 editor.suspendSyncScroll();   // 暂停同步滚动
 // ... 预览区交互操作 ...
 editor.resumeSyncScroll();    // 恢复同步滚动
 ```
 
-> **v2.0.0 引擎原理**：解析 markdown 源码标题行号 + 预览 DOM 标题元素 → 文本+层级智能配对 → `editorLine ↔ previewElement` 锚点表 → 锚点间线性插值精准定位。门控体系（suppressAllSync → programmaticScroll → disablePreviewListener）确保各方向互不干扰。程序化滚动识别防止反馈循环。祖先链滚动监听不遗漏任何事件。
+> **引擎原理**：解析 markdown 源码标题行号 + 预览 DOM 标题元素 → 文本+层级智能配对 → `editorLine ↔ previewElement` 锚点表 → 锚点间线性插值精准定位。门控体系（suppressAllSync → programmaticScroll → disablePreviewListener）确保各方向互不干扰。程序化滚动识别防止反馈循环。祖先链滚动监听不遗漏任何事件。
 
 **工具栏**：
 ```javascript
@@ -966,7 +946,6 @@ editor.setToolbarAutoFixed(true); // 设置工具栏固定
 **全屏和预览**：
 ```javascript
 editor.fullscreen();           // 全屏
-editor.unfullscreen();         // 退出全屏
 editor.previewing();            // 预览模式
 editor.previewed();             // 退出预览
 editor.watch();                 // 开启实时预览
@@ -991,7 +970,6 @@ editor.clearDraft();           // 清除草稿
 
 ```javascript
 xfEditor.markdownToHTML(id, options); // 渲染 Markdown 为 HTML
-xfEditor.dom;                        // 内置 micro-DOM（xfEditor.$ / xfEditor.$dom 为其别名）
 xfEditor.marked;                     // marked 解析器
 xfEditor.defaults;                   // 全局默认配置
 ```
@@ -1132,7 +1110,7 @@ var html = editor.getPreviewedHTML();
 xfEditor("editor", {
     saveHTMLToTextarea: true
 });
-var html = editor.getTextareaSavedHTML();
+var html = editor.getHTML();
 ```
 
 ### Q: 如何处理图片上传？
@@ -1145,6 +1123,8 @@ xfEditor("editor", {
     crossDomainUpload: false
 });
 ```
+
+拖放或粘贴文件到左侧编辑区时，编辑器会按后缀与 MIME 自动分类，分别调用 `imageUploadURL` / `videoUploadURL` / `fileUploadURL`，上传成功后回插到鼠标位置。该能力由 `dropPasteUpload` 控制，与工具栏弹窗的 `imageUpload` / `fileUpload` 开关互不影响。
 
 ### Q: 如何在页面内使用 Tabs 和 Columns？
 
@@ -1201,5 +1181,5 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 
 ---
 
-**最后更新**: 2026-10-29
-**版本**: v2.0.0
+**最后更新**: 2026-11-27
+**版本**: v2.1.0

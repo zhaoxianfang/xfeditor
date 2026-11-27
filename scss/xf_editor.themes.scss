@@ -1,3 +1,7 @@
+@charset "UTF-8";
+
+@import "lib/variables";
+
 // ★ v1.17.28: 暗色主题色调从暖灰改为 Slate Blue（石板蓝），参考"智慧文档·精细版"主题
 //           CodeMirror 编辑区 + 工具栏 + 预览区同步覆盖
 #{$prefix}theme-dark {

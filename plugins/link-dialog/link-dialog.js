@@ -42,7 +42,7 @@
             }
             else
             {
-                // ★ v1.3.0: 新增跳转方式选择
+                // 跳转方式选择
                 var dialogHTML = "<div class=\"" + classPrefix + "form\">" + 
                                         "<label>" + linkLang.url + "</label>" + 
                                         "<input type=\"text\" value=\"http://\" data-url />" +
@@ -85,7 +85,7 @@
                                 return false;
                             }
                             
-                            // ★ v1.17.6: 构建带 target 的链接标记
+                            // 构建带 target 的链接标记
                             var str;
                             if (target) {
                                 // 使用扩展语法: [text](url){target=_blank}
@@ -122,29 +122,5 @@
 
 	};
     
-	// CommonJS/Node.js
-	if (typeof require === "function" && typeof exports === "object" && typeof module === "object")
-    { 
-        module.exports = factory;
-    }
-	else if (typeof define === "function")  // AMD/CMD/Sea.js
-    {
-		if (define.amd) { // for Require.js
-
-			define(["xfEditor"], function(xfEditor) {
-                factory(xfEditor);
-            });
-
-		} else { // for Sea.js
-			define(function(require) {
-                var xfEditor = require("./../../xf_editor");
-                factory(xfEditor);
-            });
-		}
-	} 
-	else
-	{
-        factory(window.xfEditor);
-	}
-
+	factory(window.xfEditor);
 })();

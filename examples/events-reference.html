@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>xfEditor 事件与回调参考手册（v2.0.0）</title>
+    <title>xfEditor 事件与回调参考手册（v2.1.0）</title>
     <style>
         :root{
             --brand:#6c5ce7; --brand-2:#8e7bff; --ink:#1f2330; --muted:#6b7280;
@@ -52,7 +52,7 @@
 <body>
 <header>
     <h1>xfEditor 事件与回调参考手册</h1>
-    <p>版本 v2.0.0 · 全面枚举编辑器暴露的所有事件、回调、配置项与接入方式，便于开发者按业务自定义管理</p>
+    <p>版本 v2.1.0 · 全面枚举编辑器暴露的所有事件、回调、配置项与接入方式，便于开发者按业务自定义管理</p>
 </header>
 
 <div class="wrap">
@@ -128,11 +128,11 @@
             <li><code>bindSyncScroll()</code> / <code>unbindSyncScroll()</code> — 手动绑定/解绑</li>
             <li><code>scrollToLineNum(lineNum, linePercent)</code> — 滚动预览区到指定编辑行</li>
         </ul>
-        <div class="callout">v2.0.0 增强：预览区图片/视频/音频加载完成会自动失效位置映射并重建，避免同步滚动跳转错位；图片缩放、表格编辑等预览交互期间会暂停同步，杜绝抖动与回环。</div>
+        <div class="callout">v2.1.0 增强：预览区图片/视频/音频加载完成会自动失效位置映射并重建，避免同步滚动跳转错位；图片缩放、表格编辑等预览交互期间会暂停同步，杜绝抖动与回环。</div>
     </section>
 
     <section id="file">
-        <h2>五、文件上传 / 删除通知 <span class="tag new">v2.0.0 新增</span></h2>
+        <h2>五、文件上传 / 删除通知 <span class="tag new">v2.1.0 新增</span></h2>
         <p>为避免服务器存储「僵尸文件」，已上传到服务器的文件在编辑器内容中被删除或替换时，会自动通知服务端清理，并触发对应回调。</p>
 
         <h3>配置项</h3>
@@ -213,7 +213,7 @@
         </ul>
         <div class="callout"><b>提示：</b>程序化替换内容（<code>setValue</code> / <code>setMarkdown</code> / <code>clear</code> / <code>appendMarkdown</code>）会重置检测基线，不会误触发删除事件；初始化加载文档时已建立基线。</div>
 
-        <h3>5.2 CSRF 防护 <span class="tag new">v2.0.0 新增</span></h3>
+        <h3>5.2 CSRF 防护 <span class="tag new">v2.1.0 新增</span></h3>
         <p>为防止跨站请求伪造（CSRF）攻击，上传（XHR）与删除（通知服务端）请求会自动携带 CSRF 凭证：</p>
         <ul>
             <li>XHR 上传 / 删除：请求头携带 <code>X-CSRF-TOKEN: &lt;token&gt;</code>；</li>
@@ -255,7 +255,7 @@ var editor = xfEditor({
         <table>
             <thead><tr><th>方法</th><th>说明</th></tr></thead>
             <tbody>
-                <tr><td><code>getValue()</code> / <code>getMarkdown()</code></td><td>获取编辑区 Markdown 原文</td></tr>
+                <tr><td><code>getMarkdown()</code></td><td>获取编辑区 Markdown 原文</td></tr>
                 <tr><td><code>setValue(md)</code></td><td>设置编辑区内容</td></tr>
                 <tr><td><code>getHTML()</code> / <code>getPreviewedHTML()</code></td><td>获取预览 HTML（自包含无外部依赖）</td></tr>
                 <tr><td><code>watch()</code> / <code>unwatch()</code></td><td>开启/关闭实时预览</td></tr>
@@ -317,6 +317,6 @@ editor._syncUploadedFiles();         // 主动触发一次删除比对</code></p
     </section>
 </div>
 
-<footer>xfEditor v2.0.0 · 事件与回调参考手册 · 本页为离线静态文档，无需任何外部依赖</footer>
+<footer>xfEditor v2.1.0 · 事件与回调参考手册 · 本页为离线静态文档，无需任何外部依赖</footer>
 </body>
 </html>

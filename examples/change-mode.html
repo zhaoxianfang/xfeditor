@@ -47,7 +47,7 @@
         &lt;/div&gt;
         &lt;script src="../xf_editor.min.js"&gt;&lt;/script&gt;
         &lt;script type="text/javascript"&gt;
-            $(function() {
+            xfEditor.dom(function() {
                 var testEditor = xfEditor("test-xfEditor", {
                     width            : "90%",
                     height           : 720,
@@ -56,7 +56,7 @@
                     codeFold         : true,
                     searchReplace    : true,
                     placeholder      : "Enjoy coding!",
-                    value            : (localStorage.mode) ? $("#"+localStorage.mode.replace("text/", "")+"-code").val() : $("#html-code").val(),
+                    value            : (localStorage.mode) ? xfEditor.dom("#"+localStorage.mode.replace("text/", "")+"-code").val() : xfEditor.dom("#html-code").val(),
                     theme            : (localStorage.theme) ? localStorage.theme : "default",
                     mode             : (localStorage.mode) ? localStorage.mode : "text/html",
                     path             : '../lib/'
@@ -65,7 +65,7 @@
         &lt;/script&gt;
     &lt;/body&gt;
 &lt;/html&gt;</textarea>
-<textarea id="javascript-code">$(function() {
+<textarea id="javascript-code">xfEditor.dom(function() {
     var testEditor = xfEditor("test-xfEditor", {
         width            : "90%",
         height           : 720,
@@ -74,7 +74,7 @@
         codeFold         : true,
         searchReplace    : true,
         placeholder      : "Enjoy coding!",
-        value            : (localStorage.mode) ? $("#"+localStorage.mode.replace("text/", "")+"-code").val() : $("#html-code").val(),
+        value            : (localStorage.mode) ? xfEditor.dom("#"+localStorage.mode.replace("text/", "")+"-code").val() : xfEditor.dom("#html-code").val(),
         theme            : (localStorage.theme) ? localStorage.theme : "default",
         mode             : (localStorage.mode) ? localStorage.mode : "text/html",
         path             : '../lib/'
@@ -441,7 +441,7 @@ if __name__ == '__main__':
                 });
 
                 dom("#get-code-btn").on("click", function() {
-                    alert(testEditor.getValue());
+                    alert(testEditor.getMarkdown());
                 });
 
                 dom("#fullscreen-btn").on("click", function() {
@@ -451,7 +451,7 @@ if __name__ == '__main__':
                 var select = dom("#themes");
                 
                 // 合并编辑器整体主题和 CodeMirror 编辑区主题到下拉框
-                var allThemes = xfEditor.themes.concat(xfEditor.editorThemes);
+                var allThemes = xfEditor.editorThemes.concat(xfEditor.previewThemes);
                 // 去重
                 var uniqueThemes = [];
                 for (var t = 0; t < allThemes.length; t++) {
@@ -479,7 +479,7 @@ if __name__ == '__main__':
                     localStorage.theme = theme;
                     
                     // 如果是编辑器整体主题（default/dark），设置整体主题
-                    if (dom.inArray(theme, xfEditor.themes) !== -1) {
+                    if (dom.inArray(theme, xfEditor.editorThemes) !== -1) {
                         testEditor.setTheme(theme);
                         // setTheme 内部会自动为 "dark" 设置 "monokai" CodeMirror 主题
                     }

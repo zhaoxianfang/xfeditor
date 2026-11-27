@@ -127,7 +127,7 @@
  *    xfeditor 预览自带 linenums 行号、mac 头部、复制按钮与 header-link 锚点，
  *    重复注入会造成「两套行号 / 两个锚点」并破坏 prettify 语法高亮 span。
  *    正解是在平台侧跳过 .xf_editor 子树（见 docs_app.js），此处仅作兜底，
- *    保证即使平台脚本为旧版本缓存也不会出现重复元素。
+ *    避免平台脚本重复增强导致出现重复元素。
  * -------------------------------------------------------------------------- */
 .xf_editor.markdown-body :where(.code-line-numbers, .code-lang-tag, .heading-anchor) {
     display: none;

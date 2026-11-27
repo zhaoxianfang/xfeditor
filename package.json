@@ -1,6 +1,6 @@
 {
   "name": "xf_editor",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "开源可嵌入 Markdown 在线编辑器 - 基于 pandao/editor.md 的改进增强版 | Open source embeddable online Markdown editor",
   "directories": {
     "example": "examples",
@@ -11,8 +11,7 @@
     "build:scss": "npx sass scss/xf_editor.scss:css/xf_editor.css scss/xf_editor.preview.scss:css/xf_editor.preview.css scss/xf_editor.logo.scss:css/xf_editor.logo.css --style expanded --no-source-map && npm run build:css:min",
     "build:css:min": "cleancss css/xf_editor.css -o css/xf_editor.min.css && cleancss css/xf_editor.preview.css -o css/xf_editor.preview.min.css && cleancss css/xf_editor.logo.css -o css/xf_editor.logo.min.css",
     "build:js": "node build-inline-flowchart.js",
-    "build:amd": "uglifyjs xf_editor.amd.js -o xf_editor.amd.min.js -c -m",
-    "build": "npm run build:scss && npm run build:js && npm run build:amd"
+    "build": "npm run build:scss && npm run build:js"
   },
   "repository": {
     "type": "git",
@@ -47,7 +46,6 @@
     "gulp-minify-css": "^0.4.4",
     "gulp-notify": "^2.1.0",
     "gulp-rename": "^1.2.0",
-    "gulp-replace": "^0.5.3",
     "gulp-ruby-sass": "^1.0.1",
     "gulp-uglifyjs": "^0.6.1",
     "gulp-util": "^3.0.1",

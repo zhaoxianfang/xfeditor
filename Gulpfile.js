@@ -15,7 +15,6 @@ var minifycss    = require("gulp-minify-css");
 //var jsdoc2md     = require("gulp-jsdoc-to-markdown");
 var pkg          = require("./package.json");
 var dateFormat   = require("dateformatter").format;
-var replace      = require("gulp-replace");
 
 pkg.name         = "xfEditor";
 pkg.today        = dateFormat;
@@ -91,109 +90,6 @@ gulp.task("js", function() {
             .pipe(gulp.dest("./"))
             .pipe(notify({ message: "xFEditor.js task complete" }));
 }); 
-
-gulp.task("amd", function() {
-    var replaceText1 = [
-        'var cmModePath  = "codemirror/mode/";',
-        '            var cmAddonPath = "codemirror/addon/";', 
-        '',
-        '            var codeMirrorModules = [',
-        '                "marked", "prettify",',
-        '                "katex", "raphael", "underscore", "flowchart", "sequenceDiagram",',
-        '',
-        '                "codemirror/lib/codemirror",',
-        '                cmModePath + "css/css",',
-        '                cmModePath + "sass/sass",', 
-        '                cmModePath + "shell/shell",', 
-        '                cmModePath + "sql/sql",',
-        '                cmModePath + "clike/clike",',
-        '                cmModePath + "php/php",',
-        '                cmModePath + "xml/xml",',
-        '                cmModePath + "markdown/markdown",', 
-        '                cmModePath + "javascript/javascript",',
-        '                cmModePath + "htmlmixed/htmlmixed",',
-        '                cmModePath + "gfm/gfm",',
-        '                cmModePath + "http/http",',
-        '                cmModePath + "go/go",', 
-        '                cmModePath + "dart/dart",', 
-        '                cmModePath + "coffeescript/coffeescript",',
-        '                cmModePath + "nginx/nginx",',
-        '                cmModePath + "python/python",', 
-        '                cmModePath + "perl/perl",',
-        '                cmModePath + "lua/lua",', 
-        '                cmModePath + "r/r", ',
-        '                cmModePath + "ruby/ruby", ',
-        '                cmModePath + "rst/rst",',
-        '                cmModePath + "smartymixed/smartymixed",', 
-        '                cmModePath + "vb/vb",',
-        '                cmModePath + "vbscript/vbscript",', 
-        '                cmModePath + "velocity/velocity",',
-        '                cmModePath + "xquery/xquery",',
-        '                cmModePath + "yaml/yaml",',
-        '                cmModePath + "erlang/erlang",', 
-        '                cmModePath + "jade/jade",',
-        '',
-        '                cmAddonPath + "edit/trailingspace", ',
-        '                cmAddonPath + "dialog/dialog", ',
-        '                cmAddonPath + "search/searchcursor", ',
-        '                cmAddonPath + "search/search", ',
-        '                cmAddonPath + "scroll/annotatescrollbar", ', 
-        '                cmAddonPath + "search/matchesonscrollbar", ',
-        '                cmAddonPath + "display/placeholder", ',
-        '                cmAddonPath + "edit/closetag", ',
-        '                cmAddonPath + "fold/foldcode",',
-        '                cmAddonPath + "fold/foldgutter",',
-        '                cmAddonPath + "fold/indent-fold",',
-        '                cmAddonPath + "fold/brace-fold",',
-        '                cmAddonPath + "fold/xml-fold", ',
-        '                cmAddonPath + "fold/markdown-fold",',
-        '                cmAddonPath + "fold/comment-fold", ',
-        '                cmAddonPath + "mode/overlay", ',
-        '                cmAddonPath + "selection/active-line", ',
-        '                cmAddonPath + "edit/closebrackets", ',
-        '                cmAddonPath + "display/fullscreen",',
-        '                cmAddonPath + "search/match-highlighter"',
-        '            ];',
-        '',
-        '            define(codeMirrorModules, factory);'
-    ].join("\r\n");
-    
-    var replaceText2 = [
-        "if (typeof define == \"function\" && define.amd) {",
-        "       marked     = arguments[0];",
-        "       prettify   = arguments[1];",
-        "       katex      = arguments[2];",
-        "       Raphael    = arguments[3];",
-        "       _          = arguments[4];",
-        "       flowchart  = arguments[5];",
-        "       sequenceDiagram = arguments[6];",
-        "       CodeMirror = arguments[7];",
-        "   }"
-    ].join("\r\n");
-    
-    gulp.src("xf_editor.js")
-        .pipe(rename({ suffix: ".amd" }))
-        .pipe(gulp.dest('./'))
-        .pipe(header(headerComment, {pkg : pkg, fileName : function(file) { 
-            var name = file.path.split(file.base);
-            return name[1].replace(/[\\\/]?/, "");
-        }}))
-        .pipe(gulp.dest("./"))
-        .pipe(replace("/* Require.js define replace */", replaceText1))
-        .pipe(gulp.dest('./'))
-        .pipe(replace("/* Require.js assignment replace */", replaceText2))
-        .pipe(gulp.dest('./'))
-        .pipe(rename({ suffix: ".min" }))
-        .pipe(uglify()) //{outSourceMap: true, sourceRoot: './'}
-        .pipe(gulp.dest("./"))
-        .pipe(header(headerMiniComment, {pkg : pkg, fileName : function(file) {
-            var name = file.path.split(file.base + ( (os.platform() === "win32") ? "\\" : "/") );
-            return name[1].replace(/[\\\/]?/, "");
-        }}))
-        .pipe(gulp.dest("./"))
-        .pipe(notify({ message: "amd version task complete"}));
-}); 
-
 
 var codeMirror = {
     path : {
@@ -328,7 +224,7 @@ gulp.task("watch", function() {
 	gulp.watch("scss/xf_editor.scss", ["scss"]);
 	gulp.watch("scss/xf_editor.preview.scss", ["scss", "scss2"]);
 	gulp.watch("scss/xf_editor.logo.scss", ["scss", "scss3"]);
-	gulp.watch("xf_editor.js", ["js", "amd"]);
+	gulp.watch("xf_editor.js", ["js"]);
 });
 
 gulp.task("default", function() {
@@ -336,7 +232,6 @@ gulp.task("default", function() {
     gulp.run("scss2");
     gulp.run("scss3");
     gulp.run("js");
-    gulp.run("amd");
     gulp.run("cm-addon");
     gulp.run("cm-mode");
 });

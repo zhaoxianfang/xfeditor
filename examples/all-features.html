@@ -3,7 +3,7 @@
 <head>
     <link rel="shortcut icon" href="../images/favicon.ico" type="image/x-icon">
     <meta charset="utf-8" />
-    <title>xfEditor v2.0.0 — 全部功能完整演示</title>
+    <title>xfEditor v2.1.0 — 全部功能完整演示</title>
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="../css/xf_editor.min.css" />
     <link rel="stylesheet" href="../css/xf_editor.preview.min.css" />
@@ -41,12 +41,12 @@
 <body>
     <div id="layout">
         <header>
-            <h1>xfEditor v2.0.0 全部功能完整演示</h1>
+            <h1>xfEditor v2.1.0 全部功能完整演示</h1>
             <p>Complete All-Features Demo — 涵盖所有 Markdown 语法、扩展特性与 API 交互</p>
         </header>
 
         <div class="feature-intro">
-            <h2>v2.0.0 新增功能速览 <span class="badge badge-new">NEW</span></h2>
+            <h2>v2.1.0 新增功能速览 <span class="badge badge-new">NEW</span></h2>
             <ul>
                 
                 <li><strong>🙈 Hidden 隐藏代码块</strong>：<code>```(hidden)</code> <code>```(hidden.class#id)</code> 语法，渲染为 display:none!important 的隐藏 pre 标签，配合 iframe:pre 可「阅后即焚」式预览</li>
@@ -75,7 +75,7 @@
                 <li><strong>草稿暂存</strong>：浏览器端自动保存，防止误刷新丢失内容</li>
                 <li><strong>字帖</strong>：田字格/米字格/拼音格三种字帖，SVG 辅助线</li>
                 <li><strong>🔗 链接 target 语法</strong> <span class="badge badge-new">NEW</span>：<code>[文本](url){target=_blank}</code> 支持新窗口/当前窗口跳转，工具栏链接对话框支持 target 选择</li>
-                <li><strong>🖌️ 画布涂鸦 Canvas Graffiti</strong> <span class="badge badge-new">NEW</span>：工具栏「涂鸦」按钮打开画布面板，手绘画作/标注/签名；画笔/橡皮互斥切换、颜色与快捷色板、粗细、橡皮大小、撤销/恢复、缩放（放大/缩小/重置 + 百分比）、对齐与名称；点击已生成图片可重新编辑；弹窗最大宽度 95% 适配小屏</li>
+                <li><strong>🖌️ 画布涂鸦 Canvas Graffiti</strong> <span class="badge badge-new">NEW</span>：工具栏「涂鸦」按钮打开画布面板，手绘画作/标注/签名；画笔/橡皮/文字工具互斥切换（文字提交后可拖动）、颜色与快捷色板、粗细、橡皮大小、撤销/恢复、缩放（放大/缩小/重置 + 百分比）、对齐与名称；点击已生成图片可重新编辑；弹窗最大宽度 95% 适配小屏</li>
                 <li><strong>🎠 Banner 轮播图</strong> <span class="badge badge-new">NEW</span>：工具栏「插入 Banner」按钮，使用 <code>[[banner width height]] ... [[/banner]]</code> 语法插入自动轮播图；支持自动播放 / 悬停暂停 / 箭头 / 圆点 / 触摸滑动，图片始终铺满容器（<code>object-fit:cover</code>），且与画布涂鸦图片一样不触发拖拽编辑</li>
             </ul>
         </div>
@@ -114,7 +114,7 @@
         <div id="test-xfEditor">
             <textarea style="display:none;">[TOC]
 
-# xfEditor v2.0.0 全部功能演示
+# xfEditor v2.1.0 全部功能演示
 
 ---
 
@@ -133,7 +133,7 @@
 
 🔗 **链接 target 新语法** <span class="badge badge-new">NEW</span>：[新窗口打开](https://github.com/zhaoxianfang/xfeditor){target=_blank} | 使用 `{target=_blank}` 指定新窗口打开，也支持 `{target=_self}` 当前页面打开。
 
-> 这是一段引用文本。xfEditor 是一款开源的、可嵌入的 Markdown 在线编辑器（组件），基于 CodeMirror、jQuery 和 Marked 构建。
+> 这是一段引用文本。xfEditor 是一款开源的、可嵌入的 Markdown 在线编辑器（组件），基于 CodeMirror 和 marked 构建，零外部 DOM 库依赖。
 
 ### 1.2 列表与任务列表
 
@@ -174,12 +174,12 @@ HTML 特殊字符：&copy; &reg; &trade; &mdash; &ndash; &hellip; &laquo; &raquo
 
 | 功能 | 版本 | 状态 | 说明 |
 |------|------|------|------|
-| 实时预览 | v1.0 | 已发布 | 所见即所得编辑 |
-| 图片上传 | v1.0 | 已发布 | 支持拖拽和跨域上传 |
-| 流程图 | v1.0 | 已发布 | flowchart.js 渲染 |
-| 时序图 | v1.0 | 已发布 | js-sequence-diagrams 渲染 |
-| Tabs 标签页 | v1.7.0 | 已发布 | 支持任意嵌套 Markdown 内容 |
-| ECharts 图表 | v1.7.0 | 已发布 | 5 种图表类型 |
+| 实时预览 | v2.1.0 | 已发布 | 所见即所得编辑 |
+| 图片上传 | v2.1.0 | 已发布 | 支持拖拽和跨域上传 |
+| 流程图 | v2.1.0 | 已发布 | flowchart.js 渲染 |
+| 时序图 | v2.1.0 | 已发布 | js-sequence-diagrams 渲染 |
+| Tabs 标签页 | v2.1.0 | 已发布 | 支持任意嵌套 Markdown 内容 |
+| ECharts 图表 | v2.1.0 | 已发布 | 5 种图表类型 |
 
 > 提示：点击预览区表格单元格，可弹出工具栏进行插入/删除行列操作，并自动同步到 Markdown 源码。
 
@@ -314,7 +314,7 @@ func main() {
 
 ---
 
-## 三·五、🎠 Banner 轮播图 <span class="badge badge-new">NEW v2.0.0</span>
+## 三·五、🎠 Banner 轮播图 <span class="badge badge-new">NEW</span>
 
 > 使用 `[[banner]] ... [[/banner]]` 插入轮播图，支持自动播放、箭头、圆点、触摸滑动，图片始终铺满容器。
 > 完整示例见 `md/full.md`（本页通过 HTTP 访问时会自动加载该文件）。
@@ -325,7 +325,7 @@ func main() {
 {url:"https://picsum.photos/id/1018/1200/500",title:"雪山湖泊",desc:"雪山倒映湖面"}
 [[/banner]]
 
-## 四、代码块属性扩展 <span class="badge badge-new">NEW v2.0.0</span>
+## 四、代码块属性扩展 <span class="badge badge-new">NEW</span>
 
 ### 4.1 自定义 class/id 属性
 
@@ -355,7 +355,7 @@ class ApiClient {
 
 上述代码块可配合 iframe:pre 使用（见下方 Tooltip 9.4 节）。
 
-### 4.2 Hidden 隐藏代码块 <span class="badge badge-new">NEW v2.0.0</span>
+### 4.2 Hidden 隐藏代码块 <span class="badge badge-new">NEW</span>
 
 使用 `(hidden)` 标记可将代码块渲染为 **不可见** 的 `<pre style="display:none!important">` 标签。  
 隐藏的代码块在页面中不占用任何空间，但仍然存在于 DOM 中，可通过 JS 读取或配合 `tooltip:iframe:pre` 实现「阅后即焚」式悬浮预览。
@@ -410,7 +410,7 @@ print(fibonacci(15))
 
 > **Hidden 代码块要点**：
 > - **完全不可见**：`display:none!important` 最高优先级隐藏，不占任何页面空间
-> - **DOM 可访问**：`document.querySelector()` / `$()` 仍可获取内容
+> - **DOM 可访问**：`document.querySelector()` / `xfEditor.dom()` 仍可获取内容
 > - **完美配合 iframe:pre**：隐藏的 pre 能被 `tooltip:iframe:pre#id` 提取，悬浮时动态显示
 > - **initCodeCopy 跳过**：复制代码按钮自动跳过隐藏代码块
 > - **语法组合**：`(hidden)` 可与语言名、class、id 任意组合（如 `javascript(hidden.myClass#myId)`）
@@ -514,7 +514,7 @@ print(fibonacci(15))
 }
 ```
 
-### 5.6 树图/脑图 <span class="badge badge-new">NEW v2.0.0</span>
+### 5.6 树图/脑图 <span class="badge badge-new">NEW</span>
 
 使用 `"type": "tree"` 配合 `layout: "orthogonal"` 和 `orient: "LR"` 可创建从左到右的组织架构树图。  
 主题自动跟随编辑器，无需手动设置 `"theme"`；点击节点圆圈可折叠/展开子分支。
@@ -595,7 +595,7 @@ print(fibonacci(15))
 
 [[tabs]]
 [[tab:产品介绍]]
-xfEditor 是一款开源的、可嵌入的 Markdown 在线编辑器（组件），基于 CodeMirror、jQuery 和 Marked 构建。
+xfEditor 是一款开源的、可嵌入的 Markdown 在线编辑器（组件），基于 CodeMirror 和 marked 构建，零外部 DOM 库依赖。
 
 **核心特性：**
 - 支持 Standard Markdown / GFM / CommonMark
@@ -607,22 +607,21 @@ xfEditor 是一款开源的、可嵌入的 Markdown 在线编辑器（组件）�
 [[/tab]]
 
 [[tab:更新日志]]
-### v2.0.0（最新）
+### v2.1.0（最新）
 - 🔒 **XSS 安全修复**：image renderer 属性转义、filterHTMLTags 实体解码检测、5 项安全加固
-- 🌐 **ES5 兼容性修复**：移除 `(?<!!)` ES2018 负向后瞻，确保 IE11 和老版 Safari 正常运行
 - 🐛 **多反引号行内代码保护**：preprocessLinkTarget 正确保护 `` `…` `` 格式
 - 🎯 **货币符号优化**：protectTeXSyntax 不再误触 `$100` 类型货币符号
 - ✅ **任务列表去重**：postProcessTaskLists 跳过已处理 HTML
 - 🧹 **死代码 + 正则有向无环图标记**：6 个未使用正则标记为 DEPRECATED
 - 📦 **全面重构构建**：所有 `.js` / `.css` / `.min.js` / `.min.css` / `preview.min.js` 同步构建
 
-### v2.0.0
+### v2.1.0
 - 🔄 **同步滚动引擎全面重写**：统一 `_syncState` 状态管理 + 门控优先级体系 + 程序化滚动识别 + 预览交互防护
 - 🎯 **预览→编辑方向完全修复**：祖先链滚动监听确保不遗漏事件，`disablePreviewListener` 精确控制
 - 🛡 **预览交互防护**：图片拖拽缩放/表格编辑时自动暂停同步，防止内容更新导致滚动跳转
 - 🔗 **标题锚点智能配对**：文本+层级二维验证匹配 + 代码块过滤
 
-### v2.0.0
+### v2.1.0
 - 🌳 **Tree图/脑图**：`"type": "tree"` 支持，工具栏新增「树图/脑图」按钮，支持 theme 主题切换、折叠/展开
 - 🙈 **Hidden 隐藏代码块**：` ```(hidden) ` ` ```(hidden.class#id) ` 语法，渲染为 display:none!important
 - 🎯 Hidden 配合 iframe:pre 实现「阅后即焚」式悬浮预览，initCodeCopy 自动跳过隐藏 pre
@@ -634,34 +633,34 @@ xfEditor 是一款开源的、可嵌入的 Markdown 在线编辑器（组件）�
 - 📏 ECharts 自定义高度：config.height 设置图表容器高度
 - 🔧 Gulp 3.x → 直接 UglifyJS/CleanCSS 构建，兼容 Node 22+
 
-### v2.0.0
+### v2.1.0
 - 🔧 Tooltip 尺寸限制修复：图片/iframe 显式宽高 + object-fit:contain，max-width 放宽至 90vw
 - 📄 getHTML/getPreviewedHTML 增强：完整内联样式，不依赖外部 CSS/JS
 
-### v2.0.0
+### v2.1.0
 - TOC 目录点击跳转修复（精确 ID + 文本回退匹配）
 - 公式弹窗自动加载 KaTeX（无需 tex: true 也能使用公式面板）
 - 表格/图片编辑后编辑区滚动位置保持修复
 - UI 细节优化与多语言完善
 
-### v2.0.0
+### v2.1.0
 - 新增组合上下标语法 <<下标>^<上标>> 同时显示上下角标
 - 修复渲染管线不一致（getPreviewedHTML/markdownToHTML 缺失步骤）
 - 全面代码审计、正则优化、事件泄漏修复
 
-### v2.0.0
+### v2.1.0
 - 工具栏图片/视频/文件按钮失效修复、弹窗全面美化
 - XSS 安全加固（6 项注入漏洞修复）、ECharts 内存泄漏修复
 - 上标 ^^、下标 ^^^^、字体大小 !字!、脚注 [^name] 新语法
 - 公式面板去搜索、下拉菜单全方向溢出自动适配
 
-### v1.9.0
+### v2.1.0
 - 草稿弹窗美化、Tooltip 交互修复、全屏增强、KaTeX 安全防护
 
-### v1.8.0
+### v2.1.0
 - 全屏编辑修复、LaTeX 语法保护、嵌套深度限制、ESC 事件管理
 
-### v1.7.0
+### v2.1.0
 - 新增 Apache ECharts 图表支持（柱状图/折线图/饼图/雷达图/漏斗图）
 - 新增 Tabs 标签页功能（支持任意 Markdown 内容嵌套）
 - 新增多列排版 Columns 功能
@@ -671,7 +670,7 @@ xfEditor 是一款开源的、可嵌入的 Markdown 在线编辑器（组件）�
 - 新增字帖（田字格/米字格/拼音格）功能
 - JetBrains 风格代码块展示
 
-### v1.6.0
+### v2.1.0
 - 新增拼音标注语法
 - 新增文本对齐语法
 - 新增图片尺寸编辑
@@ -717,12 +716,12 @@ console.log(demo.greet());
 [[tab:表格示例]]
 | 功能 | 最低版本 | 状态 |
 |------|----------|------|
-| Tabs 标签页 | v1.7.0 | ✅ 已发布 |
-| ECharts 图表 | v1.7.0 | ✅ 已发布 |
-| 多列排版 | v1.7.0 | ✅ 已发布 |
-| 悬浮提示 | v1.7.0 | ✅ 已发布 |
-| 视频嵌入 | v1.7.0 | ✅ 已发布 |
-| 附件链接 | v1.7.0 | ✅ 已发布 |
+| Tabs 标签页 | v2.1.0 | ✅ 已发布 |
+| ECharts 图表 | v2.1.0 | ✅ 已发布 |
+| 多列排版 | v2.1.0 | ✅ 已发布 |
+| 悬浮提示 | v2.1.0 | ✅ 已发布 |
+| 视频嵌入 | v2.1.0 | ✅ 已发布 |
+| 附件链接 | v2.1.0 | ✅ 已发布 |
 [[/tab]]
 
 [[tab:图表示例]]
@@ -974,7 +973,7 @@ console.log(grid);
 - [小窗口 100x60](tooltip:iframe:./simple.html)<100,60>
 - [中窗口 200x120](tooltip:iframe:./simple.html)<200,120>
 
-### 9.4 iframe:pre 代码块悬浮预览 <span class="badge badge-new">NEW v2.0.0</span>
+### 9.4 iframe:pre 代码块悬浮预览 <span class="badge badge-new">NEW</span>
 
 **配合代码块属性扩展使用**，先给代码块设置 id 或 class，再用悬浮提示引用。  
 **原理**：提取 `<pre id="xxx">` 内部原始内容，通过 Blob URL 创建 iframe 页面进行悬浮预览。  
@@ -1059,7 +1058,7 @@ def merge(left, right):
 **iframe:pre 工作流程**：
 1. 解析 `[文字](tooltip:iframe:pre#id)` → `tooltipType = "iframe"`, `tooltipContent = "pre#id"`
 2. 正则 `/^pre[#.][a-zA-Z_][\w\-]*$/` 检测是否为 `pre#id` / `pre.class` 格式
-3. `$(preSelector)` 在 DOM 中查找对应 `<pre>` 元素
+3. `xfEditor.dom(preSelector)` 在 DOM 中查找对应 `<pre>` 元素
 4. `.text()` 提取解码后的原始内容（HTML 实体会被还原为原始字符），存入 `data-iframepre-code`
 5. **每次鼠标悬停**（`showTooltip`）→ 动态创建新 Blob URL → `new Blob([rawCode], {type:'text/html'})` → 设置 iframe.src
 6. iframe 加载完成 → 浏览器解析渲染 HTML 页面 → JS 代码重新执行
@@ -1070,7 +1069,7 @@ def merge(left, right):
 - 纯文本（text）类型：深色背景 `#1e1e1e`，浅色文字
 - 图片（image）、iframe、HTML 类型：白色背景 `#fff`，深色文字
 
-### 9.5 HTML 悬浮提示 <span class="badge badge-new">NEW v1.12</span>
+### 9.5 HTML 悬浮提示 <span class="badge badge-new">NEW</span>
 
 #### 9.5.1 Class选择器
 - [查看产品卡片](tooltip:html:.test_tooltip1)<150,100>
@@ -1121,7 +1120,7 @@ def merge(left, right):
 
 ⁑⁖开源、简洁、强大，支持实时预览与扩展语法⁖⁑
 
-⠪版本号：v2.0.0 | 许可证：MIT⠪
+⠪版本号：v2.1.0 | 许可证：MIT⠪
 
 ### 标题中的对齐
 
@@ -1136,7 +1135,7 @@ def merge(left, right):
 
 ---
 
-## 十一、拼音标注 <span class="badge">v1.6.0</span>
+## 十一、拼音标注 <span class="badge">v2.1.0</span>
 
 {xfEditor | biān jí qì} 是一款非常优秀的 {Markdown | mā kè dáo nà} 编辑器，支持 {GitHub | jí tè bù} Flavored Markdown。
 
@@ -1309,16 +1308,7 @@ report.xlsx | 2024年度数据报表
 > 提示：`(!width:525)` 设置每行拼音格宽度为 525px，
 > 内容在设定宽度内两端对齐，每个汉字正上方对应拼音。
 
-### 22.4 拼音格 — 圆括号语法（兼容旧版）
-
-不指定宽度参数时使用默认流式布局：
-
-[[copybookPinyin]]
-(春眠不觉晓|chūn mián bù jué xiǎo)(处处闻啼鸟|chù chù wén tí niǎo)
-(夜来风雨声|yè lái fēng yǔ shēng)(花落知多少|huā luò zhī duō shǎo)
-[[/copybookPinyin]]
-
-### 22.5 字帖内嵌入脚注 <span class="badge badge-new">NEW v2.0.0</span>
+### 22.4 字帖内嵌入脚注 <span class="badge badge-new">NEW</span>
 
 字帖和拼音格内可使用 `[^name]` 脚注标记，点击可跳转到对应脚注内容。
 拼音格中脚注标记上方不会显示拼音，保证拼音与汉字一对一展示：
@@ -1339,7 +1329,7 @@ report.xlsx | 2024年度数据报表
 [^chun]: **春**：春季、春天，四季之首。
 [^chu]: **处**：读 chù，表示"地方、处处"之意。
 
-### 22.6 混合格型
+### 22.5 混合格型
 
 不同格型可在同一文档中混合使用：
 
@@ -1384,7 +1374,7 @@ report.xlsx | 2024年度数据报表
 
 > 提示：下标使用双 `^^` 包裹，可与上标组合使用：A^1^^2^^。内容长度上限 100 字符。
 
-### 23.3 组合上下标 &lt;&lt;下标&gt;^&lt;上标&gt;&gt; <span class="badge badge-new">NEW v1.11</span>
+### 23.3 组合上下标 &lt;&lt;下标&gt;^&lt;上标&gt;&gt; <span class="badge badge-new">NEW</span>
 
 使用 `<<下标>^<上标>>` 语法在同一个字符上同时显示下标和上标：
 
@@ -1452,7 +1442,7 @@ xfEditor[^editor-footnote] 是一款强大的开源 Markdown 在线编辑器。
 
 #### 关于本编辑器[^about]
 
-[^about]: 本文档演示了 xfEditor v2.0.0 的全部功能，包括 Markdown 基础语法、扩展语法和 API 交互。更多功能请查阅 `USAGE_GUIDE.md` 和 `README.md`。
+[^about]: 本文档演示了 xfEditor v2.1.0 的全部功能，包括 Markdown 基础语法、扩展语法和 API 交互。更多功能请查阅 `USAGE_GUIDE.md` 和 `README.md`。
 
 ### 25.4 多个脚注
 
@@ -1483,7 +1473,7 @@ xfEditor[^editor-footnote] 是一款强大的开源 Markdown 在线编辑器。
 - 可选 `title="名称"`，名称显示在图片正下方居中。
 - 工具栏提供：画笔/橡皮（**互斥切换**）、颜色选择器 + 8 色快捷色板、粗细、橡皮大小、撤销/恢复、缩放（放大/缩小/重置 + 百分比）、对齐与名称。
 - 使用画笔时画布鼠标为画笔图标；使用橡皮时鼠标变为与橡皮大小一致的圆形，便于感知擦除范围。
-- 渲染后的涂鸦图片可直接点击**重新编辑**；弹窗最大宽度为屏幕可视区 95%，小屏也不会超出导致无法关闭。
+- 工具栏「文字」工具可在画布任意位置输入文字，按 Enter 提交后自动切换为选择工具，可拖动文字到任意位置；渲染后的涂鸦图片可直接点击**重新编辑**；弹窗最大宽度为屏幕可视区 95%，小屏也不会超出导致无法关闭。
 
 下面是默认左对齐、带名称的涂鸦示例：
 
@@ -1611,7 +1601,7 @@ xfEditor 持续迭代，致力于为开发者和内容创作者提供最优秀�
                 video               : true,             // 启用 [[video]] 视频列表语法，默认 true
                 file                : true,             // 启用 [[file]] 文件列表语法，默认 true
                 previewCodeHighlight: true,             // 启用预览区代码高亮，默认 true
-                syncScroll          : true,             // 启用编辑区与预览区同步滚动，默认 true（v2.0.0 全面重写）
+                syncScroll          : true,             // 启用编辑区与预览区同步滚动，默认 true（v2.1.0 全面重写）
                 previewOnly         : false,            // 纯预览模式（禁用表格编辑、图片缩放等交互），默认 false
 
                 // ═══ 工具栏配置 ═══
@@ -1672,7 +1662,7 @@ xfEditor 持续迭代，致力于为开发者和内容创作者提供最优秀�
 
                 // ═══ 事件回调 ═══
                 onload              : function() {      // 编辑器加载完成回调，默认 function(){}
-                    console.log("✅ xfEditor v2.0.0 全部功能完整演示已加载");
+                    console.log("✅ xfEditor v2.1.0 全部功能完整演示已加载");
                 },
                 onchange            : function() {      // 编辑器内容变化回调，默认 function(){}
                     // 内容变化时触发

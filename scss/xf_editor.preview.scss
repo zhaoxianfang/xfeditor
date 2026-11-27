@@ -1844,7 +1844,7 @@ a#{$prefix}banner-link {
         }
     }
 }
-// ★ v1.17.26: 字帖组级宽度样式（花括号/圆括号语法 + (!width:NNN)）
+// ★ 字帖组级宽度样式（花括号语法 + (!width:NNN)）
 .xf_editor-copybook-group {
     display: inline-flex !important;
     flex-wrap: nowrap;

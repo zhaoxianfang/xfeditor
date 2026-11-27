@@ -323,3 +323,17 @@
 }
 
 @import "xf_editor.themes";
+
+/* ★ v2.1.0 a11y: 键盘焦点可见（WCAG 2.4.7） */
+.xf_editor-menu > li > a:focus-visible,
+.xf_editor-toolbar button:focus-visible,
+.xf_editor-dialog-close:focus-visible,
+.xf_editor-draft-list a:focus-visible {
+    outline: 2px solid #2C7EEA;
+    outline-offset: 2px;
+}
+/* ★ v2.1.0 a11y: 提升低对比度文本（WCAG AA 4.5:1） */
+.xf_editor-dialog-container ::placeholder { color: #6b7280; }
+.xf_editor-dialog-container h1 small { color: #595959; }
+.xf_editor .markdown-body .pl-c { color: #6e6e6e; }
+.xf_editor-form .fa-btns a { color: #595959; }

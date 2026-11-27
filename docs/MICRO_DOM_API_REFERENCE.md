@@ -2,13 +2,16 @@
 
 ## 概述
 
-xfEditor 的 micro-DOM 层是一个轻量级的 jQuery API 兼容层，使用原生 JavaScript 实现。本文档记录所有 API 的行为，用于迁移对比。
+xfEditor 内置 micro-DOM 层（`xfEditor.dom`），是一个纯原生 JavaScript 实现的轻量 DOM 工具库，
+随编辑器一起打包，无任何外部依赖。本文档记录其全部公开 API 的行为与用法。
+
+> 所有示例中的 `dom` 均指 `xfEditor.dom`。
 
 ---
 
 ## 选择器
 
-### $(selector, context)
+### dom(selector, context)
 
 **功能**：选择 DOM 元素
 
@@ -21,26 +24,26 @@ xfEditor 的 micro-DOM 层是一个轻量级的 jQuery API 兼容层，使用原
 **示例**：
 ```javascript
 // 选择器字符串
-$('.class')
-$('#id')
-$('div')
-$('div.class')
+dom('.class')
+dom('#id')
+dom('div')
+dom('div.class')
 
 // DOM 元素
-$(document.body)
-$(element)
+dom(document.body)
+dom(element)
 
 // 函数（DOM ready）
-$(function() {
+dom(function() {
     console.log('DOM ready');
 });
 
 // HTML 字符串（创建元素）
-$('<div>Test</div>')
-$('<div/>', { class: 'test', text: 'Test' })
+dom('<div>Test</div>')
+dom('<div/>', { class: 'test', text: 'Test' })
 
 // 数组
-$([element1, element2])
+dom([element1, element2])
 ```
 
 **行为**：
@@ -53,7 +56,7 @@ $([element1, element2])
 
 ## DOM 操作
 
-### $.fn.html([content])
+### dom.fn.html([content])
 
 **功能**：获取或设置元素的 HTML 内容
 
@@ -67,20 +70,20 @@ $([element1, element2])
 **示例**：
 ```javascript
 // 获取
-var html = $('.container').html();
+var html = dom('.container').html();
 
 // 设置
-$('.container').html('<p>New content</p>');
+dom('.container').html('<p>New content</p>');
 
 // 函数
-$('.item').html(function(index, oldHtml) {
+dom('.item').html(function(index, oldHtml) {
     return '<span>' + index + '</span>';
 });
 ```
 
 ---
 
-### $.fn.text([content])
+### dom.fn.text([content])
 
 **功能**：获取或设置元素的文本内容
 
@@ -94,15 +97,15 @@ $('.item').html(function(index, oldHtml) {
 **示例**：
 ```javascript
 // 获取
-var text = $('.container').text();
+var text = dom('.container').text();
 
 // 设置
-$('.container').text('New text');
+dom('.container').text('New text');
 ```
 
 ---
 
-### $.fn.val([value])
+### dom.fn.val([value])
 
 **功能**：获取或设置表单元素的值
 
@@ -116,18 +119,18 @@ $('.container').text('New text');
 **示例**：
 ```javascript
 // 获取
-var value = $('input').val();
+var value = dom('input').val();
 
 // 设置
-$('input').val('new value');
+dom('input').val('new value');
 
 // 多选框
-$('select').val(['option1', 'option2']);
+dom('select').val(['option1', 'option2']);
 ```
 
 ---
 
-### $.fn.attr(name, [value])
+### dom.fn.attr(name, [value])
 
 **功能**：获取或设置元素的属性
 
@@ -143,13 +146,13 @@ $('select').val(['option1', 'option2']);
 **示例**：
 ```javascript
 // 获取
-var id = $('div').attr('id');
+var id = dom('div').attr('id');
 
 // 设置
-$('div').attr('id', 'container');
+dom('div').attr('id', 'container');
 
 // 对象设置
-$('div').attr({
+dom('div').attr({
     'id': 'container',
     'data-test': 'value'
 });
@@ -157,7 +160,7 @@ $('div').attr({
 
 ---
 
-### $.fn.removeAttr(name)
+### dom.fn.removeAttr(name)
 
 **功能**：移除元素的属性
 
@@ -168,13 +171,13 @@ $('div').attr({
 
 **示例**：
 ```javascript
-$('div').removeAttr('id');
-$('div').removeAttr('id title');
+dom('div').removeAttr('id');
+dom('div').removeAttr('id title');
 ```
 
 ---
 
-### $.fn.prop(name, [value])
+### dom.fn.prop(name, [value])
 
 **功能**：获取或设置元素的 DOM 属性
 
@@ -189,15 +192,15 @@ $('div').removeAttr('id title');
 **示例**：
 ```javascript
 // 获取
-var checked = $('input').prop('checked');
+var checked = dom('input').prop('checked');
 
 // 设置
-$('input').prop('checked', true);
+dom('input').prop('checked', true);
 ```
 
 ---
 
-### $.fn.data(key, [value])
+### dom.fn.data(key, [value])
 
 **功能**：获取或设置元素的数据
 
@@ -213,18 +216,18 @@ $('input').prop('checked', true);
 **示例**：
 ```javascript
 // 从 data-* 属性读取
-var id = $('div').data('id'); // <div data-id="123">
+var id = dom('div').data('id'); // <div data-id="123">
 
 // 存储
-$('div').data('custom', { key: 'value' });
+dom('div').data('custom', { key: 'value' });
 
 // 获取所有
-var allData = $('div').data();
+var allData = dom('div').data();
 ```
 
 ---
 
-### $.fn.css(name, [value])
+### dom.fn.css(name, [value])
 
 **功能**：获取或设置元素的样式
 
@@ -239,14 +242,14 @@ var allData = $('div').data();
 **示例**：
 ```javascript
 // 获取
-var color = $('div').css('color');
+var color = dom('div').css('color');
 
 // 设置
-$('div').css('color', 'red');
-$('div').css('color', 'red !important');
+dom('div').css('color', 'red');
+dom('div').css('color', 'red !important');
 
 // 对象设置
-$('div').css({
+dom('div').css({
     'color': 'red',
     'background': 'blue'
 });
@@ -256,7 +259,7 @@ $('div').css({
 
 ## 类操作
 
-### $.fn.addClass(className)
+### dom.fn.addClass(className)
 
 **功能**：添加 CSS 类
 
@@ -267,13 +270,13 @@ $('div').css({
 
 **示例**：
 ```javascript
-$('div').addClass('active');
-$('div').addClass('class1 class2');
+dom('div').addClass('active');
+dom('div').addClass('class1 class2');
 ```
 
 ---
 
-### $.fn.removeClass(className)
+### dom.fn.removeClass(className)
 
 **功能**：移除 CSS 类
 
@@ -284,13 +287,13 @@ $('div').addClass('class1 class2');
 
 **示例**：
 ```javascript
-$('div').removeClass('active');
-$('div').removeClass(); // 移除所有类
+dom('div').removeClass('active');
+dom('div').removeClass(); // 移除所有类
 ```
 
 ---
 
-### $.fn.toggleClass(className, [state])
+### dom.fn.toggleClass(className, [state])
 
 **功能**：切换 CSS 类
 
@@ -302,13 +305,13 @@ $('div').removeClass(); // 移除所有类
 
 **示例**：
 ```javascript
-$('div').toggleClass('active');
-$('div').toggleClass('active', true); // 强制添加
+dom('div').toggleClass('active');
+dom('div').toggleClass('active', true); // 强制添加
 ```
 
 ---
 
-### $.fn.hasClass(className)
+### dom.fn.hasClass(className)
 
 **功能**：检查是否包含 CSS 类
 
@@ -319,7 +322,7 @@ $('div').toggleClass('active', true); // 强制添加
 
 **示例**：
 ```javascript
-if ($('div').hasClass('active')) {
+if (dom('div').hasClass('active')) {
     // ...
 }
 ```
@@ -328,7 +331,7 @@ if ($('div').hasClass('active')) {
 
 ## DOM 遍历
 
-### $.fn.find(selector)
+### dom.fn.find(selector)
 
 **功能**：查找后代元素
 
@@ -339,13 +342,13 @@ if ($('div').hasClass('active')) {
 
 **示例**：
 ```javascript
-$('.container').find('.item');
-$('.container').find(element);
+dom('.container').find('.item');
+dom('.container').find(element);
 ```
 
 ---
 
-### $.fn.children([selector])
+### dom.fn.children([selector])
 
 **功能**：获取子元素
 
@@ -356,13 +359,13 @@ $('.container').find(element);
 
 **示例**：
 ```javascript
-$('.container').children();
-$('.container').children('.item');
+dom('.container').children();
+dom('.container').children('.item');
 ```
 
 ---
 
-### $.fn.parent([selector])
+### dom.fn.parent([selector])
 
 **功能**：获取父元素
 
@@ -373,13 +376,13 @@ $('.container').children('.item');
 
 **示例**：
 ```javascript
-$('.item').parent();
-$('.item').parent('.container');
+dom('.item').parent();
+dom('.item').parent('.container');
 ```
 
 ---
 
-### $.fn.parents([selector])
+### dom.fn.parents([selector])
 
 **功能**：获取所有祖先元素
 
@@ -390,13 +393,13 @@ $('.item').parent('.container');
 
 **示例**：
 ```javascript
-$('.item').parents();
-$('.item').parents('.container');
+dom('.item').parents();
+dom('.item').parents('.container');
 ```
 
 ---
 
-### $.fn.siblings([selector])
+### dom.fn.siblings([selector])
 
 **功能**：获取兄弟元素
 
@@ -407,13 +410,13 @@ $('.item').parents('.container');
 
 **示例**：
 ```javascript
-$('.item').siblings();
-$('.item').siblings('.active');
+dom('.item').siblings();
+dom('.item').siblings('.active');
 ```
 
 ---
 
-### $.fn.next([selector])
+### dom.fn.next([selector])
 
 **功能**：获取下一个兄弟元素
 
@@ -424,12 +427,12 @@ $('.item').siblings('.active');
 
 **示例**：
 ```javascript
-$('.item').next();
+dom('.item').next();
 ```
 
 ---
 
-### $.fn.prev([selector])
+### dom.fn.prev([selector])
 
 **功能**：获取上一个兄弟元素
 
@@ -440,12 +443,12 @@ $('.item').next();
 
 **示例**：
 ```javascript
-$('.item').prev();
+dom('.item').prev();
 ```
 
 ---
 
-### $.fn.eq(index)
+### dom.fn.eq(index)
 
 **功能**：获取指定索引的元素
 
@@ -456,13 +459,13 @@ $('.item').prev();
 
 **示例**：
 ```javascript
-$('.item').eq(0);   // 第一个
-$('.item').eq(-1);  // 最后一个
+dom('.item').eq(0);   // 第一个
+dom('.item').eq(-1);  // 最后一个
 ```
 
 ---
 
-### $.fn.first()
+### dom.fn.first()
 
 **功能**：获取第一个元素
 
@@ -470,12 +473,12 @@ $('.item').eq(-1);  // 最后一个
 
 **示例**：
 ```javascript
-$('.item').first();
+dom('.item').first();
 ```
 
 ---
 
-### $.fn.last()
+### dom.fn.last()
 
 **功能**：获取最后一个元素
 
@@ -483,12 +486,12 @@ $('.item').first();
 
 **示例**：
 ```javascript
-$('.item').last();
+dom('.item').last();
 ```
 
 ---
 
-### $.fn.filter(selector)
+### dom.fn.filter(selector)
 
 **功能**：过滤元素
 
@@ -499,15 +502,15 @@ $('.item').last();
 
 **示例**：
 ```javascript
-$('.item').filter('.active');
-$('.item').filter(function(index) {
+dom('.item').filter('.active');
+dom('.item').filter(function(index) {
     return index % 2 === 0;
 });
 ```
 
 ---
 
-### $.fn.not(selector)
+### dom.fn.not(selector)
 
 **功能**：排除元素
 
@@ -518,12 +521,12 @@ $('.item').filter(function(index) {
 
 **示例**：
 ```javascript
-$('.item').not('.active');
+dom('.item').not('.active');
 ```
 
 ---
 
-### $.fn.is(selector)
+### dom.fn.is(selector)
 
 **功能**：检查元素是否匹配选择器
 
@@ -534,7 +537,7 @@ $('.item').not('.active');
 
 **示例**：
 ```javascript
-if ($('.item').is('.active')) {
+if (dom('.item').is('.active')) {
     // ...
 }
 ```
@@ -543,7 +546,7 @@ if ($('.item').is('.active')) {
 
 ## DOM 插入
 
-### $.fn.append(content, [...])
+### dom.fn.append(content, [...])
 
 **功能**：在元素内部末尾插入内容
 
@@ -554,13 +557,13 @@ if ($('.item').is('.active')) {
 
 **示例**：
 ```javascript
-$('.container').append('<div>New</div>');
-$('.container').append(element);
+dom('.container').append('<div>New</div>');
+dom('.container').append(element);
 ```
 
 ---
 
-### $.fn.prepend(content, [...])
+### dom.fn.prepend(content, [...])
 
 **功能**：在元素内部开头插入内容
 
@@ -571,12 +574,12 @@ $('.container').append(element);
 
 **示例**：
 ```javascript
-$('.container').prepend('<div>New</div>');
+dom('.container').prepend('<div>New</div>');
 ```
 
 ---
 
-### $.fn.before(content, [...])
+### dom.fn.before(content, [...])
 
 **功能**：在元素前面插入内容
 
@@ -587,12 +590,12 @@ $('.container').prepend('<div>New</div>');
 
 **示例**：
 ```javascript
-$('.item').before('<div>New</div>');
+dom('.item').before('<div>New</div>');
 ```
 
 ---
 
-### $.fn.after(content, [...])
+### dom.fn.after(content, [...])
 
 **功能**：在元素后面插入内容
 
@@ -603,12 +606,12 @@ $('.item').before('<div>New</div>');
 
 **示例**：
 ```javascript
-$('.item').after('<div>New</div>');
+dom('.item').after('<div>New</div>');
 ```
 
 ---
 
-### $.fn.remove([selector])
+### dom.fn.remove([selector])
 
 **功能**：移除元素
 
@@ -619,13 +622,13 @@ $('.item').after('<div>New</div>');
 
 **示例**：
 ```javascript
-$('.item').remove();
-$('.item').remove('.active');
+dom('.item').remove();
+dom('.item').remove('.active');
 ```
 
 ---
 
-### $.fn.empty()
+### dom.fn.empty()
 
 **功能**：清空元素的所有子节点
 
@@ -633,12 +636,12 @@ $('.item').remove('.active');
 
 **示例**：
 ```javascript
-$('.container').empty();
+dom('.container').empty();
 ```
 
 ---
 
-### $.fn.clone([deep])
+### dom.fn.clone([deep])
 
 **功能**：克隆元素
 
@@ -649,14 +652,14 @@ $('.container').empty();
 
 **示例**：
 ```javascript
-var $clone = $('.item').clone();
+var $clone = dom('.item').clone();
 ```
 
 ---
 
 ## 事件
 
-### $.fn.on(events, [selector], [data], handler)
+### dom.fn.on(events, [selector], [data], handler)
 
 **功能**：绑定事件
 
@@ -671,24 +674,24 @@ var $clone = $('.item').clone();
 **示例**：
 ```javascript
 // 直接绑定
-$('div').on('click', function(e) {
+dom('div').on('click', function(e) {
     console.log('clicked');
 });
 
 // 事件委托
-$('.container').on('click', '.item', function(e) {
+dom('.container').on('click', '.item', function(e) {
     console.log('item clicked');
 });
 
 // 多个事件
-$('div').on('click mouseenter', function(e) {
+dom('div').on('click mouseenter', function(e) {
     console.log(e.type);
 });
 ```
 
 ---
 
-### $.fn.off(events, [selector], [handler])
+### dom.fn.off(events, [selector], [handler])
 
 **功能**：解绑事件
 
@@ -702,35 +705,35 @@ $('div').on('click mouseenter', function(e) {
 **示例**：
 ```javascript
 // 解绑所有
-$('div').off();
+dom('div').off();
 
 // 解绑特定事件
-$('div').off('click');
+dom('div').off('click');
 
 // 解绑特定处理函数
-$('div').off('click', handler);
+dom('div').off('click', handler);
 ```
 
 ---
 
-### $.fn.one(events, [selector], [data], handler)
+### dom.fn.one(events, [selector], [data], handler)
 
 **功能**：绑定一次性事件
 
-**参数**：同 `$.fn.on()`
+**参数**：同 `dom.fn.on()`
 
 **返回值**：this
 
 **示例**：
 ```javascript
-$('div').one('click', function(e) {
+dom('div').one('click', function(e) {
     console.log('只触发一次');
 });
 ```
 
 ---
 
-### $.fn.trigger(eventName, [extraParameters])
+### dom.fn.trigger(eventName, [extraParameters])
 
 **功能**：触发事件
 
@@ -742,15 +745,15 @@ $('div').one('click', function(e) {
 
 **示例**：
 ```javascript
-$('div').trigger('click');
-$('div').trigger('custom', [arg1, arg2]);
+dom('div').trigger('click');
+dom('div').trigger('custom', [arg1, arg2]);
 ```
 
 ---
 
 ## 显示/隐藏
 
-### $.fn.show()
+### dom.fn.show()
 
 **功能**：显示元素
 
@@ -758,12 +761,12 @@ $('div').trigger('custom', [arg1, arg2]);
 
 **示例**：
 ```javascript
-$('div').show();
+dom('div').show();
 ```
 
 ---
 
-### $.fn.hide()
+### dom.fn.hide()
 
 **功能**：隐藏元素
 
@@ -771,12 +774,12 @@ $('div').show();
 
 **示例**：
 ```javascript
-$('div').hide();
+dom('div').hide();
 ```
 
 ---
 
-### $.fn.toggle([state])
+### dom.fn.toggle([state])
 
 **功能**：切换显示/隐藏
 
@@ -787,15 +790,15 @@ $('div').hide();
 
 **示例**：
 ```javascript
-$('div').toggle();
-$('div').toggle(true); // 强制显示
+dom('div').toggle();
+dom('div').toggle(true); // 强制显示
 ```
 
 ---
 
 ## 工具方法
 
-### $.extend([deep], target, [source1], [source2], ...)
+### dom.extend([deep], target, [source1], [source2], ...)
 
 **功能**：扩展对象
 
@@ -809,15 +812,15 @@ $('div').toggle(true); // 强制显示
 **示例**：
 ```javascript
 // 浅拷贝
-var obj = $.extend({}, { a: 1 }, { b: 2 });
+var obj = dom.extend({}, { a: 1 }, { b: 2 });
 
 // 深拷贝
-var obj = $.extend(true, {}, { a: { x: 1 } }, { a: { y: 2 } });
+var obj = dom.extend(true, {}, { a: { x: 1 } }, { a: { y: 2 } });
 ```
 
 ---
 
-### $.each(collection, callback)
+### dom.each(collection, callback)
 
 **功能**：遍历集合
 
@@ -830,19 +833,19 @@ var obj = $.extend(true, {}, { a: { x: 1 } }, { a: { y: 2 } });
 **示例**：
 ```javascript
 // 数组
-$.each([1, 2, 3], function(index, value) {
+dom.each([1, 2, 3], function(index, value) {
     console.log(index, value);
 });
 
 // 对象
-$.each({ a: 1, b: 2 }, function(key, value) {
+dom.each({ a: 1, b: 2 }, function(key, value) {
     console.log(key, value);
 });
 ```
 
 ---
 
-### $.map(collection, callback)
+### dom.map(collection, callback)
 
 **功能**：映射集合
 
@@ -854,14 +857,14 @@ $.each({ a: 1, b: 2 }, function(key, value) {
 
 **示例**：
 ```javascript
-var doubled = $.map([1, 2, 3], function(value, index) {
+var doubled = dom.map([1, 2, 3], function(value, index) {
     return value * 2;
 });
 ```
 
 ---
 
-### $.grep(array, callback, [invert])
+### dom.grep(array, callback, [invert])
 
 **功能**：过滤数组
 
@@ -874,14 +877,14 @@ var doubled = $.map([1, 2, 3], function(value, index) {
 
 **示例**：
 ```javascript
-var filtered = $.grep([1, 2, 3, 4, 5], function(value) {
+var filtered = dom.grep([1, 2, 3, 4, 5], function(value) {
     return value > 2;
 });
 ```
 
 ---
 
-### $.trim(str)
+### dom.trim(str)
 
 **功能**：去除字符串两端的空白
 
@@ -892,12 +895,12 @@ var filtered = $.grep([1, 2, 3, 4, 5], function(value) {
 
 **示例**：
 ```javascript
-var trimmed = $.trim('  test  '); // 'test'
+var trimmed = dom.trim('  test  '); // 'test'
 ```
 
 ---
 
-### $.type(obj)
+### dom.type(obj)
 
 **功能**：判断对象类型
 
@@ -908,17 +911,17 @@ var trimmed = $.trim('  test  '); // 'test'
 
 **示例**：
 ```javascript
-$.type([1, 2]);     // 'array'
-$.type({});         // 'object'
-$.type('test');     // 'string'
-$.type(123);        // 'number'
-$.type(null);       // 'null'
-$.type(undefined);  // 'undefined'
+dom.type([1, 2]);     // 'array'
+dom.type({});         // 'object'
+dom.type('test');     // 'string'
+dom.type(123);        // 'number'
+dom.type(null);       // 'null'
+dom.type(undefined);  // 'undefined'
 ```
 
 ---
 
-### $.isArray(obj)
+### dom.isArray(obj)
 
 **功能**：判断是否为数组
 
@@ -929,13 +932,13 @@ $.type(undefined);  // 'undefined'
 
 **示例**：
 ```javascript
-$.isArray([1, 2]);  // true
-$.isArray('test');  // false
+dom.isArray([1, 2]);  // true
+dom.isArray('test');  // false
 ```
 
 ---
 
-### $.isNumeric(value)
+### dom.isNumeric(value)
 
 **功能**：判断是否为数字
 
@@ -946,14 +949,14 @@ $.isArray('test');  // false
 
 **示例**：
 ```javascript
-$.isNumeric(123);     // true
-$.isNumeric('123');   // true
-$.isNumeric('test');  // false
+dom.isNumeric(123);     // true
+dom.isNumeric('123');   // true
+dom.isNumeric('test');  // false
 ```
 
 ---
 
-### $.inArray(value, array, [fromIndex])
+### dom.inArray(value, array, [fromIndex])
 
 **功能**：在数组中查找值
 
@@ -966,13 +969,13 @@ $.isNumeric('test');  // false
 
 **示例**：
 ```javascript
-$.inArray(2, [1, 2, 3]);  // 1
-$.inArray(4, [1, 2, 3]);  // -1
+dom.inArray(2, [1, 2, 3]);  // 1
+dom.inArray(4, [1, 2, 3]);  // -1
 ```
 
 ---
 
-### $.proxy(function, context)
+### dom.proxy(function, context)
 
 **功能**：绑定函数上下文
 
@@ -991,13 +994,13 @@ var obj = {
     }
 };
 
-var fn = $.proxy(obj.getName, obj);
+var fn = dom.proxy(obj.getName, obj);
 fn(); // 'test'
 ```
 
 ---
 
-### $.parseJSON(json)
+### dom.parseJSON(json)
 
 **功能**：解析 JSON 字符串
 
@@ -1008,12 +1011,12 @@ fn(); // 'test'
 
 **示例**：
 ```javascript
-var obj = $.parseJSON('{"a":1}');
+var obj = dom.parseJSON('{"a":1}');
 ```
 
 ---
 
-### $.now()
+### dom.now()
 
 **功能**：获取当前时间戳
 
@@ -1021,14 +1024,14 @@ var obj = $.parseJSON('{"a":1}');
 
 **示例**：
 ```javascript
-var timestamp = $.now();
+var timestamp = dom.now();
 ```
 
 ---
 
 ## AJAX
 
-### $.ajax(options)
+### dom.ajax(options)
 
 **功能**：发送 AJAX 请求
 
@@ -1048,7 +1051,7 @@ var timestamp = $.now();
 
 **示例**：
 ```javascript
-$.ajax({
+dom.ajax({
     url: '/api/data',
     method: 'POST',
     data: { key: 'value' },
@@ -1063,7 +1066,7 @@ $.ajax({
 
 ---
 
-### $.get(url, [data], [success], [dataType])
+### dom.get(url, [data], [success], [dataType])
 
 **功能**：发送 GET 请求
 
@@ -1077,24 +1080,24 @@ $.ajax({
 
 **示例**：
 ```javascript
-$.get('/api/data', { id: 123 }, function(data) {
+dom.get('/api/data', { id: 123 }, function(data) {
     console.log(data);
 });
 ```
 
 ---
 
-### $.post(url, [data], [success], [dataType])
+### dom.post(url, [data], [success], [dataType])
 
 **功能**：发送 POST 请求
 
-**参数**：同 `$.get()`
+**参数**：同 `dom.get()`
 
 **返回值**：XMLHttpRequest
 
 **示例**：
 ```javascript
-$.post('/api/data', { key: 'value' }, function(data) {
+dom.post('/api/data', { key: 'value' }, function(data) {
     console.log(data);
 });
 ```
@@ -1103,10 +1106,10 @@ $.post('/api/data', { key: 'value' }, function(data) {
 
 ## 链式调用
 
-所有实例方法（`$.fn.*`）都返回 `this`，支持链式调用：
+所有实例方法（`dom.fn.*`）都返回 `this`，支持链式调用：
 
 ```javascript
-$('.item')
+dom('.item')
     .addClass('active')
     .css('color', 'red')
     .html('Test')
@@ -1123,24 +1126,24 @@ $('.item')
 对空集合调用方法不会报错，但可能返回 `undefined`：
 
 ```javascript
-var $empty = $('.non-existent');
+var $empty = dom('.non-existent');
 $empty.html('test');  // 无操作
 $empty.html();        // undefined
 ```
 
 ---
 
-### $(null) 和 $(undefined)
+### dom(null) 和 dom(undefined)
 
 返回空集合：
 
 ```javascript
-$(null).length;      // 0
-$(undefined).length; // 0
+dom(null).length;      // 0
+dom(undefined).length; // 0
 ```
 
 ---
 
 ## 总结
 
-本文档记录了 xfEditor micro-DOM 层的所有 API 行为，用于迁移对比和测试验证。迁移时应确保每个 API 的行为保持一致。
+本文档记录了 xfEditor micro-DOM 层的所有 API 行为，用于测试验证与二次开发参考。

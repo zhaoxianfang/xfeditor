@@ -397,7 +397,7 @@
   /* ★ v1.18 重要说明 ★
    * flowchart.js 输出的是「扁平 SVG」：所有 rect / path / text 都是 <svg> 的
    * 直系子节点，**不存在 <g> 分组**。因此 fc-type-* 这个 class 是直接打在
-   * 形状元素本身上的（由 $.fn.flowChart 的 symbols 配置注入），
+   * 形状元素本身上的（由 xfEditor.dom.fn.flowChart 的 symbols 配置注入），
    * 文本元素则是 fc-type-*t（多一个 t 后缀）。
    *
    * 旧写法 `.fc-type-start { rect { ... } }` 编译成后代选择器

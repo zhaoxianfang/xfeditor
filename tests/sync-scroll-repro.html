@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>xfEditor 双向同步滚动复现</title>
+<link rel="stylesheet" href="../css/xf_editor.min.css" />
+<style>
+  body { margin: 0; font-family: sans-serif; }
+  #editor { width: 1200px; }
+</style>
+</head>
+<body>
+<div id="editor"><textarea style="display:none;"></textarea></div>
+<script src="../xf_editor.js"></script>
+<script>
+(function () {
+  var parts = [];
+  for (var i = 1; i <= 60; i++) {
+    parts.push('# 章节 ' + i + ' 标题');
+    parts.push('');
+    for (var j = 1; j <= 6; j++) {
+      parts.push('这是第 ' + i + ' 章的第 ' + j + ' 段正文内容，用于构造足够长的文档以便观察同步滚动的定位精度。段落文本包含中英文 abcdefg 与数字 ' + (i * 100 + j) + '。');
+      parts.push('');
+    }
+  }
+  var markdown = parts.join('\n');
+  var dom = window.xfEditor.dom;
+  dom(function () {
+    window.__editor = xfEditor('editor', {
+      width: '1200px',
+      height: '600px',
+      path: '../lib/',
+      pluginPath: '../plugins/',
+      markdown: markdown,
+      toc: false,
+      taskList: false,
+      tex: false,
+      toolbarIcons: function () { return ['undo', 'redo', '|', 'watch']; }
+    });
+    window.__ready = true;
+  });
+})();
+</script>
+</body>
+</html>

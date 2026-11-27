@@ -1,7 +1,6 @@
 /**
  * xfEditor 预览页面 JS 打包脚本
- * 将预览所需的 JS 文件（不含 jQuery）合并为单个 xf_editor.preview.min.js
- * jQuery 需要由使用者单独引入（<script src="jquery.min.js"></script>）
+ * 将预览所需的 JS 文件（不含外部 DOM 库）合并为单个 xf_editor.preview.min.js
  * （所有源文件已经是 .min.js，直接拼接即可）
  */
 
@@ -9,7 +8,7 @@ var fs = require('fs');
 var path = require('path');
 var pkg = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf8'));
 
-// ★ 无 jQuery 依赖：xf_editor.min.js 已内置 micro-DOM 与 flowChart/sequenceDiagram 插件
+// ★ 零外部 DOM 库依赖：xf_editor.min.js 已内置 micro-DOM 与 flowChart/sequenceDiagram 插件
 var previewFiles = [
     { path: 'lib/marked.min.js',             required: true },
     { path: 'lib/prettify.min.js',           required: false },

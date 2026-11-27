@@ -36,23 +36,23 @@ testEditor = xfEditor("test-xfEditor", {
 }); 
 
 // the first method
-$("#undo").on('click', function() {
-    $.proxy(testEditor.toolbarHandlers.undo, testEditor)();
+xfEditor.dom("#undo").on('click', function() {
+    dom.proxy(testEditor.toolbarHandlers.undo, testEditor)();
 });
 
 // the Second method : using manually loaded dialog plugin
 // &lt;script src="../plugins/html-entities/html-entities.js"&gt;&lt;/script&gt;
-$("#open-html-entities-dialog").on('click', function() {
+xfEditor.dom("#open-html-entities-dialog").on('click', function() {
     testEditor.htmlEntities();
 });
 
 // using toolbar dialog plugin
-$("#open-link-dialog").on('click', function() {
-    $.proxy(testEditor.toolbarHandlers.link, testEditor)();
+xfEditor.dom("#open-link-dialog").on('click', function() {
+    dom.proxy(testEditor.toolbarHandlers.link, testEditor)();
 });
 
 // or
-$("#open-image-dialog").on('click', function(){
+xfEditor.dom("#open-image-dialog").on('click', function(){
     // load and execute plugin
     testEditor.executePlugin("imageDialog", "../plugins/image-dialog/image-dialog");
 });

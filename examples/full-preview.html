@@ -2,9 +2,9 @@
 <html lang="zh" data-theme="dark">
     <head>
         <meta charset="utf-8" />
-        <title>完整独立预览 - xfEditor v2.0.0</title>
+        <title>完整独立预览 - xfEditor v2.1.0</title>
     <link rel="stylesheet" href="css/style.css" />
-        <link rel="stylesheet" href="../css/xf_editor.preview.min.css?v=1.17.35" />
+        <link rel="stylesheet" href="../css/xf_editor.preview.min.css?v=2.1.0" />
         <link rel="shortcut icon" href="../images/favicon.ico" type="image/x-icon" />
         <style>
             #layout {
@@ -28,7 +28,7 @@
                 color: #666;
                 font-size: 14px;
             }
-            /* ★ v2.0.0: 暗色主题下 header 文字颜色适配 */
+            /* ★ v2.1.0: 暗色主题下 header 文字颜色适配 */
             [data-theme="dark"] header h1 { color: #f1f5f9; }
             [data-theme="dark"] header p { color: #94a3b8; }
             [data-theme="dark"] body { background: #0f172a; }
@@ -37,7 +37,7 @@
     <body>
         <div id="layout">
             <header>
-                <h1>xfEditor v2.0.0 完整独立预览</h1>
+                <h1>xfEditor v2.1.0 完整独立预览</h1>
                 <p>Full Preview Page — 内容由 <code>examples/md/full.md</code> 动态加载，演示所有 Markdown 扩展语法的渲染效果</p>
             </header>
             <div id="full-preview">
@@ -49,28 +49,16 @@
             预览 JS 加载方式（二选一）：
             
             方式一（推荐）：引入单个打包文件 xf_editor.preview.min.js
-            只需 1 个 HTTP 请求（无需 jQuery，编辑器已内置零依赖 micro-DOM），打包文件包含：
+            只需 1 个 HTTP 请求（编辑器已内置零依赖 micro-DOM，无需外部库），打包文件包含：
             marked + prettify + raphael + underscore + sequence-diagram +
             flowchart + echarts + xf_editor
             注意：KaTeX 公式字体已内嵌为 Base64，无需额外字体请求，完全离线可用
             <script src="../xf_editor.preview.min.js"></script>
             
-            方式二（兼容旧模式）：分别引入各文件
-            需要 10 个 HTTP 请求，适合按需加载或调试
         -->
         <!-- 方式一：推荐使用打包文件（当前使用） -->
-        <script src="../xf_editor.preview.min.js?v=1.17.34"></script>
-        <!-- 方式二：分别引入（已注释，供参考）
-        <script src="../lib/marked.min.js"></script>
-        <script src="../lib/prettify.min.js"></script>
-        <script src="../lib/raphael.min.js"></script>
-        <script src="../lib/underscore.min.js"></script>
-        <script src="../lib/sequence-diagram.min.js"></script>
-        <script src="../lib/flowchart.min.js"></script>
-        <script src="../lib/echarts.min.js"></script>
-        <script src="../xf_editor.min.js"></script>
-        -->
-        <script type="text/javascript">var dom = (window.xfEditor && window.xfEditor.dom) ? window.xfEditor.dom : null; // 内置 micro-DOM（零依赖，无全局 $）
+        <script src="../xf_editor.preview.min.js?v=2.1.0"></script>
+        <script type="text/javascript">var dom = (window.xfEditor && window.xfEditor.dom) ? window.xfEditor.dom : null; // 内置 micro-DOM（零外部依赖）
 
             dom(function() {
                 // 从 md/full.md 加载完整演示内容

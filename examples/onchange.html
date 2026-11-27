@@ -39,7 +39,7 @@
                     height : 720,
                     path   : '../lib/',
                     onchange : function() {
-                        dom("#output").html("onchange : this.id =>" + this.id + ", markdown =>" + this.getValue());
+                        dom("#output").html("onchange : this.id =>" + this.id + ", markdown =>" + this.getMarkdown());
                         console.log("onchange =>", this, this.id, this.settings, this.state);
                     }
                 });

@@ -61,15 +61,15 @@ configs:
 
 ```javascript
 {
-    // xfEditor theme, default or dark, change at v1.5.0
+    // xfEditor theme, default or dark, change at v2.1.0
     // You can also custom css class .xfEditor-theme-xxxx
     theme : "default | dark",
 
-    // Preview container theme, added v1.5.0
+    // Preview container theme, added v2.1.0
     // You can also custom css class .xfEditor-preview-theme-xxxx
     previewTheme : "default | dark",
 
-    // Added @v1.5.0 & after version this is CodeMirror (editor area) theme
+    // Added @v2.1.0 & after version this is CodeMirror (editor area) theme
     editorTheme : xfEditor.editorThemes['theme-name']
 }
 ```
@@ -176,26 +176,25 @@ editor.setPreviewTheme('theme-name');
                     width        : "90%",
                     height       : 720,
                     
-                    // xfEditor theme, default or dark, change at v1.5.0
+                    // xfEditor theme, default or dark, change at v2.1.0
                     // You can also custom css class .xfEditor-preview-theme-xxxx
                     theme        : (localStorage.theme) ? localStorage.theme : "dark",
                     
-                    // Preview container theme, added v1.5.0
+                    // Preview container theme, added v2.1.0
                     // You can also custom css class .xfEditor-preview-theme-xxxx
                     previewTheme : (localStorage.previewTheme) ? localStorage.previewTheme : "dark", 
                     
-                    // Added @v1.5.0 & after version is CodeMirror (editor area) theme
+                    // Added @v2.1.0 & after version is CodeMirror (editor area) theme
                     editorTheme  : (localStorage.editorTheme) ? localStorage.editorTheme : "pastel-on-dark", 
                     path         : '../lib/'
                 });
                 
-                themeSelect("xf_editor-theme-select", xfEditor.themes, "theme", function(self, theme) {
+                themeSelect("xf_editor-theme-select", xfEditor.editorThemes, "theme", function(self, theme) {
                     testEditor.setTheme(theme);
                 });
                 
                 themeSelect("editor-area-theme-select", xfEditor.editorThemes, "editorTheme", function(self, theme) {
-                    testEditor.setCodeMirrorTheme(theme); 
-                    // or testEditor.setEditorTheme(theme);
+                    testEditor.setEditorTheme(theme);
                 });
                 
                 themeSelect("preview-area-theme-select", xfEditor.previewThemes, "previewTheme", function(self, theme) {

@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
     <meta charset="utf-8" />
-    <title>表格空单元格修复演示 — xfEditor v2.0.0</title>
+    <title>表格空单元格修复演示 — xfEditor v2.1.0</title>
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="../css/xf_editor.min.css" />
     <link rel="shortcut icon" href="../images/favicon.ico" type="image/x-icon" />
@@ -11,7 +11,7 @@
     <div id="layout">
         <header>
             <h1>📊 表格空单元格修复演示</h1>
-            <p>v1.14.0 修复 marked.js v0.3.3 表格解析 Bug — 最后一列为空时不再丢失单元格</p>
+            <p>v2.1.0 修复 marked.js v0.3.3 表格解析 Bug — 最后一列为空时不再丢失单元格</p>
         </header>
 
         <div id="test-xfEditor" style="margin: 0 auto;">
@@ -21,15 +21,13 @@
 
 在 marked.js v0.3.3 中，解析 pipe-table 时使用贪婪正则 `replace(/^ *\| *| *\| *$/g, "")`，当表格**最后一行最后一列为空**时，贪婪正则会吞掉前一列到行尾的全部内容，导致该行少一列，造成显示错位。
 
-xfEditor v1.14.0 通过后处理函数 `fixTableEmptyCells()` 修复此 Bug：以 `thead` 列数为基准，自动补齐 `tbody` 中缺失的空 `td`。
+xfEditor v2.1.0 通过后处理函数 `fixTableEmptyCells()` 修复此 Bug：以 `thead` 列数为基准，自动补齐 `tbody` 中缺失的空 `td`。
 
 ---
 
-## 二、修复前后对比
+## 二、表格列对齐验证
 
-### 修复前（marked.js v0.3.3 Bug 导致）
-
-下面这个表格在旧版本编辑器中会导致"格式"列缺失：
+下面这个表格用于验证空单元格不会导致列错位：
 
 | 功能项 | 说明 | 格式 |
 |--------|------|------|
@@ -37,9 +35,7 @@ xfEditor v1.14.0 通过后处理函数 `fixTableEmptyCells()` 修复此 Bug：�
 | 图片上传 | 拖拽+粘贴上传 | .png, .jpg, .webp |
 | 文件上传 | 附件管理 | .pdf, .doc, .zip |
 
-**Bug 表现**：最后一行 `.pdf, .doc, .zip` 会向左错位到"说明"列，"格式"列消失。
-
-**修复后** ✅：所有列正常对齐，空单元格自动补齐。
+**验证结果** ✅：所有列正常对齐，空单元格自动补齐。
 
 ---
 
@@ -49,9 +45,9 @@ xfEditor v1.14.0 通过后处理函数 `fixTableEmptyCells()` 修复此 Bug：�
 
 | 名称 | 版本 | 状态 | 备注 |
 |------|------|------|------|
-| 实时预览 | v1.0 | 已发布 | 所见即所得编辑 |
-| 流程图 | v1.0 | 已发布 | — |
-| 时序图 | v1.0 | 已发布 | — |
+| 实时预览 | v2.1.0 | 已发布 | 所见即所得编辑 |
+| 流程图 | v2.1.0 | 已发布 | — |
+| 时序图 | v2.1.0 | 已发布 | — |
 
 ### 3.2 中间行末列为空
 
@@ -100,8 +96,8 @@ xfEditor v1.14.0 通过后处理函数 `fixTableEmptyCells()` 修复此 Bug：�
 
 [[tabs]]
 [[tab:功能对比]]
-| 项目 | 旧版本 | 新版本 |
-|------|--------|--------|
+| 项目 | 基线 | 当前版本 |
+|------|------|----------|
 | 代码高亮 | 支持 | 增强版 |
 | 表格空单元格 | ❌ 丢失 | ✅ 自动补齐 |
 | Tooltip | 基础 | 增强 |

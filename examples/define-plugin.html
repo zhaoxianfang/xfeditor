@@ -31,7 +31,7 @@
 
     var factory = function (exports) {
 
-		var dom = (exports && exports.dom) ? exports.dom : null;   // 使用编辑器内置 micro-DOM（零外部依赖，无需 jQuery）
+		var dom = (exports && exports.dom) ? exports.dom : null;   // 使用编辑器内置 micro-DOM（零外部依赖）
 
 		exports.customMethod = function() {
 		    //....
@@ -54,30 +54,8 @@
 
 	};
 
-	// CommonJS/Node.js
-	if (typeof require === "function" && typeof exports === "object" && typeof module === "object")
-    {
-        module.exports = factory;
-    }
-	else if (typeof define === "function")  // AMD/CMD/Sea.js
-    {
-		if (define.amd) { // for Require.js
-
-			define(["xf_editor"]), function(xfEditor) {
-                factory(xfEditor);
-            });
-
-		} else { // for Sea.js
-			define(function(require) {
-                var xfEditor = require("./../../xf_editor");
-                factory(xfEditor);
-            });
-		}
-	} 
-	else
-	{
-        factory(window.xfEditor);
-	}
+	// 浏览器全局脚本：插件直接注册到 window.xfEditor
+	factory(window.xfEditor);
 
 })();
 ```
@@ -99,7 +77,7 @@
     });
 
     // or
-    $("#btn").click(function(){
+    xfEditor.dom("#btn").click(function(){
         testEditor.youPluginName();
     });
 &lt;/script&gt;

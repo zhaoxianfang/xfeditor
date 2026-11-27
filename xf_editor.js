@@ -1,138 +1,8 @@
-;(function(factory) {
+;(function() {
     "use strict";
-
-    // Polyfill：始终覆盖 window.test，防止浏览器报 "test is not defined" / "test.mode is not a function" 错误
-    if (typeof window !== "undefined") {
-        try {
-            var _testPolyfill = function() {};
-            _testPolyfill.mode       = function() {};
-            _testPolyfill.formatString = function() { return ""; };
-            _testPolyfill.addOption  = function() {};
-            _testPolyfill.show       = function() {};
-            _testPolyfill.init       = function() {};
-            _testPolyfill.run        = function() {};
-            _testPolyfill.destroy    = function() {};
-            window.test = _testPolyfill;
-        } catch(e) {
-            // 静默失败：test polyfill 非关键功能
-        }
-    }
-    
-	// CommonJS / Node.js 模块加载
-	if (typeof require === "function" && typeof exports === "object" && typeof module === "object")
-    { 
-        module.exports = factory;
-    }
-	else if (typeof define === "function")  // AMD / CMD / Sea.js 模块加载
-	{
-        if (define.amd) // Require.js AMD 加载
-        {
-            /* Require.js define replace */
-        } 
-        else 
-        {
-		    define(factory);  // Sea.js CMD 加载
-        }
-	} 
-	else
-	{ 
-        window.xfEditor = factory();
-	}
-    
-}(function() {    
-
-    /* Require.js assignment replace */
-    
-    "use strict";
-    
-    // ★ v2.0.0: CSS.escape polyfill（IE/旧浏览器兼容）
-    if (typeof CSS !== "undefined" && !CSS.escape) {
-        CSS.escape = function(value) {
-            var str = String(value);
-            return str.replace(/[!"#$%&'()*+,.\/:;<=>?@[\]^`{|}~]/g, "\\$&");
-        };
-    }
-    // ★ v2.0.0: String.prototype.padStart polyfill（IE/ES2016-兼容）
-    if (!String.prototype.padStart) {
-        String.prototype.padStart = function(targetLength, padString) {
-            targetLength = targetLength >> 0;
-            padString = String(typeof padString !== "undefined" ? padString : " ");
-            if (this.length >= targetLength) return String(this);
-            var pad = "";
-            while (pad.length < targetLength - this.length) pad += padString;
-            return pad.substring(0, targetLength - this.length) + String(this);
-        };
-    }
-    // ★ v2.0.0: Element.prototype.matches polyfill（IE/旧浏览器兼容）
-    if (!Element.prototype.matches) {
-        Element.prototype.matches = Element.prototype.msMatchesSelector || Element.prototype.webkitMatchesSelector;
-    }
-    // ★ v2.0.0: Element.prototype.closest polyfill（IE 兼容）
-    if (!Element.prototype.closest) {
-        Element.prototype.closest = function(selector) {
-            var el = this;
-            while (el && el.nodeType === 1) {
-                if (el.matches && el.matches(selector)) return el;
-                el = el.parentNode;
-            }
-            return null;
-        };
-    }
-    // ★ v2.0.0: Object.assign polyfill（IE 兼容）
-    if (typeof Object.assign !== "function") {
-        Object.assign = function(target) {
-            if (target === null || target === undefined) throw new TypeError("Cannot convert undefined or null to object");
-            var to = Object(target);
-            for (var i = 1; i < arguments.length; i++) {
-                var source = arguments[i];
-                if (source !== null && source !== undefined) {
-                    for (var key in source) {
-                        if (Object.prototype.hasOwnProperty.call(source, key)) to[key] = source[key];
-                    }
-                }
-            }
-            return to;
-        };
-    }
-    // ★ v2.0.0: TextEncoder / TextDecoder polyfill（旧浏览器兼容）
-    if (typeof TextEncoder === "undefined") {
-        (function() {
-            var encoder = function() {};
-            encoder.prototype.encode = function(str) {
-                str = String(str === null || str === undefined ? "" : str);
-                var bytes = [];
-                var i, c, len = str.length;
-                for (i = 0; i < len; i++) {
-                    c = str.charCodeAt(i);
-                    if (c < 0x80) { bytes.push(c); }
-                    else if (c < 0x800) { bytes.push(0xc0 | (c >> 6), 0x80 | (c & 0x3f)); }
-                    else if (c < 0xd800 || c >= 0xe000) { bytes.push(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 0x3f), 0x80 | (c & 0x3f)); }
-                    else { i++; if (i >= len) break; var c2 = str.charCodeAt(i); c = 0x10000 + ((c & 0x3ff) << 10) + (c2 & 0x3ff); bytes.push(0xf0 | (c >> 18), 0x80 | ((c >> 12) & 0x3f), 0x80 | ((c >> 6) & 0x3f), 0x80 | (c & 0x3f)); }
-                }
-                return new Uint8Array(bytes);
-            };
-            var decoder = function() {};
-            decoder.prototype.decode = function(bytes) {
-                var str = "", i = 0, len = bytes.length;
-                while (i < len) {
-                    var b1 = bytes[i++], c;
-                    if (b1 < 0x80) { c = b1; }
-                    else if ((b1 & 0xe0) === 0xc0 && i < len) { c = ((b1 & 0x1f) << 6) | (bytes[i++] & 0x3f); }
-                    else if ((b1 & 0xf0) === 0xe0 && i + 1 < len) { c = ((b1 & 0x0f) << 12) | ((bytes[i++] & 0x3f) << 6) | (bytes[i++] & 0x3f); }
-                    else if ((b1 & 0xf8) === 0xf0 && i + 2 < len) { c = ((b1 & 0x07) << 18) | ((bytes[i++] & 0x3f) << 12) | ((bytes[i++] & 0x3f) << 6) | (bytes[i++] & 0x3f); if (c > 0x10ffff) c = 0xfffd; }
-                    else { c = 0xfffd; if (b1 >= 0x80) i++; }
-                    if (c < 0x10000) { str += String.fromCharCode(c); }
-                    else { c -= 0x10000; str += String.fromCharCode(0xd800 | (c >> 10)) + String.fromCharCode(0xdc00 | (c & 0x3ff)); }
-                }
-                return str;
-            };
-            window.TextEncoder = encoder;
-            window.TextDecoder = decoder;
-        })();
-    }
     
     /* ==================================================================
-     * 原生工具函数 - 替代传统 jQuery 的 extend / isArray 等工具方法
+     * 原生工具函数 - extend / isArray 等工具方法
      * ================================================================== */
     var deepMerge = (function() {
         function isPlainObject(obj) {
@@ -159,7 +29,7 @@
     })();
 
     /**
-     * 原生 fetch 封装 - 替代传统 jQuery 的 ajax / get / post / getJSON
+     * 原生 fetch 封装 - 提供简洁的 ajax / get / post / getJSON 接口
      */
     // ★ CSRF 防护：读取 <meta name="csrf-token"> 的 Token，并按需附加到请求头。
     //   仅在「同源」请求时附加 X-CSRF-TOKEN，避免跨域 GET（如远程图片抓取）触发 CORS 预检而失败。
@@ -189,11 +59,17 @@
     }
 
     var nativeFetch = (function() {
+        // 附加空 catch 标记 Promise 已处理，避免网络失败时产生
+        //   unhandled promise rejection；原 Promise 仍原样返回，调用方可继续 .catch。
+        var _guard = function(promise) {
+            promise.catch(function() {});
+            return promise;
+        };
         function fetchJSON(method, url, data, _opts) {
             var opts = Object.assign({ method: method, headers: { "Content-Type": "application/json" }, credentials: "same-origin" }, _opts || {});
             opts.headers = mergeCsrfHeader(url, opts.headers);
             if (data) opts.body = JSON.stringify(data);
-            return fetch(url, opts).then(function(r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
+            return _guard(fetch(url, opts).then(function(r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }));
         }
         return {
             get: function(url, data, opts) { return fetchJSON("GET", url, data, opts); },
@@ -201,18 +77,18 @@
             getJSON: function(url, opts) {
                 var o = Object.assign({ method: "GET", credentials: "same-origin" }, opts || {});
                 o.headers = mergeCsrfHeader(url, o.headers || {});
-                return fetch(url, o).then(function(r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
+                return _guard(fetch(url, o).then(function(r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }));
             },
             ajax: function(opts) {
                 var o = Object.assign({ method: "GET", headers: {}, credentials: "same-origin", cache: true }, opts || {});
                 if (!o.cache) o.headers["Cache-Control"] = "no-cache";
                 o.headers = mergeCsrfHeader(o.url, o.headers);
                 if (o.data) o.body = typeof o.data === "string" ? o.data : JSON.stringify(o.data);
-                return fetch(o.url, o).then(function(r) {
+                return _guard(fetch(o.url, o).then(function(r) {
                     if (!r.ok) throw new Error("HTTP " + r.status);
                     var ct = r.headers.get("content-type") || "";
                     return ct.indexOf("application/json") >= 0 ? r.json() : r.text();
-                });
+                }));
             }
         };
     })();
@@ -220,9 +96,9 @@
     /* ==================================================================
      * xfDom - 内置零依赖 micro-DOM 库（原生 JS 封装）
      * ------------------------------------------------------------------
-     * 目的：移除对 jQuery / Zepto 的外部依赖，编辑器自包含运行。
+     * 目的：编辑器自包含运行，无任何外部 DOM 库依赖。
      * 覆盖：选择/遍历/属性/样式/类名/DOM操作/尺寸位置/事件(含命名空间与委托)/data。
-     * 说明：兼容 jQuery 子集 API，纯原生实现。
+     * 说明：纯原生实现，仅暴露 xfEditor.dom 单一入口。
      * ================================================================== */
     var dom = (function(window, document) {
         "use strict";
@@ -319,7 +195,7 @@
             } else if (sel instanceof XfDom) {
                 return sel;
             } else if (isFn(sel)) {
-                // $(fn) => DOM ready
+                // 函数参数 => DOM ready
                 if (document.readyState === "loading") {
                     document.addEventListener("DOMContentLoaded", function() { sel(XfDom.fn.init); });
                 } else {
@@ -366,7 +242,7 @@
         function matches(el, sel) {
             if (!el || el.nodeType !== 1 || !sel) return false;
             if (sel === "*") return true;
-            // 支持 :visible / :hidden 伪类（jQuery 扩展，原生 matches 不支持）
+            // 支持 :visible / :hidden 伪类（原生 matches 不支持）
             if (sel === ":visible") return isVisible(el);
             if (sel === ":hidden") return !isVisible(el);
             var fn = el.matches || el.webkitMatchesSelector || el.msMatchesSelector || el.mozMatchesSelector;
@@ -430,7 +306,7 @@
             var out = [];
             if (!sel) return pushStack(this, out);
             if (sel instanceof XfDom || isNode(sel)) {
-                // $(el).find(node) —— 判断包含关系
+                // XfDom.find(node) —— 判断包含关系
                 var targets = sel instanceof XfDom ? sel.toArray() : [sel];
                 for (var a = 0; a < this.length; a++) {
                     for (var b = 0; b < targets.length; b++) {
@@ -647,7 +523,7 @@
             if (value === undefined) {
                 var el = this[0];
                 if (!el || el.nodeType !== 1) return undefined;
-                // 布尔属性：与 jQuery 一致，返回 name 或 undefined
+                // 布尔属性：返回 name 或 undefined
                 if (boolAttrs[name.toLowerCase()] && el[name] !== undefined) {
                     return el[name] ? name.toLowerCase() : undefined;
                 }
@@ -690,7 +566,7 @@
                         .map(function(o) { return o.value; });
                 }
                 
-                // ★ v2.0.0: 处理 checkbox/radio 组
+                // 处理 checkbox/radio 组
                 // 当元素是 checkbox 或 radio 且有 name 属性时，返回同 name 组的选中值数组
                 if ((el.type === "checkbox" || el.type === "radio") && el.name) {
                     var name = el.name;
@@ -849,7 +725,7 @@
             if (typeof state === "boolean") return state ? this.show() : this.hide();
             return this.each(function(i, el) {
                 if (el.nodeType !== 1) return;
-                // 与 jQuery 一致：以 display 是否为 none 判定（而非几何可见性）。
+                // 以 display 是否为 none 判定（而非几何可见性）。
                 // 注意：未插入文档的元素 getComputedStyle().display 恒为 ''，
                 // 需回退到内联样式 / 标签默认 display，否则 detached 元素无法正确切换。
                 var computed = window.getComputedStyle(el, null).display;
@@ -1099,7 +975,7 @@
             if (!el) return { top: 0, left: 0 };
             return { top: el.offsetTop, left: el.offsetLeft };
         };
-        // ★ v2.0.0: 补齐 jQuery 同名方法 —— XfDom 缺少 outerWidth/outerHeight，
+        // 补齐 outerWidth/outerHeight —— XfDom 缺少这两个方法，
         // 导致 showTooltip 中 $tooltip.outerWidth() 抛出 TypeError，tooltip 完全不可用。
         dom.fn.outerWidth = function(includeMargin) {
             var el = this[0];
@@ -1145,7 +1021,7 @@
             var p = t.split(".");
             return { type: p[0], ns: p.slice(1).filter(Boolean).sort() };
         }
-        // 为原生 Event 补齐 jQuery 风格 API
+        // 为原生 Event 补齐常用风格 API
         function normalizeEvent(e, delegateTarget) {
             if (!e) return e;
             if (!("isDefaultPrevented" in e)) {
@@ -1306,7 +1182,7 @@
                 // 注意：不优先调用原生方法（如 el.click()），原因有二：
                 //   1) 自定义事件名若与 DOM 方法同名（remove/before/after/append/prepend 等）
                 //      会错误执行 DOM 操作而非派发事件；
-                //   2) 原生分支会丢弃 extraData，违背 jQuery "trigger(type, data)" 的语义。
+                //   2) 原生分支会丢弃 extraData，违背 trigger(type, data) 的语义。
                 // 统一用 dispatchEvent 派发，并通过事件系统的 rec.proxy 把 extraData 作为
                 // handler 的第二个参数传入；命名空间事件仅手动派发一次（避免与 dispatchEvent 重复）。
                 var e = makeFakeEvent(nativeType, isObj(type) ? type : null);
@@ -1433,7 +1309,7 @@
             return Object.prototype.toString.call(v).slice(8, -1).toLowerCase();
         };
 
-        // ---------- AJAX（基于 XMLHttpRequest，提供 jQuery 兼容的常用子集） ----------
+        // ---------- AJAX（基于 XMLHttpRequest，提供常用请求接口） ----------
         function ajaxSettings(url, data, success, dataType) {
             // 参数重载：url[, data][, success][, dataType]
             if (isFn(data)) { dataType = success; success = data; data = undefined; }
@@ -1486,7 +1362,7 @@
                 }
             }
             
-            // ★ v2.0.0: 添加 timeout 支持
+            // 添加 timeout 支持
             if (opts.timeout && opts.timeout > 0) {
                 xhr.timeout = opts.timeout;
                 xhr.ontimeout = function() {
@@ -1497,10 +1373,10 @@
                 };
             }
             
-            // ★ v2.0.0: 防 XHR 双重回调标记（onerror 后 onreadystatechange 可能再次触发 error 分支）
+            // 防 XHR 双重回调标记（onerror 后 onreadystatechange 可能再次触发 error 分支）
             var _xhrHandled = false;
             
-            // ★ v2.0.0: 添加网络错误处理
+            // 添加网络错误处理
             xhr.onerror = function() {
                 if (_xhrHandled) return;
                 _xhrHandled = true;
@@ -1568,7 +1444,7 @@
                 fire(callbacks.always, []);
             };
             
-            // ★ v2.0.0: 添加脚本加载失败的错误处理
+            // 添加脚本加载失败的错误处理
             script.onerror = function() {
                 if (typeof console !== "undefined" && console.error) {
                     console.error("[xfEditor] Failed to load script: " + url);
@@ -1581,10 +1457,10 @@
             return promise;
         };
 
-        // ---------- 内建图表插件（XfDom 插件层封装，下接 Raphael flow/sequence 库；摆脱 jQuery 适配） ----------
-        // flowchart.js / js-sequence-diagrams 本身零 jQuery/XfDom 依赖，
+        // ---------- 内建图表插件（XfDom 插件层封装，下接 Raphael flow/sequence 库） ----------
+        // flowchart.js / js-sequence-diagrams 本身不依赖 XfDom，
         // 直接调用 Raphael API 绘制；此处提供 XfDom 插件接口，无需外部适配器。
-        // ★ v1.18: 判定元素当前所处主题（暗色/亮色）
+        // 判定元素当前所处主题（暗色/亮色）
         //   优先级：最近的 [data-theme] 祖先 → <html>/<body> 的 data-theme → 类名 theme-dark → 系统偏好
         dom.fn.flowChart = function(options) {
             options = options || {};
@@ -1615,7 +1491,7 @@
                 "fill": themeColors["fill"],
                 "yes-text": "yes", "no-text": "no",
                 "arrow-end": "block",
-                // ★ v1.18: 覆盖 flowchart.js 全部 9 种节点类型（新增 input / output）
+                // 覆盖 flowchart.js 全部 9 种节点类型（新增 input / output）
                 //   注意：flowchart.js 输出的是「扁平 SVG」（无 <g> 分组），
                 //   每个节点 shape 直接带上这里配置的 class，文本元素则带 class + "t" 后缀。
                 "symbols": {
@@ -1640,8 +1516,7 @@
                 }
             };
             // ★ 关键修复（彻底消除版本依赖）：
-            //   优先使用内置自包含 bundle（flowchart.bundle.min.js 内联的 v1.18），
-            //   它已缓存到 xfEditor._flowchart。外部全局 window.flowchart 可能是旧版 v1.3.4，
+            //   优先使用内置自包含 bundle（flowchart.bundle.min.js），它已缓存到 xfEditor._flowchart。
             //   一律不优先使用，从而彻底消除 "a.shiftX is not a function" /
             //   "Cannot set properties of undefined (setting 'yes')" 等错误。
             var FC = xfEditor._flowchart || window.flowchart;
@@ -1652,7 +1527,7 @@
 
             return this.each(function(i, el) {
                 var selfW = dom(el);
-                // ★ v1.18: 源码优先取 data-fc-source（首次渲染时缓存），
+                // 源码优先取 data-fc-source（首次渲染时缓存），
                 //   否则取 textContent。缓存后主题切换可重新渲染而不丢失源码。
                 var source = el.getAttribute("data-fc-source");
                 if (source === null || source === "") {
@@ -1693,7 +1568,6 @@
     })(window, document);
 
     // 将 micro-DOM 挂载到 xfEditor 上（替代 $ 直接访问）
-    var xfDom = dom; // 内部别名，兼容旧 $ 使用
     
     /**
      * xfEditor
@@ -1708,8 +1582,8 @@
     };
     
     xfEditor.title        = "xfEditor";
-    xfEditor.version      = "2.0.0";          // ★ 全系统唯一版本号来源（展示时统一前缀 v）
-    xfEditor.versionName  = "v2.0.0";         // ★ 便于外部直接读取带 v 前缀的版本串
+    xfEditor.version      = "2.1.0";          // ★ 全系统唯一版本号来源（展示时统一前缀 v）
+    xfEditor._instanceSeq = 0;                 // 实例序号，供 _uid 使用（多实例事件隔离）
     xfEditor.homePage     = "https://github.com/zhaoxianfang/xfeditor";
     /**
      * 文件名安全化
@@ -1768,7 +1642,6 @@
     };
 
     xfEditor.classPrefix  = "xf_editor-";
-    xfEditor.dom          = dom; // micro-DOM 实例，替代 $/jQuery
     xfEditor._echartsSeq  = 0;   // echarts 图表 id 稳定计数器（避免 Math.random 每次渲染漂移）
     
     /**
@@ -1789,17 +1662,21 @@
                   .replace(/[\u201c\u201d]/g, "&quot;")
                   .replace(/[\u2018\u2019]/g, "&#39;");
     };
-    
-    // 别名：保持大写的 escapeHTML 与 escapeHtml 一致（历史代码中两处均有调用）
-    xfEditor.escapeHTML = xfEditor.escapeHtml;
-    
+
     /**
-     * HTML 属性值转义（与 escapeHtml 行为一致，转义所有特殊字符）
-     * 提供独立函数名以便语义区分（'escapeAttr' 用于属性值上下文）
-     * ★ v2.0.0: 修正注释，实际转义行为与 escapeHtml 一致
+     * Markdown 正文转义（用于图片 alt / 链接文本等 Markdown 结构上下文）
+     * 与 escapeHtml 不同：需转义 [ ] ( ) \ 等 Markdown 结构符，
+     * 防止文件名含 "x](/evil)" 时提前闭合图片/链接语法造成结构注入。
+     *
+     * @param {String} str 原始文本
+     * @returns {String}   可安全嵌入 Markdown 方括号/圆括号上下文的文本
      */
-    xfEditor.escapeAttr = xfEditor.escapeHtml;
-    
+    xfEditor.escapeMarkdownText = function(str) {
+        if (str == null || typeof str !== "string") return "";
+        return str.replace(/\\/g, "\\\\")
+                  .replace(/([\[\]()])/g, "\\$1")
+                  .replace(/[\r\n]+/g, " ");
+    };
     /**
      * Base64 编码（UTF-8 安全），用于在 HTML 属性中存储含特殊字符的内容
      */
@@ -1883,8 +1760,8 @@
         mode                 : "gfm",          // 编辑器模式：gfm 或 markdown
         name                 : "",             // 表单元素 name 属性值
         value                : "",             // CodeMirror 初始值（当 mode 不是 gfm/markdown 时使用）
-        theme                : "",             // xfEditor 编辑器主题（v1.5.0 之前为 CodeMirror 主题）
-        editorTheme          : "default",      // 编辑区主题，即 CodeMirror 主题（v1.5.0 起）
+        theme                : "",             // xfEditor 编辑器主题
+        editorTheme          : "default",      // 编辑区主题，即 CodeMirror 主题
         previewTheme         : "",             // 预览区主题
         markdown             : "",             // Markdown 源内容
         appendMarkdown       : "",             // 追加 Markdown 内容（初始化时 textarea 已有值则追加）
@@ -1995,7 +1872,19 @@
         videoUpload          : false,
         videoFormats         : ["mp4", "webm", "ogv", "mov"],
         videoUploadURL       : "",
-        
+
+        // 拖放 / 粘贴上传：文件按类型自动选择图片、视频或附件接口，上传成功后回插到鼠标位置
+        dropPasteUpload      : true,            // 总开关：是否处理拖入/粘贴的文件
+        dropPasteAtMouse     : true,            // true=插入到最近一次鼠标位置；false=插入到当前光标
+        dropPasteMaxFiles    : 10,              // 单次最多处理的文件数
+        uploadMaxSize        : 10 * 1024 * 1024, // 图片单文件上限（10MB）
+        uploadMaxFileSize    : 50 * 1024 * 1024, // 视频/附件单文件上限（50MB）
+        strictMimeCheck      : true,            // 严格校验图片扩展名、MIME 与文件头魔数
+        allowedUploadProtocols: ["http:", "https:", "mailto:", "tel:", "ftp:", "/", "./", "../"],
+        uploadFunction       : null,            // 自定义上传：function(file, meta, done)，返回 (err, json)
+        uploadHeaders        : {},              // 附加到 XHR 上传的请求头
+        onUploadError        : function() {},  // 上传失败回调：function(info){}
+
         toc                  : true,           // 启用目录生成
         tocm                 : false,          // 使用 [TOCM] 自动创建目录下拉菜单
         tocTitle             : "",         tocDropdown          : false,          // 自动创建目录下拉菜单
@@ -2392,6 +2281,15 @@
             var _this            = this;
             var classPrefix      = this.classPrefix  = xfEditor.classPrefix; 
             var settings         = this.settings     = deepMerge( {}, xfEditor.defaults, options);
+
+            // 实例级 state —— 原型上的 state 仅为默认值模板，
+            // 禁止多个编辑器实例共享同一个可变状态对象（否则 A 全屏/销毁会污染 B）
+            this.state = {
+                watching   : false,
+                loaded     : false,
+                preview    : false,
+                fullscreen : false
+            };
             
             id                   = (typeof id === "object") ? settings.id : id;
             
@@ -2415,7 +2313,10 @@
             this._scrollSyncBound = false;   // 是否已绑定同步滚动事件
             this._syncScrollActive = null;   // 当前鼠标所在区域："editor" | "preview" | null
             this._applyingDomChanges = false;  // DOM 更新期间锁定滚动同步
-            // ★ v2.0.0: 统一同步滚动状态管理
+            // 实例唯一 ID，用于 window 级事件命名空间隔离；
+            //   多个编辑器共存时，A 的解绑不会误删 B 的监听器。
+            this._uid = "xfed" + (++xfEditor._instanceSeq).toString(36);
+            // 统一同步滚动状态管理
             this._syncState = {
                 suppressAllSync    : false,   // 完全禁用双向同步（preview→editor内容更新时）
                 programmaticScroll : false,   // 标记为程序化滚动（忽略该次scroll事件）
@@ -2478,7 +2379,8 @@
             var appendElements = [
                 (!settings.readOnly) ? "<a href=\"javascript:;\" class=\"fa fa-close " + classPrefix + "preview-close-btn\"></a>" : "",
                 ( (settings.saveHTMLToTextarea) ? "<textarea class=\"" + classNames.textarea.html + "\" name=\"" + id + "-html-code\"></textarea>" : "" ),
-                "<div class=\"" + classPrefix + "preview\"><div class=\"markdown-body " + classPrefix + "preview-container\"></div></div>",
+                // ★ v2.1.0 a11y: 预览区声明为具名 region，便于屏幕阅读器定位
+                "<div class=\"" + classPrefix + "preview\" role=\"region\" aria-label=\"Markdown 预览\"><div class=\"markdown-body " + classPrefix + "preview-container\" lang=\"zh-CN\"></div></div>",
                 "<div class=\"" + classPrefix + "container-mask\" style=\"display:block;\"></div>",
                 "<div class=\"" + classPrefix + "mask\"></div>"
             ].join("\n");
@@ -2507,7 +2409,7 @@
             this.preview          = editor.children("." + classPrefix + "preview");
             this.previewContainer = this.preview.children("." + classPrefix + "preview-container");
             
-            // ★ v2.0.0: 如果设置了 editor theme 但没设 previewTheme，自动同步
+            // 如果设置了 editor theme 但没设 previewTheme，自动同步
             if (!settings.previewTheme && settings.theme && settings.theme !== "default") {
                 settings.previewTheme = settings.theme;
             }
@@ -2517,32 +2419,29 @@
                 this.preview.addClass(classPrefix + "preview-theme-" + settings.previewTheme);
             }
             
-            if (typeof define === "function" && define.amd)
+            if (!settings.autoLoadModules)
             {
-                if (typeof katex !== "undefined") 
+                if (typeof katex !== "undefined")
                 {
                     xfEditor.katex = katex;
                 }
-                
-                if (settings.searchReplace && !settings.readOnly) 
+
+                if (settings.searchReplace && !settings.readOnly)
                 {
                     xfEditor.loadCSS(settings.path + "codemirror/addon/dialog/dialog");
                     xfEditor.loadCSS(settings.path + "codemirror/addon/search/matchesonscrollbar");
                 }
-            }
-            
-            if ((typeof define === "function" && define.amd) || !settings.autoLoadModules)
-            {
+
                 if (typeof CodeMirror !== "undefined") {
                     xfEditor.CodeMirror = CodeMirror;
                 }
-                
-                if (typeof marked     !== "undefined") {
-                    xfEditor.marked     = marked;
+
+                if (typeof marked !== "undefined") {
+                    xfEditor.marked = marked;
                 }
-                
+
                 this.setCodeMirror().setToolbar().loadedDisplay();
-            } 
+            }
             else
             {
                 this.loadQueues();
@@ -2582,7 +2481,7 @@
             var loadPath     = settings.path;
                                 
             var onEditorReady = function() {
-                // ★ v2.0.0: 移除已失效的 IE8 分支
+                // 移除已失效的 IE8 分支
                 _this.loadedDisplay();
             };
 
@@ -2600,7 +2499,7 @@
             }
             
             xfEditor.loadScript(loadPath + "codemirror/codemirror.min", function() {
-                // ★ v2.0.0: 空值安全检查
+                // 空值安全检查
                 xfEditor.CodeMirror = (typeof CodeMirror !== "undefined") ? CodeMirror : null;
                 if (!xfEditor.CodeMirror) { console.warn("[xfEditor] CodeMirror 加载失败"); return; }
                 
@@ -2623,7 +2522,7 @@
 
                         xfEditor.loadScript(loadPath + "marked.min", function() {
 
-                            // ★ v2.0.0: 空值安全检查
+                            // 空值安全检查
                             xfEditor.marked = (typeof marked !== "undefined") ? marked : null;
                             if (!xfEditor.marked) { console.error("[xfEditor] marked 库加载失败"); return; }
                                 
@@ -2686,7 +2585,7 @@
                 this.setEditorTheme("default");
             }
             
-            // ★ v2.0.0: 同步切换预览区主题 — 确保左右两侧都切换到暗色/默认主题
+            // 同步切换预览区主题 — 确保左右两侧都切换到暗色/默认主题
             this.setPreviewTheme(theme);
             
             return this;
@@ -2710,19 +2609,6 @@
             
             if (!this.cm) return this;
             this.cm.setOption("theme", theme);
-            
-            return this;
-        },
-        
-        /**
-         * setEditorTheme() 的别名
-         * setEditorTheme() alias
-         * 
-         * @returns {xfEditor}  返回xfEditor的实例对象
-         */
-        
-        setCodeMirrorTheme : function (theme) {            
-            this.setEditorTheme(theme);
             
             return this;
         },
@@ -2808,11 +2694,13 @@
                 xfEditor.CodeMirror.registerHelper("fold", "xfeditorBase64", xfBase64Fold);
             }
             // 自动折叠全文档中的超长 base64 行
-            var xfFoldAllBase64 = function() {
+            var xfFoldAllBase64 = function(fromLine, toLine) {
                 if (!self.cm) return;
                 var cm = self.cm;
-                var last = cm.lastLine();
-                for (var i = 0; i <= last; i++) {
+                // ★ v2.1.0 性能: 支持只扫描变更行范围；无参数时才全量扫描（初始化）
+                var first = (typeof fromLine === "number") ? Math.max(0, fromLine) : 0;
+                var last = (typeof toLine === "number") ? Math.min(cm.lastLine(), toLine) : cm.lastLine();
+                for (var i = first; i <= last; i++) {
                     var ln = cm.getLine(i);
                     if (ln && /data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]{60,}/.test(ln)) {
                         try { cm.foldCode(xfEditor.CodeMirror.Pos(i, 0), xfBase64Fold, "fold"); } catch (e) {}
@@ -2881,8 +2769,10 @@
             
             if (settings.autoHeight)
             {
+                // ★ v2.1.0 性能: 原 viewportMargin=Infinity 会渲染全文档 DOM，
+                //   万行文档首屏与内存开销极大。改为有限视口 + 容器高度自适应，保留虚拟化。
                 this.codeMirror.css("height", "auto");
-                this.cm.setOption("viewportMargin", Infinity);
+                this.cm.setOption("viewportMargin", 100);
             }
             
             if (!settings.lineNumbers)
@@ -2913,7 +2803,7 @@
          */
         
         setCodeMirrorOption : function(key, value) {
-            // ★ v2.0.0: 添加 null 守卫，防止编辑器未初始化时崩溃
+            // 添加 null 守卫，防止编辑器未初始化时崩溃
             if (!this.cm) return this;
             this.cm.setOption(key, value);
             
@@ -2943,7 +2833,7 @@
          */
         
         removeKeyMap : function(map) {
-            // ★ v2.0.0: 添加 null 守卫
+            // 添加 null 守卫
             if (!this.cm) return this;
             this.cm.removeKeyMap(map);
             
@@ -2968,7 +2858,7 @@
             }
             
             var cm       = this.cm;
-            // ★ v2.0.0: 添加 null 守卫，防止编辑器未初始化时崩溃
+            // 添加 null 守卫，防止编辑器未初始化时崩溃
             if (!cm) return this;
             var editor   = this.editor;
             var count    = cm.lineCount();
@@ -3378,7 +3268,8 @@
                     }
                     else 
                     {
-                        menuItem += "<a href=\"javascript:;\" title=\"" + title + "\" unselectable=\"on\">";
+                        // ★ v2.1.0 a11y: role=button + aria-label，屏幕阅读器可识别为按钮
+                        menuItem += "<a href=\"javascript:;\" role=\"button\" tabindex=\"0\" aria-label=\"" + title + "\" title=\"" + title + "\" unselectable=\"on\">";
                         menuItem += "<i class=\"fa " + iconClass + "\" name=\""+name+"\" unselectable=\"on\">"+((isHeader) ? name.toUpperCase() : ( (iconClass === "") ? iconTexts : "") ) + "</i>";
                         menuItem += "</a>";
                     }
@@ -3468,7 +3359,7 @@
                     
                     requestAnimationFrame(function() {
                         var rect = menu[0].getBoundingClientRect();
-                        var vpW = window.innerWidth || document.documentElement.clientWidth;
+                        var vpW = window.innerWidth;
                         var vpH = window.innerHeight || document.documentElement.clientHeight;
                         
                         // 右边缘溢出 → 右对齐
@@ -3637,9 +3528,7 @@
             var _this        = this;
 			var editor       = this.editor;
             var classPrefix  = this.classPrefix;
-            // ★ v2.0.0-FIX: 原实现在此直接引用裸变量 settings，而本函数从未声明它，
-            //   打开「关于」弹窗必然抛出 ReferenceError: settings is not defined。
-            //   现统一从实例上取，并在 this.settings 缺失时回落为默认配置，杜绝同类崩溃。
+            // 从实例上取配置，并在缺失时回落为默认配置，避免依赖外部变量。
             var settings     = this.settings || xfEditor.defaults || {};
             var lang         = this.lang || (xfEditor.defaults && xfEditor.defaults.lang) || {};
             
@@ -3661,7 +3550,7 @@
                 "<p style=\"font-size: 0.85em;\">Copyright &copy; 2015-2026 <a href=\"https://github.com/zhaoxianfang\" target=\"_blank\" class=\"hover-link\">zhaoxianfang</a>, The <a href=\"https://github.com/zhaoxianfang/xfeditor/blob/master/LICENSE\" target=\"_blank\" class=\"hover-link\">MIT</a> License.</p>",
                 "<p style=\"font-size: 0.75em;color:#8b949e;margin-top:8px;\">Powered by CodeMirror, marked.js, KaTeX, ECharts, Flowchart.js, js-sequence-diagrams</p>",
                 "</div>",
-                "<a href=\"javascript:;\" class=\"fa fa-close " + classPrefix + "dialog-close\"></a>",
+                "<a href=\"javascript:;\" role=\"button\" aria-label=\"关闭\" tabindex=\"0\" class=\"fa fa-close " + classPrefix + "dialog-close\"></a>",
                 "</div>"
             ].join("\n");
 
@@ -3699,7 +3588,7 @@
 
 			_infoDialogPosition();
 
-			// ★ v2.0.0: 使用命名空间避免多次调用叠加 handler
+			// 使用命名空间避免多次调用叠加 handler
 			dom(window).off("resize.xf_infoDialog").on("resize.xf_infoDialog", _infoDialogPosition);
             
             return this;
@@ -3826,7 +3715,7 @@
          */
         
         previewCodeHighlight : function() {
-            // ★ v2.0.0: 委托给统一静态方法
+            // 委托给统一静态方法
             xfEditor._previewCodeHighlight(this.previewContainer, this.settings);
             return this;
         },
@@ -3839,7 +3728,7 @@
          * @returns {xfEditor}
          */
         initCodeCopy : function(container) {
-            // ★ v2.0.0: 委托给统一静态方法，消除 ~73 行重复代码
+            // 委托给统一静态方法，消除 ~73 行重复代码
             xfEditor.initCodeCopy(container);
             return this;
         },
@@ -3852,7 +3741,7 @@
          */
         
         katexRender : function() {
-            // ★ v2.0.0: 委托给统一静态方法（编辑器模式，启用双击编辑定位）
+            // 委托给统一静态方法（编辑器模式，启用双击编辑定位）
             if (this.timer === null && typeof xfEditor.katex === "undefined") return this;
             xfEditor._renderKatex(this.previewContainer, this.settings, true, this);
             return this;
@@ -3866,7 +3755,7 @@
          */
         
         flowChartAndSequenceDiagramRender : function() {
-            // ★ v2.0.0: 委托给统一静态方法
+            // 委托给统一静态方法
             var settings = this.settings;
             var prev = this.previewContainer;
             var instanceOk = this.flowchartTimer !== null;
@@ -3980,6 +3869,17 @@
             if (!cm) return this;
             
             cm.on("change", function(_cm, changeObj) {
+                // ★ v2.1.0 性能: 记录变更行范围，供 base64 折叠增量扫描
+                if (changeObj && changeObj.from && changeObj.to) {
+                    _this._xfChangeFrom = Math.min(
+                        typeof _this._xfChangeFrom === "number" ? _this._xfChangeFrom : changeObj.from.line,
+                        changeObj.from.line
+                    );
+                    _this._xfChangeTo = Math.max(
+                        typeof _this._xfChangeTo === "number" ? _this._xfChangeTo : changeObj.to.line,
+                        changeObj.to.line + 1
+                    );
+                }
                 if (settings.watch)
                 {
                     _this.previewContainer.css("padding", settings.autoHeight ? "20px 20px 50px 40px" : "20px");
@@ -3990,7 +3890,9 @@
                 _this._xfBase64FoldTimer = setTimeout(function() {
                     _this._xfBase64FoldTimer = null;
                     if (_this._xfFoldAllBase64) {
-                        try { _this._xfFoldAllBase64(); } catch (e) {}
+                        var foldFrom = _this._xfChangeFrom, foldTo = _this._xfChangeTo;
+                        _this._xfChangeFrom = null; _this._xfChangeTo = null;
+                        try { _this._xfFoldAllBase64(foldFrom, foldTo); } catch (e) {}
                     }
                 }, 400);
 
@@ -4022,7 +3924,7 @@
                 }
             });
 
-            // ★ v2.0.0: 在每次变更「之前」捕获 Markdown 快照，供删除检测兜底比对。
+            // 在每次变更「之前」捕获 Markdown 快照，供删除检测兜底比对。
             //   必须在 beforeChange（变更尚未应用，getMarkdown 仍为旧值）捕获，而非 change 之后。
             cm.on("beforeChange", function(_cm, changeObj) {
                 try { _this._xfBeforeChangeMarkdown = _this.getMarkdown(); } catch (e) {}
@@ -4044,14 +3946,23 @@
             cm.on("mousedown", function(_cm, e) {
                 settings.onmousedown.call(_this, _cm, e);
             });
-            
+
+            // 缓存最近一次鼠标位置，供粘贴文件/图片时按鼠标位置插入
+            var lastMousePos = null;
+            cm.on("mousemove", function(_cm, e) {
+                if (e && typeof e.clientX === "number" && typeof e.clientY === "number") {
+                    lastMousePos = { x: e.clientX, y: e.clientY, t: Date.now() };
+                }
+            });
+
             cm.on("paste", function(_cm, e) {
                 var cd = e && (e.clipboardData || (e.originalEvent && e.originalEvent.clipboardData));
                 if (cd) {
                     // 直接粘贴文件（部分浏览器把文件放在 clipboardData.files 中）
                     if (cd.files && cd.files.length > 0) {
                         if (e.preventDefault) e.preventDefault();
-                        _this._handleDroppedFiles(cd.files, _cm);
+                        var pastePos = (settings.dropPasteAtMouse && lastMousePos && Date.now() - lastMousePos.t < 2000) ? lastMousePos : null;
+                        _this._handleDroppedFiles(cd.files, _cm, pastePos && pastePos.x, pastePos && pastePos.y);
                         return;
                     }
                     // 粘贴板中的图片项（截图粘贴等）
@@ -4067,7 +3978,8 @@
                             var blob = imgItem.getAsFile();
                             if (blob) {
                                 if (e.preventDefault) e.preventDefault();
-                                _this._handleDroppedFiles([blob], _cm);
+                                var imagePastePos = (settings.dropPasteAtMouse && lastMousePos && Date.now() - lastMousePos.t < 2000) ? lastMousePos : null;
+                                _this._handleDroppedFiles([blob], _cm, imagePastePos && imagePastePos.x, imagePastePos && imagePastePos.y);
                                 return;
                             }
                         }
@@ -4140,42 +4052,45 @@
                 preview.show();
             }
             
-            editor.data("oldWidth", editor.width()).data("oldHeight", editor.height()); // 缓存编辑器原始宽高（兼容 Zepto）
+            editor.data("oldWidth", editor.width()).data("oldHeight", editor.height()); // 缓存编辑器原始宽高
             
             this.resize();
             this.registerKeyMaps();
             
             // ★ 使用命名空间绑定，避免 recreate() 重复调用 loadedDisplay 时
             //   累积多个 window resize 监听导致 resize() 被重复执行
-            dom(window).off("resize.xf_editor-resize").on("resize.xf_editor-resize", function(){
+            var _resizeNs = ".xf_editor-resize_" + _this._uid;
+            dom(window).off(_resizeNs).on("resize" + _resizeNs, function(){
                 _this.resize();
             });
 
             // ★ 拖拽文件进入编辑器时的高亮提示（仅做视觉反馈，真正处理在 cm drop 事件中）
+            // 改用命名空间事件，destroy 时可统一解绑，避免重复初始化累积监听器
             (function(self) {
                 if (self._dragBound) return;
-                self._dragBound = true;
                 var editorEl = (self.editor && self.editor.get) ? self.editor.get(0) : (self.editor || null);
-                if (!editorEl || typeof editorEl.addEventListener !== "function") return;
+                if (!editorEl) return;
                 var dragDepth = 0;
-                editorEl.addEventListener("dragenter", function(e) {
-                    dragDepth++;
-                    if (e.preventDefault) e.preventDefault();
-                    editorEl.classList.add("xf_editor-dragover");
-                });
-                editorEl.addEventListener("dragover", function(e) {
-                    if (e.preventDefault) e.preventDefault();
-                    if (e.dataTransfer) { try { e.dataTransfer.dropEffect = "copy"; } catch (err) {} }
-                    if (!editorEl.classList.contains("xf_editor-dragover")) editorEl.classList.add("xf_editor-dragover");
-                });
-                editorEl.addEventListener("dragleave", function() {
-                    dragDepth = Math.max(0, dragDepth - 1);
-                    if (dragDepth === 0) editorEl.classList.remove("xf_editor-dragover");
-                });
-                editorEl.addEventListener("drop", function() {
-                    dragDepth = 0;
-                    editorEl.classList.remove("xf_editor-dragover");
-                });
+                dom(editorEl).off(".xf_editor-drag")
+                    .on("dragenter.xf_editor-drag", function(e) {
+                        dragDepth++;
+                        if (e.preventDefault) e.preventDefault();
+                        editorEl.classList.add("xf_editor-dragover");
+                    })
+                    .on("dragover.xf_editor-drag", function(e) {
+                        if (e.preventDefault) e.preventDefault();
+                        if (e.dataTransfer) { try { e.dataTransfer.dropEffect = "copy"; } catch (err) {} }
+                        if (!editorEl.classList.contains("xf_editor-dragover")) editorEl.classList.add("xf_editor-dragover");
+                    })
+                    .on("dragleave.xf_editor-drag", function() {
+                        dragDepth = Math.max(0, dragDepth - 1);
+                        if (dragDepth === 0) editorEl.classList.remove("xf_editor-dragover");
+                    })
+                    .on("drop.xf_editor-drag", function() {
+                        dragDepth = 0;
+                        editorEl.classList.remove("xf_editor-dragover");
+                    });
+                self._dragBound = true;
             })(_this);
             
             this.bindChangeEvent();
@@ -4204,21 +4119,18 @@
                 // 先按当前宿主主题对齐一次
                 try { applyHostTheme(); } catch (e) {}
                 // 再监听后续主题切换
+                // ★ v2.1.0 fix: observer 存实例属性，重建前先断开；
+                //   不再层层包装 destroy（recreate 会造成包装链累积泄漏）。
                 if (typeof MutationObserver !== 'undefined') {
-                    var _xfHostThemeMo = new MutationObserver(function () {
+                    if (self._xfHostThemeMo) {
+                        try { self._xfHostThemeMo.disconnect(); } catch (e) {}
+                    }
+                    self._xfHostThemeMo = new MutationObserver(function () {
                         try { applyHostTheme(); } catch (e) {}
                     });
-                    _xfHostThemeMo.observe(document.documentElement, {
+                    self._xfHostThemeMo.observe(document.documentElement, {
                         attributes: true, attributeFilter: ['data-theme']
                     });
-                    // 随编辑器销毁一并断开，避免泄漏
-                    var _origDestroy = self.destroy;
-                    if (typeof _origDestroy === 'function') {
-                        self.destroy = function () {
-                            try { _xfHostThemeMo.disconnect(); } catch (e) {}
-                            return _origDestroy.apply(self, arguments);
-                        };
-                    }
                 }
             })(this);
 
@@ -4381,6 +4293,12 @@
                 preview.hide();
             }
             
+            // ★ v2.1.0 fix: 尺寸变化后位置映射的 previewY 已失效，
+            //   必须显式失效，否则全屏/预览/宽度切换后同步定位到旧坐标。
+            if (this._syncState && this._syncState._invalidateAnchors) {
+                this._syncState._invalidateAnchors();
+            }
+
             if (state.loaded) 
             {
                 settings.onresize.call(this);
@@ -4465,24 +4383,23 @@
             
             if(settings.watch || (!settings.watch && state.preview))
             {
-                // ★ v2.0.0: DOM 更新期间锁定同步滚动，防止内容变化触发反向同步
+                // DOM 更新期间锁定同步滚动，防止内容变化触发反向同步
                 this._applyingDomChanges = true;
                 clearTimeout(this.__syncDomLockTimer);
                 
-                // ★ v2.0.0: 注入 data-sign 块签名用于精准行号映射
+                // 注入 data-sign 块签名用于精准行号映射
                 if (settings.syncScroll) {
-                    var totalEditorLines = (cmValue.match(/\n/g) || []).length + 1;
-                    newMarkdownDoc = xfEditor.addBlockSignatures(newMarkdownDoc, totalEditorLines);
+                    newMarkdownDoc = xfEditor.addBlockSignatures(newMarkdownDoc, cmValue);
                 }
                 
                 previewContainer.html(newMarkdownDoc);
 
-                // ★ v2.0.0: 延迟解锁滚动同步，等待 DOM 高度稳定
+                // 延迟解锁滚动同步，等待 DOM 高度稳定
                 this.__syncDomLockTimer = setTimeout(function() {
                     _this._applyingDomChanges = false;
                 }, 100);
 
-                // ★ v2.0.0: 每次预览更新后重新绑定 tooltip 事件（DOM 已完全替换）
+                // 每次预览更新后重新绑定 tooltip 事件（DOM 已完全替换）
                 if (settings && settings.tooltip !== false) {
                     xfEditor.initTooltips(previewContainer);
                 }
@@ -4563,8 +4480,7 @@
                                     _this._checkAllAsyncLoaded();
                                 }
                             };
-                            // ★ 关键修复：flowchart 加载自包含 bundle（内联 v1.18），
-                            //   彻底摆脱外部 lib/flowchart.min.js 版本（旧版 v1.3.4 会崩溃），
+                            // flowchart 加载自包含 bundle，避免外部库版本差异导致渲染失败。
                             //   并缓存内置引用 xfEditor._flowchart。
                             if (hasFlowChart && typeof flowchart === "undefined") {
                                 pending++;
@@ -4646,14 +4562,14 @@
                 if (settings.banner) {
                     _this.initBanners();
                 }
-                // ★ v2.0.0: tooltip 已在上方 xfEditor.initTooltips(previewContainer) 中初始化，
+                // tooltip 已在上方 xfEditor.initTooltips(previewContainer) 中初始化，
                 //     此处的重复调用已移除（避免双层清理+全量遍历无效迭代）
                 if (settings.syncScroll) {
-                    // ★ v2.0.0: 确保首次绑定
+                    // 确保首次绑定
                     if (!_this._scrollSyncBound) {
                         _this.bindSyncScroll();
                     }
-                    // ★ v2.0.0: 内容变更后强制刷新同步状态
+                    // 内容变更后强制刷新同步状态
                     // 即使 bindSyncScroll 已绑定，内容变更后也需要：
                     // 1. 重新无效化锚点缓存（因为 data-sign 已变化）
                     // 2. 延迟触发一次编辑区→预览区的同步滚动
@@ -4671,19 +4587,12 @@
                             try {
                                 var cm = _this.cm;
                                 var cmInfo = cm.getScrollInfo();
-                                var cmMaxScroll = Math.max(0, cmInfo.height - cmInfo.clientHeight);
-                                if (cmMaxScroll <= 0) return;
-                                var scrollRatio = cmInfo.top / cmMaxScroll;
-                                var totalLines = cm.lineCount();
-                                var centerLine = Math.round(scrollRatio * (totalLines - 1));
-                                // ★ 通过内部函数快速同步
+                                if (Math.max(0, cmInfo.height - cmInfo.clientHeight) <= 0) return;
+                                // 直接按当前编辑区滚动位置重建映射并同步，避免线性比例估算在不等高行/折行时产生偏差。
                                 if (_this._syncState && typeof _this._syncState._refreshSync === 'function') {
-                                    _this._syncState._refreshSync(centerLine);
-                                } else {
-                                    // 回退：直接调用 xfEditor.resize() 触发重绘
-                                    if (typeof _this._syncState._invalidateAnchors === 'function') {
-                                        _this._syncState._invalidateAnchors();
-                                    }
+                                    _this._syncState._refreshSync();
+                                } else if (typeof _this._syncState._invalidateAnchors === 'function') {
+                                    _this._syncState._invalidateAnchors();
                                 }
                         } catch(e) {
                             if (typeof console !== "undefined" && console.warn) {
@@ -5353,13 +5262,13 @@
             var previewContainer = this.previewContainer;
             var cm = this.cm;
             
-            // ★ v2.0.0: 冲突 prevention — 防止重复绑定文档级事件
+            // 冲突 prevention — 防止重复绑定文档级事件
             dom(document).off("mousemove.xf_editor-img").off("mouseup.xf_editor-img");
             
             var srcOccurrenceCounter = {};
             var _resizeState = null; // { img, wrapper, startX, startY, startWidth, startHeight, imgSrc }
             
-            // ★ v2.0.0: 全局文档级事件 — 只绑定一次（避免 .each 循环内累积）
+            // 全局文档级事件 — 只绑定一次（避免 .each 循环内累积）
             dom(document).on("mousemove.xf_editor-img", function(e) {
                 // ★ 加固：若按键已松开或拖拽状态异常，自动复位，避免卡住全局 mousemove 影响页面其它交互
                 if (e.buttons !== undefined && e.buttons === 0) { _resizeState = null; return; }
@@ -5382,7 +5291,7 @@
                 var s = _resizeState;
                 _resizeState = null;
                 
-                // ★ v2.0.0: 恢复双向同步
+                // 恢复双向同步
                 if (_this.resumeSyncScroll) _this.resumeSyncScroll();
                 
                 var finalWidth = Math.round(s.img.width());
@@ -5424,7 +5333,7 @@
                 handle.on("mousedown", function(e) {
                     // ★ 加固：仅响应左键拖拽，避免右键/中键误触发图片尺寸拖拽并卡住全局 mousemove
                     if (e.button !== undefined && e.button !== 0) return;
-                    // ★ v2.0.0: 拖拽期间暂停双向同步 — 预览区是主控区
+                    // 拖拽期间暂停双向同步 — 预览区是主控区
                     if (_this.suspendSyncScroll) _this.suspendSyncScroll();
                     
                     _resizeState = {
@@ -5470,7 +5379,7 @@
             if (!cm) return;
             var markdown = cm.getValue();
             var sizeStr = "<" + width + "," + height + ">";
-            occurrence = occurrence || 1;  // 默认第一次出现，向后兼容
+            occurrence = occurrence || 1;  // 默认第一次出现
 
             // 正则说明：匹配 ![alt](url "title")<W,H> 或 ![alt](url)<W,H> 或 ![alt](url)
             // - [^\]]* 匹配 alt 文本
@@ -5514,7 +5423,7 @@
             if (newMarkdown !== markdown) {
                     if (this.timer && this.timer !== 0) { clearTimeout(this.timer); this.timer = null; }
                 
-                // ★ v2.0.0: 暂停双向同步滚动，防止内容更新触发滚动跳转
+                // 暂停双向同步滚动，防止内容更新触发滚动跳转
                 if (this.suspendSyncScroll) this.suspendSyncScroll();
                 
                 var editorScroll = cm.getScrollInfo();
@@ -5535,7 +5444,7 @@
                 this.preview.scrollTop(previewScroll);
                 this.timer = null;
                 
-                // ★ v2.0.0: 恢复同步滚动（延迟确保 DOM 稳定后重建锚点）
+                // 恢复同步滚动（延迟确保 DOM 稳定后重建锚点）
                 var _thisImg = this;
                 setTimeout(function() {
                     if (_thisImg.resumeSyncScroll) _thisImg.resumeSyncScroll();
@@ -5549,7 +5458,7 @@
          * Initialize ECharts in preview area
          */
         initECharts : function() {
-            // ★ v2.0.0: 委托给统一静态方法
+            // 委托给统一静态方法
             xfEditor._initECharts(this.previewContainer, this.settings, this.settings.theme);
         },
         
@@ -5557,7 +5466,7 @@
          * Initialize Tabs in preview area
          */
         initTabs : function() {
-            // ★ v2.0.0: 委托给统一静态方法（编辑器模式，面板切换时可重新可见内容初始化）
+            // 委托给统一静态方法（编辑器模式，面板切换时可重新可见内容初始化）
             xfEditor._initTabs(this.previewContainer, this.settings, this);
         },
         
@@ -5565,7 +5474,7 @@
          * Initialize multi-column layout dividers in preview area
          */
         initColumns : function() {
-            // ★ v2.0.0: 委托给统一静态方法
+            // 委托给统一静态方法
             xfEditor._initColumns(this.previewContainer);
         },
 
@@ -5583,7 +5492,7 @@
          * Also sets up resize handler for responsive page splitting.
          */
         initPages : function() {
-            // ★ v2.0.0: 委托给统一静态方法
+            // 委托给统一静态方法
             xfEditor._initPages(this.previewContainer);
         },
 
@@ -5758,16 +5667,6 @@
             return this;
         },
 
-        /**
-         * 兼容旧名：等价于 getExportFileName()
-         * ★ v2.0.0-FIX: 历史版本曾把同名方法定义在 xfEditor.toolbarHandlers 上，
-         *   而 handler 调用时 this 指向编辑器实例，导致 TypeError。此处统一落到原型。
-         *
-         * @returns {String} 导出文件名（不含扩展名）
-         */
-        _defaultExportName : function() {
-            return this.getExportFileName();
-        },
 
         /**
          * 导出文件
@@ -6018,7 +5917,8 @@
             // ★ 健壮性：try/finally 保证异常时也能恢复标志，杜绝删除事件被永久抑制
             this._xfSuppressDeleteEvents = true;
             try {
-                this.cm.setValue(md || this.settings.markdown);
+                // ★ v2.1.0 fix: null/undefined 才回退默认内容，空串必须能清空文档
+                this.cm.setValue(md == null ? this.settings.markdown : String(md));
             } catch (e) {
                 // 容错：异常时 finally 仍会恢复标志
             } finally {
@@ -6041,18 +5941,6 @@
             return this.cm.getValue();
         },
         
-        /**
-         * 获取编辑器的源文档
-         * Get CodeMirror value
-         * 
-         * @returns {xfEditor}         返回xfEditor的实例对象
-         */
-        
-        getValue : function() {
-            // ★ v2.0.0: 委托给 getMarkdown（两个方法功能完全一致）
-            return this.getMarkdown();
-        },
-
         /**
          * 判断编辑器编辑区内容使用了哪些语法特性
          * Detect which syntax features are used in the editor content
@@ -6171,7 +6059,8 @@
             // ★ 健壮性：try/finally 确保异常时也能恢复标志，避免删除事件被永久抑制
             this._xfSuppressDeleteEvents = true;
             try {
-                this.cm.setValue(value);
+                // 类型归一化，避免 undefined 被写成字符串
+                this.cm.setValue(value == null ? "" : String(value));
             } catch (e) {
                 // 容错：异常时 finally 仍会恢复标志
             } finally {
@@ -6378,10 +6267,11 @@
             dom("body").append(mask);
 
             var lang = _this.settings.lang;
-            var dialogHtml = '<div id="' + dialogId + '" class="xf_editor-dialog xf_editor-draft-dialog" style="display:block;opacity:0;transform:scale(0.9) translate(-50%, -50%);transition:all 300ms cubic-bezier(0.34, 1.56, 0.64, 1);">' +
+            // ★ v2.1.0 a11y: 对话框语义 + 可访问名
+            var dialogHtml = '<div id="' + dialogId + '" role="dialog" aria-modal="true" aria-labelledby="' + dialogId + '-title" class="xf_editor-dialog xf_editor-draft-dialog" style="display:block;opacity:0;transform:scale(0.9) translate(-50%, -50%);transition:all 300ms cubic-bezier(0.34, 1.56, 0.64, 1);">' +
                 '<div class="xf_editor-dialog-header">' +
-                '<strong class="xf_editor-dialog-title">' + (lang.toolbar.restoreDraft || "恢复草稿") + ' <span style="font-size:12px;font-weight:normal;opacity:0.8;">(' + draftCount + ')</span></strong>' +
-                '<a href="javascript:;" class="xf_editor-dialog-close" title="关闭">&times;</a>' +
+                '<strong id="' + dialogId + '-title" class="xf_editor-dialog-title">' + (lang.toolbar.restoreDraft || "恢复草稿") + ' <span style="font-size:12px;font-weight:normal;opacity:0.8;">(' + draftCount + ')</span></strong>' +
+                '<a href="javascript:;" role="button" aria-label="关闭" tabindex="0" class="xf_editor-dialog-close" title="关闭">&times;</a>' +
                 '</div>' +
                 '<div class="xf_editor-dialog-content">' +
                 '<p class="xf_editor-draft-tip">' + (lang.toolbar.draftRestoreTip || "检测到以下自动保存的草稿，点击任意草稿可恢复到编辑器：") + '</p>' +
@@ -6478,7 +6368,7 @@
                 
                 // 延迟恢复，让用户看到选中效果
                 setTimeout(function() {
-                    // ★ v2.0.0: 添加 _this.cm null 守卫，防止异步中编辑器被销毁
+                    // 添加 _this.cm null 守卫，防止异步中编辑器被销毁
                     if (drafts[idx] && drafts[idx].content && _this.cm) {
                         var editorScroll = _this.cm.getScrollInfo();
                         var previewScroll = _this.preview.scrollTop();
@@ -6522,7 +6412,7 @@
          *
          * 返回的 HTML 包含三类内容：(1) 内联 CSS 样式（与编辑器预览区保持一致的视觉效果）；
          * (2) 渲染后的 Markdown HTML 内容；(3) 内联 JavaScript 初始化脚本（tooltip / tabs /
-         * columns / 代码复制 / ECharts 等交互，全部为原生 DOM 实现，不依赖 jQuery 等外部库）。
+         * columns / 代码复制 / ECharts 等交互，全部为原生 DOM 实现，无外部依赖）。
          *
          * 输出形态由 options.wrap 控制：
          *   - wrap = false（默认）：返回干净的 HTML 片段（含一个根容器 div），会自动剥离任何残留的
@@ -6639,7 +6529,7 @@
             rawHTML = rawHTML || '';
             
             // 安全清理 HTML 中的内部初始化标记，确保独立使用时纯 JS 脚本可以重新初始化所有组件
-            // ★ v2.1.0: 与 getPreviewedHTML 共用统一清理函数，避免两条导出路径行为不一致
+            // 与 getPreviewedHTML 共用统一清理函数，避免两条导出路径行为不一致
             rawHTML = xfEditor._cleanRuntimeMarkers(rawHTML);
             
             // ★ 文档级结构标签处理（关键：区分 wrap 两种形态）
@@ -6659,7 +6549,7 @@
             // 移除旧版代码复制按钮（仅简单 span，避免破坏嵌套结构）
             rawHTML = rawHTML.replace(/<span\b[^>]*?\bxf_editor-code-copy-btn\b[^>]*>[^]*?<\/span>/gi, '');
             
-            // ★ v2.0.0: 清理由 XfDom/外部 DOM 库 .data() 留下的 attr 数据标记（独立页面不需要）
+            // 清理由 XfDom/外部 DOM 库 .data() 留下的 attr 数据标记（独立页面不需要）
             rawHTML = rawHTML
                 .replace(/\sdata-_copyBtnReady="true"/g, '')
                 .replace(/\sdata-_originalCode="[^"]*"/g, '')
@@ -6753,7 +6643,7 @@
                 inlineScripts = this._getInitScripts(rawHTML, featureFlags);
             }
             
-            // ★ v2.0.0: 更安全的压缩与完整 HTML 文档封装
+            // 更安全的压缩与完整 HTML 文档封装
             var nl = opts.minify ? '' : '\n';
             var sp = opts.minify ? '' : '  ';
             
@@ -6856,10 +6746,6 @@
                 return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
             };
             
-            var escapeAttr = function(s) {
-                return escapeHtml(s);
-            };
-            
             var body = '';
             
             if (opts.includeStyles && inlineStyles) {
@@ -6885,7 +6771,7 @@
             // ★ ECharts：仅在检测到 echarts 语法时，于片段最前方注入带域名的 echarts.min.js 引用
             //   （先于内联初始化脚本，确保全局 echarts 可用；其余依赖一律不外链）
             if (echartsSrc && !opts.wrap) {
-                body = '<script src="' + escapeAttr(echartsSrc) + '"><\/script>' + nl + body;
+                body = '<script src="' + escapeHtml(echartsSrc) + '"><\/script>' + nl + body;
             }
 
             // ★ 组装最终输出（统一收口到 finalHTML，便于 toBrowser 在返回前触发下载）
@@ -6900,22 +6786,22 @@
             } else {
                 // 完整文档模式：重建 <!DOCTYPE><html><head>…</head><body>…</body></html>
                 var html = '<!DOCTYPE html>' + nl
-                    + '<html lang="' + escapeAttr(opts.lang) + '"' + (isDark ? ' data-theme="dark"' : '') + '>' + nl
+                    + '<html lang="' + escapeHtml(opts.lang) + '"' + (isDark ? ' data-theme="dark"' : '') + '>' + nl
                     + '<head>' + nl
-                    + sp + '<meta charset="' + escapeAttr(opts.charset) + '">' + nl
+                    + sp + '<meta charset="' + escapeHtml(opts.charset) + '">' + nl
                     + sp + '<meta name="viewport" content="width=device-width, initial-scale=1.0">' + nl;
 
                 if (opts.title) {
                     html += sp + '<title>' + escapeHtml(opts.title) + '</title>' + nl;
                 }
                 if (opts.description) {
-                    html += sp + '<meta name="description" content="' + escapeAttr(opts.description) + '">' + nl;
+                    html += sp + '<meta name="description" content="' + escapeHtml(opts.description) + '">' + nl;
                 }
                 if (opts.author) {
-                    html += sp + '<meta name="author" content="' + escapeAttr(opts.author) + '">' + nl;
+                    html += sp + '<meta name="author" content="' + escapeHtml(opts.author) + '">' + nl;
                 }
                 if (opts.keywords) {
-                    html += sp + '<meta name="keywords" content="' + escapeAttr(opts.keywords) + '">' + nl;
+                    html += sp + '<meta name="keywords" content="' + escapeHtml(opts.keywords) + '">' + nl;
                 }
 
                 var mk;
@@ -6923,25 +6809,25 @@
                     // ★ v2.1.0-FIX: 用 Object.prototype.hasOwnProperty.call，兼容
                     //   Object.create(null) 等无原型对象，避免 hasOwnProperty is not a function
                     if (Object.prototype.hasOwnProperty.call(opts.customMeta, mk)) {
-                        html += sp + '<meta name="' + escapeAttr(mk) + '" content="' + escapeAttr(opts.customMeta[mk]) + '">' + nl;
+                        html += sp + '<meta name="' + escapeHtml(mk) + '" content="' + escapeHtml(opts.customMeta[mk]) + '">' + nl;
                     }
                 }
 
                 var i;
                 for (i = 0; i < opts.externalStyles.length; i++) {
-                    html += sp + '<link rel="stylesheet" href="' + escapeAttr(opts.externalStyles[i]) + '">' + nl;
+                    html += sp + '<link rel="stylesheet" href="' + escapeHtml(opts.externalStyles[i]) + '">' + nl;
                 }
 
                 // ★ ECharts：在 <head> 中注入带域名的 echarts.min.js（经典脚本，先于内联初始化脚本加载）
                 if (echartsSrc) {
-                    html += sp + '<script src="' + escapeAttr(echartsSrc) + '"><\/script>' + nl;
+                    html += sp + '<script src="' + escapeHtml(echartsSrc) + '"><\/script>' + nl;
                 }
 
                 html += '</head>' + nl + '<body>' + nl;
                 html += body;
 
                 for (i = 0; i < opts.externalScripts.length; i++) {
-                    html += sp + '<script src="' + escapeAttr(opts.externalScripts[i]) + '"><\/script>' + nl;
+                    html += sp + '<script src="' + escapeHtml(opts.externalScripts[i]) + '"><\/script>' + nl;
                 }
 
                 html += '</body>' + nl + '</html>';
@@ -6956,9 +6842,7 @@
                     if (typeof document !== 'undefined' && document.createElement && typeof Blob !== 'undefined' && typeof URL !== 'undefined') {
                         var _rawName = String(opts.toBrowser).trim();
                         var _dlName = _rawName;
-                        // ★ v2.1.0-FIX: 只按【结尾】判断扩展名。历史用 indexOf，
-                        //   "my.html.notes" 这类文件名会被误认为已有 .html 后缀而不补，
-                        //   导致下载文件无网页扩展名。
+                        // 只按【结尾】判断扩展名，避免 "my.html.notes" 被误认为已有 .html 后缀。
                         var _lowerName = _dlName.toLowerCase();
                         if (!/\.html?$/.test(_lowerName)) {
                             _dlName += '.html';
@@ -6988,7 +6872,7 @@
          * @returns {Object}
          */
         _buildRendererOptions : function(settings, overrides) {
-            // ★ v2.0.0: 委托给静态版本，消除重复代码
+            // 委托给静态版本，消除重复代码
             return xfEditor._buildRendererOptionsStatic(settings, overrides);
         },
 
@@ -7103,7 +6987,7 @@
             c.push('.markdown-body img{max-width:100%;box-sizing:border-box;}.markdown-body img[align=right]{padding-left:20px;}.markdown-body img[align=left]{padding-right:20px;}');
             c.push('.markdown-body hr{height:0.25em;padding:0;margin:24px 0;background-color:#e1e4e8;border:0;}');
             // 表格
-            // ★ v2.0.0: 表格（与编辑器预览区一致 — 参照 table_demo 示例）
+            // 表格（与编辑器预览区一致 — 参照 table_demo 示例）
             c.push('.markdown-body table{display:table;width:100%;max-width:100%;margin:16px 0;border-collapse:separate;border-spacing:0;font-size:14px;line-height:1.6;font-variant-numeric:tabular-nums;border:1px solid #c6d5e2;border-radius:8px;overflow:hidden;background:#fff;box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 6px 18px -6px rgba(11,38,58,.18),0 2px 6px -2px rgba(11,38,58,.08);}');
             c.push('.markdown-body table thead tr{background:linear-gradient(180deg,#1d4159 0%,#12303f 100%);border-bottom:2px solid #0b2230;}.markdown-body table thead th{font-weight:600;font-size:.78rem;color:#eaf3fa;text-align:left;white-space:nowrap;letter-spacing:.6px;text-transform:uppercase;padding:.85rem 1.1rem!important;border:0!important;border-right:1px solid rgba(255,255,255,.08)!important;border-bottom:2px solid #0b2230!important;text-shadow:0 1px 1px rgba(0,0,0,.35);}.markdown-body table thead th:last-child{border-right:none!important;}');
             c.push('.markdown-body table tbody td{padding:.78rem 1.1rem!important;color:#16293a;font-size:13.5px;background-color:#fff;border:0!important;border-right:1px solid #f0f5fa!important;border-bottom:1px solid #eaf1f7!important;vertical-align:middle;}.markdown-body table tbody td:last-child{border-right:none!important;}.markdown-body table tbody td:first-child{font-weight:600;color:#0f2b3d;}');
@@ -7270,11 +7154,9 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 c.push('.xf_editor-code-copy-btn:hover{color:#fff;border-color:rgba(255,255,255,0.4);background:rgba(255,255,255,0.22);}.xf_editor-code-copy-btn.copied{color:#4caf50;border-color:#4caf50;background:rgba(76,175,80,0.15);cursor:default;pointer-events:none;}.xf_editor-code-copy-btn.failed{color:#f44336;border-color:#f44336;background:rgba(244,67,54,0.15);cursor:default;pointer-events:none;}');
             }
             c.push('.xf_editor-html-preview li.task-list-item{list-style:none;}.xf_editor-html-preview li.task-list-item+li.task-list-item{margin-top:3px;}.xf_editor-html-preview .task-list-item-checkbox{float:left;margin:0.35em 0 0.25em -1.6em;vertical-align:middle;}');
-            // ★ v1.18: 容器与自适应
+            // 容器与自适应
             c.push('.xf_editor-html-preview .flowchart,.xf_editor-html-preview .sequence-diagram{margin:0 auto;text-align:center;max-width:100%;overflow-x:auto;}.xf_editor-html-preview .flowchart svg,.xf_editor-html-preview .sequence-diagram svg{max-width:none!important;height:auto!important;margin:0 auto;}.xf_editor-html-preview .sequence-diagram text{font-size:15px!important;}');
-            // ★ v1.18: 移除旧的 "所有 rect/path 强制 stroke:#555!important" ——
-            //   该规则会覆盖每种节点类型的主题描边色，导致节点无法区分；
-            //   现仅保证描边宽度，颜色交给下面的按类型规则与 flowstate。
+            // 仅保证描边宽度，颜色交给按类型规则与 flowstate。
             c.push('.xf_editor-html-preview .flowchart .fc-node{stroke-width:2px;}.xf_editor-html-preview .flowchart path.fc-edge{fill:none;}');
             // 亮色主题：按节点类型着色（与暗色主题一一对应）
             var fcLightTypes = [
@@ -7336,7 +7218,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 c.push('.xf_editor-html-preview .pln{color:#e6edf3}.xf_editor-html-preview .str,.xf_editor-html-preview .atv{color:#ce9178}.xf_editor-html-preview .kwd,.xf_editor-html-preview .tag{color:#569cd6}.xf_editor-html-preview .com{color:#6a9955;font-style:italic}.xf_editor-html-preview .typ{color:#4ec9b0}.xf_editor-html-preview .lit{color:#b5cea8}.xf_editor-html-preview .pun,.xf_editor-html-preview .opn,.xf_editor-html-preview .clo{color:#d4d4d4}.xf_editor-html-preview .atn{color:#9cdcfe}.xf_editor-html-preview .dec,.xf_editor-html-preview .var{color:#9cdcfe}.xf_editor-html-preview .fun{color:#dcdcaa}');
             }
             // ═══ [data-theme="dark"] 暗色主题支持 ═══
-            // ★ v2.0.0: 独立 HTML 预览暗色主题 — 当父元素设置 data-theme="dark" 时自动适用
+            // 独立 HTML 预览暗色主题 — 当父元素设置 data-theme="dark" 时自动适用
             // 用法：<html data-theme="dark"> / <body data-theme="dark"> / <div data-theme="dark">
             // 覆盖：容器背景、代码块、表格、脚注、流程图、时序图、Tabs、TOC、Badge 等
             c.push('[data-theme="dark"] .xf_editor-html-preview{color:#cbd5e1;background-color:#0f172a;}');
@@ -7378,7 +7260,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             // ★ Flowchart & Sequence diagram (v2.0.0 全面升级)
             // Flowchart: 节点类型区分 + SVG背景
             c.push('[data-theme="dark"] .xf_editor-html-preview .flowchart{background:#0f1a2e;border-radius:4px;padding:8px;}[data-theme="dark"] .xf_editor-html-preview .flowchart svg{background:#0f1a2e;}');
-            // ★ v1.18: 选择器对齐 flowchart.js 真实输出 —— 扁平 SVG，节点 shape 自带
+            // 选择器对齐 flowchart.js 真实输出 —— 扁平 SVG，节点 shape 自带
             //   fc-type-*（由 dom.fn.flowChart 的 symbols 配置注入），文本为 fc-type-*t。
             //   旧版用 .start/.operation 这类祖先选择器，在真实 DOM 中从不匹配。
             var fcDarkTypes = [
@@ -7454,14 +7336,14 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 c.push('.xf_editor-copybook-pinyin-bottom .xf_editor-copybook-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;}.xf_editor-copybook-pinyin-bottom .xf_editor-copybook-hanzi-text{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-family:"KaiTi","楷体",serif;color:#3e2a1a;line-height:1;z-index:3;}');
                 c.push('.xf_editor-copybook-footnote{position:absolute;top:-2px;right:0;font-size:55%;line-height:1;z-index:10;}.xf_editor-copybook-footnote a{display:inline-block;text-decoration:none;color:#2563eb;font-weight:700;padding:1px 3px;background:rgba(255,255,255,0.85);border-radius:2px;}.xf_editor-copybook-footnote a:hover{color:#1d4ed8;text-decoration:underline;}');
                 c.push('.xf_editor-copybook-row-justified{justify-content:space-between !important;gap:0 !important;}.xf_editor-copybook-row-justified .xf_editor-copybook-pinyin-cell{flex:1 1 0;min-width:36px;max-width:80px;}.xf_editor-copybook-row-justified .xf_editor-copybook-pinyin-cell:not(:last-child){margin-right:2px;}');
-                // ★ 字帖组级宽度容器（花括号/圆括号语法 + (!width:NNN)）
+                // ★ 字帖组级宽度容器（花括号语法 + (!width:NNN)）
                 c.push('.xf_editor-copybook-group{display:inline-flex!important;flex-wrap:nowrap;align-items:stretch;vertical-align:top;overflow:hidden!important;}');
-                // ★ v2.0.0: group-pinyin 使用 center+gap 代替 space-evenly，cell 固定 52px 保证正方形
+                // group-pinyin 使用 center+gap 代替 space-evenly，cell 固定 52px 保证正方形
                 c.push('.xf_editor-copybook-group-pinyin{display:inline-flex!important;flex-wrap:nowrap;align-items:stretch;justify-content:center;gap:2px;overflow:hidden!important;}');
                 c.push('.xf_editor-copybook-group-pinyin>.xf_editor-copybook-pinyin-cell{flex:0 0 auto!important;min-width:0!important;width:52px!important;max-width:52px!important;overflow:hidden!important;}');
                 c.push('.xf_editor-copybook-group-grid{display:inline-flex!important;flex-wrap:nowrap;align-items:stretch;overflow:hidden!important;}');
                 c.push('.xf_editor-copybook-group-grid>.xf_editor-copybook-grid-cell{flex:1 1 0!important;min-width:0!important;width:auto!important;max-width:none!important;overflow:hidden!important;}');
-                // ★ v2.0.0: 行级宽容器 — 组可收缩以适应屏幕宽度，非组单元格均分剩余空间
+                // 行级宽容器 — 组可收缩以适应屏幕宽度，非组单元格均分剩余空间
                 c.push('.xf_editor-copybook-row-wide{display:flex!important;flex-wrap:wrap;justify-content:center;gap:4px 8px!important;}');
                 c.push('.xf_editor-copybook-row-wide>.xf_editor-copybook-cell{flex:1 1 0;min-width:0;max-width:68px;}');
                 // ★ 组元素可收缩响应式布局，max-width 确保不超出容器
@@ -7543,7 +7425,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             c.push('.xf_editor-page-content blockquote{font-style:normal;margin:12px 0;}.xf_editor-page-content hr{border:0;border-top:1px solid #e1e4e8;margin:20px 0;}');
             c.push('.xf_editor-page-content img,.xf_editor-page-content video,.xf_editor-page-content iframe{margin:0;border:0;border-radius:0;box-shadow:none;vertical-align:middle;max-width:100%;height:auto;}');
 
-            // ★ v2.0.0: 作用域隔离 — 将 .markdown-body 选择器限制在 .xf_editor 容器内，
+            // 作用域隔离 — 将 .markdown-body 选择器限制在 .xf_editor 容器内，
             // 确保 getHTML() 输出的内联样式不会泄漏到宿主页面的其他元素
             return c.join('\n').replace(/\.markdown-body/g, '.xf_editor.markdown-body');
         },
@@ -7731,7 +7613,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             s.push('    var oldBtns=cloned.querySelectorAll(".xf_editor-code-copy-btn");');
             s.push('    for(var bi=0;bi<oldBtns.length;bi++){oldBtns[bi].parentNode.removeChild(oldBtns[bi]);}');
             s.push('    // ★ 收集 ALL <code> 元素的内容 — 优先用 textContent（保留原始空白），innerText 作为降级');
-            s.push('    // ★ v2.0.0: 使用 innerHTML 提取，保留原始缩进/空格/换行');
+            s.push('    // 使用 innerHTML 提取，保留原始缩进/空格/换行');
             s.push('    var codeEls=cloned.querySelectorAll("code");');
             s.push('    if(codeEls.length>0){');
             s.push('      var parts=[];for(var ci=0;ci<codeEls.length;ci++){');
@@ -7879,7 +7761,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             if (f.tooltip) {
             s.push('function base64Decode(str){try{return decodeURIComponent(Array.prototype.map.call(atob(str),function(c){return"%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);}).join(""));}catch(e){return"";}}');
             s.push('function escapeHTML(s){if(s==null||typeof s!=="string")return"";var d=document.createElement("div");d.textContent=s;return d.innerHTML;}');
-            s.push('function escapeAttr(s){if(s==null)return"";return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\x27/g,"&#39;");}');
+            s.push('function escapeAttrInline(s){if(s==null)return"";return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\x27/g,"&#39;");}');
             s.push('');
             s.push('function buildIframeHTML(code,langCls){');
             s.push('  if(!code||!code.trim())return"<!DOCTYPE html><html><body></body></html>";');
@@ -7935,7 +7817,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             s.push('        if(tooltipWidth){istyle+="width:"+tooltipWidth+"px;max-width:"+tooltipWidth+"px;";}else{istyle+="max-width:340px;";}');
             s.push('        if(tooltipHeight){istyle+="height:"+tooltipHeight+"px;max-height:"+tooltipHeight+"px;";}else{istyle+="max-height:220px;";}');
             s.push('        if(tooltipWidth||tooltipHeight){istyle+="object-fit:contain;";}');
-            s.push('        htmlContent=\'<div class="xf_editor-tooltip-loading"><span>加载中...</span></div><img src="\'+escapeAttr(tooltipContent)+\'" alt="" style="\'+istyle+\'" onload="this.previousElementSibling.style.display=\\\'none\\\';this.style.display=\\\'block\\\';" onerror="this.previousElementSibling.innerHTML=\\\'<span>图片加载失败</span>\\\';" />\';');
+            s.push('        htmlContent=\'<div class="xf_editor-tooltip-loading"><span>加载中...</span></div><img src="\'+escapeAttrInline(tooltipContent)+\'" alt="" style="\'+istyle+\'" onload="this.previousElementSibling.style.display=\\\'none\\\';this.style.display=\\\'block\\\';" onerror="this.previousElementSibling.innerHTML=\\\'<span>图片加载失败</span>\\\';" />\';');
             s.push('      }else if(tooltipType==="iframe"){');
             s.push('        var fstyle="display:none;";');
             s.push('        if(tooltipWidth){fstyle+="width:"+tooltipWidth+"px;max-width:"+tooltipWidth+"px;";}else{fstyle+="width:340px;";}');
@@ -7948,7 +7830,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             s.push('              // ★ 收集 ALL <code> 元素，确保多组代码块全部提取');
             s.push('              var ces=preEl.querySelectorAll("code");');
             s.push('              var rawCode;');
-            s.push('              // ★ v2.0.0: 使用 innerHTML 提取原始代码（保留缩进/换行/空格）');
+            s.push('              // 使用 innerHTML 提取原始代码（保留缩进/换行/空格）');
             s.push('              if(ces.length>0){');
             s.push('                var rp=[];for(var ri=0;ri<ces.length;ri++){');
             s.push('                  var hi=ces[ri].innerHTML;if(!hi){rp.push("");continue;}');
@@ -7970,7 +7852,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             s.push('            }else{htmlContent=\'<div class="xf_editor-tooltip-loading"><span>Pre 元素不存在</span></div><iframe src="about:blank" frameborder="0" style="\'+fstyle+\'"></iframe>\';}');
             s.push('          }catch(ex){htmlContent=\'<div class="xf_editor-tooltip-loading"><span>加载失败</span></div><iframe src="about:blank" frameborder="0" style="\'+fstyle+\'"></iframe>\';}');
             s.push('        }else{');
-            s.push('          htmlContent=\'<div class="xf_editor-tooltip-loading"><span>加载中...</span></div><iframe src="\'+escapeAttr(tooltipContent)+\'" frameborder="0" style="\'+fstyle+\'" onload="this.previousElementSibling.style.display=\\\'none\\\';this.style.display=\\\'block\\\';"></iframe>\';');
+            s.push('          htmlContent=\'<div class="xf_editor-tooltip-loading"><span>加载中...</span></div><iframe src="\'+escapeAttrInline(tooltipContent)+\'" frameborder="0" style="\'+fstyle+\'" onload="this.previousElementSibling.style.display=\\\'none\\\';this.style.display=\\\'block\\\';"></iframe>\';');
             s.push('        }');
             s.push('      }else if(tooltipType==="html-selector"){');
             s.push('        htmlContent=\'<div class="xf_editor-tooltip-html-content">正在加载HTML内容...</div>\';');
@@ -8153,15 +8035,6 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             return s.join('\n');
         },
         
-        /**
-         * getHTML()的别名，向后兼容
-         * 
-         * @returns {String} 返回HTML源码
-         */
-        
-        getTextareaSavedHTML : function() {
-            return this.getHTML();
-        },
         
         /**
          * 获取预览区渲染后的原始 HTML 内容
@@ -8177,7 +8050,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
          * Get previewed HTML
          *
          * ★ v2.1.0 增强：新增可选自包含能力，使返回值也能携带「各种语法所需的交互与事件处理逻辑」。
-         *   - 默认（向后兼容）：返回预览区原始片段 HTML（不含样式/脚本），行为与旧版本完全一致；
+         *   - 默认：返回预览区原始片段 HTML（不含样式/脚本）；
          *   - includeStyles  : true → 追加内联样式，保证脱离编辑器 CSS 后外观一致；
          *   - includeScripts : true → 追加内联初始化脚本，使 Tabs / Tooltip / 代码复制 /
          *                             ECharts / 流程图 / 时序图 / 页脚 / 涂鸦等交互与事件仍然可用；
@@ -8200,7 +8073,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 wrap           : false,
                 title          : 'xfEditor Preview',
                 theme          : '',
-                // ★ v2.1.0: 与 getHTML 的文档头能力对齐，wrap=true 时可定制
+                // 与 getHTML 的文档头能力对齐，wrap=true 时可定制
                 lang           : 'zh-CN',
                 charset        : 'UTF-8',
                 description    : '',
@@ -8222,7 +8095,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             var markdownText = this.getMarkdown();
             var settings = this.settings;
             
-            // ★ v2.0.0: 优化为单次 .html() 调用
+            // 优化为单次 .html() 调用
             if (this.previewContainer) {
                 var currentHtml = this.previewContainer.html();
                 if (currentHtml && currentHtml.trim() !== '') {
@@ -8242,11 +8115,11 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
 
             rawHTML = rawHTML || "";
 
-            // ★ v2.1.0: 统一清理编辑器运行时内部标记（两条路径共用，避免行为不一致）。
+            // 统一清理编辑器运行时内部标记（两条路径共用，避免行为不一致）。
             //   这些属性仅用于编辑器内部状态，导出后既无意义又暴露实现细节。
             rawHTML = xfEditor._cleanRuntimeMarkers(rawHTML);
 
-            // 默认路径：返回清理后的预览 HTML，不做任何包裹（严格向后兼容片段语义）
+            // 默认路径：返回清理后的预览 HTML，不做任何包裹
             // ★ 只有当「未开启任何增强项」时才走此路径；一旦显式指定 theme 也算增强。
             if (!opts.includeStyles && !opts.includeScripts && !opts.wrap && !opts.theme) {
                 return rawHTML;
@@ -8280,26 +8153,26 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             }
 
             // 完整文档模式：内联样式进 head、脚本置于 body 末尾
-            // ★ v2.1.0: lang/charset/title/description/keywords/author/customMeta 全部可定制，
+            // lang/charset/title/description/keywords/author/customMeta 全部可定制，
             //   与 getHTML 的 wrap 行为保持一致；所有值统一 escapeAttr 转义防属性注入。
             var head = '<!DOCTYPE html>' + nl
-                + '<html lang="' + xfEditor.escapeAttr(opts.lang) + '"' + (isDark ? ' data-theme="dark"' : '') + '>' + nl
+                + '<html lang="' + xfEditor.escapeHtml(opts.lang) + '"' + (isDark ? ' data-theme="dark"' : '') + '>' + nl
                 + '<head>' + nl
-                + '  <meta charset="' + xfEditor.escapeAttr(opts.charset) + '">' + nl
+                + '  <meta charset="' + xfEditor.escapeHtml(opts.charset) + '">' + nl
                 + '  <meta name="viewport" content="width=device-width, initial-scale=1.0">' + nl
                 + '  <title>' + xfEditor.escapeHtml(opts.title) + '</title>' + nl;
             if (opts.description) {
-                head += '  <meta name="description" content="' + xfEditor.escapeAttr(opts.description) + '">' + nl;
+                head += '  <meta name="description" content="' + xfEditor.escapeHtml(opts.description) + '">' + nl;
             }
             if (opts.keywords) {
-                head += '  <meta name="keywords" content="' + xfEditor.escapeAttr(opts.keywords) + '">' + nl;
+                head += '  <meta name="keywords" content="' + xfEditor.escapeHtml(opts.keywords) + '">' + nl;
             }
             if (opts.author) {
-                head += '  <meta name="author" content="' + xfEditor.escapeAttr(opts.author) + '">' + nl;
+                head += '  <meta name="author" content="' + xfEditor.escapeHtml(opts.author) + '">' + nl;
             }
             for (var metaKey in opts.customMeta) {
                 if (Object.prototype.hasOwnProperty.call(opts.customMeta, metaKey)) {
-                    head += '  <meta name="' + xfEditor.escapeAttr(metaKey) + '" content="' + xfEditor.escapeAttr(opts.customMeta[metaKey]) + '">' + nl;
+                    head += '  <meta name="' + xfEditor.escapeHtml(metaKey) + '" content="' + xfEditor.escapeHtml(opts.customMeta[metaKey]) + '">' + nl;
                 }
             }
             if (opts.includeStyles) {
@@ -8417,7 +8290,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 var mdSource = cm.getValue();
                 var lines = mdSource.split('\n');
                 
-                // ★ v2.0.0: 只在非代码区域提取标题
+                // 只在非代码区域提取标题
                 var mdHeadingRegex = /^(#{1,6})\s+(.+?)(?:\s+#+)?\s*$/;
                 var inCodeBlock = false;
                 var editorHeadings = [];
@@ -8432,7 +8305,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     
                     var m = line.match(mdHeadingRegex);
                     if (m) {
-                        // ★ v2.0.0: 防御 m[2] 可能为 undefined
+                        // 防御 m[2] 可能为 undefined
                         editorHeadings.push({
                             line: i,
                             level: m[1].length,
@@ -8459,7 +8332,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     }
                 }
                 
-                // ★ v2.0.0: 智能配对 — 优先文本+层级匹配，回退到顺序匹配
+                // 智能配对 — 优先文本+层级匹配，回退到顺序匹配
                 var anchors = [];
                 var usedPreview = {};
                 
@@ -8593,6 +8466,11 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             state.expectEditorTop  = null;
             state.expectPreviewTs  = 0;
             state.expectEditorTs   = 0;
+            // 生命周期令牌，用于取消 destroy 后的异步回调
+            state._destroyed       = false;
+            state._generation      = (state._generation || 0) + 1;
+            state._initialAlignTimer = null;
+            state.lastError        = null;
 
             if (!cm || !previewDom || !previewDom.length || !scrollEl || !editor || !editor.length) {
                 return this;
@@ -8612,29 +8490,51 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 : function() { return Date.now(); };
 
             var _rafThrottle = function(fn) {
-                var pending = false;
+                var scheduled = false;
+                var dirty = false;
                 var runner = function() {
-                    pending = false;
-                    try { fn(); } catch(e) {}
+                    scheduled = false;
+                    if (!dirty) return;
+                    dirty = false;
+                    try { fn(); } catch(e) {
+                        // 同步热路径异常不再完全静默
+                        if (state && typeof state === "object") {
+                            state.lastError = e && e.message ? e.message : String(e);
+                        }
+                    }
                 };
                 return function() {
-                    if (pending) return;
-                    pending = true;
+                    dirty = true;   // 本帧内后续滚动仍需执行，避免尾帧丢失
+                    if (scheduled) return;
+                    scheduled = true;
                     if (_hasRAF) requestAnimationFrame(runner);
                     else setTimeout(runner, 16);
                 };
             };
 
             // ============================================================
-            // ★ 主控区（sticky，不超时过期）
+            // 主控区（带过期TTL）
             //   谁最后产生「用户滚动意图」谁是主控；另一侧始终跟随。
             //   程序化滚动（同步产生）不更新主控区 —— 由 self-trigger 检测拦截。
+            //   TTL 过期后自动释放，修复拖动滚动条/键盘翻页不更新主控区导致单向失效。
             // ============================================================
             var _masterZone = null;   // "editor" | "preview" | null
+            var _masterZoneTs = 0;
+            var _MASTER_TTL = 900;    // 900ms 无用户交互则释放主控
+            var _setMasterZone = function(zone) {
+                _masterZone = zone;
+                _masterZoneTs = _now();
+            };
+            var _getMasterZone = function() {
+                if (_masterZone && (_now() - _masterZoneTs) > _MASTER_TTL) {
+                    _masterZone = null;
+                }
+                return _masterZone;
+            };
 
             var _isSelfPreviewScroll = function() {
                 if (state.expectPreviewTop == null) return false;
-                if (_now() - state.expectPreviewTs > 400) { state.expectPreviewTop = null; return false; }
+                if (_now() - state.expectPreviewTs > 250) { state.expectPreviewTop = null; return false; }
                 // 命中期望位置视为自身触发；随后清除记账，放行后续用户滚动
                 if (Math.abs(scrollEl.scrollTop - state.expectPreviewTop) <= 2) {
                     if (_now() - state.expectPreviewTs > 60) state.expectPreviewTop = null;
@@ -8644,10 +8544,13 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             };
             var _isSelfEditorScroll = function() {
                 if (state.expectEditorTop == null) return false;
-                if (_now() - state.expectEditorTs > 400) { state.expectEditorTop = null; return false; }
+                if (_now() - state.expectEditorTs > 250) { state.expectEditorTop = null; return false; }
                 var top = 0;
                 try { top = cm.getScrollInfo().top; } catch(e) { return false; }
-                if (Math.abs(top - state.expectEditorTop) <= 2) return true;
+                if (Math.abs(top - state.expectEditorTop) <= 2) {
+                    if (_now() - state.expectEditorTs > 60) state.expectEditorTop = null;
+                    return true;
+                }
                 return false;
             };
 
@@ -8661,7 +8564,12 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             var _lineTop = function(line) {
                 var n = _lineCount();
                 if (n <= 0) return 0;
-                try { return cm.heightAtLine(Math.max(0, Math.min(n - 1, line)), "local"); } catch(e) { return 0; }
+                // NaN 不受 Math.min/max 钳制，会污染整条映射，入口必须拦截
+                if (!isFinite(line)) line = 0;
+                try {
+                    var top = cm.heightAtLine(Math.max(0, Math.min(n - 1, line)), "local");
+                    return isFinite(top) ? top : 0;
+                } catch(e) { return 0; }
             };
             // ★ 防御加固：_defaultLineHeight 必须在 _lineHeight 之前完成赋值。
             //   二者均为 var 函数表达式（不提升到赋值），当前调用时机虽在赋值之后不会出错，
@@ -8686,16 +8594,19 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             var _mdPosToEditorTop = function(mdPos) {
                 var n = _lineCount();
                 if (n <= 0) return 0;
+                if (!isFinite(mdPos)) mdPos = 0;
                 mdPos = Math.max(0, Math.min(n - 1, mdPos));
                 var line = Math.floor(mdPos);
                 var frac = mdPos - line;
-                return _lineTop(line) + frac * _lineHeight(line);
+                var result = _lineTop(line) + frac * _lineHeight(line);
+                return isFinite(result) ? result : 0;
             };
 
             // 编辑器 scrollTop -> mdPos(连续行位置)
             var _editorTopToMdPos = function(top) {
                 var n = _lineCount();
                 if (n <= 0) return 0;
+                if (!isFinite(top)) return 0;
                 top = Math.max(0, top);
                 var line = 0;
                 try { line = cm.lineAtHeight(top, "local"); } catch(e) { line = 0; }
@@ -8703,6 +8614,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 var lt = _lineTop(line);
                 var lh = _lineHeight(line);
                 var frac = lh > 0 ? (top - lt) / lh : 0;
+                if (!isFinite(frac)) frac = 0;
                 frac = Math.max(0, Math.min(1, frac));
                 return line + frac;
             };
@@ -8843,11 +8755,32 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 } catch(e) { return []; }
                 if (!nodes || !nodes.length) return [];
 
-                var MAXB = 1200;                 // ★ 大文档采样上限，避免构建耗时随文档平方增长
+                // 超长文档采用均匀采样（首/尾必留），避免截断导致尾部无锚点
+                var MAXB = 1200;
                 var arr = [], kept = {};
                 var lim = Math.min(nodes.length, MAXB);
+                var sampled = null;
+                if (nodes.length > MAXB) {
+                    sampled = [];
+                    for (var si = 0; si < MAXB; si++) {
+                        sampled.push(nodes[Math.round(si * (nodes.length - 1) / (MAXB - 1))]);
+                    }
+                }
+                var nodeList = sampled || nodes;
                 for (var i = 0; i < lim; i++) {
-                    var el = nodes[i];
+                    var el = nodeList[i];
+                    // 跳过目录容器内的节点，避免与正文块数量错位
+                    var tocParent = el.parentElement, inToc = false;
+                    while (tocParent && tocParent !== previewDom[0]) {
+                        var parentClass = tocParent.className || "";
+                        if (typeof parentClass === "string" && /markdown-toc|\btoc\b|xf_editor-toc/i.test(parentClass)) {
+                            inToc = true;
+                            break;
+                        }
+                        tocParent = tocParent.parentElement;
+                    }
+                    if (inToc) continue;
+
                     // 去嵌套：祖先已在集合中则跳过
                     var p = el.parentElement, nested = false;
                     while (p && p !== previewDom[0]) {
@@ -8858,164 +8791,135 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     el.__xfSyncId = i + 1;
                     kept[el.__xfSyncId] = true;
                     var r = el.getBoundingClientRect();
+                    var lineAttr = el.getAttribute ? el.getAttribute("data-line") : null;
+                    var sourceLine = lineAttr == null ? null : parseInt(lineAttr, 10);
+                    if (sourceLine != null && !isFinite(sourceLine)) sourceLine = null;
+                    var topY = Math.max(0, scrollEl.scrollTop + (r.top - seTop));
+                    var bottomY = Math.max(0, scrollEl.scrollTop + (r.bottom - seTop));
                     arr.push({
-                        y: Math.max(0, scrollEl.scrollTop + (r.top - seTop)),
-                        bottom: Math.max(0, scrollEl.scrollTop + (r.bottom - seTop)),
+                        y: topY,
+                        bottom: bottomY,
                         h: r.height,
+                        mdPos: sourceLine,
                         isHead: /^H[1-6]$/.test(el.tagName),
                         node: el
                     });
+                    // 块结束锚点：让多行段落/标题内部也能线性插值，缩小块内定位误差
+                    var endAttr = el.getAttribute ? el.getAttribute("data-line-end") : null;
+                    var sourceLineEnd = endAttr == null ? null : parseInt(endAttr, 10);
+                    if (sourceLine != null && sourceLineEnd != null && isFinite(sourceLineEnd) && sourceLineEnd > sourceLine) {
+                        arr.push({ y: bottomY, bottom: bottomY, h: 0, mdPos: sourceLineEnd, isHead: false, node: el });
+                    }
                 }
                 return arr;
             };
 
             // ============================================================
-            // ★ 位置映射表：[{mdPos, previewY}] 单调递增双射
-            //   1) 标题为硬锚点（左右强对齐 → 语义级对应）
-            //   2) 章节内的块按「预览渲染高度比例」分配 mdPos → 长章节按比例
-            //   3) 端点 0↔0、末行↔最大滚动，保证顶/底同步
+            // 位置映射表：[{mdPos, previewY}] 单调递增双射
+            //   1) 预览块携带的 data-line 真实源码行号为主锚点
+            //   2) 标题文本匹配作为无 data-line 时的回退
+            //   3) 端点 0↔0、可达终点↔最大滚动，保证顶/底对齐与双向互逆
+            //   4) 仅在内容变更/视口变化时重建，滚动过程只读缓存
             // ============================================================
             var _positionMap = null;
-            var _positionMapKey = null;
-
-            var _hash = function(str) {
-                var h = 5381, i, n = str.length;
-                for (i = 0; i < n; i++) { h = ((h << 5) + h + str.charCodeAt(i)) >>> 0; }
-                return h >>> 0;
-            };
+            var _positionDirty = true;
 
             var _buildPositionMap = function() {
                 try {
                     var nLines = _lineCount();
                     if (nLines <= 1) { _positionMap = []; return; }
 
-                    // ★ 一次性读取 scrollEl 的 rect，杜绝循环内反复触发 layout
                     var seRect = scrollEl.getBoundingClientRect ? scrollEl.getBoundingClientRect() : { top: 0, height: 0 };
-                    var seTop  = seRect.top;
+                    var seTop = seRect.top;
                     var maxPreviewTop = Math.max(0, (scrollEl.scrollHeight || 0) - (scrollEl.clientHeight || seRect.height || 0));
 
-                    var md = "";
-                    try { md = cm.getValue(); } catch(e) {}
-                    var eHeads = _collectEditorHeadings();
-                    var pHeads = _collectPreviewHeadings(seTop);
-                    var pairs  = _alignHeadings(eHeads, pHeads);
+                    var infoEnd = cm.getScrollInfo();
+                    var endH = Number(infoEnd && infoEnd.height), endCH = Number(infoEnd && infoEnd.clientHeight);
+                    var maxEditorTop = (isFinite(endH) && isFinite(endCH)) ? Math.max(0, endH - endCH) : 0;
+                    var mdPosEnd = maxEditorTop > 0 ? _editorTopToMdPos(maxEditorTop) : (nLines - 1);
+                    if (!isFinite(mdPosEnd)) mdPosEnd = nLines - 1;
+                    mdPosEnd = Math.max(0, Math.min(nLines - 1, mdPosEnd));
 
                     var map = [];
+                    var blocks = _collectPreviewBlocks(seTop);
 
-                    if (pairs.length === 0) {
-                        // 无任何标题：端点等比（0↔0，可达终点↔预览底部）
-                        var FallBackEnd = nLines - 1;
-                        try {
-                            var fbInfo = cm.getScrollInfo();
-                            var fbMax = Math.max(0, fbInfo.height - fbInfo.clientHeight);
-                            if (fbMax > 0) FallBackEnd = _editorTopToMdPos(fbMax);
-                        } catch(e) {}
-                        _positionMap = [
-                            { mdPos: 0, previewY: 0 },
-                            { mdPos: Math.max(0.001, Math.min(nLines - 1, FallBackEnd)), previewY: maxPreviewTop }
-                        ];
+                    // 主锚点：预览块携带的真实源码行号，避免按高度比例反推造成系统性偏移
+                    for (var blockIndex = 0; blockIndex < blocks.length; blockIndex++) {
+                        var block = blocks[blockIndex];
+                        if (block.mdPos == null || block.mdPos <= 0 || block.mdPos > mdPosEnd) continue;
+                        if (block.y > maxPreviewTop) continue;
+                        map.push({ mdPos: block.mdPos, previewY: block.y });
+                    }
+
+                    // 标题锚点仅在真实行号锚点不足时补充，保证兼容无 data-line 的渲染结果
+                    if (map.length < 3) {
+                        var pairs = _alignHeadings(_collectEditorHeadings(), _collectPreviewHeadings(seTop));
+                        for (var pairIndex = 0; pairIndex < pairs.length; pairIndex++) {
+                            if (pairs[pairIndex].mdPos <= 0 || pairs[pairIndex].mdPos > mdPosEnd) continue;
+                            map.push({ mdPos: pairs[pairIndex].mdPos, previewY: pairs[pairIndex].previewY });
+                        }
+                    }
+
+                    map.push({ mdPos: 0, previewY: 0 });
+
+                    if (map.length === 1) {
+                        map.push({ mdPos: Math.max(0.001, mdPosEnd), previewY: maxPreviewTop });
+                        _positionMap = map;
                         return;
                     }
 
-                    // 头部对齐 0 ↔ 0
-                    map.push({ mdPos: 0, previewY: 0 });
-
-                    var blocks = null;
-                    for (var pi = 0; pi < pairs.length; pi++) {
-                        map.push({ mdPos: pairs[pi].mdPos, previewY: pairs[pi].previewY });
-
-                        // ★ 章节内部：在两个硬锚点之间按渲染高度比例插入块级插值点
-                        var nextPair = pairs[pi + 1];
-                        if (!nextPair) continue;
-                        var mdSpan = nextPair.mdPos - pairs[pi].mdPos;
-                        if (mdSpan < 4) continue;                       // 短章节无需细分
-                        var ySpan   = nextPair.previewY - pairs[pi].previewY;
-                        if (ySpan <= 2) continue;
-
-                        if (blocks === null) blocks = _collectPreviewBlocks(seTop);
-                        if (!blocks.length) continue;
-
-                        // 取落在该章节预览高度区间内的块
-                        var lo = pairs[pi].previewY, hi = nextPair.previewY;
-                        var picked = [], totalH = 0;
-                        for (var bi = 0; bi < blocks.length; bi++) {
-                            var b = blocks[bi];
-                            if (b.y <= lo + 1 || b.y >= hi - 1) continue;
-                            if (b.h <= 0) continue;
-                            picked.push(b);
-                            totalH += b.h;
-                        }
-                        if (picked.length < 2 || totalH <= 0) continue;
-
-                        var accH = 0;
-                        for (var ci = 0; ci < picked.length - 1; ci++) {
-                            accH += picked[ci].h;
-                            // 高度比例 → mdPos（贴合真实排版密度，远优于「块数均分」）
-                            var frac = accH / totalH;
-                            map.push({
-                                mdPos: pairs[pi].mdPos + frac * mdSpan,
-                                previewY: picked[ci + 1].y
-                            });
-                        }
-                    }
-
-                    // 强制单调递增（mdPos 与 previewY 均非递减），保证双射可逆
+                    // 单调化：mdPos 严格递增，previewY 非递减，保证双向查表互逆
                     map.sort(function(a, b) { return a.mdPos - b.mdPos; });
                     var clean = [map[0]];
-                    for (var i2 = 1; i2 < map.length; i2++) {
+                    for (var i = 1; i < map.length; i++) {
                         var last = clean[clean.length - 1];
-                        if (map[i2].mdPos - last.mdPos < 1e-6) {
-                            // mdPos 相撞：保留 previewY 较大者（更靠后的视觉位置）
-                            last.previewY = Math.max(last.previewY, map[i2].previewY);
+                        if (map[i].mdPos - last.mdPos < 1e-6) {
+                            last.previewY = Math.max(last.previewY, map[i].previewY);
                             continue;
                         }
-                        if (map[i2].previewY < last.previewY) map[i2].previewY = last.previewY;
-                        clean.push(map[i2]);
+                        if (map[i].previewY < last.previewY) map[i].previewY = last.previewY;
+                        clean.push(map[i]);
                     }
 
-                    // ★ 尾部锚点用「Emax 对应的 mdPos」而非「最后一行」：
-                    //   编辑区存在最大滚动量，最后一行永远无法滚到视口顶部；
-                    //   若以最后一行作锚点，t=Emax 时反查会偏离预览底部。
-                    //   改用可达终点 Emax→mdPos，使 map 端点天然为 (0,0) 与 (Emax,Pmax)，
-                    //   从而同时满足：严格互逆 + 端点对齐 + 标题精确对应，无需全局缩放。
-                    var maxEditorTopF = 0;
-                    try {
-                        var infoEnd = cm.getScrollInfo();
-                        maxEditorTopF = Math.max(0, infoEnd.height - infoEnd.clientHeight);
-                    } catch(e) {}
-                    var mdPosEnd = (maxEditorTopF > 0) ? _editorTopToMdPos(maxEditorTopF) : (nLines - 1);
-                    mdPosEnd = Math.max(0, Math.min(nLines - 1, mdPosEnd));
-
-                    // mdPos 超出可达终点的锚点永远不会被查到，剔除以免拖尾误差
-                    clean = clean.filter(function(it) { return it.mdPos < mdPosEnd - 1e-6; });
+                    // 过滤后再补齐末端锚点，保证映射严格单调且可通过二分查找。
+                    clean = clean.filter(function(item) { return item.mdPos < mdPosEnd - 1e-6; });
                     if (!clean.length) clean.push({ mdPos: 0, previewY: 0 });
                     if (clean[clean.length - 1].mdPos < mdPosEnd) {
                         clean.push({ mdPos: mdPosEnd, previewY: maxPreviewTop });
                     } else {
+                        clean[clean.length - 1].mdPos = mdPosEnd;
                         clean[clean.length - 1].previewY = maxPreviewTop;
+                    }
+                    // 强单调：previewY 非递减，保证反向 _lookup 二分正确
+                    for (var mi = 1; mi < clean.length; mi++) {
+                        if (clean[mi].previewY < clean[mi - 1].previewY) clean[mi].previewY = clean[mi - 1].previewY;
+                        if (!isFinite(clean[mi].mdPos) || !isFinite(clean[mi].previewY)) {
+                            clean[mi].mdPos = clean[mi - 1].mdPos + 1;
+                            clean[mi].previewY = clean[mi - 1].previewY;
+                        }
                     }
                     _positionMap = clean;
                 } catch(e) {
-                    _positionMap = [];
+                    // 异常时保留上一次有效映射，并标记 dirty 使下次滚动重试。
+                    if (!_positionMap) _positionMap = [];
+                    _positionDirty = true;
+                    state.lastError = e && e.message ? e.message : String(e);
                 }
             };
 
             var _getPositionMap = function() {
-                var md = "";
-                try { md = cm.getValue(); } catch(e) {}
-                // ★ 缓存键含内容哈希 + 行数 + 预览/编辑器可视高度，等长替换或视口变化都能正确失效
-                var key = _hash(md) + "_" + md.length + "_" + _lineCount() + "_" + (scrollEl.scrollHeight || 0)
-                        + "_" + (scrollEl.clientHeight || 0) + "_" + (cm.getScrollInfo ? cm.getScrollInfo().clientHeight : 0);
-                if (_positionMapKey !== key || !_positionMap) {
+                // ★ v2.1.0 性能：滚动热路径不再读取 scrollHeight/clientHeight（会强制 layout）。
+                //   视口尺寸变化由 resize / 内容变更 / 媒体加载等显式调用 _invalidatePositionMap 驱动。
+                if (_positionDirty || !_positionMap) {
                     _buildPositionMap();
-                    _positionMapKey = key;
+                    _positionDirty = false;
                 }
                 return _positionMap;
             };
 
             var _invalidatePositionMap = function() {
+                _positionDirty = true;
                 _positionMap = null;
-                _positionMapKey = null;
             };
 
             // 单调表线性插值
@@ -9057,7 +8961,9 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 if (!map || map.length === 0) return null;
                 try {
                     var info = cm.getScrollInfo();
-                    var maxEditorTop = Math.max(0, info.height - info.clientHeight);
+                    var infoH = Number(info && info.height), infoCH = Number(info && info.clientHeight);
+                    if (!isFinite(infoH) || !isFinite(infoCH)) return 0;
+                    var maxEditorTop = Math.max(0, infoH - infoCH);
                     var maxPreviewTop = Math.max(0, (scrollEl.scrollHeight || 0) - (scrollEl.clientHeight || 0));
                     if (maxEditorTop <= 0) return 0;
 
@@ -9082,7 +8988,9 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 if (!map || map.length === 0) return null;
                 try {
                     var info = cm.getScrollInfo();
-                    var maxEditorTop = Math.max(0, info.height - info.clientHeight);
+                    var infoH = Number(info && info.height), infoCH = Number(info && info.clientHeight);
+                    if (!isFinite(infoH) || !isFinite(infoCH)) return 0;
+                    var maxEditorTop = Math.max(0, infoH - infoCH);
                     var maxPreviewTop = Math.max(0, (scrollEl.scrollHeight || 0) - (scrollEl.clientHeight || 0));
                     if (maxEditorTop <= 0) return null;
 
@@ -9102,58 +9010,96 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             // ============================================================
             var _smoothDur = (settings && settings.syncScrollSmooth) ? 180 : 0;
 
+            // 取消上一帧未完成的缓动动画（避免多次滚动叠加/抖动）
+            var _cancelAnim = function() {
+                if (state.previewAnimTimer) {
+                    cancelAnimationFrame(state.previewAnimTimer);
+                    state.previewAnimTimer = null;
+                }
+                if (state.editorCmAnimTimer) {
+                    cancelAnimationFrame(state.editorCmAnimTimer);
+                    state.editorCmAnimTimer = null;
+                }
+            };
+            var _clearProgrammatic = function() {
+                // 瞬时模式：等 scroll 事件派发完再解锁（双重 rAF）；缓动模式在动画末帧解锁
+                if (_hasRAF) {
+                    requestAnimationFrame(function() {
+                        requestAnimationFrame(function() { state.programmaticScroll = false; });
+                    });
+                } else {
+                    setTimeout(function() { state.programmaticScroll = false; }, 32);
+                }
+            };
+
             var _applyPreviewTop = function(target) {
                 target = Math.max(0, target);
+                _cancelAnim();
                 state.expectPreviewTop = target;
                 state.expectPreviewTs  = _now();
                 state.programmaticScroll = true;
                 try {
                     if (!_smoothDur) {
                         scrollEl.scrollTop = target;
+                        _clearProgrammatic();
                     } else {
                         var startTop = scrollEl.scrollTop, startT = _now();
                         var step = function() {
+                            // destroy/re-init 竞态保护
+                            if (state._destroyed) { state.previewAnimTimer = null; state.programmaticScroll = false; return; }
                             var p = Math.min(1, (_now() - startT) / _smoothDur);
                             var e = p < 0.5 ? 4*p*p*p : 1 - Math.pow(-2*p + 2, 3) / 2;
                             scrollEl.scrollTop = startTop + (target - startTop) * e;
                             state.expectPreviewTop = scrollEl.scrollTop;
                             state.expectPreviewTs  = _now();
-                            if (p < 1) requestAnimationFrame(step);
-                            else { scrollEl.scrollTop = target; state.programmaticScroll = false; }
+                            if (p < 1) {
+                                state.previewAnimTimer = requestAnimationFrame(step);
+                            } else {
+                                state.previewAnimTimer = null;
+                                scrollEl.scrollTop = target;
+                                state.programmaticScroll = false;
+                            }
                         };
-                        requestAnimationFrame(step);
+                        state.previewAnimTimer = requestAnimationFrame(step);
                     }
-                } catch(e) {}
-                requestAnimationFrame(function() {
-                    requestAnimationFrame(function() { state.programmaticScroll = false; });
-                });
+                } catch(e) {
+                    state.programmaticScroll = false;
+                }
             };
 
             var _applyEditorTop = function(target) {
                 target = Math.max(0, target);
+                _cancelAnim();
                 state.expectEditorTop = target;
                 state.expectEditorTs  = _now();
                 state.programmaticScroll = true;
                 try {
                     if (!_smoothDur) {
                         cm.scrollTo(0, target);
+                        _clearProgrammatic();
                     } else {
                         var startTop = cm.getScrollInfo().top, startT = _now();
                         var step = function() {
+                            // destroy/re-init 竞态保护
+                            if (state._destroyed) { state.editorCmAnimTimer = null; state.programmaticScroll = false; return; }
                             var p = Math.min(1, (_now() - startT) / _smoothDur);
                             var e = p < 0.5 ? 4*p*p*p : 1 - Math.pow(-2*p + 2, 3) / 2;
                             cm.scrollTo(0, startTop + (target - startTop) * e);
                             state.expectEditorTop = cm.getScrollInfo().top;
                             state.expectEditorTs  = _now();
-                            if (p < 1) requestAnimationFrame(step);
-                            else { cm.scrollTo(0, target); state.programmaticScroll = false; }
+                            if (p < 1) {
+                                state.editorCmAnimTimer = requestAnimationFrame(step);
+                            } else {
+                                state.editorCmAnimTimer = null;
+                                cm.scrollTo(0, target);
+                                state.programmaticScroll = false;
+                            }
                         };
-                        requestAnimationFrame(step);
+                        state.editorCmAnimTimer = requestAnimationFrame(step);
                     }
-                } catch(e) {}
-                requestAnimationFrame(function() {
-                    requestAnimationFrame(function() { state.programmaticScroll = false; });
-                });
+                } catch(e) {
+                    state.programmaticScroll = false;
+                }
             };
 
             // ============================================================
@@ -9162,7 +9108,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             var _editorSyncToPreview = function() {
                 if (state.suppressAllSync) return;
                 if (_this._applyingDomChanges) return;
-                if (_masterZone === "preview") return;
+                if (_getMasterZone() === "preview") return;
                 if (_isSelfEditorScroll()) return;
                 try {
                     var info = cm.getScrollInfo();
@@ -9176,7 +9122,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             var _editorChangeTimer = null;
             cmScroll.off("scroll.xf_editor-sync").on("scroll.xf_editor-sync", function() {
                 if (_isSelfEditorScroll()) return;
-                _masterZone = "editor";
+                _setMasterZone("editor");
                 _editorSyncRAF();
             });
 
@@ -9186,7 +9132,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             var _previewSyncToEditor = function() {
                 if (state.suppressAllSync) return;
                 if (_this._applyingDomChanges) return;
-                if (_masterZone === "editor") return;
+                if (_getMasterZone() === "editor") return;
                 if (_isSelfPreviewScroll()) return;
                 try {
                     var target = _previewTopToEditorTop(scrollEl.scrollTop);
@@ -9198,7 +9144,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
 
             dom(scrollEl).off("scroll.xf_editor-sync-v3").on("scroll.xf_editor-sync-v3", function() {
                 if (_isSelfPreviewScroll()) return;
-                _masterZone = "preview";
+                _setMasterZone("preview");
                 _previewSyncRAF();
             });
 
@@ -9209,7 +9155,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 if (!el) return;
                 dom(el).off("wheel.xf_editor-master touchstart.xf_editor-master touchmove.xf_editor-master mousedown.xf_editor-master")
                     .on("wheel.xf_editor-master touchstart.xf_editor-master touchmove.xf_editor-master mousedown.xf_editor-master", function() {
-                        _masterZone = zone;
+                        _setMasterZone(zone);
                     });
             };
             _bindMaster(cmScrollEl, "editor");
@@ -9217,7 +9163,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
 
             try {
                 cm.off("focus.xf_editor-sync");
-                cm.on("focus.xf_editor-sync", function() { _masterZone = "editor"; });
+                cm.on("focus.xf_editor-sync", function() { _setMasterZone("editor"); });
             } catch(e) {}
 
             editor.off("mouseenter.xf_editor-sync mouseleave.xf_editor-sync")
@@ -9234,17 +9180,21 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 _editorChangeTimer = setTimeout(function() {
                     if (_this._applyingDomChanges) return;
                     _invalidatePositionMap();
-                    if (!state.suppressAllSync && _masterZone !== "preview") {
+                    if (!state.suppressAllSync && _getMasterZone() !== "preview") {
                         _editorSyncToPreview();
                     }
                 }, 50);
             });
 
+            // 折叠/展开会改变行高，必须让映射失效（否则同步位置整体漂移）
+            cm.off("fold.xfsync");
+            cm.on("fold.xfsync", function() { _invalidatePositionMap(); });
+
             cm.off("cursorActivity.xfsync");
             cm.on("cursorActivity.xfsync", function() {
                 if (state.suppressAllSync) return;
                 if (_this._applyingDomChanges) return;
-                if (_masterZone === "preview") return;
+                if (_getMasterZone() === "preview") return;
                 try {
                     var cur = cm.getCursor();
                     var info = cm.getScrollInfo();
@@ -9276,7 +9226,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     var tRect = targetEl.getBoundingClientRect();
                     var targetScrollTop = Math.max(0, scrollEl.scrollTop + (tRect.top - seRect.top) - 30);
                     _invalidatePositionMap();
-                    _masterZone = "preview";
+                    _setMasterZone("preview");
                     _applyPreviewTop(targetScrollTop);
                 }
             });
@@ -9299,7 +9249,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     e.stopPropagation();
                     var tRect = targetEl.getBoundingClientRect();
                     var targetScrollTop = Math.max(0, scrollEl.scrollTop + (tRect.top - scrollEl.getBoundingClientRect().top) - 40);
-                    _masterZone = "preview";
+                    _setMasterZone("preview");
                     _applyPreviewTop(targetScrollTop);
                     var target = dom(targetEl);
                     target.addClass("xf_editor-footnote-highlight");
@@ -9308,11 +9258,12 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             });
 
             var _resizeTimer = null;
-            dom(window).off("resize.xf_editor-sync").on("resize.xf_editor-sync", function() {
+            var _syncResizeNs = ".xf_editor-sync_" + _this._uid;
+            dom(window).off(_syncResizeNs).on("resize" + _syncResizeNs, function() {
                 clearTimeout(_resizeTimer);
                 _resizeTimer = setTimeout(function() {
                     _invalidatePositionMap();
-                    if (_masterZone !== "preview") _editorSyncToPreview();
+                    if (_getMasterZone() !== "preview") _editorSyncToPreview();
                 }, 200);
             });
 
@@ -9324,11 +9275,13 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 if (_imgResyncTimer) clearTimeout(_imgResyncTimer);
                 _imgResyncTimer = setTimeout(function() {
                     _imgResyncTimer = null;
+                    state._imgResyncTimer = null;
                     _invalidatePositionMap();
-                    if (_masterZone === "editor" || (!_masterZone && state.mouseTarget !== "preview")) {
+                    if (_getMasterZone() === "editor" || (!_getMasterZone() && state.mouseTarget !== "preview")) {
                         _editorSyncToPreview();
                     }
                 }, 150);
+                state._imgResyncTimer = _imgResyncTimer;
             };
             previewDom.off("load.xf_editor-sync-img").on("load.xf_editor-sync-img", "img", function() { _scheduleImgResync(); });
             try {
@@ -9344,29 +9297,55 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 var _onPreviewMediaLoad = function(ev) {
                     var t = ev && ev.target;
                     if (t && (t.tagName === "IMG" || t.tagName === "VIDEO" || t.tagName === "AUDIO")) {
+                        // 与 _scheduleImgResync 行为统一 —— 失效后立即按主控区重新对齐，
+                        //   避免图片加载后映射失效却要等下次滚动才收敛的短暂错位。
                         _invalidatePositionMap();
+                        _scheduleImgResync();
                     }
                 };
                 previewDom[0].addEventListener("load", _onPreviewMediaLoad, true);
                 state._previewMediaLoadHandler = _onPreviewMediaLoad;
             } catch(e) {}
 
-            dom(window).off("resize.xf_editor-sync-media");
-            dom(window).on("resize.xf_editor-sync-media", function() { _invalidatePositionMap(); });
+            // 观察预览容器尺寸变化（KaTeX 字体、图表、折叠等不触发 img load 的场景）
+            try {
+                if (typeof ResizeObserver !== "undefined") {
+                    if (state._syncResizeObserver) {
+                        try { state._syncResizeObserver.disconnect(); } catch (e) {}
+                        state._syncResizeObserver = null;
+                    }
+                    var _syncResizeObserver = new ResizeObserver(function() {
+                        if (state._destroyed || _this._applyingDomChanges) return;
+                        _invalidatePositionMap();
+                        _scheduleImgResync();
+                    });
+                    if (previewDom[0]) _syncResizeObserver.observe(previewDom[0]);
+                    if (_this.previewContainer && _this.previewContainer[0]) _syncResizeObserver.observe(_this.previewContainer[0]);
+                    state._syncResizeObserver = _syncResizeObserver;
+                }
+            } catch(e) {}
+
+            var _mediaResizeNs = ".xf_editor-sync-media_" + _this._uid;
+            dom(window).off(_mediaResizeNs);
+            dom(window).on("resize" + _mediaResizeNs, function() { _invalidatePositionMap(); });
 
             try {
                 if (typeof document !== "undefined" && document.fonts && document.fonts.ready && document.fonts.ready.then) {
+                    var _fontGeneration = state._generation;
                     document.fonts.ready.then(function() {
+                        // 代次令牌 —— destroy 后或 re-init 后旧回调直接丢弃
+                        if (state._destroyed || _fontGeneration !== state._generation) return;
                         try {
                             _invalidatePositionMap();
-                            if (_masterZone !== "preview" && !state.suppressAllSync && !_this._applyingDomChanges) {
+                            if (_getMasterZone() !== "preview" && !state.suppressAllSync && !_this._applyingDomChanges) {
                                 _editorSyncToPreview();
                             }
                         } catch(e) {}
                     });
                 }
             } catch(e) {}
-            dom(window).off("load.xf_editor-sync-fonts").on("load.xf_editor-sync-fonts", function() { _invalidatePositionMap(); });
+            var _fontLoadNs = ".xf_editor-sync-fonts_" + _this._uid;
+            dom(window).off(_fontLoadNs).on("load" + _fontLoadNs, function() { _invalidatePositionMap(); });
 
             // ============================================================
             // 外部接口
@@ -9407,8 +9386,10 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             this._scrollSyncBound = true;
             _invalidatePositionMap();
 
-            // 初始对齐
-            setTimeout(function() {
+            // 初始对齐（句柄保存，解绑/destroy 可取消，避免新实例被旧回调误同步）
+            state._initialAlignTimer = setTimeout(function() {
+                state._initialAlignTimer = null;
+                if (state._destroyed) return;
                 if (state.suppressAllSync) return;
                 if (_this._applyingDomChanges) return;
                 try {
@@ -9432,47 +9413,72 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             if (!this._scrollSyncBound) return this;
             
             try {
-                // 取消动画
-                if (this._syncState && this._syncState.editorAnimTimer) {
-                    cancelAnimationFrame(this._syncState.editorAnimTimer);
-                    this._syncState.editorAnimTimer = null;
+                // 取消所有动画帧（含 preview / editor 双向缓动）
+                if (this._syncState) {
+                    var syncTimers = ["editorAnimTimer", "editorCmAnimTimer", "previewAnimTimer"];
+                    for (var timerIdx = 0; timerIdx < syncTimers.length; timerIdx++) {
+                        var timerKey = syncTimers[timerIdx];
+                        if (this._syncState[timerKey]) {
+                            try { cancelAnimationFrame(this._syncState[timerKey]); } catch (ex) {}
+                            this._syncState[timerKey] = null;
+                        }
+                    }
                     this._syncState.disablePreviewListener = false;
                 }
-                // 兼容旧版
-                if (this._scrollAnimation && this._scrollAnimation.timer) {
-                    cancelAnimationFrame(this._scrollAnimation.timer);
-                    this._scrollAnimation.timer = null;
-                }
-                
                 var cmScrollEl = this.cm && this.cm.getScrollerElement();
                 var preview = this.preview && this.preview[0];
                 
                 if (cmScrollEl) {
-                    dom(cmScrollEl).off("scroll.xf_editor-sync wheel.xf_editor-master wheel.xf_editor-anim");
+                    dom(cmScrollEl).off("scroll.xf_editor-sync wheel.xf_editor-master touchstart.xf_editor-master touchmove.xf_editor-master mousedown.xf_editor-master wheel.xf_editor-anim");
                 }
                 if (preview) {
-                    dom(preview).off("scroll.xf_editor-sync-v3 wheel.xf_editor-master wheel.xf_editor-anim mousedown.xf_editor-sync mouseenter.xf_editor-sync mouseleave.xf_editor-sync");
+                    dom(preview).off("scroll.xf_editor-sync-v3 wheel.xf_editor-master touchstart.xf_editor-master touchmove.xf_editor-master mousedown.xf_editor-master wheel.xf_editor-anim mousedown.xf_editor-sync mouseenter.xf_editor-sync mouseleave.xf_editor-sync");
                 }
                 if (this.previewContainer) {
-                    this.previewContainer.off("click.xf_editor-toc click.xf_editor-footnote");
-                    // ★ v2.0.0 fix: 移除媒体加载监听（与 bindSyncScroll 中的捕获监听配对）
+                    this.previewContainer.off("click.xf_editor-toc click.xf_editor-footnote load.xf_editor-sync-img");
+                    // 清理图片 load 监听，避免解绑后监听器残留
+                    try {
+                        var boundImages = this.previewContainer[0].querySelectorAll("img");
+                        Array.prototype.forEach.call(boundImages, function(image) {
+                            dom(image).off("load.xf_editor-sync-img2");
+                        });
+                    } catch (e) {}
+                    // 移除媒体加载捕获监听（与 bindSyncScroll 中的注册配对）
                     if (this._syncState && this._syncState._previewMediaLoadHandler) {
                         try {
                             this.previewContainer[0].removeEventListener("load", this._syncState._previewMediaLoadHandler, true);
                         } catch (e) {}
                         this._syncState._previewMediaLoadHandler = null;
                     }
-                    dom(window).off("resize.xf_editor-sync-media");
                 }
+                dom(window).off("resize.xf_editor-sync-media load.xf_editor-sync-fonts"
+                    + " .xf_editor-sync-media_" + this._uid + " .xf_editor-sync-fonts_" + this._uid
+                    + " .xf_editor-sync_" + this._uid + " .xf_editor-resize_" + this._uid);
                 if (this.editor) {
                     this.editor.off("mouseenter.xf_editor-sync mouseleave.xf_editor-sync");
                 }
-                dom(window).off("resize.xf_editor-sync");
                 if (this.cm) {
-                    this.cm.off("changes.xfsync cursorActivity.xfsync focus.xf_editor-sync");
+                    this.cm.off("changes.xfsync fold.xfsync cursorActivity.xfsync focus.xf_editor-sync");
+                }
+                if (this._syncState && this._syncState._syncResizeObserver) {
+                    try { this._syncState._syncResizeObserver.disconnect(); } catch (e) {}
+                    this._syncState._syncResizeObserver = null;
+                }
+                if (this._syncState && this._syncState._imgResyncTimer) {
+                    clearTimeout(this._syncState._imgResyncTimer);
+                    this._syncState._imgResyncTimer = null;
                 }
             } catch(e) {}
             
+            // 标记销毁态并清理初始对齐定时器 / 代次递增
+            if (this._syncState) {
+                this._syncState._destroyed = true;
+                this._syncState._generation = (this._syncState._generation || 0) + 1;
+                if (this._syncState._initialAlignTimer) {
+                    clearTimeout(this._syncState._initialAlignTimer);
+                    this._syncState._initialAlignTimer = null;
+                }
+            }
             clearTimeout(this.__syncLeaveTimer);
             clearTimeout(this.__syncDomLockTimer);
             clearTimeout(this.__lastSyncTimer);
@@ -9670,7 +9676,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             
             codeMirror.toggle();
             
-            if (codeMirror.css("display") === "none") // 使用 css("display") 替代 is(":hidden") 以兼容 Zepto
+            if (codeMirror.css("display") === "none")
             {
                 this.state.preview = true;
 
@@ -9951,7 +9957,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                                 return false;
                             }
                             
-                            // ★ v2.0.0: 构建带 target 的链接标记
+                            // 构建带 target 的链接标记
                             var str;
                             if (target) {
                                 // 使用扩展语法: [text](url){target=_blank}
@@ -9964,7 +9970,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                                 }
                             }
 
-                            // ★ v2.0.0-FIX4: 使用 _this.cm 获取最新 CodeMirror 引用
+                            // 使用 _this.cm 获取最新 CodeMirror 引用
                             var editCm = _this.cm;
                             if (editCm && typeof editCm.replaceSelection === "function") {
                                 editCm.focus();
@@ -10054,7 +10060,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                             }
                             linkStr += ")";
 
-                            // ★ v2.0.0-FIX4: 使用 _this.cm 获取最新 CodeMirror 引用
+                            // 使用 _this.cm 获取最新 CodeMirror 引用
                             var editCm = _this.cm;
                             if (editCm && typeof editCm.replaceSelection === "function") {
                                 editCm.focus();
@@ -10103,8 +10109,8 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             var cm       = this.cm;
             var settings = this.settings;
             
-            // ★ v2.0.0: 统一插件调用方式，优先直接调用已注册的插件方法
-            // 无论 AMD 或非 AMD 模式，只要 this[name] 是函数就直接调用
+            // 统一插件调用方式，优先直接调用已注册的插件方法
+            // 已注册的插件方法直接调用，避免重复动态加载
             if (typeof this[name] === "function") {
                 try {
                     this[name](cm);
@@ -10120,7 +10126,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             // 插件未注册到实例上，尝试动态加载
             path = settings.pluginPath + path;
             
-            // ★ v2.0.0: 确保 pluginPath 以 / 结尾，避免路径拼接错误
+            // 确保 pluginPath 以 / 结尾，避免路径拼接错误
             if (!/\.js$/.test(path)) {
                 path += ".js";
             }
@@ -10367,6 +10373,12 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             var settings  = this.settings;
             var classPrefix = this.classPrefix;
 
+            // 断开宿主主题观察器（单次，无包装链累积）
+            if (this._xfHostThemeMo) {
+                try { this._xfHostThemeMo.disconnect(); } catch (e) {}
+                this._xfHostThemeMo = null;
+            }
+
             // 1. 清除所有定时器
             if (this.timer) {
                 clearTimeout(this.timer);
@@ -10382,15 +10394,22 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             }
 
             // 1b. 取消可能仍在运行的滚动同步动画帧，避免销毁后继续操作已拆除的 CodeMirror
-            if (this.state) {
-                if (this.state.editorAnimTimer) {
-                    try { cancelAnimationFrame(this.state.editorAnimTimer); } catch (ex) {}
-                    this.state.editorAnimTimer = null;
+            // 修正 —— 动画 timer 实际存放在 _syncState（非 state），原代码为死代码
+            if (this._syncState) {
+                if (this._syncState.editorAnimTimer) {
+                    try { cancelAnimationFrame(this._syncState.editorAnimTimer); } catch (ex) {}
+                    this._syncState.editorAnimTimer = null;
                 }
-                if (this.state.editorCmAnimTimer) {
-                    try { cancelAnimationFrame(this.state.editorCmAnimTimer); } catch (ex) {}
-                    this.state.editorCmAnimTimer = null;
+                if (this._syncState.editorCmAnimTimer) {
+                    try { cancelAnimationFrame(this._syncState.editorCmAnimTimer); } catch (ex) {}
+                    this._syncState.editorCmAnimTimer = null;
                 }
+                this._syncState.suppressAllSync = true;
+            }
+
+            // 1c. 解绑同步滚动引擎，避免监听器/定时器残留。
+            if (this._scrollSyncBound && typeof this.unbindSyncScroll === "function") {
+                try { this.unbindSyncScroll(); } catch (ex) {}
             }
 
             // 2. 解绑所有文档级事件（xfEditor 命名空间）
@@ -10412,10 +10431,10 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             dom(window).off(".xf_editor-auto");  // 匹配 xf_editor-auto 命名空间的元素级事件
 
             // 3b. 销毁所有 ECharts 实例并解绑其 resize 事件
-            // ★ v2.0.0: 修复 _echarts_instance 属性名不匹配导致 dispose 不生效
+            // 修复 _echarts_instance 属性名不匹配导致 dispose 不生效
             if (this.previewContainer && typeof echarts !== "undefined") {
                 this.previewContainer.find(".xf_editor-echarts").each(function() {
-                    // ★ v2.0.0: 先断开 ResizeObserver 再 dispose（避免内存泄漏）
+                    // 先断开 ResizeObserver 再 dispose（避免内存泄漏）
                     if (this._ro && this._ro.disconnect) { this._ro.disconnect(); this._ro = null; }
                     // echarts 4.x 在 DOM 上存储实例的属性为 _echarts_instance_（尾下划线）
                     if (echarts.getInstanceByDom && echarts.getInstanceByDom(this)) {
@@ -10476,6 +10495,12 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             if (settings.theme) {
                 editor.removeClass(classPrefix + "theme-" + settings.theme);
             }
+
+            // 7b. ★ v2.1.0: 解绑拖拽高亮监听（命名空间），避免重复初始化累积
+            if (this.editor) {
+                this.editor.off(".xf_editor-drag");
+            }
+            this._dragBound = false;
 
             // 8. 重置编辑器状态
             this.state.watching    = false;
@@ -10576,9 +10601,10 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 '<div class="xf-canvas-graffiti">',
                 '<style>',
                 '.xf-canvas-graffiti{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;display:flex;flex-direction:column;flex:1 1 auto;min-height:0;}',
-                '.canvas-graffiti-dialog .xf_editor-dialog-close{top:16px;right:18px;}',
-                '.canvas-graffiti-dialog .xf-cg-max-btn{position:absolute;top:16px;right:50px;font-size:18px;color:rgba(255,255,255,.85);cursor:pointer;z-index:5;transition:transform .15s;}',
-                '.canvas-graffiti-dialog .xf-cg-max-btn:hover{color:#fff;transform:scale(1.12);}',
+                '.canvas-graffiti-dialog .xf_editor-dialog-close{top:14px;right:14px;width:34px;height:34px;line-height:34px;font-size:26px;}',
+                '.canvas-graffiti-dialog .xf-cg-max-btn{position:absolute;top:14px;right:56px;width:34px;height:34px;line-height:34px;font-size:18px;text-align:center;color:rgba(255,255,255,.85);cursor:pointer;z-index:5;border-radius:6px;transition:background .15s,color .15s;}',
+                '.canvas-graffiti-dialog .xf-cg-max-btn:hover{color:#fff;background:rgba(255,255,255,.12);}',
+                '.canvas-graffiti-dialog .xf_editor-dialog-close:hover,.canvas-graffiti-dialog .xf-cg-max-btn:hover{transform:none;}',
                 '.canvas-graffiti-dialog .xf_editor-dialog-container{display:flex!important;flex-direction:column;padding:0!important;overflow:hidden!important;}',
                 '.canvas-graffiti-dialog .xf_editor-dialog-footer{flex:0 0 auto;}',
                 '.canvas-graffiti-dialog .xf-canvas-graffiti{flex:1 1 auto;min-height:0;}',
@@ -10607,6 +10633,8 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 '.xf-canvas-graffiti .xf-cg-canvas{display:block;margin:0;background:#fff;border:1px solid #d0d7de;border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.10);touch-action:none;}',
                 '.xf-canvas-graffiti .xf-cg-hint{position:sticky;top:0;left:0;z-index:5;margin:0 0 8px;padding:7px 12px;font-size:12.5px;line-height:1.5;color:#0b5ed7;background:#eaf2fd;border:1px solid #bcd6f7;border-radius:7px;box-shadow:0 1px 4px rgba(44,126,234,.15);}',
                 '.xf-canvas-graffiti .xf-cg-hint .fa{margin-right:5px;}',
+                '.xf-canvas-graffiti .xf-cg-text-input{position:absolute;z-index:10;box-sizing:border-box;border:1px solid #2C7EEA;border-radius:4px;padding:2px 5px;font-size:20px;line-height:1.2;color:#222;background:rgba(255,255,255,.96);box-shadow:0 2px 10px rgba(44,126,234,.25);outline:none;}',
+                '.xf-canvas-graffiti .xf-cg-text-input:focus{border-color:#1a6fd6;box-shadow:0 0 0 2px rgba(44,126,234,.18);}',
                 '</style>',
                 '<div class="xf-cg-toolbar">',
                 '  <div class="xf-cg-group xf-cg-group-main" role="group" aria-label="画布操作">',
@@ -10617,6 +10645,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 '    <button type="button" class="xf-cg-btn" data-act="zoomreset" title="重置缩放 (Reset)"><i class="fa fa-refresh"></i></button>',
                 '    <button type="button" class="xf-cg-btn" data-act="clear" title="清空画布 (Clear)"><i class="fa fa-trash"></i></button>',
                 '    <button type="button" class="xf-cg-btn" data-act="select" title="选择工具：框选区域后拖拽移动 (Select / Move)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="2.4 2"><rect x="2.5" y="2.5" width="11" height="11" rx="1"/></svg></button>',
+                '    <button type="button" class="xf-cg-btn" data-act="text" title="文字工具：点击画布输入文字，提交后可拖动到任意位置 (Text)"><i class="fa fa-font"></i></button>',
                 '    <button type="button" class="xf-cg-btn" data-act="zoomin" title="放大 (Zoom in)"><i class="fa fa-search-plus"></i></button>',
                 '    <button type="button" class="xf-cg-btn" data-act="zoomout" title="缩小 (Zoom out)"><i class="fa fa-search-minus"></i></button>',
                 '    <span class="xf-cg-zoomval">100%</span>',
@@ -10680,6 +10709,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                         dialog.hide().lockScreen(false).hideMask().remove();
                     }],
                     cancelBtn: ["取消", function() {
+                        if (textInput) closeTextInput(false);
                         dom(window).off("resize.xf_cg_cursor", onWinResize);
                         dialog.hide().lockScreen(false).hideMask().remove();
                     }]
@@ -10705,9 +10735,10 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             var curveAdjusting = false, curveP1 = null, curveP2 = null;
             var undoStack = [], redoStack = [];
             var MAX_STACK = 40;
-            var state = { color: "#e53935", size: 4, eraser: false, eraserSize: 20, scale: 1, tool: "pen" };
+            var state = { color: "#e53935", size: 4, fontSize: 24, eraser: false, eraserSize: 20, scale: 1, tool: "pen" };
             var MIN_W = 60, MIN_H = 60;
             var maxBtn = null;
+            var textInput = null, textPos = null;
 
             function makeCanvas(w, h) { var c = document.createElement("canvas"); c.width = w; c.height = h; return c; }
             function resetStage(w, h) { baseW = w; baseH = h; base.width = w; base.height = h; bctx = base.getContext("2d"); }
@@ -10754,23 +10785,27 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             // 最大化 / 还原
             var maximized = false, origSize = null;
             function toggleMaximize() {
+                if (textInput) closeTextInput(false);
                 if (!maximized) {
                     origSize = { width: dialog.width(), height: dialog.height(), left: dialog[0].style.left, top: dialog[0].style.top };
                     dialog.css({ width: "96vw", height: "94vh", left: "2vw", top: "3vh" });
                     maximized = true;
-                    if (maxBtn) maxBtn.removeClass("fa-expand").addClass("fa-compress").attr("title", "还原尺寸");
+                    if (maxBtn) maxBtn.removeClass("fa-expand").addClass("fa-compress").attr("title", "还原尺寸").attr("aria-label", "还原尺寸");
                 } else {
                     dialog.css(origSize);
                     maximized = false;
-                    if (maxBtn) maxBtn.removeClass("fa-compress").addClass("fa-expand").attr("title", "最大化");
+                    if (maxBtn) maxBtn.removeClass("fa-compress").addClass("fa-expand").attr("title", "最大化").attr("aria-label", "最大化");
                 }
                 layout(); render();   // 尺寸变化后重新计算布局并重绘，确保画布正确铺满/居中
             }
             layout();
             render();
-            maxBtn = dom('<a href="javascript:;" class="xf-cg-max-btn fa fa-expand" title="最大化"></a>');
+            maxBtn = dom('<a href="javascript:;" role="button" aria-label="最大化" tabindex="0" class="xf-cg-max-btn fa fa-expand" title="最大化"></a>');
             maxBtn.insertBefore(dialog.children(".xf_editor-dialog-close"));
-            maxBtn.on(xfEditor.mouseOrTouch("click", "touchend"), function(e) { e.preventDefault(); e.stopPropagation(); toggleMaximize(); });
+            var activateMaximize = function(e) { e.preventDefault(); e.stopPropagation(); toggleMaximize(); };
+            maxBtn.on(xfEditor.mouseOrTouch("click", "touchend"), activateMaximize).on("keydown", function(e) {
+                if (e.key === "Enter" || e.key === " " || e.keyCode === 13 || e.keyCode === 32) activateMaximize(e);
+            });
 
             // 导出：先按内容智能裁剪（保留安全边距），再合成白底导出，优先 jpeg 以减小体积，内容绝不丢失
             function contentBounds() {
@@ -10803,6 +10838,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             // 导出：智能裁剪 -> 合成白底 -> 在 webp / 多档 jpeg / png 中选择体积最小者，保证内容完整
             function exportDataUri() {
                 cancelCurveAdjust();   // 保存时若曲线尚未提交，先取消预览基线，避免导出未确认的内容
+                if (textInput) closeTextInput(true);   // 保存时提交尚未确认的文字
                 var cropped = cropToContent();
                 var out = makeCanvas(cropped.width, cropped.height);
                 var octx = out.getContext("2d");
@@ -10950,8 +10986,77 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 shapeSnap = null;
                 render();
             }
+            // 文字工具：在舞台坐标处创建临时输入框；提交后文字栅格化到离屏舞台，可继续用选择工具拖动
+            function openTextInput(pos) {
+                if (textInput) closeTextInput(true);
+                textPos = pos;
+                var input = document.createElement("input");
+                input.type = "text";
+                input.className = "xf-cg-text-input";
+                input.setAttribute("aria-label", "输入文字");
+                input.style.left = Math.max(0, vp.offsetLeft + pos.x * state.scale - wrap.scrollLeft) + "px";
+                input.style.top = Math.max(0, vp.offsetTop + pos.y * state.scale - wrap.scrollTop) + "px";
+                input.style.fontSize = Math.max(12, Math.round(state.fontSize * state.scale)) + "px";
+                input.style.width = Math.max(120, Math.min(wrap.clientWidth - 20, Math.ceil((baseW - pos.x) * state.scale) + 24)) + "px";
+                wrap.appendChild(input);
+                textInput = input;
+                dom(input).on("keydown", function(e) {
+                    var key = e.key || (e.keyCode === 13 ? "Enter" : (e.keyCode === 27 ? "Escape" : ""));
+                    if (key === "Enter") {
+                        if (e.preventDefault) e.preventDefault();
+                        closeTextInput(true);
+                        setTool("select", true);
+                    } else if (key === "Escape") {
+                        if (e.preventDefault) e.preventDefault();
+                        closeTextInput(false);
+                    }
+                });
+                dom(input).on("click", function(e) { if (e.stopPropagation) e.stopPropagation(); });
+                dom(input).on("blur", function() {
+                    if (textInput !== input) return;
+                    closeTextInput(true);
+                    setTool("select", true);
+                });
+                input.focus();
+                if (input.select) input.select();
+            }
+            // 关闭文字输入框；commit=true 时将文字绘制到舞台并生成可拖动选区
+            function closeTextInput(commit) {
+                var input = textInput;
+                var pos = textPos;
+                if (!input) return;
+                textInput = null;
+                textPos = null;
+                var value = "";
+                try { value = dom(input).val() || ""; } catch (e) {}
+                try { if (input.parentNode) input.parentNode.removeChild(input); } catch (e) {}
+                value = String(value).replace(/^\s+|\s+$/g, "");
+                if (!commit || !value || !pos) { render(); return; }
+                pushUndo();
+                var font = state.fontSize + "px sans-serif";
+                bctx.save();
+                bctx.globalCompositeOperation = "source-over";
+                bctx.fillStyle = state.color;
+                bctx.font = font;
+                bctx.textBaseline = "top";
+                bctx.fillText(value, pos.x, pos.y);
+                var textWidth = Math.ceil(bctx.measureText(value).width) + 6;
+                bctx.restore();
+                selRect = {
+                    x: Math.max(0, pos.x - 3),
+                    y: Math.max(0, pos.y - 3),
+                    w: Math.max(8, Math.min(baseW - pos.x, textWidth)),
+                    h: state.fontSize + 8
+                };
+                render();
+            }
             function startDraw(e) {
                 if (e.cancelable) e.preventDefault();
+                // 文字工具：点击舞台任意位置输入文字
+                if (state.tool === "text") {
+                    openTextInput(getPos(e));
+                    return;
+                }
                 // 曲线第二阶段：单击以当前位置为控制点提交曲线
                 if (curveAdjusting) {
                     var cp0 = getPos(e);
@@ -11176,14 +11281,16 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             }
             function setPenMode() { setTool("pen"); }
             // 统一工具切换：画笔 / 橡皮 / 选择 / 形状（直线/矩形/椭圆/曲线/圆形）互斥，并同步视觉与光标
-            function setTool(tool) {
+            function setTool(tool, keepSelection) {
+                if (textInput) closeTextInput(false);   // 切换工具时丢弃未提交的文字
                 cancelCurveAdjust();   // 曲线调节中途切换工具：取消未提交的曲线
-                selRect = null; selDragging = false; movingSel = false; moveOldRect = null;   // 切换工具时清除选区与移动状态
+                if (!keepSelection) { selRect = null; selDragging = false; movingSel = false; moveOldRect = null; }
                 state.tool = tool;
                 state.eraser = (tool === "eraser");
                 dialog.find('[data-act="pen"]').toggleClass("xf-cg-toggle-on", tool === "pen");
                 dialog.find('[data-act="eraser"]').toggleClass("xf-cg-eraser-on", tool === "eraser");
                 dialog.find('[data-act="select"]').toggleClass("xf-cg-toggle-on", tool === "select");
+                dialog.find('[data-act="text"]').toggleClass("xf-cg-toggle-on", tool === "text");
                 SHAPE_TOOLS.forEach(function(t) {
                     dialog.find('[data-act="' + t + '"]').toggleClass("xf-cg-toggle-on", tool === t);
                 });
@@ -11193,10 +11300,13 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     hint.html('<i class="fa fa-info-circle"></i> 选择工具：在画布上拖拽框选一个区域；在选区内按下并拖动可把该区域的涂鸦内容“剪切”移动到新位置；选中后按 Delete 键可删除该区域内容').css("display", "block");
                 } else if (tool === "curve") {
                     hint.html('<i class="fa fa-info-circle"></i> 曲线工具：先按住拖拽画出起止基线，松开后移动鼠标调整弯曲度，再单击一次完成绘制').css("display", "block");
+                } else if (tool === "text") {
+                    hint.html('<i class="fa fa-info-circle"></i> 文字工具：在画布上单击输入文字，按 Enter 提交后自动切换为选择工具，可拖动文字到任意位置').css("display", "block");
                 } else {
                     hint.css("display", "none");
                 }
                 if (tool === "select") vp.style.cursor = "crosshair";
+                else if (tool === "text") vp.style.cursor = "text";
                 else updateCursor();
                 render();
             }
@@ -11217,6 +11327,9 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             dialog.find('[data-act="select"]').on(xfEditor.mouseOrTouch("click", "touchend"), function() {
                 setTool(state.tool === "select" ? "pen" : "select");
             });
+            dialog.find('[data-act="text"]').on(xfEditor.mouseOrTouch("click", "touchend"), function() {
+                setTool(state.tool === "text" ? "pen" : "text");
+            });
             // 形状工具：直线 / 矩形 / 椭圆 / 曲线 / 圆形（再次点击已激活的形状按钮切回画笔）
             SHAPE_TOOLS.forEach(function(t) {
                 dialog.find('[data-act="' + t + '"]').on(xfEditor.mouseOrTouch("click", "touchend"), function() {
@@ -11224,6 +11337,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 });
             });
             dialog.find('[data-act="clear"]').on(xfEditor.mouseOrTouch("click", "touchend"), function() {
+                if (textInput) closeTextInput(false);
                 cancelCurveAdjust();   // 清空前取消未提交的曲线，避免快照混入
                 selRect = null;        // 清空选区，避免残留虚线边框
                 pushUndo();   // 先保存当前内容，清空后即可通过“撤销/恢复”回退或前进
@@ -11371,6 +11485,15 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             if (!files || !files.length) return false;
             var settings = this.settings;
             var classPrefix = this.classPrefix;
+            if (settings.dropPasteUpload === false) return false;
+
+            var queue = Array.prototype.slice.call(files);
+            var maxFiles = Math.max(1, parseInt(settings.dropPasteMaxFiles, 10) || 10);
+            if (queue.length > maxFiles) {
+                xfEditor.notify("单次最多处理 " + maxFiles + " 个文件，多余文件已忽略。", "warning", 5000);
+                queue = queue.slice(0, maxFiles);
+            }
+            if (!queue.length) return false;
 
             var extOf = function(name) {
                 var m = /\.([^.\/]+)$/.exec(name || "");
@@ -11379,20 +11502,15 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             var categorize = function(file) {
                 var type = (file.type || "").toLowerCase();
                 var ext  = extOf(file.name);
-                if (type.indexOf("image/") === 0 || ["jpg","jpeg","gif","png","bmp","webp","svg"].indexOf(ext) >= 0) return "image";
+                if (type.indexOf("image/") === 0 || ["jpg","jpeg","gif","png","bmp","webp"].indexOf(ext) >= 0) return "image";
                 if (type.indexOf("video/") === 0 || ["mp4","webm","ogv","mov","mkv","flv","avi"].indexOf(ext) >= 0) return "video";
                 if (type.indexOf("audio/") === 0 || ["mp3","wav","ogg","m4a","aac","flac"].indexOf(ext) >= 0) return "audio";
                 return "file";
             };
-            var uploadTypeOf = function(type) { return (type === "audio") ? "file" : type; };
-            var urlOf = function(type) {
-                if (type === "image") return settings.imageUploadURL;
-                if (type === "video") return settings.videoUploadURL;
-                return settings.fileUploadURL; // file / audio 共用附件上传地址
-            };
             var formatsOf = function(type) {
                 if (type === "image") return settings.imageFormats;
                 if (type === "video") return settings.videoFormats;
+                if (type === "audio") return settings.audioFormats;
                 return settings.fileFormats;
             };
             var isAllowed = function(type, name) {
@@ -11403,84 +11521,155 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 }
                 return false;
             };
-
-            // 在指定位置（拖放坐标）或当前光标处插入内容
+            var urlOf = function(type) {
+                if (type === "image") return settings.imageUploadURL;
+                if (type === "video") return settings.videoUploadURL;
+                return settings.fileUploadURL; // file / audio 共用附件上传地址
+            };
+            var safeUrl = function(value) {
+                var url = String(value || "").trim();
+                if (!url) return "";
+                var protocols = settings.allowedUploadProtocols || [];
+                if (/^(javascript|vbscript|jar|mocha|livescript|data:text\/html|data:image\/svg)/i.test(url)) return "";
+                if (url.indexOf("//") === 0) return ""; // 协议相对地址可能指向外部域
+                if (/^data:image\/(png|jpe?g|gif|webp);base64,/i.test(url)) return url;
+                for (var i = 0; i < protocols.length; i++) {
+                    var prefix = String(protocols[i]);
+                    if (url.indexOf(prefix) === 0) return url;
+                }
+                return "";
+            };
+            var notifyError = function(type, label, message) {
+                try { settings.onUploadError.call(self, { type: type, name: label, message: message }); } catch (e) {}
+                xfEditor.notify(message, "error", 5000);
+            };
+            // 在指定位置（拖放坐标 / 最近鼠标位置）或当前光标处插入内容
+            // 多文件时复用上一次插入后的光标，避免重复按旧坐标定位造成顺序错乱
+            var lastInsertPos = null;
             var insertAt = function(md) {
                 var editorCm = cm || self.cm;
                 if (!editorCm || typeof editorCm.replaceSelection !== "function") return;
-                if (typeof clientX === "number" && editorCm.coordsChar) {
+                if (lastInsertPos && typeof editorCm.setCursor === "function") {
+                    try { editorCm.setCursor(lastInsertPos); } catch (e) { lastInsertPos = null; }
+                } else if (typeof clientX === "number" && typeof clientY === "number" && editorCm.coordsChar) {
                     try {
-                        var pos = editorCm.coordsChar({ left: clientX, top: clientY }, "page");
+                        var pos = editorCm.coordsChar({ left: clientX, top: clientY }, "client");
                         if (pos && typeof pos.line === "number") editorCm.setCursor(pos);
                     } catch (e) {}
                 }
                 editorCm.focus();
                 editorCm.replaceSelection("\n" + md + "\n");
+                try { lastInsertPos = editorCm.getCursor(); } catch (e) { lastInsertPos = null; }
+            };
+            // 图片魔数嗅探：不信任客户端声明的 MIME 或扩展名
+            var sniffImage = function(file, callback) {
+                if (!settings.strictMimeCheck || !file.slice || typeof FileReader === "undefined") return callback(true);
+                if (file.type && file.type.indexOf("image/") !== 0) return callback(false);
+                try {
+                    var reader = new FileReader();
+                    reader.onload = function() {
+                        var u8 = new Uint8Array(reader.result || []);
+                        var ok = (u8[0] === 0xFF && u8[1] === 0xD8 && u8[2] === 0xFF) ||
+                                 (u8[0] === 0x89 && u8[1] === 0x50 && u8[2] === 0x4E && u8[3] === 0x47) ||
+                                 (u8[0] === 0x47 && u8[1] === 0x49 && u8[2] === 0x46 && u8[3] === 0x38) ||
+                                 (u8[0] === 0x42 && u8[1] === 0x4D) ||
+                                 (u8[0] === 0x52 && u8[1] === 0x49 && u8[2] === 0x46 && u8[3] === 0x46 && u8[8] === 0x57 && u8[9] === 0x45 && u8[10] === 0x42 && u8[11] === 0x50);
+                        callback(!!ok);
+                    };
+                    reader.onerror = function() { callback(false); };
+                    reader.readAsArrayBuffer(file.slice(0, 12));
+                } catch (e) { callback(true); }
+            };
+            var doUpload = function(file, upType, url, fieldName, callback) {
+                if (typeof settings.uploadFunction === "function") {
+                    try {
+                        settings.uploadFunction.call(self, file, { type: upType, url: url, fieldName: fieldName }, callback);
+                    } catch (e) { callback(e); }
+                    return;
+                }
+                self._uploadFileByXhr(file, url, fieldName, callback, settings.uploadHeaders);
             };
 
             var processOne = function(file, done) {
-                var type  = categorize(file);
-                var upType = uploadTypeOf(type);
-                var url   = urlOf(upType);
+                var type = categorize(file);
+                var upType = (type === "audio") ? "file" : type;
+                var url = urlOf(upType);
                 var label = file.name || type;
+                var fieldName = classPrefix + upType + "-file";
 
-                if (!isAllowed(type, file.name || "")) {
+                if (!isAllowed(type, label)) {
                     xfEditor.notify("不支持的文件格式：" + label, "warning", 4000);
                     return done();
                 }
-
-                // 无上传地址：图片可离线转 base64 涂鸦块；其余类型需配置上传接口
-                if (!url || String(url).trim() === "") {
-                    if (type === "image") {
-                        self.fileToDataURL(file, function(err, dataUri) {
-                            if (!err && dataUri) {
-                                insertAt(self._buildCanvasBlock(dataUri, "center", file.name || ""));
-                            } else {
-                                xfEditor.notify("图片读取失败。", "error", 5000);
-                            }
-                            done();
-                        });
-                    } else {
-                        xfEditor.notify("「" + label + "」需要配置对应的上传接口（imageUploadURL / videoUploadURL / fileUploadURL）后才能上传。", "warning", 5000);
-                        done();
-                    }
-                    return;
+                var limit = (type === "image") ? settings.uploadMaxSize : settings.uploadMaxFileSize;
+                if (limit && file.size && file.size > limit) {
+                    xfEditor.notify("「" + label + "」超过大小上限（" + Math.round(limit / 1024 / 1024) + "MB）。", "warning", 5000);
+                    return done();
                 }
 
-                // 有上传地址：通过 XHR 上传（字段名与对话框表单保持一致）
-                self._uploadFileByXhr(file, url, classPrefix + upType + "-file", function(err, json) {
-                    // ★ 统一使用 _parseUploadResult 解析上传结果（兼容 success:true/code:0/errno:0/url 字段别名等）
-                    var parsed = (self._parseUploadResult && self._parseUploadResult(json)) || { success: false, url: "", message: (json && json.message) || "" };
-                    if (err || !parsed.success) {
-                        xfEditor.notify(parsed.message || "上传失败，请检查上传接口。", "error", 5000);
-                        return done();
-                    }
-                    var u = parsed.url;
+                var finish = function(rawUrl) {
+                    var u = safeUrl(rawUrl);
                     if (!u) {
-                        xfEditor.notify("上传成功，但服务端未返回文件地址。", "error", 5000);
+                        notifyError(type, label, "服务端返回的文件地址不被允许。");
                         return done();
                     }
-                    // 登记已上传文件，便于后续删除时通知服务端清理（防僵尸文件）
                     try { self._trackUploadedFile({ type: type, url: u, name: file.name || "" }); } catch (e) {}
                     if (type === "image") {
-                        insertAt("![" + xfEditor.escapeAttr(file.name || "") + "](" + xfEditor.escapeAttr(u) + ")");
+                        insertAt("![" + xfEditor.escapeMarkdownText(file.name || "") + "](" + xfEditor.escapeHtml(u) + ")");
                     } else if (type === "video") {
-                        insertAt('<div class="xfEditor-video-wrapper" style="text-align:center;"><video src="' + xfEditor.escapeAttr(u) + '" controls preload="metadata">' + xfEditor.escapeHtml(file.name || "Video") + '</video></div>');
+                        insertAt('<div class="xfEditor-video-wrapper" style="text-align:center;"><video src="' + xfEditor.escapeHtml(u) + '" controls preload="metadata">' + xfEditor.escapeHtml(file.name || "Video") + '</video></div>');
                     } else {
-                        // 音频 / 附件统一回插为可点击的下载链接
-                        insertAt("[" + xfEditor.escapeHtml(file.name || u) + "](" + xfEditor.escapeAttr(u) + ")");
+                        insertAt("[" + xfEditor.escapeMarkdownText(file.name || u) + "](" + xfEditor.escapeHtml(u) + ")");
                     }
                     done();
-                });
+                };
+
+                var startUpload = function() {
+                    // 无上传地址：图片可离线转 base64 涂鸦块；其余类型需配置上传接口
+                    if (!url || String(url).trim() === "") {
+                        if (type === "image") {
+                            self.fileToDataURL(file, function(err, dataUri) {
+                                if (!err && dataUri) {
+                                    insertAt(self._buildCanvasBlock(dataUri, "center", file.name || ""));
+                                } else {
+                                    notifyError(type, label, "图片读取失败。");
+                                }
+                                done();
+                            });
+                        } else {
+                            notifyError(type, label, "「" + label + "」需要配置对应的上传接口（imageUploadURL / videoUploadURL / fileUploadURL）后才能上传。");
+                            done();
+                        }
+                        return;
+                    }
+                    doUpload(file, upType, url, fieldName, function(err, json) {
+                        var parsed = (self._parseUploadResult && self._parseUploadResult(json)) || { success: false, url: "", message: (json && json.message) || "" };
+                        if (err || !parsed.success) {
+                            notifyError(type, label, parsed.message || "上传失败，请检查上传接口。");
+                            return done();
+                        }
+                        finish(parsed.url);
+                    });
+                };
+
+                if (type === "image" && settings.strictMimeCheck) {
+                    sniffImage(file, function(ok) {
+                        if (!ok) {
+                            notifyError(type, label, "图片内容与其扩展名/MIME 不匹配。");
+                            return done();
+                        }
+                        startUpload();
+                    });
+                } else {
+                    startUpload();
+                }
             };
 
-            // 串行处理，避免多文件并发插入顺序错乱
-            var queue = Array.prototype.slice.call(files);
-            var idx = 0;
+            var index = 0;
             var step = function() {
-                if (idx >= queue.length) return;
-                var f = queue[idx++];
-                processOne(f, function() { step(); });
+                if (index >= queue.length) return;
+                var file = queue[index++];
+                processOne(file, step);
             };
             step();
             return true;
@@ -11494,7 +11683,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
          * @param {String} fieldName
          * @param {Function} callback
          */
-        _uploadFileByXhr: function(file, url, fieldName, callback) {
+        _uploadFileByXhr: function(file, url, fieldName, callback, headers) {
             callback = callback || function() {};
             try {
                 var formData = new FormData();
@@ -11504,12 +11693,17 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 // ★ CSRF 防护：XHR 上传请求携带 X-CSRF-TOKEN 请求头，避免遭遇 CSRF 拦截
                 var _csrf = (this._getCsrfToken && this._getCsrfToken()) || "";
                 if (_csrf) { try { xhr.setRequestHeader("X-CSRF-TOKEN", _csrf); } catch (e) {} }
+                if (headers && typeof headers === "object") {
+                    Object.keys(headers).forEach(function(key) {
+                        try { xhr.setRequestHeader(key, headers[key]); } catch (e) {}
+                    });
+                }
                 xhr.onload = function() {
                     if (xhr.status >= 200 && xhr.status < 300) {
                         var raw = xhr.responseText || "";
                         var json;
                         try {
-                            json = (typeof JSON !== "undefined" && JSON.parse) ? JSON.parse(raw) : eval("(" + raw + ")");
+                            json = JSON.parse(raw);
                         } catch (e) {
                             callback(new Error("parse-error"));
                             return;
@@ -11549,7 +11743,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 if (options.crossDomain) return;        // 跨域上传由服务端回调页处理，本处不解析
                 var json;
                 try {
-                    json = (typeof JSON !== "undefined" && JSON.parse) ? JSON.parse(raw) : eval("(" + raw + ")");
+                    json = JSON.parse(raw);
                 } catch (err) {
                     if (options.onError) options.onError(err, raw);
                     return;
@@ -11710,7 +11904,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             // ★ 关键修复：字段名必须是 csrfFieldName（默认 _token），而非 token 本身，
             //   否则服务端 VerifyCsrfToken 找不到 _token 字段 → "CSRF token mismatch."
             var name = (this.settings && this.settings.csrfFieldName) || "_token";
-            return '<input type="hidden" name="' + xfEditor.escapeAttr(name) + '" value="' + xfEditor.escapeAttr(token) + '" />';
+            return '<input type="hidden" name="' + xfEditor.escapeHtml(name) + '" value="' + xfEditor.escapeHtml(token) + '" />';
         },
 
         /**
@@ -11831,7 +12025,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 return;
             }
             var prev = this._xfPrevResourceRefs;
-            // ★ v2.0.0: 合并「滚动基线」与「变更前快照」两路检测结果，杜绝任何遗漏。
+            // 合并「滚动基线」与「变更前快照」两路检测结果，杜绝任何遗漏。
             //   - 滚动基线：覆盖自上次扫描以来所有累计删除；
             //   - 变更前快照（beforeChange 捕获）：精准捕获最近一次编辑的删除，
             //     即使基线因异常偶发偏离也能兜底。
@@ -11998,7 +12192,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             var selection  = cm.getSelection();
             var selections = cm.listSelections();
 
-            cm.replaceSelection(xfEditor.wordsFirstUpperCase(selection));
+            cm.replaceSelection(xfEditor.ucwords(selection));
             cm.setSelections(selections);
         },
         
@@ -12923,7 +13117,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         "copybook-pinyin" : function() {
             var cm = this.cm;
             var cursor = cm.getCursor();
-            cm.replaceSelection("\n[[copybookPinyin]]\n(春眠不觉晓| chūn mián bù jué xiǎo)(处处闻啼鸟| chù chù wén tí niǎo)\n(夜来风雨声| yè lái fēng yǔ shēng)(花落知多少| huā luò zhī duō shǎo)\n[[/copybookPinyin]]\n");
+            cm.replaceSelection("\n[[copybookPinyin]]\n{春眠不觉晓| chūn mián bù jué xiǎo}{处处闻啼鸟| chù chù wén tí niǎo}\n{夜来风雨声| yè lái fēng yǔ shēng}{花落知多少| huā luò zhī duō shǎo}\n[[/copybookPinyin]]\n");
             cm.setCursor(cursor.line + 2, 0);
         },
 
@@ -12995,11 +13189,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
 
         /**
          * 导出 PDF 文件：打开新窗口写入完整可打印文档并调用浏览器打印（可另存为 PDF）
-         * 
-         * ★ v2.0.0-FIX: 文件名统一由实例方法 this.getExportFileName() 推导。
-         *   旧实现调用的 this._defaultExportName() 只存在于 xfEditor.toolbarHandlers 上，
-         *   而 handler 执行时 this 指向编辑器实例（prototype 上没有该方法），
-         *   因此必然抛出 TypeError: this._defaultExportName is not a function。
+         * 文件名统一由实例方法 this.getExportFileName() 推导。
          */
         "export-pdf" : function() {
             this.exportFile(this.getExportFileName(), "pdf");
@@ -13138,7 +13328,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
      */
     
     var trim = function(str) {
-        return (!String.prototype.trim) ? str.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, "") : str.trim();
+        return str == null ? "" : str.trim();
     };
     
     xfEditor.trim = trim;
@@ -13157,7 +13347,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         });
     };
     
-    xfEditor.ucwords = xfEditor.wordsFirstUpperCase = ucwords;
+    xfEditor.ucwords = ucwords;
     
     /**
      * 字符串首字母大写
@@ -13173,9 +13363,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         });
     };
     
-    var ucfirst = firstUpperCase;
-    
-    xfEditor.firstUpperCase = xfEditor.ucfirst = firstUpperCase;
+    xfEditor.firstUpperCase = firstUpperCase;
     
     xfEditor.urls = {
         atLinkBase : "https://github.com/"
@@ -13187,26 +13375,18 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         emailLink     : /(mailto:)?([\w\.\+\-]+)@([\w\-]+)\.([\w\-]{2,})\.?(\w+)?/g,
 
         pageBreak     : /^\[[=]{8,}\]$/,
-        // ★ v2.0.0: 支持 {text|pinyin}(!width:NNN) 可选的组级宽度参数
+        // 支持 {text|pinyin}(!width:NNN) 可选的组级宽度参数
         pinyin        : /\{([^|{}]+)\s*\|\s*([^|{}]+)\}(?:\s*\(!width:(\d+)\))?/g,
         unicodeAlignCenter : /⁑([\s\S]*?)⁑/g,
         unicodeAlignLeft   : /⁑⁖([\s\S]*?)⁖⁑/g,
         unicodeAlignRight  : /⠪([\s\S]*?)⠪/g,
         imageSizeNew    : /!\[([^\]]*)\]\(([^)]+)\)<(\d+),\s*(\d+)>/g,
-        // ★ [DEPRECATED v2.0.0] 以下 tabs/tabItem/columns 正则已被内联 findBalancedBlocks 替代，
-        //   保留仅用于向后兼容（外部代码可能引用 xfEditor.regexs.tabs 等）。
-        tabs            : /\[\[tabs\]\]([\s\S]*?)\[\[\/tabs\]\]/g,
-        tabItem       : /\[\[tab:([^\]]+)\]\]([\s\S]*?)\[\[\/tab\]\]/g,
-        columns       : /\[\[columns:(\d+)\]\]([\s\S]*?)\[\[\/columns\]\]/g,
         copybookTian   : /\[\[copybookTian\]\]/g,
         copybookMi     : /\[\[copybookMi\]\]/g,
         copybookPinyin : /\[\[copybookPinyin\]\]/g,
         copybookTianEnd   : /\[\[\/copybookTian\]\]/g,
         copybookMiEnd     : /\[\[\/copybookMi\]\]/g,
         copybookPinyinEnd : /\[\[\/copybookPinyin\]\]/g,
-        // ★ [DEPRECATED v2.0.0] videoBlock/fileBlock 正则已被内联 findBalancedBlocks 替代
-        videoBlock    : /\[\[video\]\]\s*\n?([\s\S]*?)\n?\s*\[\[\/video\]\]/g,
-        fileBlock     : /\[\[file\]\]\s*\n?([\s\S]*?)\n?\s*\[\[\/file\]\]/g,
         tooltipLink   : /\[([^\]]+)\]\(tooltip:([^)]+)\)/gi,
         tooltipImg    : /\{tooltip:([^}]+)\}/gi,
         pageOpen      : /\[\[page:(A\d+|AN|LETTER|LEGAL)(?:\s[^\]]*)?\]\]/gi,
@@ -13229,10 +13409,10 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         // 脚注定义标记：[^脚注名称]:  -- 用于按行定位定义位置
         footnoteDefAnchor : /^\[\^([^\]]+)\]:/gm,
         
-        // ★ v2.0.0: 视频文件扩展名检测，避免多处重复定义
+        // 视频文件扩展名检测，避免多处重复定义
         videoExts : /\.(mp4|webm|ogv|mov)(\?.*)?$/i,
 
-        // ★ v2.0.0: 音频文件扩展名检测（与 settings.audioFormats 保持一致，供链接/图片渲染器识别音频）
+        // 音频文件扩展名检测（与 settings.audioFormats 保持一致，供链接/图片渲染器识别音频）
         audioExts : /\.(mp3|wav|ogg|oga|m4a|aac|flac|opus)(\?.*)?$/i
     };
 
@@ -13256,7 +13436,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         // Protect remaining $...$ inline formulas
         // 只匹配包含 TeX 命令（以反斜杠开头）或 TeX 特殊字符（^、_、{、}等）的内容
         // 避免误匹配货币符号（如 $5.00 或 Cost: $100）
-        // ★ v2.0.0: 增加数字起始检测，$100 后不跟 LaTeX 标记直接跳过
+        // 增加数字起始检测，$100 后不跟 LaTeX 标记直接跳过
         markdown = markdown.replace(/\$(?=[^$\n\r]{1,200}\$)([^$\n\r]+?)\$/g, function(match, tex) {
             // 货币检测：如果内容以数字开头且不包含 LaTeX 命令，视为货币跳过
             if (/^\d/.test(tex) && !/[\\{}_^]/.test(tex)) {
@@ -13355,7 +13535,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
     xfEditor.postProcessTaskLists = function(html) {
         if (!html) return html;
         
-        // ★ v2.0.0: 如果 HTML 中已有 task-list-item-checkbox（listitem renderer 已处理），
+        // 如果 HTML 中已有 task-list-item-checkbox（listitem renderer 已处理），
         //   跳过后处理以避免重复渲染。
         if (html.indexOf('task-list-item-checkbox') !== -1) return html;
 
@@ -13399,33 +13579,144 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
      * @param {number}  totalLines 编辑器总行数 (/n 分隔)
      * @returns {string} 带有 data-sign 属性的 HTML
      */
-    xfEditor.addBlockSignatures = function(html, totalLines) {
-        if (!html || totalLines < 1) return html;
-        
-        var blockIdx = 0;
-        
-        // ★ v2.0.0: 增强块签名注入，覆盖更多块级元素
-        // 支持的标签：h1-h6, p, pre, blockquote, ul, ol, table, dl, hr, 
-        //              div.xf_editor-*, section, article, header, footer, nav, main, aside
-        //              li (list items for finer granularity)
-        var result = html.replace(/<(h[1-6]|p|pre|blockquote|ul|ol|table|dl|hr|section|article|header|footer|nav|main|aside|li|div\s+[^>]*class="[^"]*xf_editor-[^"]*")[^>]*>/gi, function(tagMatch) {
-            // 跳过自闭合标签、已包含 data-sign 的标签、以及非块级上下文中的标签
-            if (/\/>$/.test(tagMatch) || /data-sign\s*=/.test(tagMatch)) {
-                return tagMatch;
+    /**
+     * v2.0.0: 扫描 Markdown 源码中各块级结构的起始行号。
+     * 顺序与 addBlockSignatures 注入的 data-sign 块顺序一一对应，
+     * 为「编辑区行号 ↔ 预览区渲染位置」提供真实锚点，替代按高度比例反推的近似算法。
+     *
+     * @param {string} markdown 原始 Markdown 文本
+     * @returns {number[]} 每个块级结构的起始行号（0 基）
+     */
+    xfEditor.scanSourceBlockLines = function(markdown) {
+        var lines = String(markdown || "").split("\n");
+        var result = [];
+        var inFence = false;
+        var fenceChar = "";
+        var prevBlank = true;
+        var inQuote = false;
+        var inTable = false;
+
+        for (var index = 0; index < lines.length; index++) {
+            var line = lines[index];
+            var trimmed = line.trim();
+
+            var fence = line.match(/^\s{0,3}(`{3,}|~{3,})/);
+            if (fence) {
+                var mark = fence[1].charAt(0);
+                if (!inFence) {
+                    inFence = true;
+                    fenceChar = mark;
+                    result.push(index);
+                } else if (mark === fenceChar) {
+                    inFence = false;
+                    fenceChar = "";
+                }
+                prevBlank = true;
+                inQuote = false;
+                inTable = false;
+                continue;
             }
-            
+            if (inFence) continue;
+
+            if (/^\s*(\[\[|<!--|<[a-zA-Z][^>]*>)/.test(line)) {
+                result.push(index);
+                prevBlank = true;
+                inQuote = false;
+                inTable = false;
+                continue;
+            }
+
+            if (!trimmed) {
+                prevBlank = true;
+                inQuote = false;
+                inTable = false;
+                continue;
+            }
+
+            if (/^#{1,6}\s/.test(trimmed) || /^(-{3,}|\*{3,}|_{3,})$/.test(trimmed)) {
+                result.push(index);
+                prevBlank = true;
+                inQuote = false;
+                inTable = false;
+                continue;
+            }
+
+            if (/^\|/.test(trimmed)) {
+                if (!inTable) {
+                    result.push(index);
+                    inTable = true;
+                }
+                prevBlank = false;
+                inQuote = false;
+                continue;
+            }
+            inTable = false;
+
+            if (/^>/.test(trimmed)) {
+                if (!inQuote) result.push(index);
+                inQuote = true;
+                prevBlank = false;
+                continue;
+            }
+            inQuote = false;
+
+            if (/^([-*+]|\d+[.)])\s+/.test(trimmed)) {
+                result.push(index);
+                prevBlank = false;
+                continue;
+            }
+
+            if (prevBlank) result.push(index);
+            prevBlank = false;
+        }
+        return result;
+    };
+
+    /**
+     * 为预览 HTML 块注入 data-sign、真实源码起始行 data-line 与结束行 data-line-end。
+     *
+     * @param {string} html       已渲染的 HTML 字符串
+     * @param {string} markdown   对应的原始 Markdown 文本
+     * @returns {string} 带 data-sign / data-line / data-line-end 的 HTML
+     */
+    xfEditor.addBlockSignatures = function(html, markdown) {
+        if (!html) return html;
+
+        var sourceLines = xfEditor.scanSourceBlockLines(markdown);
+        var totalLines  = String(markdown || "").split("\n").length;
+        var lastLine    = sourceLines.length ? sourceLines[sourceLines.length - 1] : 0;
+        var blockIdx    = 0;
+        // 纯布局容器不参与块签名，避免一个源码块被多次计数导致后续 data-line 整体偏移
+        var nonSignDiv  = /xf_editor-(tab-body|tab-panel|tab-nav|tab-header)([\s"]|$)/;
+
+        var result = html.replace(/<(h[1-6]|p|pre|blockquote|ul|ol|table|dl|hr|section|article|header|footer|nav|main|aside|li|div\s+[^>]*class="[^"]*xf_editor-[^"]*")[^>]*>/gi, function(tagMatch) {
+            if (/\/>$/.test(tagMatch) || /data-sign\s*=/.test(tagMatch)) return tagMatch;
+            if (/^<div/i.test(tagMatch) && nonSignDiv.test(tagMatch)) return tagMatch;
+
             blockIdx++;
-            // 在标签结束 > 前插入 data-sign 属性
+            var sourceLine = sourceLines[blockIdx - 1];
+            if (sourceLine == null) {
+                sourceLine = sourceLines.length
+                    ? Math.min(totalLines - 1, lastLine + (blockIdx - sourceLines.length + 1))
+                    : Math.max(0, blockIdx - 1);
+            }
+            var nextSourceLine = sourceLines[blockIdx];
+            var sourceLineEnd = (nextSourceLine != null && nextSourceLine > sourceLine)
+                ? nextSourceLine - 1
+                : sourceLine;
             var insertPos = tagMatch.length - 1;
-            return tagMatch.substring(0, insertPos) + ' data-sign="block-' + blockIdx + '"' + tagMatch.substring(insertPos);
+            return tagMatch.substring(0, insertPos)
+                + ' data-sign="block-' + blockIdx + '"'
+                + ' data-line="' + sourceLine + '"'
+                + ' data-line-end="' + sourceLineEnd + '"'
+                + tagMatch.substring(insertPos);
         });
-        
-        // 存储块总数用于后续比例计算
+
         result = result.replace(/<div class="markdown-body[^"]*"[^>]*>/, function(match) {
             if (/data-sign-count=/.test(match)) return match;
             return match.replace('>', ' data-sign-count="' + blockIdx + '">');
         });
-        
+
         return result;
     };
 
@@ -13440,7 +13731,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
     xfEditor.preprocessLinkTarget = function(markdown) {
         if (!markdown || typeof markdown !== "string") return markdown || "";
         
-        // ★ v2.0.0-FIX1: 先保护代码块，防止代码块内的 [text](url){target=_blank} 被误转换
+        // 先保护代码块，防止代码块内的 [text](url){target=_blank} 被误转换
         // 因为 preprocessLinkTarget 在 protectCodeBlocks 之前运行，必须自行保护代码区域
         var codePlaceholders = [];
         var cid = 0;
@@ -13457,7 +13748,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         );
         
         // 2) 保护行内代码（支持单反引号和多反引号，不跨行）
-        // ★ v2.0.0: 增加多反引号行内代码保护，避免 ``[text](url){target=blank}`` 被误处理
+        // 增加多反引号行内代码保护，避免 ``[text](url){target=blank}`` 被误处理
         // 先处理多反引号（2+ 个反引号），再处理单反引号
         markdown = markdown.replace(/(`{2,})([\s\S]*?)\1/g, function(match, fence, content) {
             // 行内代码不能包含换行符；跨行的是围栏代码块（已在步骤1处理）
@@ -13647,7 +13938,8 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             var thead = "<thead><tr>";
             for (var h = 0; h < headerCells.length; h++) {
                 var ha = aligns[h] ? ' style="text-align:' + aligns[h] + '"' : "";
-                thead += "<th" + ha + ">" + renderCell(headerCells[h], cellOpts) + "</th>";
+                // ★ v2.1.0 a11y: 表头声明 scope，便于屏幕阅读器关联数据单元格
+                thead += "<th scope=\"col\"" + ha + ">" + renderCell(headerCells[h], cellOpts) + "</th>";
             }
             thead += "</tr></thead>";
 
@@ -13717,7 +14009,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             return { markdown: markdown || "", placeholders: [] };
         }
         
-        // ★ v2.0.0: 安全防护 — 确保 $marked 可用
+        // 安全防护 — 确保 $marked 可用
         if (typeof xfEditor.marked !== "function") {
             if (typeof console !== "undefined" && console.warn) {
                 console.warn("[xfEditor] xfEditor.marked is not available — markdown parsing will be skipped");
@@ -13779,21 +14071,21 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
 
             /**
              * 保护围栏代码块：支持 ``` 和 ~~~，支持任意数量的反引号/波浪号作为分隔符
-             * 规则：开标签是 3 个或更多 ` 或 ~，闭标签必须与开标签相同数量的相同字符
+             * 规则：开标签是 3 个或更多 ` 或 ~，闭标签必须是相同字符且数量不少于开标签
              * 支持代码块内包含任意内容（包括嵌套的 [[tabs]]、[[columns]] 等）
              */
-            // ★ v2.0.0-FIX3: 围栏必须位于行首（CommonMark 规范要求）
+            // 围栏必须位于行首（CommonMark 规范要求）
             // 之前缺少行首锚点，导致文本中 "```(hidden.class#id) ` 语法" 这类
             // 作为示例展示的围栏语法被误识别为真正的代码块，吞噬后续大段内容
             // 新正则添加 (^|\n) 前缀，确保围栏开标签和闭标签都必须在行首
-            text = text.replace(/(^|\n)(`{3,}|~{3,})([^\n]*)\n([\s\S]*?)\n(`{3,}|~{3,})(?=\s*(?:\n|$))/g, function(match, prefix, openFence, lang, content, closeFence) {
+            text = text.replace(/(^|\n)([ \t]{0,3})(`{3,}|~{3,})([^\n]*)\n([\s\S]*?)\n([ \t]{0,3})(`{3,}|~{3,})[ \t]*(?=\n|$)/g, function(match, prefix, openIndent, openFence, lang, content, closeIndent, closeFence) {
                 // 闭合围栏必须与开启围栏类型相同，且数量 >= 开启围栏数量
                 if (openFence[0] !== closeFence[0] || closeFence.length < openFence.length) {
                     return match; // 不是有效的闭合围栏，保持原样
                 }
                 var id = "xf_editor-cb-" + (++cid);
                 codePlaceholders.push({ id: id, html: match });
-                return prefix + "<!--" + id + "-->";
+                return prefix + openIndent + "<!--" + id + "-->";
             });
 
             /**
@@ -13836,7 +14128,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         var codeProtection = protectCodeBlocks(markdown);
         markdown = codeProtection.text;
 
-        // ★ v2.0.0: 表格嵌套语法增强
+        // 表格嵌套语法增强
         // 在 marked 解析前接管表格渲染，逐单元格调用完整内联管线（公式 / 拼音 / 对齐 / atLink + 标准内联），
         // 并保护单元格内的竖线（代码、公式 $..$ / $$..$$、拼音 {..|..}、转义 \|），
         // 避免 marked 原生按竖线分列时破坏表格结构、且单元格内无法嵌套语法的问题。
@@ -13932,7 +14224,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 text = text.substring(0, maxProcessLength);
             }
 
-            // ★ v2.0.0: 安全限制 — 最大处理块数量，防止病态输入导致浏览器卡死
+            // 安全限制 — 最大处理块数量，防止病态输入导致浏览器卡死
             var maxBlocks = 500;
             var maxTotalIterations = 50000;
             var _totalIterations = 0;
@@ -14038,7 +14330,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     
                     // XSS 防护：转义特殊字符
                     var safeAlt = (alt || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-                    var safeUrl = xfEditor.escapeAttr(url);
+                    var safeUrl = xfEditor.escapeHtml(url);
                     
                     if (videoExts.test(safeUrl)) {
                         return '<video src="' + safeUrl + '" controls preload="metadata"' + styleAttr + '>' + safeAlt + '</video>';
@@ -14062,13 +14354,13 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             return "<!--" + id + "-->";
         });
 
-        // ========== ★ v2.0.0-FIX: 脚注处理移到最前（tabs/columns/grid 之前）==========
+        // ========== 脚注处理移到最前（tabs/columns/grid 之前）==========
         // 根因：脚注在 tabs/columns/row 之后处理时，每次递归调用 preprocessMarkdownBlocks
         // 都将 footnoteIndex 重置为 0，导致多个 tab 中产生编号重复的 [1] 脚注。
         // 修复：在块级语法处理之前，从原始 markdown 一次性处理所有脚注，全局唯一编号。
         // 同时构建共享映射供字帖系统使用。
         //
-        // ★ v2.0.0-FIX4: _wasRootFootnotesCall 确保脚注列表只在最外层调用中添加
+        // _wasRootFootnotesCall 确保脚注列表只在最外层调用中添加
         // 防止递归 preprocessMarkdownBlocks（tabs/columns 内）把脚注列表插入到嵌套内容末尾
         var _wasRootFootnotesCall = false;
         if (!options._footnotesProcessed) {
@@ -14105,7 +14397,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     if (_sleadingWs) _scontentStart += _sleadingWs[0].length;
                     
                     var _scontentEnd;
-                    // ★ v2.0.0: 使用正则查找第一个空行，同时兼容 \n\n、\r\n\r\n、\r\r
+                    // 使用正则查找第一个空行，同时兼容 \n\n、\r\n\r\n、\r\r
                     var _sblankSearch = markdown.substring(_scontentStart).search(/[\r\n]{2,}/);
                     var _sblankLineIdx = _sblankSearch !== -1 ? _scontentStart + _sblankSearch : -1;
                     var _snextDefIdx = (_sdi + 1 < _sharedDefMatches.length) ? _sharedDefMatches[_sdi + 1].start : -1;
@@ -14158,7 +14450,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     markdown = markdown.substring(0, _sdm.start) + markdown.substring(_sdm.contentEnd);
                 }
                 
-                // ★ v2.0.0-FIX2: Step 5 之前计算字帖块范围，替换时跳过字帖内的 [^name]
+                // Step 5 之前计算字帖块范围，替换时跳过字帖内的 [^name]
                 // 字帖内部有独立的 parseCharsWithFN 解析 [^name]，需要保留原始语法
                 var _copybookRanges = [];
                 var _copybookTypes = [
@@ -14207,7 +14499,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             options._sharedDefMatches = _sharedDefMatches;
         }
         
-        // ★ v2.0.0-FIX5: tab-context-aware tabs 块扫描器
+        // tab-context-aware tabs 块扫描器
         // 解决表格单元格中文本 [[tabs]]/[[row]][[col]] 被 hasMatchingPair 误判为
         // 真实标签导致 findBalancedBlocks 返回错误块的问题。
         // 核心思路：扫描时同时追踪 [[tab:xxx]]/[[/tab]] 上下文深度，
@@ -14280,7 +14572,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         // 注意：必须逆序处理（从后往前），否则前面的 block 被替换后，
         // 后续 block 的位置（基于原始文本）会错误地偏移
         if (options.tabs !== false) {
-            // ★ v2.0.0-FIX5: 使用 tab-context-aware 扫描器替换 findBalancedBlocks
+            // 使用 tab-context-aware 扫描器替换 findBalancedBlocks
             // 防止表格内文本 [[tabs]] 干扰真实 tabs 块的匹配
             var tabBlocks = findTabsBlocksAware(markdown);
             for (var bi = tabBlocks.length - 1; bi >= 0; bi--) {
@@ -14298,7 +14590,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 var hasTabs = false;
                 var tabMarkedOptions = createMarkedOptions(options, true);
 
-                // ★ v2.0.0-FIX5: 提取嵌套 tab 项（tab-context-aware 版本）
+                // 提取嵌套 tab 项（tab-context-aware 版本）
                 // 两步走：
                 // 1. 扫描找到顶层 [[tab:xxx]] 项
                 // 2. 对每个 tab 项的内容，使用 findTabsBlocksAware 仅查找实数内嵌 [[tabs]] 块
@@ -14517,7 +14809,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         //   - [[col:N]](1≤N≤10)  → 占 N×10% 宽度
         //   - [[col]]            → 按行内 col 个数平分 100% 宽度
         if (options.grid !== false) {
-            // ★ v2.0.0: 使用增强版 row 匹配器，防止表格/文本中的 [[row]] 误匹配
+            // 使用增强版 row 匹配器，防止表格/文本中的 [[row]] 误匹配
             var rowBlocks = findBalancedBlocks(markdown, /\[\[row\]\]/g, /\[\[\/row\]\]/g);
             for (var ri = rowBlocks.length - 1; ri >= 0; ri--) {
                 var rowBlock = rowBlocks[ri];
@@ -14534,7 +14826,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     // - 增强嵌套 col 深度追踪可靠性
                     function extractColBlocks(rowContent) {
                         var colBlocks = [];
-                        // ★ v2.0.0: 同时使用两种 col 标签模式
+                        // 同时使用两种 col 标签模式
                         // 使用捕获组分别识别 [[col:N]] 和 [[col]]
                         var colOpenRe2 = /\[\[col(?::(\d+))?\]\]/g;
                         var colCloseRe2 = /\[\[\/col\]\]/g;
@@ -14579,7 +14871,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                                     colNum: om[1] ? parseInt(om[1], 10) : -1
                                 });
                             } else {
-                                // ★ v2.0.0: 未能匹配的 [[col]] 跳过整个标签，避免无限循环
+                                // 未能匹配的 [[col]] 跳过整个标签，避免无限循环
                                 break;
                             }
                         }
@@ -14588,7 +14880,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     
                     var colBlocks = extractColBlocks(rowContent);
                     
-                    // ★ v2.0.0: 空 row 警告
+                    // 空 row 警告
                     if (colBlocks.length === 0) {
                         if (typeof console !== "undefined" && console.warn) {
                             console.warn("[xfEditor] Empty row block (no [[col]] found), row will be rendered as empty container.");
@@ -14627,7 +14919,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                         if (w === -1) {
                             w = autoWidth + (autoRemainder-- > 0 ? 1 : 0);
                         }
-                        // ★ v2.0.0: 最小宽度 1%，防止 0% 宽度列不可见
+                        // 最小宽度 1%，防止 0% 宽度列不可见
                         w = Math.max(1, Math.min(100, w));
                         
                         var colContentRaw = colBlocks[cj].content;
@@ -14662,7 +14954,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             var isMi = (type === 'mi');
             var isPinyin = (type === 'pinyin');
             
-            // ★ v2.0.0-FIX3: 解析字符和脚注 — 使用全局脚注映射 _copybookFootnoteMap
+            // 解析字符和脚注 — 使用全局脚注映射 _copybookFootnoteMap
             // 生成与全局脚注系统一致的 ID：xf_editor-fnref-{N} 和 xf_editor-fn-{N}
             var parseCharsWithFN = function(text) {
                 var result = [];
@@ -14691,41 +14983,21 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 var line = lines[li].trim();
                 if (!line) continue;
 
-                // ★ v2.0.0: 支持 {content|pinyin}(!width:NNN) 花括号语法（含可选宽度参数）
-                // 同时兼容原有的 (content|pinyin) 圆括号语法
+                // 仅支持 {content|pinyin}(!width:NNN) 花括号语法（含可选宽度参数）
                 var groups = [];
-                
-                // ★ 先尝试花括号组（带可选 (!width:NNN)）
-                // \{[^{}]*\} 匹配花括号内容，\(!width:(\d+)\) 匹配可选宽度参数
                 var curlyRegex = /\{([^{}]*?)\}(?:\s*\(!width:(\d+)\))?/g;
                 var cm;
                 while ((cm = curlyRegex.exec(line)) !== null) {
-                    groups.push({ 
-                        content: cm[1], 
-                        width: cm[2] ? parseInt(cm[2], 10) : null, 
-                        delim: 'curly' 
+                    groups.push({
+                        content: cm[1],
+                        width: cm[2] ? parseInt(cm[2], 10) : null,
+                        delim: 'curly'
                     });
-                }
-                
-                // 如果没有花括号组，回退到圆括号组（也支持 (!width:NNN)）
-                if (groups.length === 0) {
-                    var parenRegex = /\(([^)]*?)\)(?:\s*\(!width:(\d+)\))?/g;
-                    var pm;
-                    while ((pm = parenRegex.exec(line)) !== null) {
-                        // 过滤掉单独的 (!width:NNN) 参数行
-                        if (pm[1] && !/^!width:\d+$/.test(pm[1].trim())) {
-                            groups.push({ 
-                                content: pm[1], 
-                                width: pm[2] ? parseInt(pm[2], 10) : null, 
-                                delim: 'paren' 
-                            });
-                        }
-                    }
                 }
                 
                 if (groups.length === 0) continue;
 
-                // ★ v2.0.0: 检测是否有任何 group 指定了宽度 — 决定行容器样式
+                // 检测是否有任何 group 指定了宽度 — 决定行容器样式
                 var hasAnyWidth = false;
                 for (var gi = 0; gi < groups.length; gi++) {
                     if (groups[gi].width) { hasAnyWidth = true; break; }
@@ -14749,7 +15021,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                         var charObjs = parseCharsWithFN(parts[0] || '');
                         var pinyins = (parts[1] || '').trim().split(/\s+/);
                         
-                        // ★ v2.0.0: 每个字符独立单元格，拼音在上、汉字在下
+                        // 每个字符独立单元格，拼音在上、汉字在下
                         // 脚注标记 [^fn] 不产生独立单元格，附加在前一个汉字上
                         // 支持 (!width:NNN) — 组宽度作用于容器，各单元格按比例分配
 
@@ -14787,7 +15059,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                             groupCellHtml += '</div>';
                         }
 
-                        // ★ v2.0.0: 组级宽度包装 — 当 group 指定了 (!width:NNN)
+                        // 组级宽度包装 — 当 group 指定了 (!width:NNN)
                         if (groupWidth) {
                             groupCellHtml = '<div class="xf_editor-copybook-group xf_editor-copybook-group-pinyin" style="width:' + groupWidth + 'px;">' +
                                 groupCellHtml + '</div>';
@@ -14818,7 +15090,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                             gridCellHtml += '</div>';
                         }
 
-                        // ★ v2.0.0: tian/mi 字帖也支持组级宽度
+                        // tian/mi 字帖也支持组级宽度
                         if (groupWidth) {
                             gridCellHtml = '<div class="xf_editor-copybook-group xf_editor-copybook-group-grid" style="width:' + groupWidth + 'px;">' +
                                 gridCellHtml + '</div>';
@@ -14879,7 +15151,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
 
         // 处理字帖语法：[[copybookTian]]...[[/copybookTian]]、[[copybookMi]]...[[/copybookMi]]、[[copybookPinyin]]...[[/copybookPinyin]]
         // 各种字帖类型可以彼此嵌套，也可以嵌套在 tabs/columns 内使用
-        // ★ v2.0.0-FIX2: 传递脚注映射使字帖脚注 ID 与全局系统一致
+        // 传递脚注映射使字帖脚注 ID 与全局系统一致
         if (options.copybook !== false) {
             try {
                 processCopybookBlocks(findBalancedBlocks(markdown, xfEditor.regexs.copybookTian, xfEditor.regexs.copybookTianEnd), 'tian');
@@ -14945,7 +15217,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
 
                     // 构建页面HTML，包含页头、页脚区域
                     var headerHtml = pageHeader ? '<div class="xf_editor-page-header">' + pageHeader.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;") + '</div>' : '';
-                    // ★ v2.0.0-FIX1: 直接渲染页脚初始内容（{page}/{total} 暂用 1/1）
+                    // 直接渲染页脚初始内容（{page}/{total} 暂用 1/1）
                     // data-footer-template 属性保留供 initPages() 分页时更新
                     // 解决 markdownToHTML 模式下 footer 不显示的问题
                     var footerContent = pageFooter ? xfEditor.escapeHtml(pageFooter.replace(/{page}/gi, '1').replace(/{total}/gi, '1')) : '';
@@ -14992,7 +15264,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                         if (!url || url.length > 2000) continue;
                         
                         var title = parts[1] ? parts[1].trim() : "";
-                        resultHtml += '<video src="' + xfEditor.escapeAttr(url) + '" controls preload="metadata" class="xf_editor-video-player">' + xfEditor.escapeHtml(title || "Video") + '</video>';
+                        resultHtml += '<video src="' + xfEditor.escapeHtml(url) + '" controls preload="metadata" class="xf_editor-video-player">' + xfEditor.escapeHtml(title || "Video") + '</video>';
                         
                         // 安全限制：最多支持 50 个视频
                         if (i >= 49) {
@@ -15039,7 +15311,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                         // ★ v2.1.0-FIX: data-ext 来自用户可控 URL，必须转义，否则
                         //   a." onpointerover="alert(1) 这类输入可注入任意属性形成 XSS。
                         var ext = url.split(".").pop().toLowerCase().replace(/[^a-z0-9]/g, "");
-                        fresultHtml += '<a href="' + url.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;") + '" download class="xf_editor-attachment-link" data-ext="' + xfEditor.escapeAttr(ext) + '">' + name.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;") + '</a>';
+                        fresultHtml += '<a href="' + url.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;") + '" download class="xf_editor-attachment-link" data-ext="' + xfEditor.escapeHtml(ext) + '">' + name.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;") + '</a>';
                         
                         // 安全限制：最多支持 100 个文件
                         if (i >= 99) {
@@ -15080,7 +15352,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     // XSS 防护：仅允许 PNG / JPEG data URI（涂鸦导出优先 jpeg 以减小体积）
                     if (!/^data:image\/(png|jpeg|webp);base64,/i.test(cDataUri)) continue;
                     var cAlignClass = "xfeditor-canvas-graffiti-" + (cAlign === "center" ? "center" : (cAlign === "right" ? "right" : "left"));
-                    var cImgHtml = '<img data-type="xfeditor_canvas_graffiti" class="xfeditor-canvas-graffiti-img" src="' + xfEditor.escapeAttr(cDataUri) + '" alt="' + xfEditor.escapeAttr(cTitle || "涂鸦") + '">';
+                    var cImgHtml = '<img data-type="xfeditor_canvas_graffiti" class="xfeditor-canvas-graffiti-img" src="' + xfEditor.escapeHtml(cDataUri) + '" alt="' + xfEditor.escapeHtml(cTitle || "涂鸦") + '">';
                     var cTitleHtml = cTitle ? '<span class="xfeditor-canvas-graffiti-title">' + xfEditor.escapeHtml(cTitle) + '</span>' : '';
                     var cResultHtml = '<p class="xfeditor-canvas-graffiti-wrap ' + cAlignClass + '"><span class="xfeditor-canvas-graffiti-inner">' + cImgHtml + cTitleHtml + '</span></p>';
                     var cPlaceholder = addPlaceholder(cResultHtml);
@@ -15169,9 +15441,9 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                                     (bIt.desc ? '<p>' + xfEditor.escapeHtml(bIt.desc) + '</p>' : '') +
                                     '</div>';
                             }
-                            var bImg = '<img src="' + xfEditor.escapeAttr(bIt.url) + '" alt="' + xfEditor.escapeAttr(bIt.title || ("banner-" + (bsi + 1))) + '" loading="lazy" draggable="false" />';
+                            var bImg = '<img src="' + xfEditor.escapeHtml(bIt.url) + '" alt="' + xfEditor.escapeHtml(bIt.title || ("banner-" + (bsi + 1))) + '" loading="lazy" draggable="false" />';
                             if (bIt.href) {
-                                bResultHtml += '<a class="xf_editor-banner-slide xf_editor-banner-link" href="' + xfEditor.escapeAttr(bIt.href) + '" target="_blank" rel="noopener noreferrer">' + bImg + bCaption + '</a>';
+                                bResultHtml += '<a class="xf_editor-banner-slide xf_editor-banner-link" href="' + xfEditor.escapeHtml(bIt.href) + '" target="_blank" rel="noopener noreferrer">' + bImg + bCaption + '</a>';
                             } else {
                                 bResultHtml += '<div class="xf_editor-banner-slide">' + bImg + bCaption + '</div>';
                             }
@@ -15234,8 +15506,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         }
 
         // 处理字体大小语法：!数字 文本! → <span style="font-size:数字px">文本</span>
-        // ★ v2.0.0-FIX3: 修复 guard 条件 — 原 /\^\[/ 检测图片语法永远不触发(match 以 ! 开头)，
-        //     改用检测 match 是否以 !数字形式开头；图片语法 ![alt] 的 [ 不是数字，不会被误匹配
+        // 检测 match 是否以 !数字形式开头；图片语法 ![alt] 的 [ 不是数字，不会被误匹配。
         try {
             markdown = markdown.replace(xfEditor.regexs.fontSize, function(match, size, text) {
                 // 防止误匹配：图片语法 ![alt](url) 中 '!' 后跟 '[' 而非数字，正则本身不会匹配
@@ -15280,7 +15551,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             });
         }
 
-        // ★ v2.0.0-FIX4: 仅在最外层调用追加脚注列表，防止递归调用插入到嵌套内容中
+        // 仅在最外层调用追加脚注列表，防止递归调用插入到嵌套内容中
         if (_wasRootFootnotesCall && options._sharedFootnoteOrder && options._sharedFootnoteOrder.length > 0) {
             var footnoteHtml = '\n\n<div class="xf_editor-footnotes-section">';
             footnoteHtml += '<hr class="xf_editor-footnote-sep">';
@@ -15347,7 +15618,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         // 保留多轮处理以正确还原嵌套占位符（外层 html 可能包含内层占位符标记），
         // 但每轮改用单次正则替换（替代原先「每个占位符一次完整 split/join 字符串拷贝」），
         // 大幅减少对大文档的全串遍历开销。最多 10 轮确保收敛。
-        // ★ v2.1.0: 兼容带随机 nonce 的新格式（xf_editor-ph-rXXXX-1）与历史格式（xf_editor-ph-1）
+        // 兼容带随机 nonce 的新格式（xf_editor-ph-rXXXX-1）与历史格式（xf_editor-ph-1）
         var markerRegex = /<!--xf_editor-[a-z]+-(?:[a-z0-9]+-)?[0-9]+-->/g;
         var maxRounds = 10;
         while (maxRounds-- > 0) {
@@ -15442,7 +15713,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             }
             
             var pinyinReg = xfEditor.regexs.pinyin;
-            // ★ v2.0.0: 脚注引用 HTML 匹配正则（在 pinyin 处理前已被 marked 渲染）
+            // 脚注引用 HTML 匹配正则（在 pinyin 处理前已被 marked 渲染）
             var fnRefRegex = /<sup class="xf_editor-footnote-ref-wrapper">[\s\S]*?<\/sup>/g;
             
             text = text.replace(pinyinReg, function($1, $2, $3, $4) {
@@ -15452,18 +15723,18 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 var pyTrimmed = pyTextRaw.trim();
                 // 保存原始拼音中的空格（用 &nbsp; 替代），防止 HTML 折叠空白
                 var pyText = pyTextRaw.replace(/ /g, '&nbsp;');
-                // ★ v2.0.0: 可选的宽度参数 (!width:NNN)
+                // 可选的宽度参数 (!width:NNN)
                 var userWidth = $4 ? parseInt($4, 10) : null;
                 
                 // 检测拼音中是否包含空格（表示分组拼音如 "chuáng qián míng yuè guāng"）
                 var pyGroups = pyTrimmed.split(/\s+/).filter(function(g) { return g.length > 0; });
                 
-                // ★ v2.0.0: 检测 baseText 是否包含脚注 HTML（被 marked 渲染后的 footnotes）
+                // 检测 baseText 是否包含脚注 HTML（被 marked 渲染后的 footnotes）
                 var hasFootnotes = fnRefRegex.test(baseText);
                 fnRefRegex.lastIndex = 0;
                 
                 if (hasFootnotes && pyGroups.length > 1) {
-                    // ★ v2.0.0: 脚注嵌入模式 — 将 baseText 拆分为 tokens（文字字符 + 脚注HTML块）
+                    // 脚注嵌入模式 — 将 baseText 拆分为 tokens（文字字符 + 脚注HTML块）
                     var tokens = [];
                     var lastIdx = 0, fnMatch;
                     while ((fnMatch = fnRefRegex.exec(baseText)) !== null) {
@@ -15500,7 +15771,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                                 result += userWidth ? '<span class="xf_editor-pinyin-col">' + rubyHtml + '</span>' : rubyHtml;
                                 pyIdx++;
                             } else {
-                                // ★ v2.0.0: 脚注块：显示脚注标记，上方用 4 个 &nbsp; 空白占位保证对齐
+                                // 脚注块：显示脚注标记，上方用 4 个 &nbsp; 空白占位保证对齐
                                 var fnRuby = '<ruby class="xf_editor-pinyin xf_editor-pinyin-footnote"><rb>' + tok.content + '</rb><rt>&nbsp;&nbsp;&nbsp;&nbsp;</rt></ruby>';
                                 result += userWidth ? '<span class="xf_editor-pinyin-col">' + fnRuby + '</span>' : fnRuby;
                             }
@@ -15537,7 +15808,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                         var rubyHtml = '<ruby class="xf_editor-pinyin xf_editor-pinyin-matched"><rb>' + textChars[j] + '</rb><rt>' + pyGroups[j] + '</rt></ruby>';
                         result += userWidth ? '<span class="xf_editor-pinyin-col">' + rubyHtml + '</span>' : rubyHtml;
                     }
-                    // ★ v2.0.0: 指定宽度时用容器包裹并使子元素均分宽度
+                    // 指定宽度时用容器包裹并使子元素均分宽度
                     if (userWidth) {
                         result = '<span class="xf_editor-pinyin-wrap" style="display:inline-flex;width:' + userWidth + 'px;">' + result + '</span>';
                     }
@@ -15605,7 +15876,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             }
             
             // marked.js 会将引号编码为 &quot;/&#39;，尖括号编码为 &lt; &gt;
-            // ★ v1.18.2: 补充解码 &#39;（单引号）——否则 tooltip:image:'url' 单引号形式
+            // 补充解码 &#39;（单引号）——否则 tooltip:image:'url' 单引号形式
             //   会残留 &#39; 前缀导致图片 URL 被当作相对路径（破图）
             if (href) {
                 href = href.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>');
@@ -15615,7 +15886,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             }
             
             // 转义 href 用于 HTML 属性
-            var safeHref = xfEditor.escapeAttr(href || "");
+            var safeHref = xfEditor.escapeHtml(href || "");
 
             // 语法格式：[触发文本](tooltip:类型:内容)<宽度,高度>
             // 支持类型：text、image、iframe、html、iframe:pre（提取pre元素内容以iframe展示）
@@ -15660,20 +15931,20 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                         // 验证选择器格式（必须是以#、.、[开头的有效CSS选择器）
                         if (selector.match(/^[.#\[][a-zA-Z0-9\-_\[\]="'#\.:\s]*$/)) {
                             // 构建属性字符串 - 使用 html-selector 类型
-                            var attrs = 'data-tooltip="' + xfEditor.escapeAttr(selector) + '" data-tooltip-type="html-selector"';
+                            var attrs = 'data-tooltip="' + xfEditor.escapeHtml(selector) + '" data-tooltip-type="html-selector"';
                             if (tooltipWidth) attrs += ' data-tooltip-width="' + tooltipWidth + '"';
                             if (tooltipHeight) attrs += ' data-tooltip-height="' + tooltipHeight + '"';
                             return '<span class="xf_editor-tooltip-trigger" ' + attrs + ' tabindex="0">' + text + '</span>';
                         } else {
                             // 如果不是有效的CSS选择器，返回错误提示
                             console.warn('无效的HTML工具提示选择器:', tooltipContent, '，仅支持CSS选择器格式如 #id, .class, [attribute]');
-                            var errAttrs = 'data-tooltip="无效选择器:' + xfEditor.escapeAttr(tooltipContent) + '" data-tooltip-type="text"';
+                            var errAttrs = 'data-tooltip="无效选择器:' + xfEditor.escapeHtml(tooltipContent) + '" data-tooltip-type="text"';
                             return '<span class="xf_editor-tooltip-trigger" ' + errAttrs + ' tabindex="0">' + text + '</span>';
                         }
                     }
                 }
                 
-                    var attrs = 'data-tooltip="' + xfEditor.escapeAttr(tooltipContent) + '" data-tooltip-type="' + xfEditor.escapeAttr(tooltipType) + '"';
+                    var attrs = 'data-tooltip="' + xfEditor.escapeHtml(tooltipContent) + '" data-tooltip-type="' + xfEditor.escapeHtml(tooltipType) + '"';
                 if (tooltipWidth) attrs += ' data-tooltip-width="' + tooltipWidth + '"';
                 if (tooltipHeight) attrs += ' data-tooltip-height="' + tooltipHeight + '"';
                 return '<span class="xf_editor-tooltip-trigger" ' + attrs + ' tabindex="0">' + text + '</span>';
@@ -15683,10 +15954,10 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             var audioExts = xfEditor.regexs.audioExts;
             var imageExts = /\.(jpg|jpeg|png|gif|bmp|webp)(\?.*)?$/i;
 
-            // ★ v2.0.0: 音频链接渲染为真正的 <audio> 播放器（支持播放/暂停/进度/音量），
+            // 音频链接渲染为真正的 <audio> 播放器（支持播放/暂停/进度/音量），
             //   而非普通下载链接，解决“音频组件无法播放”的问题。
             if (href && audioExts.test(href)) {
-                var audioTitle = title ? xfEditor.escapeAttr(title) : (text ? xfEditor.escapeAttr(text) : "音频");
+                var audioTitle = title ? xfEditor.escapeHtml(title) : (text ? xfEditor.escapeHtml(text) : "音频");
                 var audioOut = '<div class="xf_editor-audio-player-wrap">'
                     + '<audio class="xf_editor-audio-player" controls preload="metadata" src="' + safeHref + '"'
                     + ' title="' + audioTitle + '">'
@@ -15695,10 +15966,10 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 return audioOut;
             }
 
-            // ★ v2.0.0: 防御性检查 href
+            // 防御性检查 href
             if (href && videoExts.test(href)) {
                 var videoOut = '<video src="' + safeHref + '" controls preload="metadata" class="xf_editor-video-player"';
-                if (title) videoOut += ' title="' + xfEditor.escapeAttr(title) + '"';
+                if (title) videoOut += ' title="' + xfEditor.escapeHtml(title) + '"';
                 // ★ v2.1.0-FIX: 与 image 视频分支一致，text 必须转义后再放入 <video>
                 videoOut += '>' + xfEditor.escapeHtml(text || "") + '</video>';
                 return videoOut;
@@ -15744,13 +16015,13 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             }
 
             if (linkTitle) {
-                var safeLinkTitle = xfEditor.escapeAttr(linkTitle);
+                var safeLinkTitle = xfEditor.escapeHtml(linkTitle);
                 out += " title=\"" + (titleHasAt ? safeLinkTitle.replace(/@/g, "&#64;") : safeLinkTitle) + "\"";
             }
 
             // 仅显式 download 指令才添加 download 属性与附件样式类
             if (isDownloadLink) {
-                out += " download" + (linkDownload ? "=\"" + xfEditor.escapeAttr(linkDownload) + "\"" : "");
+                out += " download" + (linkDownload ? "=\"" + xfEditor.escapeHtml(linkDownload) + "\"" : "");
                 out += " class=\"xf_editor-attachment-link\"";
             }
 
@@ -15782,14 +16053,14 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 }
             }
 
-            // ★ v2.0.0: 对所有用户提供的属性值进行 HTML 属性转义，防止 XSS 属性注入攻击
-            var safeHref  = xfEditor.escapeAttr(href || "");
-            var safeText  = xfEditor.escapeAttr(text || "");
-            var safeTitle = title ? xfEditor.escapeAttr(title) : "";
+            // 对所有用户提供的属性值进行 HTML 属性转义，防止 XSS 属性注入攻击
+            var safeHref  = xfEditor.escapeHtml(href || "");
+            var safeText  = xfEditor.escapeHtml(text || "");
+            var safeTitle = title ? xfEditor.escapeHtml(title) : "";
             
             var videoExts = xfEditor.regexs.videoExts;
             var audioExts = xfEditor.regexs.audioExts;
-            // ★ v2.0.0: 音频图片语法（!(audio.mp3)）渲染为播放器而非破损的 <img>
+            // 音频图片语法（!(audio.mp3)）渲染为播放器而非破损的 <img>
             if (href && audioExts.test(href)) {
                 var _audioTitle = title ? safeTitle : (text ? safeText : "音频");
                 return '<div class="xf_editor-audio-player-wrap">'
@@ -15798,7 +16069,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     + '您的浏览器不支持 audio 标签，请<a href="' + safeHref + '" download class="xf_editor-attachment-link">下载音频</a>'
                     + '</audio></div>';
             }
-            // ★ v2.0.0: 防御性检查 href
+            // 防御性检查 href
             if (href && videoExts.test(href)) {
                 var videoOut = "<video src=\"" + safeHref + "\" controls preload=\"metadata\"";
                 if (title) {
@@ -15827,7 +16098,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                         imgTooltipContent = imgTooltipContent.replace(/^["']|["']$/g, '');
                     }
                 }
-                tooltipAttr = ' data-tooltip="' + xfEditor.escapeAttr(imgTooltipContent) + '" data-tooltip-type="' + xfEditor.escapeAttr(imgTooltipType) + '" class="xf_editor-tooltip-trigger"';
+                tooltipAttr = ' data-tooltip="' + xfEditor.escapeHtml(imgTooltipContent) + '" data-tooltip-type="' + xfEditor.escapeHtml(imgTooltipType) + '" class="xf_editor-tooltip-trigger"';
                 out = "<img src=\"" + safeHref + "\" alt=\"" + safeText + "\"" + tooltipAttr;
                 title = "";
             }
@@ -15841,7 +16112,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         };
         
         markedRenderer.heading = function(text, level, raw) {
-            // ★ v2.0.0: 防御 null/undefined text
+            // 防御 null/undefined text
             if (typeof text !== "string") text = "";
             if (raw == null) raw = "";
                     
@@ -15895,9 +16166,9 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             
             // ★ v2.1.0-FIX: 标题文本来自用户输入，写入 id/name 属性前必须转义，
             //   否则 # x" id="injected 这类输入可注入任意属性（配合 on* 事件属性形成 XSS）。
-            var safePrefix = xfEditor.escapeAttr(String(this.options.headerPrefix || ""));
-            var safeId     = xfEditor.escapeAttr(String(id));
-            var safeToc    = xfEditor.escapeAttr(tocText);
+            var safePrefix = xfEditor.escapeHtml(String(this.options.headerPrefix || ""));
+            var safeId     = xfEditor.escapeHtml(String(id));
+            var safeToc    = xfEditor.escapeHtml(tocText);
             var headingHTML = "<h" + level + " id=\"h" + level + "-" + safePrefix + safeId + "\">";
             
             headingHTML    += "<a name=\"" + safeToc + "\" class=\"reference-link\"></a>";
@@ -15934,12 +16205,12 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     return texText.replace(/<br\s*\/?>\s*/gi, " ");
                 };
                 
-                var isTeXLine = /^\$\$([\s\S]*)\$\$$/.test(text);
-                
-                if (isTeXLine) 
+                var texLineMatch = /^\s*\$\$([\s\S]*?)\$\$\s*$/.exec(text);
+
+                if (texLineMatch)
                 {
                     // 整个段落是块级公式: $$...$$ → 直接包裹为 xf_editor-tex 块
-                    text = text.replace(/^\$\$/, "").replace(/\$\$$/, "");
+                    text = texLineMatch[1];
                     text = restoreTeXBreaks(text);
                     text = this.postProcessInline(text);
                     return "<p class=\"" + xfEditor.classNames.tex + "\" style=\"text-align:center;\">" + text + "</p>\n";
@@ -16086,7 +16357,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             var type = (flags.header) ? "th" : "td";
             var tag  = (flags.align)  ? "<" + type +" style=\"text-align:" + flags.align + "\">" : "<" + type + ">";
 
-            // ★ v2.0.0: 单元格内联语法补全 —— 与 paragraph 渲染器对齐，支持公式($..$ / $$..$$)渲染。
+            // 单元格内联语法补全 —— 与 paragraph 渲染器对齐，支持公式($..$ / $$..$$)渲染。
             // 注：接管表格渲染后(xfEditor._processTables)单元格已逐格走完整内联管线，
             // 此处作为兜底，确保任何未走接管路径的表格（如直接 marked 调用）也能渲染公式。
             if (settings.tex) {
@@ -16280,6 +16551,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             .replace(/\sdata-_copyBtnReady="true"/g, '')
             .replace(/\sdata-_originalCode="[^"]*"/g, '')
             .replace(/\sdata-sign="[^"]*"/g, '')
+            .replace(/\sdata-line="[^"]*"/g, '')
             .replace(/\sdata-sign-count="[^"]*"/g, '');
     };
 
@@ -16368,7 +16640,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         }
         
         // 清洗 href 和 src 属性，防止 javascript: 协议注入（始终执行）
-        // ★ v2.0.0: 增加 HTML 实体解码后再检测，防止 &#106;avascript: 等编码绕过
+        // 增加 HTML 实体解码后再检测，防止 &#106;avascript: 等编码绕过
         html = html.replace(/(href|src)\s*=\s*["']?([^"'>\s]*)["']?/gi, function(match, attr, url) {
             // 先进行基本清理：移除 null 字节和控制字符
             var cleanUrl = url.replace(/[\x00-\x1f\x7f]+/g, "");
@@ -16390,6 +16662,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             //   javascr ipt: 不匹配 javascript:，危险 URL 原样写回造成绕过。
             decoded = decoded.replace(/[\x00-\x1f\x7f\s]+/g, "");
             var sanitizedUrl = decoded.toLowerCase();
+            // 危险协议黑名单（快速路径）
             if (sanitizedUrl.indexOf("javascript:") === 0 || 
                 sanitizedUrl.indexOf("vbscript:") === 0 || 
                 sanitizedUrl.indexOf("data:text/html") === 0 ||
@@ -16398,6 +16671,26 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 sanitizedUrl.indexOf("livescript:") === 0 ||
                 sanitizedUrl.indexOf("&#") === 0) {
                 return attr + '="javascript:void(0);"';
+            }
+            // 协议白名单兜底 —— 仅允许 http/https/mailto/tel/ftp
+            //   以及相对路径（/ ./ ../ # 开篇）与 data:image/非 SVG（内联图片）。
+            //   黑名单无法穷尽 x-xrsp://、jar: 等陌生协议，白名单才是一致性安全底线。
+            // ★ v2.1.0-FIX: 白名单校验必须用【保留分号】的 cleanUrl —— 上方 decoded
+            //   为防编码绕过删除了所有分号，会把 data:image/png;base64 破坏成
+            //   data:image/pngbase64，导致合法内联图片被误拦。
+            var schemeUrl = cleanUrl.replace(/[\x00-\x1f\x7f\s]+/g, "").toLowerCase();
+            var schemeMatch = /^([a-z][a-z0-9+.-]*):/i.exec(schemeUrl);
+            if (schemeMatch) {
+                var scheme = schemeMatch[1].toLowerCase();
+                var isAllowed = false;
+                for (var asi = 0; asi < xssWhitelist.allowedSchemes.length; asi++) {
+                    if (scheme === xssWhitelist.allowedSchemes[asi]) { isAllowed = true; break; }
+                }
+                // data: 仅放行安全的图片类型（PNG/JPEG/GIF/WebP/AVIF/BMP），严禁 text/html 与 svg
+                if (!isAllowed && scheme === "data") {
+                    isAllowed = /^data:image\/(?:png|jpe?g|gif|webp|avif|bmp)[;,]/i.test(schemeUrl);
+                }
+                if (!isAllowed) return attr + '="javascript:void(0);"';
             }
             return attr + '="' + url + '"';
         });
@@ -16453,12 +16746,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         var filterTags = expression[0].split(",");
         var attrs      = expression[1];
 
-        // ★ v2.0.0-FIX: 改用 DOM 解析进行标签/属性过滤，替代原有的扁平正则。
-        //   旧实现使用 /\<(\w+)\s*([^\>]*)\>([^\>]*)\<\/(\w+)\>/ 这类扁平正则，
-        //   只能匹配"单层"的 <tag>text</tag>，无法处理嵌套 HTML。遇到多层嵌套结构
-        //   （例如隐藏的 tooltip 定义块 <div><div><h4/><p/><ul><li>...）时，回调以
-        //   el[0].outerHTML + text 方式重建 DOM，会错误拆解嵌套层级，丢失/错位内容，
-        //   最终导致预览从该处被截断、显示不完整。DOM 遍历天然支持任意嵌套层级，彻底修复该问题。
+        // 使用 DOM 解析进行标签/属性过滤，支持任意嵌套层级的 HTML。
         try {
             var wrap = dom("<div></div>").html(html);
 
@@ -16521,8 +16809,8 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
      */
     xfEditor.extractCodeText = function(el) {
         if (!el) return "";
-        // ★ v2.0.0: 支持 XfDom 多元素集合 — 逐个提取后合并
-        //     原检查 el.jquery 会漏掉 XfDom 实例（没有 .jquery），
+        // 支持 XfDom 多元素集合 — 逐个提取后合并
+        //     旧检查仅识别原生 DOM 元素，会漏掉 XfDom 实例，
         //     $pre.find("code") 返回 XfDom 时落入 else 分支后被当作 DOM 元素传给
         //     _extractSingleCodeText，导致 el.innerHTML=undefined→code 为空→iframe:pre 白屏。
         if (el.length > 1 && el[0] && el[0].nodeType) {
@@ -16548,11 +16836,11 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         // 使用 innerHTML 获取原始 HTML，这保留了所有空格/换行/实体
         var raw = dom.innerHTML;
         if (!raw) return "";
-        // ★ v2.0.0: 先处理 <br> 转回换行
+        // 先处理 <br> 转回换行
         raw = raw.replace(/<br\s*\/?>/gi, "\n");
-        // ★ v2.0.0: 剥离所有 HTML 标签（必须在实体解码之前！否则解码后的 < > 会被贪婪式 <[^>]+> 消耗）
+        // 剥离所有 HTML 标签（必须在实体解码之前！否则解码后的 < > 会被贪婪式 <[^>]+> 消耗）
         raw = raw.replace(/<[^>]+>/g, "");
-        // ★ v2.0.0: 最后解码 HTML 实体 — &amp; 必须在 &lt;/&gt; 之前，避免 &amp;lt; 被错误拆解
+        // 最后解码 HTML 实体 — &amp; 必须在 &lt;/&gt; 之前，避免 &amp;lt; 被错误拆解
         raw = raw.replace(/&amp;/g, "&")
                  .replace(/&lt;/g, "<")
                  .replace(/&gt;/g, ">")
@@ -16592,7 +16880,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             return '<!DOCTYPE html>\n<html><head><meta charset="utf-8"></head><body>\n' + code + '\n</body></html>';
         }
         // ★ 默认：作为纯文本展示在 pre 中，使用 textContent 赋值防止 XSS
-        var escaped = xfEditor.escapeHTML(code);
+        var escaped = xfEditor.escapeHtml(code);
         return '<!DOCTYPE html>\n<html><head><meta charset="utf-8"></head><body>\n<pre style="font-size:13px;line-height:1.6;white-space:pre-wrap;font-family:monospace;">' + escaped + '</pre>\n</body></html>';
     };
 
@@ -16634,7 +16922,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 e.preventDefault();
                 if (btn.hasClass("copied") || btn.hasClass("failed")) return;
 
-                // ★ v2.0.0: 优先读取存储的原始代码，fallback 用 extractCodeText 保留完整格式
+                // 优先读取存储的原始代码，fallback 用 extractCodeText 保留完整格式
                 var code = pre.data("_originalCode");
                 if (!code) {
                     var codeEl = pre.find("code");
@@ -16699,7 +16987,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
     xfEditor.initTooltips = function(container) {
         if (!container || container.length === 0) return;
         
-        // ★ v2.0.0: 全局注册 pagehide 清理（仅一次）—— 确保页面切换/关闭时释放 Blob URL
+        // 全局注册 pagehide 清理（仅一次）—— 确保页面切换/关闭时释放 Blob URL
         if (!xfEditor.___tooltip_pagehide_registered) {
             xfEditor.___tooltip_pagehide_registered = true;
             // ★ 组合 pagehide + beforeunload 确保跨浏览器（Safari pagehide 不稳定）
@@ -16749,7 +17037,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 return;
             }
             
-            // 构造 tooltip 内容 HTML（v1.12.1: 精确尺寸限制 + 加载状态）
+            // 构造 tooltip 内容 HTML（精确尺寸限制 + 加载状态）
             var tooltipHtml = '';
             var _rawPreCode = null; // iframe:pre 类型：存储原始代码，每次 hover 动态创建 Blob URL
             if (tooltipType === "image") {
@@ -16759,7 +17047,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 if (tooltipHeight) imgStyle += 'height:' + tooltipHeight + 'px;max-height:' + tooltipHeight + 'px;';
                 else imgStyle += 'max-height:220px;';
                 if (tooltipWidth || tooltipHeight) imgStyle += 'object-fit:contain;';
-                tooltipHtml = '<div class="xf_editor-tooltip-loading"><span>加载中...</span></div><img src="' + xfEditor.escapeAttr(tooltipContent) + '" alt="" style="' + imgStyle + '" onload="var p=this.previousElementSibling;if(p){p.style.display=\'none\';}this.style.display=\'\';var e=this;e.style.opacity=0;e.style.transition=\'opacity 200ms\';requestAnimationFrame(function(){e.style.opacity=1;});" onerror="var p=this.previousElementSibling;if(p){p.innerHTML=\'<span>图片加载失败</span>\';}" />';
+                tooltipHtml = '<div class="xf_editor-tooltip-loading"><span>加载中...</span></div><img src="' + xfEditor.escapeHtml(tooltipContent) + '" alt="" style="' + imgStyle + '" onload="var p=this.previousElementSibling;if(p){p.style.display=\'none\';}this.style.display=\'\';var e=this;e.style.opacity=0;e.style.transition=\'opacity 200ms\';requestAnimationFrame(function(){e.style.opacity=1;});" onerror="var p=this.previousElementSibling;if(p){p.innerHTML=\'<span>图片加载失败</span>\';}" />';
             } else if (tooltipType === "iframe") {
                 // 新增 iframe:pre 类型：提取页面中指定 pre 元素内容并以 iframe 展示
                 // 语法：[text](tooltip:iframe:pre#id) 或 [text](tooltip:iframe:pre.class)
@@ -16779,7 +17067,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     }
                     if (pre.length > 0) {
                         isPreContent = true;
-                        // ★ v2.0.0: 使用 extractCodeText 提取原始代码，再通过 buildIframeHTML 包裹为完整 HTML 页面
+                        // 使用 extractCodeText 提取原始代码，再通过 buildIframeHTML 包裹为完整 HTML 页面
                         // 这样 iframe 中的 JS/CSS 可以正常执行，纯文本也会在 <pre> 标签中正确显示
                         var rawCode = (pre.find("code").length > 0) ? xfEditor.extractCodeText(pre.find("code")) : xfEditor.extractCodeText(pre);
                         var langCls = pre[0].className || "";
@@ -16800,17 +17088,17 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     console.warn('iframe:pre tooltip: 未找到 pre 元素 "' + tooltipContent + '"，请检查选择器是否正确。');
                     tooltipHtml = '<div class="xf_editor-tooltip-loading" style="display:flex;align-items:center;justify-content:center;color:#888;font-size:12px;"><span>Pre 元素不存在</span></div><iframe src="about:blank" frameborder="0" style="' + iframeStyle + '" onload="var p=this.previousElementSibling;if(p){p.style.display=\'none\';}this.style.display=\'\';var e=this;e.style.opacity=0;e.style.transition=\'opacity 200ms\';requestAnimationFrame(function(){e.style.opacity=1;});"></iframe>';
                 } else {
-                    tooltipHtml = '<div class="xf_editor-tooltip-loading"><span>加载中...</span></div><iframe src="' + xfEditor.escapeAttr(tooltipContent) + '" frameborder="0" style="' + iframeStyle + '" onload="var p=this.previousElementSibling;if(p){p.style.display=\'none\';}this.style.display=\'\';var e=this;e.style.opacity=0;e.style.transition=\'opacity 200ms\';requestAnimationFrame(function(){e.style.opacity=1;});"></iframe>';
+                    tooltipHtml = '<div class="xf_editor-tooltip-loading"><span>加载中...</span></div><iframe src="' + xfEditor.escapeHtml(tooltipContent) + '" frameborder="0" style="' + iframeStyle + '" onload="var p=this.previousElementSibling;if(p){p.style.display=\'none\';}this.style.display=\'\';var e=this;e.style.opacity=0;e.style.transition=\'opacity 200ms\';requestAnimationFrame(function(){e.style.opacity=1;});"></iframe>';
                 }
             } else if (tooltipType === "html") {
                     // ★ v2.0.0 XSS 防护：将 HTML 内容转为纯文本后重新包裹，防止 XSS 注入
-                    var safeHtml = xfEditor.escapeHTML(tooltipContent);
+                    var safeHtml = xfEditor.escapeHtml(tooltipContent);
                     tooltipHtml = '<div class="xf_editor-tooltip-html-content">' + safeHtml + '</div>';
             } else if (tooltipType === "html-selector") {
                     tooltipHtml = '<div class="xf_editor-tooltip-html-content xf_editor-tooltip-selector-loading">正在加载HTML内容...</div>';
             } else {
                 // 文本类型：包裹在 .xf_editor-tooltip-text-content 中，XSS 防护：escapeHTML 转义
-                tooltipHtml = '<div class="xf_editor-tooltip-text-content">' + xfEditor.escapeHTML(tooltipContent) + '</div>';
+                tooltipHtml = '<div class="xf_editor-tooltip-text-content">' + xfEditor.escapeHtml(tooltipContent) + '</div>';
             }
             
             var tooltip = dom('<div class="xf_editor-tooltip-popup xf_editor-tooltip-' + tooltipType + '">' + tooltipHtml + '</div>');
@@ -16820,7 +17108,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 tooltip.attr("data-iframepre-code", _rawPreCode);
             }
             
-            // ★ v2.0.0: Tooltip 固定宽高时启用滚动条
+            // Tooltip 固定宽高时启用滚动条
             if (tooltipWidth) {
                 tooltip.css({width: tooltipWidth + "px", "max-width": tooltipWidth + "px"});
                 tooltip.find("img,iframe,div.xf_editor-tooltip-html-content,div.xf_editor-tooltip-text-content").css("max-width", tooltipWidth + "px");
@@ -16829,7 +17117,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 tooltip.css({height: tooltipHeight + "px", "max-height": tooltipHeight + "px"});
                 tooltip.find("img,iframe,div.xf_editor-tooltip-html-content,div.xf_editor-tooltip-text-content").css("max-height", tooltipHeight + "px");
             }
-            // ★ v2.0.0: 固定尺寸时自动溢出滚动
+            // 固定尺寸时自动溢出滚动
             if (tooltipWidth || tooltipHeight) {
                 var overflowX = tooltipWidth ? "auto" : "hidden";
                 var overflowY = tooltipHeight ? "auto" : "hidden";
@@ -16843,7 +17131,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 });
             }
             
-            // ★ v2.0.0: 为 image/iframe/html/html-selector 类型添加最大化和关闭按钮
+            // 为 image/iframe/html/html-selector 类型添加最大化和关闭按钮
             // 注意：text 文本类型不添加按钮（文字悬浮提示无需最大化）
             var maxBtn, closeBtn;
             var _origCss = {};
@@ -16859,7 +17147,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 tooltip.append(maxBtn).append(closeBtn);
             }
             
-            // ★ v2.0.0: 最大化/还原功能（image/iframe/html/html-selector 类型，自适应宽高）
+            // 最大化/还原功能（image/iframe/html/html-selector 类型，自适应宽高）
             if (maxBtn) {
                 maxBtn.on("click", function(e) {
                     e.stopPropagation();
@@ -17008,7 +17296,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                         var newBlobUrl = (window.URL || window.webkitURL).createObjectURL(newBlob);
                         tooltip.attr("data-blob-url", newBlobUrl);
                         // 显示 loading，隐藏 iframe，设置新 src 触发 onload
-                        // ★ v2.0.0: 用 .css() 代替 .show()/.hide() —— 避免 XfDom
+                        // 用 .css() 代替 .show()/.hide() —— 避免 XfDom
                         // olddisplay 缓存导致 loading div 的 flex 被错误恢复为 block
                         tooltip.find(".xf_editor-tooltip-loading").css("display", "flex");
                         tooltip.find("iframe").css("display", "none").attr("src", newBlobUrl);
@@ -17103,7 +17391,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                         if (typeof console !== "undefined" && console.warn) {
                             console.warn('HTML selector tooltip - element not found:', selector);
                         }
-                        tooltip.html('<div class="xf_editor-tooltip-html-content" style="color: #ff6b6b; padding: 10px; font-size: 12px;">未找到元素: <code>' + xfEditor.escapeHTML(selector) + '</code><br>请检查CSS选择器是否正确，元素是否存在于页面中。</div>');
+                        tooltip.html('<div class="xf_editor-tooltip-html-content" style="color: #ff6b6b; padding: 10px; font-size: 12px;">未找到元素: <code>' + xfEditor.escapeHtml(selector) + '</code><br>请检查CSS选择器是否正确，元素是否存在于页面中。</div>');
                     }
                 }
                 
@@ -17119,7 +17407,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 var triggerRect = trigger[0].getBoundingClientRect();
                 var tooltipW   = tooltip.outerWidth();
                 var tooltipH   = tooltip.outerHeight();
-                // ★ v2.0.0: image/iframe 类型在 onload 前 img/iframe 为 display:none，
+                // image/iframe 类型在 onload 前 img/iframe 为 display:none，
                 // 测量值仅含 loading 文本尺寸（极小），导致定位不准。
                 // 直接检查 img/iframe 的 inline style.display 是否仍为 "none"。
                 if (tooltipType === "image" || tooltipType === "iframe") {
@@ -17304,14 +17592,14 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
      * @param {Object} settings    设置对象
      */
     xfEditor._renderFlowChart = function(container, settings) {
-        // ★ v2.0.0: 移除已失效的 IE8 守卫
+        // 移除已失效的 IE8 守卫
         if (!container || !container.length) return;
         if (settings.flowChart) {
             container.find(".flowchart").each(function() {
                 var fc = dom(this);
                 if (fc.attr("data-fc-initialized") === "true") return;
 
-                // ★ v1.18.1: 容器不可见时延迟渲染而非放弃 ——
+                // 容器不可见时延迟渲染而非放弃 ——
                 //   loadedDisplay() 中 this.save()（内部触发 _renderFlowChart）先于
                 //   preview.show() 执行，初始化时预览区仍为 display:none；Raphael 会以
                 //   0 尺寸初始化导致 SVG 错乱。旧守卫直接 return，使流程图永不渲染。
@@ -17335,13 +17623,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 try {
                     fc.flowChart();
 
-                    // ★ v1.18 重写后处理 ——
-                    //   关键背景：flowchart.js 输出的是「扁平 SVG」，所有 shape(rect/path) 与
-                    //   text 都是 <svg> 的直系子节点，**不存在 <g> 分组**。
-                    //   旧实现遍历 <g> 子节点，在真实 DOM 上恒为空集 → 后处理从未生效，
-                    //   这正是"节点没有形状边框"的根因。
-                    //
-                    //   现改为直接遍历带 fc-type-* 的 shape：
+                    // 后处理扁平 SVG（shape 与 text 均为 <svg> 直系子节点）：
                     //   ① 确保每个节点 shape 有可见描边（部分主题/flowstate 下 stroke 可能为空）
                     //   ② 为连线（无 fc-type-* 的 path）打上 fc-edge 标记，便于 CSS 精确着色，
                     //      避免暗色主题里"给所有 path 上色"误伤节点形状。
@@ -17431,7 +17713,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         if (!editorTheme) {
             var themeParent = container.closest('[class*="theme-"]');
             if (themeParent.length) {
-                // ★ v2.0.0: 防御 attr("class") 返回 undefined
+                // 防御 attr("class") 返回 undefined
                 var cls = themeParent.attr("class") || "";
                 var m = cls.match(/(?:^|\s)theme-(\w+)/);
                 if (m) editorTheme = m[1];
@@ -17439,7 +17721,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         }
         container.find(".xf_editor-echarts").each(function() {
             var chart = dom(this);
-            // ★ v2.0.0: forceResize 模式 —— 对已初始化但尺寸可能因 tab 切换变化的图表重新 resize
+            // forceResize 模式 —— 对已初始化但尺寸可能因 tab 切换变化的图表重新 resize
             if (forceResize) {
                 if (chart.is(":hidden") || chart.width() === 0 || chart.height() === 0) return;
                 if (chart.attr("data-initialized") === "true") {
@@ -17643,7 +17925,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 // 悬停暂停自动播放
                 banner.on("mouseenter", stop).on("mouseleave", play);
                 // 触摸滑动切换（阈值 40px）
-                // ★ v2.0.0: 保存事件处理器引用，以便后续移除
+                // 保存事件处理器引用，以便后续移除
                 var startX = 0;
                 var bannerTouchStart = function(e) {
                     startX = e.touches[0].clientX; moved = false; stop();
@@ -17828,7 +18110,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
      * @returns {String} 渲染后的 HTML
      */
     xfEditor._renderMarkdownPipeline = function(markdown, markedOpts, rendererOpts, settings) {
-        // ★ v2.0.0: 添加 try/catch 防止 marked 解析失败导致整个渲染流程中断
+        // 添加 try/catch 防止 marked 解析失败导致整个渲染流程中断
         try {
             var mdProtected = xfEditor.protectTeXSyntax(markdown);
             mdProtected = xfEditor.preprocessLinkTarget(mdProtected);
@@ -17907,7 +18189,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             return;
         }
 
-        // ★ v2.0.0: 验证 target element 是否存在
+        // 验证 target element 是否存在
         var div           = dom("#" + id);
         if (div.length === 0) {
             if (typeof console !== "undefined" && console.error) {
@@ -18017,10 +18299,10 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             }
         }
             
-        // ★ v2.0.0: 使用统一静态后处理方法，与编辑器预览模式完全一致
+        // 使用统一静态后处理方法，与编辑器预览模式完全一致
 
         // 1. 代码高亮 + 复制按钮
-        // ★ v2.0.0: markdownToHTML 需要加载 prettify.min.js 才能生成行号和语法高亮
+        // markdownToHTML 需要加载 prettify.min.js 才能生成行号和语法高亮
         if (settings.previewCodeHighlight && typeof prettyPrint === "undefined" && !xfEditor.prettyPrint) {
             var prettifyPath = (settings.path || xfEditor.defaults.path || "") + "prettify.min";
             var _div = div, _settings = settings;
@@ -18048,8 +18330,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     if (mdHasFlowChart && typeof flowchart === "undefined") {
                         mdPending++;
                         // ★ 关键修复：加载【自包含 bundle】flowchart.bundle.min.js，其内部已内联
-                        //   Raphael + Underscore + flowchart.js v1.18，彻底摆脱外部 lib/flowchart.min.js
-                        //   版本（旧版 v1.3.4 会导致 "a.shiftX is not a function" /
+                        //   使用内置 Raphael + Underscore + flowchart.js bundle，避免外部库版本差异。
                         //   "Cannot set properties of undefined (setting 'yes')"）。
                         //   缓存内置引用 xfEditor._flowchart，渲染时优先使用，外部旧版无法覆盖。
                         xfEditor.loadScript((settings.path || xfEditor.defaults.path || "") + "flowchart.bundle.min", function() {
@@ -18087,7 +18368,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         // 4. ECharts 图表
         if (settings.echarts) {
             if (typeof echarts === "undefined") {
-                // ★ v2.0.0: 必须使用 settings.path（否则子目录部署时解析到错误目录 404）
+                // 必须使用 settings.path（否则子目录部署时解析到错误目录 404）
                 xfEditor.loadScript((settings.path || xfEditor.defaults.path || "") + "echarts.min", function() {
                     xfEditor._initECharts(div, settings);
                 });
@@ -18111,7 +18392,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             xfEditor._initBanners(div);
         }
 
-        // ★ v2.0.0: 新增 — 页面分页处理（与编辑器预览保持一致）
+        // 新增 — 页面分页处理（与编辑器预览保持一致）
         if (settings.pageBlock) {
             xfEditor._initPages(div);
         }
@@ -18132,15 +18413,11 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
     };
     
     // xfEditor 编辑器主题列表（用于切换工具栏等主题）
-    // 自 v1.5.0 起添加
-    xfEditor.themes        = ["default", "dark"];
     
     // 预览区主题列表
-    // added @1.5.0
     xfEditor.previewThemes = ["default", "dark"];
     
     // CodeMirror / 编辑区主题列表
-    // 自 v1.5.0 起重命名为 editorThemes，旧版本为 themes
     xfEditor.editorThemes = [
         "default", "3024-day", "3024-night",
         "ambiance", "ambiance-mobile",
@@ -18193,10 +18470,10 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
      * @param {String}   [into="head"]         嵌入页面的位置
      */
     
-    // ★ v2.0.0: 待加载队列，防止同步重复调用未完成时的竞争条件
+    // 待加载队列，防止同步重复调用未完成时的竞争条件
     xfEditor.loadFiles.pendingCSS = [];
     xfEditor.loadFiles.pendingJS  = [];
-    // ★ v2.0.0: CSS 与 JS 必须使用独立的等待队列——
+    // CSS 与 JS 必须使用独立的等待队列——
     //   同一资源可能同时以 .css 与 .js 两种形式被请求（如 codemirror/codemirror.min），
     //   若共用一个队列，CSS 先加载完成会提前冲掉 JS 排队的回调（CodeMirror 尚未定义就回调）。
     xfEditor.loadFiles.pendingQueuesCSS = {};
@@ -18221,7 +18498,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         into       = into     || "head";        
         callback   = callback || function() {};
         
-        // ★ v2.0.0: 路径归一化用于去重检测
+        // 路径归一化用于去重检测
         var normalizedName = (fileName || "").replace(/^\.\//, "");
         
         if (xfEditor.loadFiles.css.indexOf(normalizedName) >= 0) {
@@ -18229,9 +18506,8 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             return;
         }
         
-        // ★ v2.0.0: 已在加载中（同步调用尚未完成 onload/onerror）→ 排队等待，加载完成后统一回调
-        //   修复竞态：原实现立即回调，会在资源真正加载完成前执行
-        //   （如两处 markdownToHTML 同时 tex:true，katex 尚未定义就触发回调 → "katex is not defined"）
+        // 已在加载中（同步调用尚未完成 onload/onerror）→ 排队等待，加载完成后统一回调
+        //   避免资源加载完成前回调（如两处 markdownToHTML 同时启用 tex 时 katex 尚未定义）。
         if (xfEditor.loadFiles.pendingCSS.indexOf(normalizedName) >= 0) {
             (xfEditor.loadFiles.pendingQueuesCSS[normalizedName] = xfEditor.loadFiles.pendingQueuesCSS[normalizedName] || []).push(callback);
             return;
@@ -18244,7 +18520,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         css.rel    = "stylesheet";
         
         css.onload = function() {
-            // ★ v2.0.0: 检测 CSS 样式表是否真正可用（某些浏览器 404 也会触发 onload）
+            // 检测 CSS 样式表是否真正可用（某些浏览器 404 也会触发 onload）
             try {
                 if (css.sheet && css.sheet.cssRules) {
                     // 样式表可访问，确认已加载
@@ -18273,7 +18549,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             // 从待加载列表移除
             var pi = xfEditor.loadFiles.pendingCSS.indexOf(normalizedName);
             if (pi >= 0) xfEditor.loadFiles.pendingCSS.splice(pi, 1);
-            // ★ v2.0.0: 即使加载失败也统一刷新排队回调，避免加载链中断
+            // 即使加载失败也统一刷新排队回调，避免加载链中断
             xfEditor._flushLoadQueue(xfEditor.loadFiles.pendingQueuesCSS, normalizedName);
         };
 
@@ -18298,7 +18574,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         into          = into     || "head";
         callback      = callback || function() {};
         
-        // ★ v2.0.0: 路径归一化用于去重检测，避免 "./lib/a.js" 和 "lib/a.js" 被重复加载
+        // 路径归一化用于去重检测，避免 "./lib/a.js" 和 "lib/a.js" 被重复加载
         var normalizedName = (fileName || "").replace(/^\.\//, "");
         
         if (xfEditor.loadFiles.js.indexOf(normalizedName) >= 0) {
@@ -18306,9 +18582,8 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             return;
         }
         
-        // ★ v2.0.0: 已在加载中（同步调用尚未完成 onload/onerror）→ 排队等待，加载完成后统一回调
-        //   修复竞态：原实现立即回调，会在资源真正加载完成前执行
-        //   （如两处 markdownToHTML 同时 tex:true，katex 尚未定义就触发回调 → "katex is not defined"）
+        // 已在加载中（同步调用尚未完成 onload/onerror）→ 排队等待，加载完成后统一回调
+        //   避免资源加载完成前回调（如两处 markdownToHTML 同时启用 tex 时 katex 尚未定义）。
         if (xfEditor.loadFiles.pendingJS.indexOf(normalizedName) >= 0) {
             (xfEditor.loadFiles.pendingQueuesJS[normalizedName] = xfEditor.loadFiles.pendingQueuesJS[normalizedName] || []).push(callback);
             return;
@@ -18369,7 +18644,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
      */
     xfEditor._resolveBasePath = function() {
         // 尝试从加载 xfEditor.js 的 script 标签推断基路径
-        // 同时兼容 xf_editor.js / xf_editor.min.js / xf_editor.amd.js 等文件名
+        // 同时匹配 xf_editor.js / xf_editor.min.js 等浏览器脚本文件名
         var rbase = /^(.*\/)xf[_-]?editor/i;
         if (document.currentScript && document.currentScript.src) {
             var match = document.currentScript.src.match(rbase);
@@ -18398,11 +18673,6 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
      */
     
     xfEditor.loadKaTeX = function (basePath, callback) {
-        // 兼容旧的 loadKaTeX(callback) 调用方式
-        if (typeof basePath === "function") {
-            callback = basePath;
-            basePath = "";
-        }
         basePath = basePath || "";
         
         // 如果 basePath 为空或是默认的 "./lib/"，尝试自动推断基路径
@@ -18555,7 +18825,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
 
         if (options.closed)
         {
-            html += "<a href=\"javascript:;\" class=\"fa fa-close " + classPrefix + "dialog-close\"></a>";
+            html += "<a href=\"javascript:;\" role=\"button\" aria-label=\"关闭\" tabindex=\"0\" class=\"fa fa-close " + classPrefix + "dialog-close\"></a>";
         }
 
         html += "<div class=\"" + classPrefix + "dialog-container\">" + options.content;                    
@@ -18629,17 +18899,20 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
 
         dom(window).on("resize.xf_editor-dialog", dialogPosition);
 
-        dialog.children("." + classPrefix + "dialog-close").on(mouseOrTouch("click", "touchend"), function(e) {
+        var closeDialog = function(e) {
             e.preventDefault();
             e.stopPropagation();
             dialog.hide().lockScreen(false).hideMask();
+        };
+        dialog.children("." + classPrefix + "dialog-close").on(mouseOrTouch("click", "touchend"), closeDialog).on("keydown", function(e) {
+            if (e.key === "Enter" || e.key === " " || e.keyCode === 13 || e.keyCode === 32) closeDialog(e);
         });
 
         if (typeof options.buttons === "object")
         {
             var footer = dialog.footer = dialog.find("." + classPrefix + "dialog-footer");
 
-            // ★ v2.0.0-FIX4: 使用 Object.keys().forEach() 替代 for...in 循环
+            // 使用 Object.keys().forEach() 替代 for...in 循环
             //    for...in + var btn 存在经典闭包陷阱：所有事件处理器闭包共享同一个 btn 变量，
             //    循环结束后 btn 始终指向最后一个按钮，导致"确定"按钮实际执行"取消"的回调
             Object.keys(options.buttons).forEach(function(key) {
@@ -18679,7 +18952,6 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             };
 
             dialogHeader.mousedown(function(e) {
-                e = e || window.event;  // IE 兼容
                 // 仅响应主键（左键）拖拽，避免右键/中键误触发拖拽
                 if (e.button !== undefined && e.button !== 0) return;
                 posX = e.clientX - parseInt(dialog[0].style.left);
@@ -18704,7 +18976,6 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
 
             var moveAction = function (e) {
                 if (!_xfDragging) return;
-                e = e || window.event;  //IE
 
                 var left, top, nowLeft = parseInt(dialog[0].style.left), nowTop = parseInt(dialog[0].style.top);
 
@@ -18907,6 +19178,6 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         return datefmt;
     };
 
-    return xfEditor;
+    window.xfEditor = xfEditor;
 
-}));
+})();

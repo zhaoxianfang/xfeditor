@@ -62,7 +62,7 @@ xfEditor.fn.customMethod = function(){
     console.log("customMethod", this);
 };
 
-$(function() {
+xfEditor.dom(function() {
     xfEditor.methodOne = function(){
         console.log("xfEditor.methodOne");
     };
@@ -73,7 +73,7 @@ $(function() {
         path   : '../lib/',
         onload : function() {
             this.customMethod();
-            $.proxy(EditormdExtend, this)();
+            dom.proxy(EditormdExtend, this)();
         }
     });
 

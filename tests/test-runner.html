@@ -160,46 +160,46 @@
                 // 测试 1: 选择器性能
                 var start = performance.now();
                 for (var i = 0; i < 10000; i++) {
-                    var $div = $('<div class="test"></div>');
+                    var divDom = dom('<div class="test"></div>');
                 }
                 var end = performance.now();
                 results['创建元素 (10000次)'] = (end - start).toFixed(2) + 'ms';
                 
                 // 测试 2: DOM 操作性能
-                var $container = $('<div></div>');
+                var containerDom = dom('<div></div>');
                 start = performance.now();
                 for (var i = 0; i < 1000; i++) {
-                    $container.append('<span>' + i + '</span>');
+                    containerDom.append('<span>' + i + '</span>');
                 }
                 end = performance.now();
                 results['追加元素 (1000次)'] = (end - start).toFixed(2) + 'ms';
                 
                 // 测试 3: 类操作性能
-                var $div = $('<div></div>');
+                var divDom = dom('<div></div>');
                 start = performance.now();
                 for (var i = 0; i < 10000; i++) {
-                    $div.addClass('test');
-                    $div.removeClass('test');
+                    divDom.addClass('test');
+                    divDom.removeClass('test');
                 }
                 end = performance.now();
                 results['类操作 (10000次)'] = (end - start).toFixed(2) + 'ms';
                 
                 // 测试 4: 事件绑定性能
-                var $div = $('<div></div>');
+                var divDom = dom('<div></div>');
                 var handler = function() {};
                 start = performance.now();
                 for (var i = 0; i < 1000; i++) {
-                    $div.on('click', handler);
-                    $div.off('click', handler);
+                    divDom.on('click', handler);
+                    divDom.off('click', handler);
                 }
                 end = performance.now();
                 results['事件绑定/解绑 (1000次)'] = (end - start).toFixed(2) + 'ms';
                 
                 // 测试 5: 遍历性能
-                var $divs = $('<div></div><div></div><div></div><div></div><div></div>');
+                var divsDom = dom('<div></div><div></div><div></div><div></div><div></div>');
                 start = performance.now();
                 for (var i = 0; i < 10000; i++) {
-                    $divs.each(function() {});
+                    divsDom.each(function() {});
                 }
                 end = performance.now();
                 results['遍历 (10000次)'] = (end - start).toFixed(2) + 'ms';
@@ -208,7 +208,7 @@
                 var obj = { a: 1, b: 2, c: 3 };
                 start = performance.now();
                 for (var i = 0; i < 10000; i++) {
-                    $.extend({}, obj);
+                    dom.extend({}, obj);
                 }
                 end = performance.now();
                 results['对象扩展 (10000次)'] = (end - start).toFixed(2) + 'ms';

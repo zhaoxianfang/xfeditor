@@ -17,7 +17,7 @@
                 <textarea style="display:none;">### Custom toolbar
 
 ```javascript
-$(function() {
+xfEditor.dom(function() {
     var testEditor = xfEditor("test-xfEditor", {
         width: "90%",
         height: 640,
@@ -44,7 +44,7 @@ $(function() {
         toolbarHandlers : {
             /**
              * @param {Object}      cm         CodeMirror对象
-             * @param {Object}      icon       图标按钮jQuery元素对象
+             * @param {Object}      icon       图标按钮 DOM 元素对象
              * @param {Object}      cursor     CodeMirror的光标对象，可获取光标所在行和位置
              * @param {String}      selection  编辑器选中的文本
              */
@@ -81,10 +81,10 @@ $(function() {
         },
 
         onload : function(){
-            $("[type=\"file\"]").on("change", function(){
-                alert($(this).val());
-                testEditor.cm.replaceSelection($(this).val());
-                console.log($(this).val(), testEditor);
+            xfEditor.dom("[type=\"file\"]").on("change", function(){
+                alert(xfEditor.dom(this).val());
+                testEditor.cm.replaceSelection(xfEditor.dom(this).val());
+                console.log(xfEditor.dom(this).val(), testEditor);
             });
         }
     });
@@ -128,7 +128,7 @@ $(function() {
                     toolbarHandlers : {
                         /**
                          * @param {Object}      cm         CodeMirror对象
-                         * @param {Object}      icon       图标按钮jQuery元素对象
+                         * @param {Object}      icon       图标按钮 DOM 元素对象
                          * @param {Object}      cursor     CodeMirror的光标对象，可获取光标所在行和位置
                          * @param {String}      selection  编辑器选中的文本
                          */
