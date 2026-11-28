@@ -6049,8 +6049,8 @@
             // KaTeX 科学公式：$$ 块级公式 或 $...$ 行内公式
             r.katex = /\$\$/.test(md) || /\$[^$\n\r]+\$/.test(md);
 
-            // 字帖：[[tian: / [[mi: / [[pinyin:
-            r.copybook = /\[\[(tian|mi|pinyin)\s*:/.test(md);
+            // 字帖：实际渲染语法为 [[copybookTian]]...[[/copybookTian]] 等块标签
+            r.copybook = /\[\[\/?copybook(?:tian|mi|pinyin)\]\]/i.test(md);
 
             // 流程图：```flow
             r.flowchart = /```flow\b/.test(md);
@@ -13810,18 +13810,44 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 var line = lines[li].trim();
                 if (!line) continue;
 
-                // 仅支持 {content|pinyin}(!width:NNN) 花括号语法（含可选宽度参数）
+                // 同时支持两种分组语法，且允许在同一行混用：
+                //   {内容|拼音}(!width:NNN)  —— 花括号（v2.0 起推荐）
+                //   (内容|拼音)(!width:NNN)  —— 圆括号（田字格/米字格工具栏与文档使用的语法）
+                // 这里用一次从左到右的扫描代替“先花括号、失败再圆括号”的回退式解析：
+                // 回退式解析在同一行混写时会丢掉整行内容，且独立的 (!width:NNN) 会被误当成一组。
                 var groups = [];
-                var curlyRegex = /\{([^{}]*?)\}(?:\s*\(!width:(\d+)\))?/g;
-                var cm;
-                while ((cm = curlyRegex.exec(line)) !== null) {
-                    groups.push({
-                        content: cm[1],
-                        width: cm[2] ? parseInt(cm[2], 10) : null,
-                        delim: 'curly'
-                    });
+                var scanPos = 0;
+                while (scanPos < line.length) {
+                    var openChar = line.charAt(scanPos);
+                    var closeChar = "";
+                    if (openChar === "{") closeChar = "}";
+                    else if (openChar === "(") closeChar = ")";
+                    else { scanPos++; continue; }
+
+                    var contentStart = scanPos + 1;
+                    var contentEnd = line.indexOf(closeChar, contentStart);
+                    if (contentEnd < 0) { scanPos = contentStart; continue; }
+
+                    var rawContent = line.substring(contentStart, contentEnd);
+                    // 宽度参数必须紧跟闭合符：{...}(!width:125) / (...)(!width:125)
+                    var width = null;
+                    var widthMatch = /^\s*\(\s*!width\s*:\s*(\d{1,5})\s*\)/i.exec(line.substring(contentEnd + 1));
+                    var consumedEnd = contentEnd + 1;
+                    if (widthMatch) {
+                        width = parseInt(widthMatch[1], 10);
+                        consumedEnd += widthMatch[0].length;
+                    }
+                    // 单独出现的 (!width:NNN) 不能直接当内容生成文字格子
+                    if (widthMatch || !/^!width\s*:\s*\d+\s*$/i.test(rawContent.trim())) {
+                        groups.push({
+                            content: rawContent,
+                            width: width,
+                            delim: (openChar === "{" ? "curly" : "paren")
+                        });
+                    }
+                    scanPos = (consumedEnd > scanPos) ? consumedEnd : scanPos + 1;
                 }
-                
+
                 if (groups.length === 0) continue;
 
                 // 检测是否有任何 group 指定了宽度 — 决定行容器样式
@@ -13868,7 +13894,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                             groupCellHtml += '<line x1="2" y1="36" x2="98" y2="36" stroke="#2f7d4a" stroke-width="1.6" opacity="0.9"/>';
                             groupCellHtml += '<line x1="2" y1="52" x2="98" y2="52" stroke="#2f7d4a" stroke-width="2" opacity="0.95"/>';
                             groupCellHtml += '</svg>';
-                            groupCellHtml += '<span class="xf_editor-copybook-pinyin-text">' + py + '</span>';
+                            groupCellHtml += '<span class="xf_editor-copybook-pinyin-text">' + xfEditor.escapeHtml(py) + '</span>';
                             groupCellHtml += '</div>';
                             // ★ 下方汉字区（田字格/米字格）
                             groupCellHtml += '<div class="xf_editor-copybook-pinyin-bottom">';
@@ -13879,9 +13905,12 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                             groupCellHtml += '<line x1="0" y1="50" x2="100" y2="50" stroke="#c69654" stroke-width="0.7" stroke-dasharray="3 3" opacity="0.6"/>';
                             groupCellHtml += '<rect x1="1" y1="1" width="98" height="98" fill="none" stroke="#a57a42" stroke-width="0.5" opacity="0.5"/>';
                             groupCellHtml += '</svg>';
-                            groupCellHtml += '<span class="xf_editor-copybook-hanzi-text">' + ch + '</span>';
-                            // ★ 脚注：渲染在汉字区底部，不显示在上方拼音区
-                            if (fn) groupCellHtml += '<sup class="xf_editor-copybook-footnote"><a href="#xf_editor-fn-' + fn + '" id="xf_editor-fnref-' + fn + '">[' + fn + ']</a></sup>';
+                            groupCellHtml += '<span class="xf_editor-copybook-hanzi-text">' + xfEditor.escapeHtml(ch) + '</span>';
+                            // ★ 脚注：渲染在汉字区底部，不显示在上方拼音区；索引强制数字，避免属性注入
+                            if (fn) {
+                                var fnId = parseInt(fn, 10) || 0;
+                                if (fnId > 0) groupCellHtml += '<sup class="xf_editor-copybook-footnote"><a href="#xf_editor-fn-' + fnId + '" id="xf_editor-fnref-' + fnId + '">[' + fnId + ']</a></sup>';
+                            }
                             groupCellHtml += '</div>';
                             groupCellHtml += '</div>';
                         }
@@ -13912,8 +13941,11 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                                 gridCellHtml += '<rect x1="1" y1="1" width="98" height="98" fill="none" stroke="#b58f53" stroke-width="0.7" opacity="0.55"/>';
                             }
                             gridCellHtml += '</svg>';
-                            gridCellHtml += '<span class="xf_editor-copybook-hanzi-text">' + ch2 + '</span>';
-                            if (fn2) gridCellHtml += '<sup class="xf_editor-copybook-footnote"><a href="#xf_editor-fn-' + fn2 + '" id="xf_editor-fnref-' + fn2 + '">[' + fn2 + ']</a></sup>';
+                            gridCellHtml += '<span class="xf_editor-copybook-hanzi-text">' + xfEditor.escapeHtml(ch2) + '</span>';
+                            if (fn2) {
+                                var fn2Id = parseInt(fn2, 10) || 0;
+                                if (fn2Id > 0) gridCellHtml += '<sup class="xf_editor-copybook-footnote"><a href="#xf_editor-fn-' + fn2Id + '" id="xf_editor-fnref-' + fn2Id + '">[' + fn2Id + ']</a></sup>';
+                            }
                             gridCellHtml += '</div>';
                         }
 

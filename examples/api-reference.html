@@ -1087,7 +1087,7 @@ editor.exportFile(<span class="fn">null</span>, <span class="str">"html"</span>)
         <tr><th style="width:18%">字段名</th><th style="width:12%">类型</th><th style="width:28%">Markdown 检测模式</th><th>说明</th></tr>
         <tr><td>echarts</td><td class="type">Boolean</td><td><code>```echarts</code></td><td>ECharts 图表代码块</td></tr>
         <tr><td>katex</td><td class="type">Boolean</td><td><code>$$...$$</code> 或 <code>$...$</code></td><td>KaTeX 块级 / 行内科学公式</td></tr>
-        <tr><td>copybook</td><td class="type">Boolean</td><td><code>[[tian:]]</code> / <code>[[mi:]]</code> / <code>[[pinyin:]]</code></td><td>字帖（田字格 / 米字格 / 拼音格）</td></tr>
+        <tr><td>copybook</td><td class="type">Boolean</td><td><code>[[copybookTian]]</code> / <code>[[copybookMi]]</code> / <code>[[copybookPinyin]]</code></td><td>字帖（田字格 / 米字格 / 拼音格）</td></tr>
         <tr><td>flowchart</td><td class="type">Boolean</td><td><code>```flow</code></td><td>流程图（flowchart.js）</td></tr>
         <tr><td>sequenceDiagram</td><td class="type">Boolean</td><td><code>```sequence</code></td><td>时序图（js-sequence-diagrams）</td></tr>
         <tr><td>taskList</td><td class="type">Boolean</td><td><code>- [ ]</code> / <code>- [x]</code></td><td>任务列表（Checkbox）</td></tr>
@@ -1125,14 +1125,14 @@ editor.exportFile(<span class="fn">null</span>, <span class="str">"html"</span>)
 <span class="cmt">// </span>
 <span class="cmt">// $$ E = mc^2 $$</span>
 <span class="cmt">// </span>
-<span class="cmt">// [[tian:大]] [[mi:小]]</span>
+<span class="cmt">// [[copybookTian]](大)[[/copybookTian]] [[copybookMi]](小)[[/copybookMi]]</span>
 
 <span class="key">var</span> types = editor.getUseTypes();
 console.log(types);
 <span class="cmt">// {</span>
 <span class="cmt">//   echarts: true,          // ✓ ```echarts 图表</span>
 <span class="cmt">//   katex: true,            // ✓ $$ 科学公式</span>
-<span class="cmt">//   copybook: true,         // ✓ [[tian:]][[mi:]] 字帖</span>
+<span class="cmt">//   copybook: true,         // ✓ [[copybookTian]]/[[copybookMi]] 字帖</span>
 <span class="cmt">//   flowchart: false,       // ✗ 无 ```flow</span>
 <span class="cmt">//   sequenceDiagram: false, // ✗ 无 ```sequence</span>
 <span class="cmt">//   taskList: false,        // ✗ 无 - [ ]</span>
@@ -1845,7 +1845,7 @@ xfEditor.registerLang(<span class="str">"ja"</span>, {
         <tr><td><code>[[file]]URL|名称[[/file]]</code></td><td>附件链接</td></tr>
         <tr><td><code>[[copybookTian]](字)(字)[[/copybookTian]]</code></td><td>田字格</td></tr>
         <tr><td><code>[[copybookMi]](字)(字)[[/copybookMi]]</code></td><td>米字格</td></tr>
-        <tr><td><code>[[copybookPinyin]]{汉字|拼音}(!width:N)[[/copybookPinyin]]</code></td><td>拼音格</td></tr>
+        <tr><td><code>[[copybookPinyin]]{汉字|拼音}(!width:N)[[/copybookPinyin]]</code></td><td>拼音格（圆括号 <code>(汉字|拼音)</code> 同样支持，可同行混用）</td></tr>
         <tr><td><code>```flow ... ```</code></td><td>流程图（flowchart.js）</td></tr>
         <tr><td><code>```seq ... ```</code></td><td>时序图（js-sequence-diagrams）</td></tr>
     </table></div>
