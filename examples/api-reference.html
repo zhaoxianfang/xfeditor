@@ -855,8 +855,8 @@ htmlDecode: <span class="str">"script,iframe|*"</span></pre>
             <td>禁用的快捷键列表。每项为字符串，如 <code>"Ctrl-S"</code>、<code>"F11"</code>。常用禁用项：<code>["Ctrl-S", "F11", "Esc"]</code></td>
         </tr>
         <tr>
-            <td>imageFormats</td><td class="type">Array</td><td class="default">["jpg","jpeg","gif","png","bmp","webp"]</td>
-            <td>允许的图片扩展名（不含点号）。<br>增加 SVG 支持：<code>["jpg","jpeg","gif","png","bmp","webp","svg"]</code></td>
+            <td>imageFormats</td><td class="type">Array</td><td class="default">["jpg","jpeg","gif","png","bmp","webp","avif"]</td>
+            <td>允许的图片扩展名（不含点号）。SVG 因可执行脚本风险不支持，配置后也会被安全过滤拒绝。</td>
         </tr>
         <tr>
             <td>fileFormats</td><td class="type">Array</td><td class="default">["doc","docx","pdf","txt","zip","rar","xls","xlsx","ppt","pptx","mp4","mp3"]</td>
@@ -881,7 +881,7 @@ htmlDecode: <span class="str">"script,iframe|*"</span></pre>
         <tr><td colspan="5" style="background:#e8f5e9; font-weight:bold;">📷 图片上传</td></tr>
         <tr><td>imageUpload</td><td class="type">Boolean</td><td class="default">false</td><td class="values">true | false</td><td>启用图片上传。POST 字段名 xf_editor-image-file</td></tr>
         <tr><td>imageUploadURL</td><td class="type">String</td><td class="default">""</td><td class="values">URL 地址</td><td>图片上传接口地址。POST, multipart/form-data</td></tr>
-        <tr><td>imageFormats</td><td class="type">Array</td><td class="default">["jpg","jpeg","gif","png","bmp","webp"]</td><td class="values">字符串数组</td><td>允许的图片格式（扩展名，不含点号）</td></tr>
+        <tr><td>imageFormats</td><td class="type">Array</td><td class="default">["jpg","jpeg","gif","png","bmp","webp","avif"]</td><td class="values">字符串数组</td><td>允许的图片格式（扩展名，不含点号；SVG 不支持）</td></tr>
         <tr><td>crossDomainUpload</td><td class="type">Boolean</td><td class="default">false</td><td class="values">true | false</td><td>启用跨域上传（通过隐藏 iframe 提交）</td></tr>
         <tr><td>uploadCallbackURL</td><td class="type">String</td><td class="default">""</td><td class="values">URL 地址</td><td>跨域上传回调页面地址</td></tr>
         <tr><td colspan="5" style="background:#fff3e0; font-weight:bold;">📎 文件上传 <span class="tag tag-ver">v2.1.0</span></td></tr>
@@ -896,14 +896,15 @@ htmlDecode: <span class="str">"script,iframe|*"</span></pre>
         <tr><td>dropPasteUpload</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true | false</td><td>处理拖入/粘贴到编辑区的文件，按类型自动选择上传接口</td></tr>
         <tr><td>dropPasteAtMouse</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true | false</td><td>粘贴/拖放文件插入到最近鼠标位置；false 使用当前光标位置（拖放坐标同样忽略）</td></tr>
         <tr><td>dropPasteMaxFiles</td><td class="type">Number</td><td class="default">10</td><td class="values">非负整数</td><td>单次最多处理的文件数；0 表示不处理</td></tr>
-        <tr><td>dropPasteFallbackToBase64</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true | false</td><td>图片上传失败时降级为内嵌 base64；false 则仅报错</td></tr>
+        <tr><td>dropPasteFallbackToBase64</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true | false</td><td>图片上传失败或无接口时降级为内嵌 base64；false 则仅报错</td></tr>
+        <tr><td>dropPasteBase64MaxSize</td><td class="type">Number</td><td class="default">5242880</td><td class="values">字节</td><td>单张图片转内嵌 base64 的上限；超限仅提示不插入，防止卡死</td></tr>
         <tr><td>uploadMaxSize</td><td class="type">Number</td><td class="default">10485760</td><td class="values">字节</td><td>图片单文件大小上限</td></tr>
         <tr><td>uploadMaxFileSize</td><td class="type">Number</td><td class="default">52428800</td><td class="values">字节</td><td>视频/附件单文件大小上限</td></tr>
         <tr><td>strictMimeCheck</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true | false</td><td>校验图片扩展名、MIME 与文件头魔数</td></tr>
         <tr><td>allowedUploadProtocols</td><td class="type">Array</td><td class="default">["http:","https:","mailto:","tel:","ftp:","/","./","../"]</td><td class="values">字符串数组</td><td>服务端返回文件地址的协议白名单</td></tr>
         <tr><td>uploadFunction</td><td class="type">Function</td><td class="default">null</td><td class="values">(file, meta, done)</td><td>自定义上传函数，覆盖默认 XHR；配置后无需填写任何 uploadURL 即可上传</td></tr>
         <tr><td>uploadHeaders</td><td class="type">Object</td><td class="default">{}</td><td class="values">键值对</td><td>XHR 上传附加请求头</td></tr>
-        <tr><td>uploadTimeout</td><td class="type">Number</td><td class="default">30000</td><td class="values">正整数</td><td>单个 XHR 上传超时（毫秒），超时后继续处理队列后续文件</td></tr>
+        <tr><td>uploadTimeout</td><td class="type">Number</td><td class="default">30000</td><td class="values">正整数</td><td>单个上传超时（毫秒），XHR 与自定义 uploadFunction 均适用，超时后继续处理队列后续文件</td></tr>
         <tr><td>onUploadProgress</td><td class="type">Function</td><td class="default">function(){}</td><td class="values">(info)</td><td>上传进度回调，info={file,loaded,total,percent}</td></tr>
         <tr><td>onUploadError</td><td class="type">Function</td><td class="default">function(){}</td><td class="values">(info)</td><td>上传失败回调，info={type,name,message}</td></tr>
     </table></div>

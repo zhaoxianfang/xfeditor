@@ -330,7 +330,7 @@ editor.exportFile("文档", "markdown"); // 导出文件
 | 选项 | 默认值 | 说明 |
 |------|--------|------|
 | `imageUpload` | `false` | 图片上传 |
-| `imageFormats` | `["jpg","jpeg","gif","png","bmp","webp"]` | 允许格式 |
+| `imageFormats` | `["jpg","jpeg","gif","png","bmp","webp","avif"]` | 允许格式（SVG 不支持） |
 | `imageUploadURL` | `""` | 上传 URL |
 | `crossDomainUpload` | `false` | 跨域上传 |
 | `imageResize` | `true` | 图片尺寸编辑 |
@@ -340,7 +340,8 @@ editor.exportFile("文档", "markdown"); // 导出文件
 | `dropPasteUpload` | `true` | 允许拖放/粘贴文件到编辑区自动上传 |
 | `dropPasteAtMouse` | `true` | 粘贴/拖放文件插入到最近鼠标位置（false 用光标位置，拖放坐标同样忽略） |
 | `dropPasteMaxFiles` | `10` | 单次拖放/粘贴最多处理文件数（0 表示不处理） |
-| `dropPasteFallbackToBase64` | `true` | 图片上传失败时降级为内嵌 base64，保证内容不丢失 |
+| `dropPasteFallbackToBase64` | `true` | 图片上传失败或未提供接口时降级为内嵌 base64，保证内容不丢失 |
+| `dropPasteBase64MaxSize` | `5MB` | 单张图片转内嵌 base64 的上限；超过后仅提示不插入，避免编辑/预览卡顿 |
 | `uploadMaxSize` | `10MB` | 图片单文件大小上限 |
 | `uploadMaxFileSize` | `50MB` | 视频/附件单文件大小上限 |
 | `strictMimeCheck` | `true` | 校验图片扩展名、MIME 与文件头 |
@@ -356,6 +357,8 @@ editor.exportFile("文档", "markdown"); // 导出文件
 > - 粘贴的截图通常没有文件名，编辑器会按 MIME 推断扩展名（如 `image/png` → `png`），再通过格式白名单与图片魔数校验，不会误判为“不支持的格式”。
 > - 文件事件在原生 DOM 捕获阶段接管（CodeMirror 自带事件在含文件时不会触发），`onpaste` / `ondrop` 回调仍会正常收到通知；普通文本粘贴不受影响。
 > - 拖放按鼠标位置定位插入点；多文件按拖入顺序依次插入。
+> - 内嵌 base64 图片按 120 字符换行存储，预览解析时自动去除空白；块解析不再截断正文，数 MB 的图片也能正确渲染为 `<img>`，不会显示整串编码。
+> - `uploadFunction` 若在 `uploadTimeout` 内未调用 `done`，会被视为超时并继续处理后续文件，避免上传队列假死。
 
 ### 扩展功能
 | 选项 | 默认值 | 说明 |

@@ -1118,7 +1118,7 @@ var html = editor.getHTML();
 ```javascript
 xfEditor("editor", {
     imageUpload: true,
-    imageFormats: ["jpg", "jpeg", "gif", "png", "bmp", "webp"],
+    imageFormats: ["jpg", "jpeg", "gif", "png", "bmp", "webp", "avif"],
     imageUploadURL: "/upload",
     crossDomainUpload: false
 });
@@ -1147,9 +1147,11 @@ var editor = xfEditor("editor-container", {
 - 粘贴截图无文件名时按 MIME 推断扩展名（如 `image/png` → `png`），格式白名单与图片魔数校验照常生效。
 - 文件事件在原生 DOM 捕获阶段接管，`onpaste` / `ondrop` 回调仍会正常收到通知；普通文本粘贴不受影响。
 - 拖放/粘贴不仅识别 `files`，也识别 `dataTransfer.items` / `clipboardData.items`（`kind === "file"`），覆盖从网页拖图、截图粘贴等来源。
-- 图片上传失败时默认降级为内嵌 base64（`dropPasteFallbackToBase64: true`），避免"粘贴了却什么都没出现"；设为 `false` 则仅报错不插入。
+- 图片上传失败或未提供接口时默认降级为内嵌 base64（`dropPasteFallbackToBase64: true`），避免"粘贴了却什么都没出现"；设为 `false` 则仅报错不插入。
+- 内嵌 base64 上限由 `dropPasteBase64MaxSize` 控制（默认 `5MB`）。超限图片只提示不插入，防止 FileReader 读取与 CodeMirror 渲染阻塞主线程。
+- base64 在 Markdown 源中按 120 字符换行保存，预览解析时自动拼接；历史单行涂鸦块仍向后兼容。块解析已改为线性扫描，不再有 100 万字符截断问题。
 - 服务端返回的 URL 必须位于 `allowedUploadProtocols` 白名单内；反斜杠协议相对地址（如 `/\evil.com`）、`javascript:`、`data:image/svg+xml` 等会被拒绝。显式失败响应（如 `{success:false,url:"..."}`）不会被误判为成功。
-- XHR 上传默认 30 秒超时（`uploadTimeout`），超时后继续处理后续文件；可通过 `onUploadProgress` 显示进度。
+- XHR 上传默认 30 秒超时（`uploadTimeout`），超时后继续处理后续文件；可通过 `onUploadProgress` 显示进度。自定义 `uploadFunction` 同样受该超时约束，忘记回调不会让队列永久卡住。
 - `dropPasteAtMouse: false` 时拖放也按当前光标位置插入；`readOnly` 或 `dropPasteUpload: false` 时不会吞掉浏览器默认事件。
 
 ### Q: 如何在页面内使用 Tabs 和 Columns？

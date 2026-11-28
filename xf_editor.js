@@ -1859,7 +1859,7 @@
         audioFormats         : ["mp3", "wav", "ogg", "m4a", "aac", "flac"], // 音频文件格式（与 imageFormats/videoFormats 同级，供资源扫描分类使用）
 
         imageUpload          : false,
-        imageFormats         : ["jpg", "jpeg", "gif", "png", "bmp", "webp"],
+        imageFormats         : ["jpg", "jpeg", "gif", "png", "bmp", "webp", "avif"],
         imageUploadURL       : "",
         crossDomainUpload    : false,
         uploadCallbackURL    : "",
@@ -1878,6 +1878,7 @@
         dropPasteAtMouse     : true,            // true=插入到最近一次鼠标位置；false=插入到当前光标
         dropPasteMaxFiles    : 10,              // 单次最多处理的文件数
         dropPasteFallbackToBase64: true,        // 图片上传失败时降级为内嵌 base64，保证内容不丢失
+        dropPasteBase64MaxSize: 5 * 1024 * 1024, // 单张图片转内嵌 base64 的上限（5MB），防止超大文件阻塞编辑与预览
         uploadMaxSize        : 10 * 1024 * 1024, // 图片单文件上限（10MB）
         uploadMaxFileSize    : 50 * 1024 * 1024, // 视频/附件单文件上限（50MB）
         strictMimeCheck      : true,            // 严格校验图片扩展名、MIME 与文件头魔数
@@ -2662,8 +2663,10 @@
                 var lineNo = start.line;
                 var line = cm.getLine(lineNo);
                 if (line == null) return undefined;
-                // 匹配 data:image/<type>;base64,<超长内容>（至少 60 字符才收起，避免误伤短串）
-                var re = /(data:image\/[a-zA-Z0-9.+-]+;base64,)([A-Za-z0-9+/=]{60,})/g;
+                // 仅折叠「单行完整 data URI」：拖放上传写入的 base64 已按 120 字符换行，
+                // 不会被误折叠；历史单行涂鸦/超长图片仍可收起。阈值提高到 500 并限定行尾，
+                // 避免只折叠换行 base64 的第一段造成编辑区显示残缺。
+                var re = /(data:image\/[a-zA-Z0-9.+-]+;base64,)([A-Za-z0-9+/=]{500,})(?=\)|$)/g;
                 var m;
                 while ((m = re.exec(line)) !== null) {
                     var headerLen = m[1].length;          // "data:image/png;base64," 长度
@@ -2691,7 +2694,7 @@
                 var last = (typeof toLine === "number") ? Math.min(cm.lastLine(), toLine) : cm.lastLine();
                 for (var i = first; i <= last; i++) {
                     var ln = cm.getLine(i);
-                    if (ln && /data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]{60,}/.test(ln)) {
+                    if (ln && /(data:image\/[a-zA-Z0-9.+-]+;base64,)[A-Za-z0-9+/=]{500,}(?=\)|$)/.test(ln)) {
                         try { cm.foldCode(xfEditor.CodeMirror.Pos(i, 0), xfBase64Fold, "fold"); } catch (e) {}
                     }
                 }
@@ -3985,6 +3988,17 @@
                 if (files && files.length) return files;
                 return null;
             };
+            // dragover 高频触发，只检查是否存在文件项即可；真正取 File 放到 drop 阶段处理。
+            var hasFileEntry = function(source) {
+                if (!source) return false;
+                if (source.files && source.files.length) return true;
+                if (source.items && source.items.length) {
+                    for (var i = 0; i < source.items.length; i++) {
+                        if (source.items[i] && source.items[i].kind === "file") return true;
+                    }
+                }
+                return false;
+            };
             // 传入坐标仅在 dropPasteAtMouse 开启时有效；关闭时必须退回光标位置，
             // 否则 drop 事件自带的 clientX/clientY 会让该配置项形同虚设。
             var dropCoords = function(e) {
@@ -3999,6 +4013,12 @@
                 if (e && e.preventDefault) e.preventDefault();
                 if (e && e.stopImmediatePropagation) e.stopImmediatePropagation();
                 else if (e && e.stopPropagation) e.stopPropagation();
+                // stopImmediatePropagation 会同时阻止冒泡阶段的 dragover 高亮清理，
+                // 这里主动清除，避免拖放后编辑区一直保持 .xf_editor-dragover。
+                try {
+                    if (containerEl && containerEl.classList) containerEl.classList.remove("xf_editor-dragover");
+                    if (containerEl) containerEl._xfDragDepth = 0;
+                } catch (err) {}
                 // 标记该事件已被文件处理链接管，避免 CodeMirror 回调重复触发用户 onpaste/ondrop
                 if (e) { try { e.__xfFileHandled = true; } catch (err) {} }
                 var pastePos = null;
@@ -4029,7 +4049,7 @@
             var domDragOverHandler = function(e) {
                 var dt = e && e.dataTransfer;
                 if (settings.dropPasteUpload === false || settings.readOnly) return;
-                if (!collectDropFiles(dt)) return;
+                if (!hasFileEntry(dt)) return;
                 if (e.preventDefault) e.preventDefault();
                 try { dt.dropEffect = "copy"; } catch (err) {}
             };
@@ -4048,7 +4068,7 @@
             var containerDragOverHandler = function(e) {
                 var dt = e && e.dataTransfer;
                 if (settings.dropPasteUpload === false || settings.readOnly) return;
-                if (!collectDropFiles(dt)) return;
+                if (!hasFileEntry(dt)) return;
                 if (e.preventDefault) e.preventDefault();
                 try { dt.dropEffect = "copy"; } catch (err) {}
             };
@@ -4157,30 +4177,51 @@
                 _this.resize();
             });
 
-            // ★ 拖拽文件进入编辑器时的高亮提示（仅做视觉反馈，真正处理在 cm drop 事件中）
+            // ★ 拖拽文件进入编辑器时的高亮提示（文件处理在 setCodeMirror 的原生捕获监听中）
             // 改用命名空间事件，destroy 时可统一解绑，避免重复初始化累积监听器
             (function(self) {
                 if (self._dragBound) return;
                 var editorEl = (self.editor && self.editor.get) ? self.editor.get(0) : (self.editor || null);
                 if (!editorEl) return;
-                var dragDepth = 0;
+                // 深度挂在 DOM 节点上：文件 drop 会在捕获阶段 stopImmediatePropagation，
+                // 冒泡清理拿不到事件，文件处理器需要能直接把深度归零。
+                var dragDepth = editorEl._xfDragDepth || 0;
+                // 只判断 kind === "file"，不在此处调用 getAsFile()：
+                // dragover 每秒触发多次，反复物化 Blob 会让拖入大文件时明显掉帧。
+                var hasDraggedFiles = function(dataTransfer) {
+                    if (!dataTransfer) return false;
+                    if (dataTransfer.files && dataTransfer.files.length) return true;
+                    var items = dataTransfer.items;
+                    if (items && items.length) {
+                        for (var i = 0; i < items.length; i++) {
+                            if (items[i] && items[i].kind === "file") return true;
+                        }
+                    }
+                    return false;
+                };
                 dom(editorEl).off(".xf_editor-drag")
                     .on("dragenter.xf_editor-drag", function(e) {
+                        if (settings.dropPasteUpload === false || settings.readOnly || !hasDraggedFiles(e.dataTransfer)) return;
                         dragDepth++;
+                        editorEl._xfDragDepth = dragDepth;
                         if (e.preventDefault) e.preventDefault();
                         editorEl.classList.add("xf_editor-dragover");
                     })
                     .on("dragover.xf_editor-drag", function(e) {
+                        if (settings.dropPasteUpload === false || settings.readOnly || !hasDraggedFiles(e.dataTransfer)) return;
                         if (e.preventDefault) e.preventDefault();
                         if (e.dataTransfer) { try { e.dataTransfer.dropEffect = "copy"; } catch (err) {} }
                         if (!editorEl.classList.contains("xf_editor-dragover")) editorEl.classList.add("xf_editor-dragover");
                     })
-                    .on("dragleave.xf_editor-drag", function() {
+                    .on("dragleave.xf_editor-drag", function(e) {
+                        if (!hasDraggedFiles(e && e.dataTransfer)) return;
                         dragDepth = Math.max(0, dragDepth - 1);
+                        editorEl._xfDragDepth = dragDepth;
                         if (dragDepth === 0) editorEl.classList.remove("xf_editor-dragover");
                     })
                     .on("drop.xf_editor-drag", function() {
                         dragDepth = 0;
+                        editorEl._xfDragDepth = 0;
                         editorEl.classList.remove("xf_editor-dragover");
                     });
                 self._dragBound = true;
@@ -8160,6 +8201,14 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
 
             rawHTML = rawHTML || "";
 
+            // ★ 兜底自愈：历史版本在正文超过 100 万字符时会截断块解析，导致 canvas 中的
+            //   base64 以裸文本进入预览缓存。这里发现“有 data URI 但没有 img[src]”时，
+            //   强制按当前 Markdown 重新渲染，避免用户看到整串编码。
+            if (rawHTML && /data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]{80,}/.test(rawHTML)
+                && !/<img\b[^>]*\bsrc=["'][^"']*data:image\//i.test(rawHTML)) {
+                rawHTML = "";
+            }
+
             // 统一清理编辑器运行时内部标记（两条路径共用，避免行为不一致）。
             //   这些属性仅用于编辑器内部状态，导出后既无意义又暴露实现细节。
             rawHTML = xfEditor._cleanRuntimeMarkers(rawHTML);
@@ -10202,9 +10251,21 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         _buildCanvasBlock : function(dataUri, align, title) {
             var header = "[[canvas";
             if (align && align !== "left") header += ":" + align;
-            if (title) header += ' title="' + String(title).replace(/"/g, "&quot;").replace(/\]/g, "&#93;") + '"';
+            if (title) {
+                // 先转义 &，避免标题中的字面量 "&quot;" 被二次解析；] 必须转义，否则提前结束块标签。
+                var safeTitle = String(title).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/\]/g, "&#93;");
+                header += ' title="' + safeTitle + '"';
+            }
             header += "]]";
-            return header + "\n(" + dataUri + ")\n[[/canvas]]";
+            // ★ 关键性能修复：base64 按 120 字符换行写入。
+            //   超长单行字符串会让 CodeMirror 的语法高亮、折行布局与变更扫描同步阻塞主线程；
+            //   渲染端会在解析时剔除这些空白，因此 Markdown 源仍可完整还原同一张图片。
+            var normalized = String(dataUri || "").replace(/\s+/g, "");
+            var uriMatch = /^(data:image\/[a-zA-Z0-9.+-]+;base64,)([A-Za-z0-9+/=]+)$/i.exec(normalized);
+            var body = uriMatch
+                ? (uriMatch[1] + uriMatch[2].replace(/(.{120})/g, "$1\n").replace(/\n$/, ""))
+                : normalized;
+            return header + "\n(" + body + ")\n[[/canvas]]";
         },
 
         /**
@@ -10278,7 +10339,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             //   否则格式白名单校验会把合法图片误判为"不支持的格式"。
             var mimeExtMap = {
                 "image/jpeg": "jpg", "image/jpg": "jpg", "image/png": "png", "image/gif": "gif",
-                "image/bmp": "bmp", "image/x-ms-bmp": "bmp", "image/webp": "webp",
+                "image/bmp": "bmp", "image/x-ms-bmp": "bmp", "image/webp": "webp", "image/avif": "avif",
                 "video/mp4": "mp4", "video/webm": "webm", "video/ogg": "ogv",
                 "video/quicktime": "mov", "video/x-matroska": "mkv", "video/x-flv": "flv", "video/x-msvideo": "avi",
                 "audio/mpeg": "mp3", "audio/mp3": "mp3", "audio/wav": "wav", "audio/x-wav": "wav",
@@ -10340,13 +10401,16 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 if (!url) return "";
                 if (/[\u0000-\u001f\u007f\\]/.test(url)) return "";
                 if (/^(javascript|vbscript|jar|mocha|livescript|data:text\/html|data:image\/svg)/i.test(url)) return "";
-                var dataMatch = /^data:image\/(png|jpe?g|gif|bmp|x-ms-bmp|webp);base64,[A-Za-z0-9+/=]+$/i.exec(url);
+                var dataMatch = /^data:image\/(png|jpe?g|gif|bmp|x-ms-bmp|webp|avif);base64,[A-Za-z0-9+/=]+$/i.exec(url);
                 if (dataMatch) return url; // 受限 data:image，与预览渲染白名单一致
                 if (/^data:/i.test(url)) return "";
                 var parsed = null;
                 try { parsed = new URL(url, window.location.href); } catch (e) { return ""; }
                 var protocol = parsed.protocol.toLowerCase();
-                var isRelative = /^(\/|\.\/|\.\.\/)/.test(url) && !/^[a-z][a-z0-9+.-]*:/i.test(url);
+                // 无 scheme 且非协议相对地址才视为相对路径；这样 "uploads/a.png" 在 file:// 页面
+                // 也不会被误判成 file 协议而拒绝，同时 "//evil.com" 仍到不了同源白名单。
+                var hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(url);
+                var isRelative = !hasScheme && !/^\/\//.test(url);
                 var protocols = settings.allowedUploadProtocols || [];
                 var allowed = false;
                 for (var i = 0; i < protocols.length; i++) {
@@ -10367,44 +10431,80 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 try { settings.onUploadError.call(self, { type: type, name: label, message: message }); } catch (e) {}
                 xfEditor.notify(message, "error", 5000);
             };
+            // 图片降级为内嵌 base64 的统一入口：
+            // 1) 尊重 dropPasteFallbackToBase64 开关；
+            // 2) 限制单张图片体积，避免超大文件读取/插入/渲染时阻塞主线程；
+            // 3) 无论成功、拒绝还是读取失败，都负责推进队列，避免串行上传永久卡住。
+            var fallbackToDataUrl = function(file, label, done, warningMsg) {
+                if (settings.dropPasteFallbackToBase64 === false) return false;
+                var limit = parseInt(settings.dropPasteBase64MaxSize, 10);
+                if (!isFinite(limit) || limit <= 0) limit = 5 * 1024 * 1024;
+                if (file && file.size && file.size > limit) {
+                    notifyError("image", label,
+                        "图片超过内嵌 base64 上限（" + Math.round(limit / 1024 / 1024) + "MB），未插入；如需处理请配置上传接口。");
+                    done();
+                    return true;
+                }
+                self.fileToDataURL(file, function(readErr, dataUri) {
+                    if (!readErr && dataUri) {
+                        insertAt(self._buildCanvasBlock(dataUri, "center", file.name || ""));
+                        if (warningMsg) xfEditor.notify(warningMsg, "warning", 5000);
+                    } else {
+                        notifyError("image", label, "图片读取失败，未能转换为内嵌图片。");
+                    }
+                    done();
+                });
+                return true;
+            };
             // 在指定位置（拖放坐标 / 最近鼠标位置）或当前光标处插入内容
             // 多文件时复用上一次插入后的光标，避免重复按旧坐标定位造成顺序错乱
             var lastInsertPos = null;
             var insertAt = function(md) {
                 var editorCm = cm || self.cm;
                 if (!editorCm || typeof editorCm.replaceSelection !== "function") return;
-                if (lastInsertPos && typeof editorCm.setCursor === "function") {
-                    try { editorCm.setCursor(lastInsertPos); } catch (e) { lastInsertPos = null; }
-                } else if (typeof clientX === "number" && typeof clientY === "number" && editorCm.coordsChar) {
-                    // 多重兜底定位：client → 相对 wrapper 的 local → 相对 scroller 的 local，
-                    //   避免个别 CodeMirror/浏览器组合下 client 模式返回 outside 导致插到文首。
-                    var dropPos = null;
-                    try { dropPos = editorCm.coordsChar({ left: clientX, top: clientY }, "client"); } catch (e) {}
-                    if (!dropPos || dropPos.outside) {
-                        try {
-                            var wrapEl = (typeof editorCm.getWrapperElement === "function") ? editorCm.getWrapperElement() : null;
-                            if (wrapEl && wrapEl.getBoundingClientRect) {
-                                var wrapRect = wrapEl.getBoundingClientRect();
-                                dropPos = editorCm.coordsChar({ left: clientX - wrapRect.left, top: clientY - wrapRect.top }, "local");
-                            }
-                        } catch (e) {}
+                var applyInsert = function() {
+                    if (lastInsertPos && typeof editorCm.setCursor === "function") {
+                        try { editorCm.setCursor(lastInsertPos); } catch (e) { lastInsertPos = null; }
+                    } else if (typeof clientX === "number" && typeof clientY === "number" && editorCm.coordsChar) {
+                        // 多重兜底定位：client → 相对 wrapper 的 local → 相对 scroller 的 local，
+                        //   避免个别 CodeMirror/浏览器组合下 client 模式返回 outside 导致插到文首。
+                        var dropPos = null;
+                        try { dropPos = editorCm.coordsChar({ left: clientX, top: clientY }, "client"); } catch (e) {}
+                        if (!dropPos || dropPos.outside) {
+                            try {
+                                var wrapEl = (typeof editorCm.getWrapperElement === "function") ? editorCm.getWrapperElement() : null;
+                                if (wrapEl && wrapEl.getBoundingClientRect) {
+                                    var wrapRect = wrapEl.getBoundingClientRect();
+                                    dropPos = editorCm.coordsChar({ left: clientX - wrapRect.left, top: clientY - wrapRect.top }, "local");
+                                }
+                            } catch (e) {}
+                        }
+                        if (!dropPos || dropPos.outside) {
+                            try {
+                                var scrollEl = (typeof editorCm.getScrollerElement === "function") ? editorCm.getScrollerElement() : null;
+                                if (scrollEl && scrollEl.getBoundingClientRect) {
+                                    var scrollRect = scrollEl.getBoundingClientRect();
+                                    dropPos = editorCm.coordsChar({ left: clientX - scrollRect.left, top: clientY - scrollRect.top }, "local");
+                                }
+                            } catch (e) {}
+                        }
+                        if (dropPos && typeof dropPos.line === "number" && !dropPos.outside) {
+                            editorCm.setCursor(dropPos);
+                        }
                     }
-                    if (!dropPos || dropPos.outside) {
-                        try {
-                            var scrollEl = (typeof editorCm.getScrollerElement === "function") ? editorCm.getScrollerElement() : null;
-                            if (scrollEl && scrollEl.getBoundingClientRect) {
-                                var scrollRect = scrollEl.getBoundingClientRect();
-                                dropPos = editorCm.coordsChar({ left: clientX - scrollRect.left, top: clientY - scrollRect.top }, "local");
-                            }
-                        } catch (e) {}
-                    }
-                    if (dropPos && typeof dropPos.line === "number" && !dropPos.outside) {
-                        editorCm.setCursor(dropPos);
-                    }
+                    editorCm.replaceSelection("\n" + md + "\n");
+                    try { lastInsertPos = editorCm.getCursor(); } catch (e) { lastInsertPos = null; }
+                };
+                // ★ 用 operation 合并光标定位与文本写入为一次 DOM 刷新；
+                //   多文件连续回显时不再逐次触发布局/高亮，显著降低卡顿。
+                try {
+                    if (typeof editorCm.operation === "function") editorCm.operation(applyInsert);
+                    else applyInsert();
+                } catch (e) {
+                    // 极端情况下 operation 失败也要保证内容写入，不静默丢失用户文件。
+                    try { editorCm.replaceSelection("\n" + md + "\n"); } catch (inner) {}
                 }
-                editorCm.focus();
-                editorCm.replaceSelection("\n" + md + "\n");
-                try { lastInsertPos = editorCm.getCursor(); } catch (e) { lastInsertPos = null; }
+                try { editorCm.focus(); } catch (e) {}
             };
             // 图片魔数嗅探：不信任客户端声明的 MIME 或扩展名
             var sniffImage = function(file, callback) {
@@ -10418,7 +10518,11 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                                  (u8[0] === 0x89 && u8[1] === 0x50 && u8[2] === 0x4E && u8[3] === 0x47) ||
                                  (u8[0] === 0x47 && u8[1] === 0x49 && u8[2] === 0x46 && u8[3] === 0x38) ||
                                  (u8[0] === 0x42 && u8[1] === 0x4D) ||
-                                 (u8[0] === 0x52 && u8[1] === 0x49 && u8[2] === 0x46 && u8[3] === 0x46 && u8[8] === 0x57 && u8[9] === 0x45 && u8[10] === 0x42 && u8[11] === 0x50);
+                                 (u8[0] === 0x52 && u8[1] === 0x49 && u8[2] === 0x46 && u8[3] === 0x46 && u8[8] === 0x57 && u8[9] === 0x45 && u8[10] === 0x42 && u8[11] === 0x50) ||
+                                 // AVIF/AVIS：ftyp 品牌位于第 4-11 字节
+                                 (u8[4] === 0x66 && u8[5] === 0x74 && u8[6] === 0x79 && u8[7] === 0x70 &&
+                                  ((u8[8] === 0x61 && u8[9] === 0x76 && u8[10] === 0x69 && u8[11] === 0x66) ||
+                                   (u8[8] === 0x61 && u8[9] === 0x76 && u8[10] === 0x69 && u8[11] === 0x73)));
                         callback(!!ok);
                     };
                     reader.onerror = function() { callback(false); };
@@ -10427,9 +10531,22 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             };
             var doUpload = function(file, upType, url, fieldName, callback) {
                 if (typeof settings.uploadFunction === "function") {
+                    // 自定义上传器可能永远不调用 done（例如忘记处理 reject），
+                    // 这里加一次性超时保护，确保队列继续推进、编辑器不会“假死”。
+                    var finished = false;
+                    var timer = null;
+                    var finish = function(err, json) {
+                        if (finished) return;
+                        finished = true;
+                        if (timer !== null) clearTimeout(timer);
+                        callback(err, json);
+                    };
+                    var timeout = parseInt(settings.uploadTimeout, 10);
+                    if (!isFinite(timeout) || timeout <= 0) timeout = 30000;
+                    timer = setTimeout(function() { finish(new Error("upload-function-timeout")); }, timeout);
                     try {
-                        settings.uploadFunction.call(self, file, { type: upType, url: url, fieldName: fieldName }, callback);
-                    } catch (e) { callback(e); }
+                        settings.uploadFunction.call(self, file, { type: upType, url: url, fieldName: fieldName }, finish);
+                    } catch (e) { finish(e); }
                     return;
                 }
                 self._uploadFileByXhr(file, url, fieldName, callback, settings.uploadHeaders);
@@ -10460,7 +10577,13 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     }
                     try { self._trackUploadedFile({ type: type, url: u, name: file.name || "" }); } catch (e) {}
                     if (type === "image") {
-                        insertAt("![" + xfEditor.escapeMarkdownText(file.name || "") + "](" + xfEditor.escapeHtml(u) + ")");
+                        // 服务端/自定义上传器直接返回 data URI 时同样改用换行画布块，
+                        // 避免把数 MB 的单行 base64 写进 CodeMirror 造成编辑卡顿。
+                        if (/^data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]+$/i.test(u)) {
+                            insertAt(self._buildCanvasBlock(u, "center", file.name || ""));
+                        } else {
+                            insertAt("![" + xfEditor.escapeMarkdownText(file.name || "") + "](" + xfEditor.escapeHtml(u) + ")");
+                        }
                     } else if (type === "video") {
                         insertAt('<div class="xfEditor-video-wrapper" style="text-align:center;"><video src="' + xfEditor.escapeHtml(u) + '" controls preload="metadata">' + xfEditor.escapeHtml(file.name || "Video") + '</video></div>');
                     } else {
@@ -10474,20 +10597,10 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     // ★ 自定义 uploadFunction 优先：即使未配置上传 URL 也应执行上传，
                     //   旧逻辑先判空 URL 导致自定义上传器永远收不到文件。
                     if (!hasCustomUploader && (!url || String(url).trim() === "")) {
-                        // 无上传地址：图片可离线转 base64 涂鸦块；其余类型需配置上传接口
-                        if (type === "image") {
-                            self.fileToDataURL(file, function(err, dataUri) {
-                                if (!err && dataUri) {
-                                    insertAt(self._buildCanvasBlock(dataUri, "center", file.name || ""));
-                                } else {
-                                    notifyError(type, label, "图片读取失败。");
-                                }
-                                done();
-                            });
-                        } else {
-                            notifyError(type, label, "「" + label + "」需要配置对应的上传接口（imageUploadURL / videoUploadURL / fileUploadURL）或 uploadFunction 后才能上传。");
-                            done();
-                        }
+                        // 无上传地址：图片优先离线转 base64 涂鸦块；其余类型需配置上传接口
+                        if (type === "image" && fallbackToDataUrl(file, label, done, "")) return;
+                        notifyError(type, label, "「" + label + "」需要配置对应的上传接口（imageUploadURL / videoUploadURL / fileUploadURL）或 uploadFunction 后才能上传。");
+                        done();
                         return;
                     }
                     doUpload(file, upType, url, fieldName, function(err, json) {
@@ -10496,16 +10609,8 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                             var failMsg = parsed.message || "上传失败，请检查上传接口。";
                             notifyError(type, label, failMsg);
                             // 图片上传失败时降级为内嵌 base64，避免用户看到"粘贴了但什么都没有"
-                            if (type === "image" && settings.dropPasteFallbackToBase64 !== false) {
-                                self.fileToDataURL(file, function(readErr, dataUri) {
-                                    if (!readErr && dataUri) {
-                                        insertAt(self._buildCanvasBlock(dataUri, "center", file.name || ""));
-                                        xfEditor.notify("图片已以内嵌方式插入（上传失败：" + failMsg + "）", "warning", 5000);
-                                    }
-                                    done();
-                                });
-                                return;
-                            }
+                            if (type === "image" && fallbackToDataUrl(file, label, done,
+                                    "图片已以内嵌方式插入（上传失败：" + failMsg + "）")) return;
                             return done();
                         }
                         finish(parsed.url);
@@ -12903,11 +13008,9 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
          */
         function findBalancedBlocks(text, openRegex, closeRegex) {
             var blocks = [];
-            var i = 0;
-            var openMatch, closeMatch;
 
             // 边界检查：确保参数有效
-            if (!text || typeof text !== 'string') {
+            if (!text || typeof text !== "string") {
                 if (typeof console !== "undefined" && console.warn) {
                     console.warn("[xfEditor] findBalancedBlocks: Invalid text parameter");
                 }
@@ -12920,147 +13023,119 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 return blocks;
             }
 
-            var openRe = new RegExp(openRegex.source, openRegex.flags.replace('g', '') + 'g');
-            var closeRe = new RegExp(closeRegex.source, closeRegex.flags.replace('g', '') + 'g');
+            // ★ 线性扫描替代旧的递归 pair 校验：
+            //   旧实现会对每个开标签递归扫描全文，且把正文截断到 100 万字符——
+            //   拖入一张大于约 750KB 的内嵌 base64 图片后，闭标签落在截断区之外，
+            //   [[canvas]] 无法还原，预览区就会直接显示 base64 原文。
+            //   新实现只做一次 token 扫描 + 栈配对，复杂度 O(n)，且不截断正文。
+            var flagsOf = function(regex) {
+                var flags = (typeof regex.flags === "string") ? regex.flags : "";
+                if (flags.indexOf("g") === -1) flags += "g";
+                // sticky 会让 lastIndex 在非连续位置直接失配，这里统一去掉。
+                if (flags.indexOf("y") !== -1) flags = flags.replace(/y/g, "");
+                return flags;
+            };
+            var openRe = new RegExp(openRegex.source, flagsOf(openRegex));
+            var closeRe = new RegExp(closeRegex.source, flagsOf(closeRegex));
 
-            // 辅助函数：判断从指定位置开始是否真的存在匹配的闭标签对
-            // 用于验证嵌套语法是否有效（避免将普通文本中的 [[columns:3]] 误判为嵌套）
-            // 添加 recursionDepth 参数防止无限递归（限制最大嵌套层数为 20）
-            function hasMatchingPair(fromPos, recursionDepth) {
-                if (recursionDepth === undefined) recursionDepth = 0;
-                if (recursionDepth > 20) {
-                    if (typeof console !== "undefined" && console.warn) {
-                        console.warn("[xfEditor] Maximum nesting depth (20) exceeded");
-                    }
-                    return false; // 防止过多嵌套导致栈溢出
-                }
-                
-                var tmpOpen = new RegExp(openRegex.source, openRegex.flags.replace('g', '') + 'g');
-                var tmpClose = new RegExp(closeRegex.source, closeRegex.flags.replace('g', '') + 'g');
-                var tmpDepth = 1;
-                var tmpPos = fromPos;
-                tmpOpen.lastIndex = tmpPos;
-                tmpClose.lastIndex = tmpPos;
-                var tmpCloseMatch;
-                while (tmpDepth > 0 && (tmpCloseMatch = tmpClose.exec(text)) !== null) {
-                    tmpOpen.lastIndex = tmpPos;
-                    var tmpOpenMatch;
-                    while ((tmpOpenMatch = tmpOpen.exec(text)) !== null && tmpOpenMatch.index < tmpCloseMatch.index) {
-                        // 对每个嵌套的开标签，验证它是否有对应的闭标签
-                        if (hasMatchingPair(tmpOpen.lastIndex, recursionDepth + 1)) {
-                            tmpDepth++;
-                            tmpPos = tmpOpen.lastIndex;
-                            tmpOpen.lastIndex = tmpPos;
-                        } else {
-                            // 这个伪嵌套开标签没有对应闭标签，不增加 depth
-                            // 将 tmpOpen.lastIndex 设置为 tmpOpenMatch 之后，跳过它
-                            tmpPos = tmpOpenMatch.index + 1;
-                            tmpOpen.lastIndex = tmpPos;
-                        }
-                    }
-                    tmpDepth--;
-                    if (tmpDepth > 0) {
-                        tmpPos = tmpClose.lastIndex;
-                        tmpClose.lastIndex = tmpPos;
-                    }
-                }
-                return tmpDepth === 0;
-            }
+            var stack = [];
+            var position = 0;
+            // 每个 token 至少消费 1 个字符；该上限只用于防御零宽匹配造成的死循环。
+            var maxTokens = text.length + 1;
+            var tokenCount = 0;
+            var openMatch, closeMatch;
 
-            // 安全检查：限制最大处理长度，防止超长文本导致性能问题
-            var maxProcessLength = 1000000; // 100万字符上限
-            if (text.length > maxProcessLength) {
-                if (typeof console !== "undefined" && console.warn) {
-                    console.warn("[xfEditor] Text length exceeds safety limit, truncating");
-                }
-                text = text.substring(0, maxProcessLength);
-            }
-
-            // 安全限制 — 最大处理块数量，防止病态输入导致浏览器卡死
-            var maxBlocks = 500;
-            var maxTotalIterations = 50000;
-            var _totalIterations = 0;
-            
-            while (i < text.length) {
-                if (blocks.length >= maxBlocks) {
-                    if (typeof console !== "undefined" && console.warn) {
-                        console.warn("[xfEditor] Maximum blocks limit (" + maxBlocks + ") reached, stopping block search");
-                    }
-                    break;
-                }
-                if (_totalIterations++ > maxTotalIterations) {
-                    if (typeof console !== "undefined" && console.warn) {
-                        console.warn("[xfEditor] Maximum iteration limit reached, stopping block search");
-                    }
-                    break;
-                }
-                openRe.lastIndex = i;
+            while (position < text.length && tokenCount++ < maxTokens) {
+                openRe.lastIndex = position;
+                closeRe.lastIndex = position;
                 try {
                     openMatch = openRe.exec(text);
-                } catch(e) {
+                    closeMatch = closeRe.exec(text);
+                } catch (e) {
                     if (typeof console !== "undefined" && console.warn) {
                         console.warn("[xfEditor] Regex execution error:", e);
                     }
                     break;
                 }
-                if (!openMatch) break;
 
-                var openEnd = openRe.lastIndex;
+                var openIndex = openMatch ? openMatch.index : Infinity;
+                var closeIndex = closeMatch ? closeMatch.index : Infinity;
+                if (openIndex === Infinity && closeIndex === Infinity) break;
 
-                // 预检查：从当前位置开始是否真的能匹配对应的闭标签
-                // 避免孤立开标签（如普通文本中的 [[columns:3]] 没有对应 [[/columns]]）
-                if (!hasMatchingPair(openEnd)) {
-                    i = openEnd;
-                    continue;
-                }
-
-                var depth = 1;
-                var searchPos = openEnd;
-
-                // 查找匹配的闭标签
-                closeRe.lastIndex = searchPos;
-                while (depth > 0 && (closeMatch = closeRe.exec(text)) !== null) {
-                    // 检查在闭标签之前是否有嵌套的开标签
-                    openRe.lastIndex = searchPos;
-                    var nestedOpen;
-                    while ((nestedOpen = openRe.exec(text)) !== null && nestedOpen.index < closeMatch.index) {
-                        // 验证这个嵌套开标签是否有对应的闭标签
-                        if (hasMatchingPair(openRe.lastIndex, 0)) {
-                            depth++;
-                            searchPos = openRe.lastIndex;
-                            openRe.lastIndex = searchPos;
-                        } else {
-                            // 伪嵌套：这个 [[columns:N]] 或 [[tabs]] 没有对应的闭标签
-                            // 不增加 depth，直接跳过
-                            searchPos = nestedOpen.index + 1;
-                            openRe.lastIndex = searchPos;
+                // 闭标签优先：避免个别宽松开标签正则把 [[/xxx]] 也当作开标签。
+                if (closeIndex <= openIndex && closeMatch) {
+                    if (closeMatch[0].length === 0) {
+                        position = closeMatch.index + 1;
+                        continue;
+                    }
+                    if (stack.length) {
+                        var opened = stack.pop();
+                        // 栈清空说明这是最外层块；内层块仍留在 content 中交由递归处理。
+                        if (!stack.length) {
+                            blocks.push({
+                                start: opened.index,
+                                end: closeRe.lastIndex,
+                                content: text.substring(opened.end, closeMatch.index),
+                                fullMatch: text.substring(opened.index, closeRe.lastIndex)
+                            });
                         }
                     }
-                    depth--;
-                    if (depth > 0) {
-                        searchPos = closeRe.lastIndex;
-                        closeRe.lastIndex = searchPos;
+                    position = closeRe.lastIndex;
+                } else if (openMatch) {
+                    if (openMatch[0].length === 0) {
+                        position = openMatch.index + 1;
+                        continue;
                     }
-                }
-
-                if (depth === 0) {
-                    // 找到匹配的闭标签
-                    var content = text.substring(openEnd, closeMatch.index);
-                    blocks.push({
-                        start: openMatch.index,
-                        end: closeRe.lastIndex,
-                        content: content,
-                        fullMatch: text.substring(openMatch.index, closeRe.lastIndex)
-                    });
-                    i = closeRe.lastIndex;
+                    stack.push({ index: openMatch.index, end: openRe.lastIndex });
+                    position = openRe.lastIndex;
                 } else {
-                    // 未找到匹配的闭标签，跳过此开标签
-                    i = openEnd;
+                    position++;
                 }
             }
 
             return blocks;
         }
+
+        /**
+         * 提前处理画布/内嵌 base64 图片块。
+         * 必须在其它块级正则（tabs/columns/video/file/banner…）之前把可能长达数 MB 的
+         * data URI 换成短占位符，否则每个块分析器都要反复扫描巨型文本，编辑区会明显卡顿。
+         * 画布块内容是独立数据体，不含嵌套块语法，因此前置处理不会破坏嵌套结构。
+         */
+        function processCanvasBlocks() {
+            if (options.canvas === false) return;
+            var canvasBlocks = findBalancedBlocks(markdown, /\[\[canvas[^\]]*\]\]/g, /\[\[\/canvas\]\]/g);
+            for (var ci = canvasBlocks.length - 1; ci >= 0; ci--) {
+                var cb = canvasBlocks[ci];
+                if (!cb || !cb.fullMatch) continue;
+                try {
+                    var openTagMatch = cb.fullMatch.match(/^\[\[canvas([^\]]*)\]\]/);
+                    var attrs = openTagMatch ? openTagMatch[1] : "";
+                    var cAlign = "left";
+                    var cTitle = "";
+                    var cAm = attrs.match(/^:(\w+)/);
+                    if (cAm) cAlign = cAm[1];
+                    var cTm = attrs.match(/title="([^"]*)"/);
+                    if (cTm) cTitle = cTm[1];
+                    var cDataMatch = cb.content.match(/\(([\s\S]*?)\)\s*$/);
+                    // 允许 _buildCanvasBlock 写入的 120 字符换行；校验前统一剥离空白。
+                    var cDataUri = (cDataMatch ? cDataMatch[1] : cb.content).replace(/\s+/g, "").trim();
+                    // XSS 防护：仅放行位图 data URI，禁止 svg/text/html 等可执行格式。
+                    if (!/^data:image\/(png|jpe?g|gif|bmp|x-ms-bmp|webp|avif);base64,[A-Za-z0-9+/=]+$/i.test(cDataUri)) continue;
+                    var cAlignClass = "xfeditor-canvas-graffiti-" + (cAlign === "center" ? "center" : (cAlign === "right" ? "right" : "left"));
+                    var cImgHtml = '<img data-type="xfeditor_canvas_graffiti" class="xfeditor-canvas-graffiti-img" src="' + xfEditor.escapeHtml(cDataUri) + '" alt="' + xfEditor.escapeHtml(cTitle || "涂鸦") + '">';
+                    var cTitleHtml = cTitle ? '<span class="xfeditor-canvas-graffiti-title">' + xfEditor.escapeHtml(cTitle) + '</span>' : "";
+                    var cResultHtml = '<p class="xfeditor-canvas-graffiti-wrap ' + cAlignClass + '"><span class="xfeditor-canvas-graffiti-inner">' + cImgHtml + cTitleHtml + '</span></p>';
+                    var cPlaceholder = addPlaceholder(cResultHtml);
+                    markdown = markdown.substring(0, cb.start) + cPlaceholder + markdown.substring(cb.end);
+                } catch (e) {
+                    if (typeof console !== "undefined" && console.warn) {
+                        console.warn("[xfEditor] Canvas block processing error:", e);
+                    }
+                }
+            }
+        }
+        processCanvasBlocks();
 
         // 将新的图片/视频尺寸语法转换为内联 HTML 以兼容 marked 渲染器
         if (options.imageResize !== false) {
@@ -13252,7 +13327,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         }
         
         // tab-context-aware tabs 块扫描器
-        // 解决表格单元格中文本 [[tabs]]/[[row]][[col]] 被 hasMatchingPair 误判为
+        // 解决表格单元格中文本 [[tabs]]/[[row]][[col]] 被普通块配对扫描误判为
         // 真实标签导致 findBalancedBlocks 返回错误块的问题。
         // 核心思路：扫描时同时追踪 [[tab:xxx]]/[[/tab]] 上下文深度，
         // 处于 tabContextDepth > 0 中的 [[tabs]] 属于 tab 内容文本，予以忽略。
@@ -14084,39 +14159,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             }
         }
 
-        // 处理画布涂鸦语法：[[canvas]] / [[canvas:right]] / [[canvas:center title="..."]] ... [[/canvas]]
-        // 内容体为 (data:image/png;base64,xxxx)，渲染为 <p><img data-type="xfeditor_canvas_graffiti" ...><span title></p>
-        if (options.canvas !== false) {
-            var canvasBlocks = findBalancedBlocks(markdown, /\[\[canvas[^\]]*\]\]/g, /\[\[\/canvas\]\]/g);
-            for (var ci = canvasBlocks.length - 1; ci >= 0; ci--) {
-                var cb = canvasBlocks[ci];
-                if (!cb || !cb.fullMatch) continue;
-                try {
-                    var openTagMatch = cb.fullMatch.match(/^\[\[canvas([^\]]*)\]\]/);
-                    var attrs = openTagMatch ? openTagMatch[1] : "";
-                    var cAlign = "left", cTitle = "";
-                    var cAm = attrs.match(/^:(\w+)/);
-                    if (cAm) cAlign = cAm[1];
-                    var cTm = attrs.match(/title="([^"]*)"/);
-                    if (cTm) cTitle = cTm[1];
-                    var cDataMatch = cb.content.match(/\(([\s\S]*?)\)\s*$/);
-                    var cDataUri = cDataMatch ? cDataMatch[1].trim() : cb.content.trim();
-                    // XSS 防护：仅允许位图 data URI；与上传回显白名单保持一致，
-                    // 禁止 svg 等可执行格式，同时避免因 gif/bmp 被拒导致内容丢失。
-                    if (!/^data:image\/(png|jpe?g|gif|bmp|x-ms-bmp|webp);base64,[A-Za-z0-9+/=]+$/i.test(cDataUri)) continue;
-                    var cAlignClass = "xfeditor-canvas-graffiti-" + (cAlign === "center" ? "center" : (cAlign === "right" ? "right" : "left"));
-                    var cImgHtml = '<img data-type="xfeditor_canvas_graffiti" class="xfeditor-canvas-graffiti-img" src="' + xfEditor.escapeHtml(cDataUri) + '" alt="' + xfEditor.escapeHtml(cTitle || "涂鸦") + '">';
-                    var cTitleHtml = cTitle ? '<span class="xfeditor-canvas-graffiti-title">' + xfEditor.escapeHtml(cTitle) + '</span>' : '';
-                    var cResultHtml = '<p class="xfeditor-canvas-graffiti-wrap ' + cAlignClass + '"><span class="xfeditor-canvas-graffiti-inner">' + cImgHtml + cTitleHtml + '</span></p>';
-                    var cPlaceholder = addPlaceholder(cResultHtml);
-                    markdown = markdown.substring(0, cb.start) + cPlaceholder + markdown.substring(cb.end);
-                } catch(e) {
-                    if (typeof console !== "undefined" && console.warn) {
-                        console.warn("[xfEditor] Canvas block processing error:", e);
-                    }
-                }
-            }
-        }
+        // 画布块已在 findBalancedBlocks 定义后立即前置处理（避免超长 base64 拖慢全文扫描），此处不再重复。
 
         // 处理轮播图语法：[[banner width="..." height="..."]] {url:"...",title:"...",desc:"...",href:"..."}, ... [[/banner]]
         // width 可选，默认 100%；height 可选，默认取第一张图片的高度（由 _initBanners 运行时计算）
@@ -14796,12 +14839,12 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         markedRenderer.image = function(href, title, text) {
             // ★ v2.1.0-FIX: 与 link 渲染器保持一致，先拦截危险协议。
             //   历史实现缺少协议校验，![x](javascript:alert(1)) 会输出可执行的 <img src="javascript:...">。
-            //   注意：data:image/(png|jpeg|gif|webp|bmp);base64 是涂鸦/离线图片的核心能力，必须放行；
+            //   注意：data:image/(png|jpe?g|gif|webp|bmp|x-ms-bmp|avif);base64 是涂鸦/离线图片的核心能力，必须放行；
             //   但 data:image/svg+xml、data:text/html 可承载脚本，必须拦截。
             if (href) {
                 var imgHrefTrimmed = String(href).trim();
                 if (/^\s*(javascript|vbscript):/i.test(imgHrefTrimmed)
-                    || (/^data:/i.test(imgHrefTrimmed) && !/^data:image\/(png|jpeg|jpg|gif|webp|bmp);base64,/i.test(imgHrefTrimmed))) {
+                    || (/^data:/i.test(imgHrefTrimmed) && !/^data:image\/(png|jpe?g|gif|webp|bmp|x-ms-bmp|avif);base64,/i.test(imgHrefTrimmed))) {
                     return xfEditor.escapeHtml(text || href || "");
                 }
             }
@@ -15438,7 +15481,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 }
                 // data: 仅放行安全的图片类型（PNG/JPEG/GIF/WebP/AVIF/BMP），严禁 text/html 与 svg
                 if (!isAllowed && scheme === "data") {
-                    isAllowed = /^data:image\/(?:png|jpe?g|gif|webp|avif|bmp)[;,]/i.test(schemeUrl);
+                    isAllowed = /^data:image\/(?:png|jpe?g|gif|webp|avif|bmp|x-ms-bmp)[;,]/i.test(schemeUrl);
                 }
                 if (!isAllowed) return attr + '="javascript:void(0);"';
             }
