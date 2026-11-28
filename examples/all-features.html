@@ -3,7 +3,7 @@
 <head>
     <link rel="shortcut icon" href="../images/favicon.ico" type="image/x-icon">
     <meta charset="utf-8" />
-    <title>xfEditor v2.1.0 — 全部功能完整演示</title>
+    <title>xfEditor v2.1.1 — 全部功能完整演示</title>
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="../css/xf_editor.min.css" />
     <link rel="stylesheet" href="../css/xf_editor.preview.min.css" />
@@ -41,12 +41,12 @@
 <body>
     <div id="layout">
         <header>
-            <h1>xfEditor v2.1.0 全部功能完整演示</h1>
+            <h1>xfEditor v2.1.1 全部功能完整演示</h1>
             <p>Complete All-Features Demo — 涵盖所有 Markdown 语法、扩展特性与 API 交互</p>
         </header>
 
         <div class="feature-intro">
-            <h2>v2.1.0 新增功能速览 <span class="badge badge-new">NEW</span></h2>
+            <h2>v2.1.1 新增功能速览 <span class="badge badge-new">NEW</span></h2>
             <ul>
                 
                 <li><strong>🙈 Hidden 隐藏代码块</strong>：<code>```(hidden)</code> <code>```(hidden.class#id)</code> 语法，渲染为 display:none!important 的隐藏 pre 标签，配合 iframe:pre 可「阅后即焚」式预览</li>
@@ -114,7 +114,7 @@
         <div id="test-xfEditor">
             <textarea style="display:none;">[TOC]
 
-# xfEditor v2.1.0 全部功能演示
+# xfEditor v2.1.1 全部功能演示
 
 ---
 
@@ -174,12 +174,12 @@ HTML 特殊字符：&copy; &reg; &trade; &mdash; &ndash; &hellip; &laquo; &raquo
 
 | 功能 | 版本 | 状态 | 说明 |
 |------|------|------|------|
-| 实时预览 | v2.1.0 | 已发布 | 所见即所得编辑 |
-| 图片上传 | v2.1.0 | 已发布 | 支持拖拽和跨域上传 |
-| 流程图 | v2.1.0 | 已发布 | flowchart.js 渲染 |
-| 时序图 | v2.1.0 | 已发布 | js-sequence-diagrams 渲染 |
-| Tabs 标签页 | v2.1.0 | 已发布 | 支持任意嵌套 Markdown 内容 |
-| ECharts 图表 | v2.1.0 | 已发布 | 5 种图表类型 |
+| 实时预览 | v2.1.1 | 已发布 | 所见即所得编辑 |
+| 图片上传 | v2.1.1 | 已发布 | 支持拖拽和跨域上传 |
+| 流程图 | v2.1.1 | 已发布 | flowchart.js 渲染 |
+| 时序图 | v2.1.1 | 已发布 | js-sequence-diagrams 渲染 |
+| Tabs 标签页 | v2.1.1 | 已发布 | 支持任意嵌套 Markdown 内容 |
+| ECharts 图表 | v2.1.1 | 已发布 | 5 种图表类型 |
 
 > 提示：点击预览区表格单元格，可弹出工具栏进行插入/删除行列操作，并自动同步到 Markdown 源码。
 
@@ -607,7 +607,7 @@ xfEditor 是一款开源的、可嵌入的 Markdown 在线编辑器（组件）�
 [[/tab]]
 
 [[tab:更新日志]]
-### v2.1.0（最新）
+### v2.1.1（最新）
 - 🔒 **XSS 安全修复**：image renderer 属性转义、filterHTMLTags 实体解码检测、5 项安全加固
 - 🐛 **多反引号行内代码保护**：preprocessLinkTarget 正确保护 `` `…` `` 格式
 - 🎯 **货币符号优化**：protectTeXSyntax 不再误触 `$100` 类型货币符号
@@ -615,13 +615,13 @@ xfEditor 是一款开源的、可嵌入的 Markdown 在线编辑器（组件）�
 - 🧹 **死代码 + 正则有向无环图标记**：6 个未使用正则标记为 DEPRECATED
 - 📦 **全面重构构建**：所有 `.js` / `.css` / `.min.js` / `.min.css` / `preview.min.js` 同步构建
 
-### v2.1.0
+### v2.1.1
 - 🔄 **章节同步引擎**：H1~H8 标题章节双向定位，主控区 TTL + 程序化滚动识别，杜绝抖动与回环
 - 🎯 **双向对等同步**：左右两侧使用同一套章节定位与高度比例算法
 - 🛡 **预览交互防护**：图片拖拽缩放/表格编辑时自动暂停同步，防止内容更新导致滚动跳转
 - 🔗 **标题智能配对**：按文本+层级顺序配对，自动跳过代码块内伪标题
 
-### v2.1.0
+### v2.1.1
 - 🌳 **Tree图/脑图**：`"type": "tree"` 支持，工具栏新增「树图/脑图」按钮，支持 theme 主题切换、折叠/展开
 - 🙈 **Hidden 隐藏代码块**：` ```(hidden) ` ` ```(hidden.class#id) ` 语法，渲染为 display:none!important
 - 🎯 Hidden 配合 iframe:pre 实现「阅后即焚」式悬浮预览，initCodeCopy 自动跳过隐藏 pre
@@ -633,34 +633,34 @@ xfEditor 是一款开源的、可嵌入的 Markdown 在线编辑器（组件）�
 - 📏 ECharts 自定义高度：config.height 设置图表容器高度
 - 🔧 Gulp 3.x → 直接 UglifyJS/CleanCSS 构建，兼容 Node 22+
 
-### v2.1.0
+### v2.1.1
 - 🔧 Tooltip 尺寸限制修复：图片/iframe 显式宽高 + object-fit:contain，max-width 放宽至 90vw
 - 📄 getHTML/getPreviewedHTML 增强：完整内联样式，不依赖外部 CSS/JS
 
-### v2.1.0
+### v2.1.1
 - TOC 目录点击跳转修复（精确 ID + 文本回退匹配）
 - 公式弹窗自动加载 KaTeX（无需 tex: true 也能使用公式面板）
 - 表格/图片编辑后编辑区滚动位置保持修复
 - UI 细节优化与多语言完善
 
-### v2.1.0
+### v2.1.1
 - 新增组合上下标语法 <<下标>^<上标>> 同时显示上下角标
 - 修复渲染管线不一致（getPreviewedHTML/markdownToHTML 缺失步骤）
 - 全面代码审计、正则优化、事件泄漏修复
 
-### v2.1.0
+### v2.1.1
 - 工具栏图片/视频/文件按钮失效修复、弹窗全面美化
 - XSS 安全加固（6 项注入漏洞修复）、ECharts 内存泄漏修复
 - 上标 ^^、下标 ^^^^、字体大小 !字!、脚注 [^name] 新语法
 - 公式面板去搜索、下拉菜单全方向溢出自动适配
 
-### v2.1.0
+### v2.1.1
 - 草稿弹窗美化、Tooltip 交互修复、全屏增强、KaTeX 安全防护
 
-### v2.1.0
+### v2.1.1
 - 全屏编辑修复、LaTeX 语法保护、嵌套深度限制、ESC 事件管理
 
-### v2.1.0
+### v2.1.1
 - 新增 Apache ECharts 图表支持（柱状图/折线图/饼图/雷达图/漏斗图）
 - 新增 Tabs 标签页功能（支持任意 Markdown 内容嵌套）
 - 新增多列排版 Columns 功能
@@ -670,7 +670,7 @@ xfEditor 是一款开源的、可嵌入的 Markdown 在线编辑器（组件）�
 - 新增字帖（田字格/米字格/拼音格）功能
 - JetBrains 风格代码块展示
 
-### v2.1.0
+### v2.1.1
 - 新增拼音标注语法
 - 新增文本对齐语法
 - 新增图片尺寸编辑
@@ -716,12 +716,12 @@ console.log(demo.greet());
 [[tab:表格示例]]
 | 功能 | 最低版本 | 状态 |
 |------|----------|------|
-| Tabs 标签页 | v2.1.0 | ✅ 已发布 |
-| ECharts 图表 | v2.1.0 | ✅ 已发布 |
-| 多列排版 | v2.1.0 | ✅ 已发布 |
-| 悬浮提示 | v2.1.0 | ✅ 已发布 |
-| 视频嵌入 | v2.1.0 | ✅ 已发布 |
-| 附件链接 | v2.1.0 | ✅ 已发布 |
+| Tabs 标签页 | v2.1.1 | ✅ 已发布 |
+| ECharts 图表 | v2.1.1 | ✅ 已发布 |
+| 多列排版 | v2.1.1 | ✅ 已发布 |
+| 悬浮提示 | v2.1.1 | ✅ 已发布 |
+| 视频嵌入 | v2.1.1 | ✅ 已发布 |
+| 附件链接 | v2.1.1 | ✅ 已发布 |
 [[/tab]]
 
 [[tab:图表示例]]
@@ -1120,7 +1120,7 @@ def merge(left, right):
 
 ⁑⁖开源、简洁、强大，支持实时预览与扩展语法⁖⁑
 
-⠪版本号：v2.1.0 | 许可证：MIT⠪
+⠪版本号：v2.1.1 | 许可证：MIT⠪
 
 ### 标题中的对齐
 
@@ -1135,7 +1135,7 @@ def merge(left, right):
 
 ---
 
-## 十一、拼音标注 <span class="badge">v2.1.0</span>
+## 十一、拼音标注 <span class="badge">v2.1.1</span>
 
 {xfEditor | biān jí qì} 是一款非常优秀的 {Markdown | mā kè dáo nà} 编辑器，支持 {GitHub | jí tè bù} Flavored Markdown。
 
@@ -1442,7 +1442,7 @@ xfEditor[^editor-footnote] 是一款强大的开源 Markdown 在线编辑器。
 
 #### 关于本编辑器[^about]
 
-[^about]: 本文档演示了 xfEditor v2.1.0 的全部功能，包括 Markdown 基础语法、扩展语法和 API 交互。更多功能请查阅 `USAGE_GUIDE.md` 和 `README.md`。
+[^about]: 本文档演示了 xfEditor v2.1.1 的全部功能，包括 Markdown 基础语法、扩展语法和 API 交互。更多功能请查阅 `USAGE_GUIDE.md` 和 `README.md`。
 
 ### 25.4 多个脚注
 
@@ -1662,7 +1662,7 @@ xfEditor 持续迭代，致力于为开发者和内容创作者提供最优秀�
 
                 // ═══ 事件回调 ═══
                 onload              : function() {      // 编辑器加载完成回调，默认 function(){}
-                    console.log("✅ xfEditor v2.1.0 全部功能完整演示已加载");
+                    console.log("✅ xfEditor v2.1.1 全部功能完整演示已加载");
                 },
                 onchange            : function() {      // 编辑器内容变化回调，默认 function(){}
                     // 内容变化时触发

@@ -4,20 +4,25 @@
 
 </p>
 
-# xfEditor 编辑器 v2.1.0
+# xfEditor 编辑器 v2.1.1
 
 > **xfEditor 是一款更适合教育、教学、网页演示、数据呈现、内容排版的现代化 Markdown 开源在线编辑器。** 基于 [pandao/editor.md](https://github.com/pandao/editor.md) 深度改进，在原有基础上进行了系统性优化、Bug 修复和新功能拓展。
 
 **xfEditor** 是一款开源可嵌入的 Markdown 在线编辑器组件，基于 CodeMirror 和 marked 构建，**零外部 DOM 库依赖**（内置轻量 micro-DOM）。**完全离线可用**，不依赖任何外部 CDN 资源。
 
-## v2.1.0 版本核心变更
-- **🔖 版本统一**：全量版本号统一收敛为 `v2.1.0`（含 `xfEditor.version`、`package.json`、各构建产物头、插件 `@version` 注释）。
+## v2.1.1 版本核心变更
+- **🔖 版本统一**：全量版本号统一收敛为 `v2.1.1`（含 `xfEditor.version`、`package.json`、各构建产物头、插件 `@version` 注释）。
 - **🎨 上传组件统一美化**：图片/视频/附件上传对话框的「本地上传」重构为协调一致的渐变按钮 + 文件名回显组件，修复原生按钮样式割裂问题。
 - **🚫 上传地址门控**：未配置对应上传地址时，视频/音频/附件的本地上传入口被禁用（不保存文件到前端）；图片为唯一例外，无地址时自动转为 base64 内联。
 - **🗑️ 文件删除服务端通知**：已上传到服务器的文件在编辑器中删除/修改时，自动回调 `fileDeleteURL` 通知服务端清理，避免僵尸文件；新增 `onFileUploaded` / `onFileDeleted` 事件。
 - **🖱️ 拖拽 / 粘贴文件**：支持拖入或粘贴图片、视频、音频、附件，按类型识别后走对应上传或离线处理。
 - **🔄 同步滚动重构**：按 H1~H8 标题章节双向定位，再按章节内容高度比例同步滚动。
 - **📑 事件与回调文档**：新增 `examples/events-reference.html`，系统枚举所有事件/回调的参数、用法与接入示例。
+- **🧭 TOC 目录跳转修复**：标题锚点 ID 改为稳定、唯一、保留中文的 slug（不再全部退化成 `h1--`）；目录链接直接指向真实 ID，并新增 `xfEditor.bindTocNavigation()` 显式导航处理，覆盖内嵌目录、下拉目录、外部 `tocContainer` 三种形态，点击后精确定位章节并同步左侧编辑区。
+- **🛡 XSS 过滤统一**：取消 `<pre>/<code>` 字符串占位保护，所有内容走同一过滤链路；统一使用浏览器实体解码做协议白名单，堵住 `javascript&colon;`、`&#x03A;`、`<img/onerror=...><!-- 安全提示：此处存在安全风险，已用占位符替代；实际使用时请替换为你自己的内容 -->` 等绕过；含空格的 `href/src` 不再被截断；tooltip iframe 仅允许 http(s) 并启用 sandbox。
+- **✏️ 字帖与弹窗修正**：田字格/米字格/四线三格边框 `rect` 改用正确的 `x/y` 属性；`html-selector` 悬浮框与导出脚本不再丢失最大化/关闭按钮。
+- **⚡ 渲染性能优化**：扩展块扫描增加 `[[` 门禁与正则缓存；XSS 危险标签正则预编译复用；章节标题配对由 O(E×P) 降为索引表查找，显著降低大文档编辑与滚动卡顿。
+- **🔧 接口补齐**：`xfEditor.dateFormat(format, date)` 支持可选日期参数，与文档签名一致；上传结果解析异常不再中断上传队列。
 
 
 ## 在线体验
@@ -31,10 +36,10 @@
 ##核心变更
 - **🔄 章节同步滚动**：先对齐左右两侧最小/最深层 H 标签章节，再按章节内容高度比例滚动；主控区带 TTL 过期，媒体加载与尺寸变化后自动重建模型，杜绝抖动与回环。
 - **🚫 零兼容 / 零别名**：彻底移除 IE polyfill、window.test 全局污染、URL 兼容别名（escapeHTML/escapeAttr/ucfirst 等）、loadKaTeX 旧签名、eval 回退等历史兼容代码；公开 API 唯一命名。
-- **🔐 安全加固**：XSS 过滤新增协议白名单（http/https/mailto/tel/ftp + 安全 data 图片），危险协议黑名单双保险；上传文件名采用 Markdown 结构转义；fetch Promise 统一防 unhandled rejection。
+- **🔐 安全加固**：XSS 过滤新增协议白名单（http/https/mailto/tel/ftp + 安全 data 图片），危险协议黑名单双保险；上传文件名采用 Markdown 结构转义；fetch Promise 统一防 unhandled rejection；编辑器自生成的字帖 SVG 辅助线经严格白名单校验后保留，用户手写 SVG 仍按危险标签移除。
 - **⚡ 性能提升**：章节模型仅在内容/尺寸变化时重建，滚动热路径只读缓存；实例级状态隔离，多编辑器互不干扰。
 - **🧹 资源清理**：destroy 完整解绑章节同步/拖拽/字体加载监听与动画帧，杜绝内存泄漏。
-- **📚 文档与示例**：全部接口文档与 demo 更新至 v2.1.0，内容与实际实现一致。
+- **📚 文档与示例**：全部接口文档与 demo 更新至 v2.1.1，内容与实际实现一致。
 
 
 ## 📐 完整语法与功能速览
@@ -215,7 +220,7 @@ xfEditor.dom(function(){
 
 **直接下载**：将 `css/` `xf_editor.min.js` `lib/` `fonts/` `images/` `languages/` `plugins/` 部署到 Web 服务器。
 
-**构建产物**：v2.1.0 仅提供浏览器全局脚本（`xf_editor.js`、`xf_editor.min.js`、`xf_editor.preview.min.js`）。插件与语言包通过 `window.xfEditor` 注册，无需模块加载器。
+**构建产物**：v2.1.1 仅提供浏览器全局脚本（`xf_editor.js`、`xf_editor.min.js`、`xf_editor.preview.min.js`）。插件与语言包通过 `window.xfEditor` 注册，无需模块加载器。
 
 **npm**：`npm install xf_editor`
 
@@ -511,7 +516,7 @@ xfEditor.markdownToHTML("preview-container", {
 | `xfEditor.marked` | marked 解析器实例 |
 | `xfEditor.defaults` | 全局默认配置对象 |
 | `xfEditor.toolbarModes` | 工具栏预设模式 |
-| `xfEditor.version` | 版本号字符串（`"2.1.0"`） |
+| `xfEditor.version` | 版本号字符串（`"2.1.1"`） |
 | `xfEditor.safeFileName(name)` | 文件名安全化（去 Markdown 残留与非法字符） |
 | `xfEditor.firstHeading(markdown)` | 提取首个标题文本 |
 | `xfEditor.base64Encode(str)` / `xfEditor.base64Decode(str)` | Base64 编解码（UTF-8 安全） |
@@ -1096,7 +1101,7 @@ var factory = function (exports) {
 ---
 
 **最后更新**: 2026-11-27
-**版本**: v2.1.0
+**版本**: v2.1.1
 
 ---
 

@@ -1,6 +1,6 @@
 [TOC]
 
-# 🎯 xfEditor v2.1.0 全部功能完整演示
+# 🎯 xfEditor v2.1.1 全部功能完整演示
 
 > Open source online Markdown editor — 更适合教育、教学、网页演示、数据呈现、内容排版的现代化 Markdown 在线编辑器。
 
@@ -111,16 +111,16 @@ HTML 实体：&copy; &reg; &trade; &mdash; &ndash; &hellip; &laquo; &raquo; &deg
 
 | 编号 | 功能 | 版本 | 状态 | 说明 |
 |:---:|------|------|:----:|------|
-| 01 | 实时预览 | v2.1.0 | ✅ | 所见即所得编辑，支持同步滚动 |
-| 02 | 图片上传 | v2.1.0 | ✅ | 拖拽上传、跨域上传、尺寸编辑 |
-| 03 | 流程图 Flowchart | v2.1.0 | ✅ | 基于 flowchart.js 实时渲染 |
-| 04 | 时序图 Sequence | v2.1.0 | ✅ | js-sequence-diagrams 渲染 |
-| 05 | KaTeX 科学公式 | v2.1.0 | ✅ | 行内与块级 LaTeX 数学公式 |
-| 06 | ECharts 图表 | v2.1.0 | ✅ | 支持 6 种图表类型 |
-| 07 | Tabs 标签页 | v2.1.0 | ✅ | 标签页组件，支持任意嵌套 |
-| 08 | Columns 多列 | v2.1.0 | ✅ | 报纸式多栏排版 |
-| 09 | Grid 栅格布局 | v2.1.0 | ✅ | 10栏栅格系统，自动平分 |
-| 10 | Tooltip 悬浮提示 | v2.1.0 | ✅ | 5 种提示类型 |
+| 01 | 实时预览 | v2.1.1 | ✅ | 所见即所得编辑，支持同步滚动 |
+| 02 | 图片上传 | v2.1.1 | ✅ | 拖拽上传、跨域上传、尺寸编辑 |
+| 03 | 流程图 Flowchart | v2.1.1 | ✅ | 基于 flowchart.js 实时渲染 |
+| 04 | 时序图 Sequence | v2.1.1 | ✅ | js-sequence-diagrams 渲染 |
+| 05 | KaTeX 科学公式 | v2.1.1 | ✅ | 行内与块级 LaTeX 数学公式 |
+| 06 | ECharts 图表 | v2.1.1 | ✅ | 支持 6 种图表类型 |
+| 07 | Tabs 标签页 | v2.1.1 | ✅ | 标签页组件，支持任意嵌套 |
+| 08 | Columns 多列 | v2.1.1 | ✅ | 报纸式多栏排版 |
+| 09 | Grid 栅格布局 | v2.1.1 | ✅ | 10栏栅格系统，自动平分 |
+| 10 | Tooltip 悬浮提示 | v2.1.1 | ✅ | 5 种提示类型 |
 
 ### 2.2 表格对齐方式
 
@@ -670,7 +670,7 @@ xfEditor 是一款开源的、可嵌入的 Markdown 在线编辑器。
 [[/tab]]
 
 [[tab:更新日志]]
-### v2.1.0（最新）
+### v2.1.1（最新）
 
 - 🔄 章节同步引擎（H1~H8 章节定位 + 章节内高度比例）
 - 🎯 预览→编辑与编辑→预览使用同一套章节算法
@@ -684,7 +684,7 @@ xfEditor 是一款开源的、可嵌入的 Markdown 在线编辑器。
 - 📝 导出文件名自动推导（标题 → 正文首个 H1/H2）
 - 🔒 XSS 过滤与宿主 CSS 干扰防护层增强
 
-### v2.1.0
+### v2.1.1
 
 - 新增 ECharts 图表、Tabs 标签页、多列排版
 - 新增悬浮提示 Tooltip、草稿暂存、视频嵌入
@@ -1010,7 +1010,7 @@ console.log(demo.greet());
 
 ⁑⁖开源、简洁、强大，支持实时预览与扩展语法⁖⁑
 
-⠪版本号：v2.1.0 | 许可证：MIT⠪
+⠪版本号：v2.1.1 | 许可证：MIT⠪
 
 > **📌 文本对齐语法说明**
 > - **三组 Unicode 标记**（可用「工具栏 → 文本对齐」插入）：`⁑...⁑` 居中、`⁑⁖...⁖⁑` 两端对齐、`⠪...⠪` 右对齐；
@@ -1397,7 +1397,7 @@ presentation.pptx | 产品演示幻灯片
 
 ### A4 纸张（含页头页脚）
 
-[[page:A4 header="xfEditor v2.1.0 — 开源 Markdown 在线编辑器" footer="第 {page} 页 / 共 {total} 页"]]
+[[page:A4 header="xfEditor v2.1.1 — 开源 Markdown 在线编辑器" footer="第 {page} 页 / 共 {total} 页"]]
 ### xfEditor — 开源 Markdown 编辑器
 
 xfEditor 是一款功能强大的开源 Markdown 在线编辑器，基于 CodeMirror、Marked 构建，内置零依赖 micro-DOM（XfDom），不依赖外部 DOM 库。
@@ -1423,7 +1423,7 @@ xfEditor 是一款功能强大的开源 Markdown 在线编辑器，基于 CodeMi
 
 | 技术 | 版本 | 用途 |
 |------|------|------|
-| xfEditor | v2.1.0 | Markdown 编辑渲染引擎 |
+| xfEditor | v2.1.1 | Markdown 编辑渲染引擎 |
 | ECharts | v5.4 | 交互式图表 |
 | KaTeX | v0.16 | 数学公式渲染 |
 | CodeMirror | v5.65 | 代码编辑器 |
@@ -1442,7 +1442,7 @@ xfEditor 是一款功能强大的开源 Markdown 在线编辑器，基于 CodeMi
 
 **日期**：2024年12月
 
-**议题**：xfEditor v2.1.0 发布计划
+**议题**：xfEditor v2.1.1 发布计划
 
 **决议**：全票通过，立即执行
 [[/page]]
@@ -1629,7 +1629,7 @@ xfEditor[^editor-footnote] 是一款强大的开源 Markdown 在线编辑器，�
 
 现代 Markdown 编辑器应具备丰富的扩展能力和良好的用户体验。
 
-[^about]: 本文档演示了 xfEditor v2.1.0 的全部功能。更多文档请参阅 `USAGE_GUIDE.md` 和 `README.md`。
+[^about]: 本文档演示了 xfEditor v2.1.1 的全部功能。更多文档请参阅 `USAGE_GUIDE.md` 和 `README.md`。
 
 ### 25.4 多脚注连续引用
 

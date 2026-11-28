@@ -1,6 +1,6 @@
-# xfEditor 使用指南 v2.1.0
+# xfEditor 使用指南 v2.1.1
 
-> xfEditor v2.1.0 完整使用手册
+> xfEditor v2.1.1 完整使用手册
 
 ---
 
@@ -73,7 +73,7 @@ xfEditor.markdownToHTML("preview-container", {
 
 > 内置 micro-DOM，无需外部库：编辑器已内置零依赖 micro-DOM。
 
-**构建产物**：v2.1.0 仅提供浏览器全局脚本（`xf_editor.js`、`xf_editor.min.js`、`xf_editor.preview.min.js`）。插件与语言包通过 `window.xfEditor` 注册，无需模块加载器。
+**构建产物**：v2.1.1 仅提供浏览器全局脚本（`xf_editor.js`、`xf_editor.min.js`、`xf_editor.preview.min.js`）。插件与语言包通过 `window.xfEditor` 注册，无需模块加载器。
 
 ---
 
@@ -1190,6 +1190,17 @@ var editor = xfEditor("editor-container", {
 
 ---
 
+## 🧭 目录（TOC）导航行为（v2.1.1）
+
+- 标题生成稳定且唯一的锚点 ID：中文保留原字符（如 `h1-第一章-概述`），英文转小写，空白与标点收敛为连字符；同名标题自动追加 `-2`、`-3` 后缀。
+- TOC 链接直接指向标题真实 ID，并携带 `data-anchor`；点击目录时由 `xfEditor.bindTocNavigation()` 显式定位目标，滚动到预览区可视范围，并同步左侧编辑区到对应章节。
+- 三种目录形态均已覆盖：预览区内 `[TOC]`、`tocDropdown: true` 下拉目录、外部 `tocContainer` 自定义容器。
+- 兼容历史 `href="#显示文本"` 与 `<a name="标题">` 锚点（按规范化文本兜底匹配）。
+
+**安全说明（v2.1.1）**：XSS 过滤不再对 `<pre>/<code>` 做占位豁免；`javascript&colon;` 等实体编码协议、`/onerror` 属性分隔符均被拦截；tooltip iframe 仅允许 http(s) 且带 sandbox。
+
+---
+
 ## 📚 更多资源
 
 - [完整示例列表](examples/index.html)
@@ -1209,5 +1220,5 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 
 ---
 
-**最后更新**: 2026-11-27
-**版本**: v2.1.0
+**最后更新**: 2026-11-28
+**版本**: v2.1.1

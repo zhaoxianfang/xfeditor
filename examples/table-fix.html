@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
     <meta charset="utf-8" />
-    <title>表格空单元格修复演示 — xfEditor v2.1.0</title>
+    <title>表格空单元格修复演示 — xfEditor v2.1.1</title>
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="../css/xf_editor.min.css" />
     <link rel="shortcut icon" href="../images/favicon.ico" type="image/x-icon" />
@@ -11,7 +11,7 @@
     <div id="layout">
         <header>
             <h1>📊 表格空单元格修复演示</h1>
-            <p>v2.1.0 修复 marked.js v0.3.3 表格解析 Bug — 最后一列为空时不再丢失单元格</p>
+            <p>v2.1.1 修复 marked.js v0.3.3 表格解析 Bug — 最后一列为空时不再丢失单元格</p>
         </header>
 
         <div id="test-xfEditor" style="margin: 0 auto;">
@@ -21,7 +21,7 @@
 
 在 marked.js v0.3.3 中，解析 pipe-table 时使用贪婪正则 `replace(/^ *\| *| *\| *$/g, "")`，当表格**最后一行最后一列为空**时，贪婪正则会吞掉前一列到行尾的全部内容，导致该行少一列，造成显示错位。
 
-xfEditor v2.1.0 通过后处理函数 `fixTableEmptyCells()` 修复此 Bug：以 `thead` 列数为基准，自动补齐 `tbody` 中缺失的空 `td`。
+xfEditor v2.1.1 通过后处理函数 `fixTableEmptyCells()` 修复此 Bug：以 `thead` 列数为基准，自动补齐 `tbody` 中缺失的空 `td`。
 
 ---
 
@@ -45,9 +45,9 @@ xfEditor v2.1.0 通过后处理函数 `fixTableEmptyCells()` 修复此 Bug：以
 
 | 名称 | 版本 | 状态 | 备注 |
 |------|------|------|------|
-| 实时预览 | v2.1.0 | 已发布 | 所见即所得编辑 |
-| 流程图 | v2.1.0 | 已发布 | — |
-| 时序图 | v2.1.0 | 已发布 | — |
+| 实时预览 | v2.1.1 | 已发布 | 所见即所得编辑 |
+| 流程图 | v2.1.1 | 已发布 | — |
+| 时序图 | v2.1.1 | 已发布 | — |
 
 ### 3.2 中间行末列为空
 

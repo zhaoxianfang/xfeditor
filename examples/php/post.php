@@ -37,7 +37,7 @@ header('X-Content-Type-Options: nosniff');
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>提交内容展示 — xfEditor v2.1.0</title>
+    <title>提交内容展示 — xfEditor v2.1.1</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -125,7 +125,7 @@ header('X-Content-Type-Options: nosniff');
     </style>
 </head>
 <body>
-    <h1>📄 xfEditor v2.1.0 — 提交内容展示</h1>
+    <h1>📄 xfEditor v2.1.1 — 提交内容展示</h1>
     <div class="actions">
         <a href="javascript:history.back();">← 返回编辑器</a>
     </div>
