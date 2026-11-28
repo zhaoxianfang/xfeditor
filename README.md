@@ -338,17 +338,24 @@ editor.exportFile("文档", "markdown"); // 导出文件
 | `fileFormats` | `["doc","docx","pdf","txt","zip","rar","xls","xlsx","ppt","pptx","mp4","mp3"]` | 文件格式 |
 | `fileUploadURL` | `""` | 文件上传 URL |
 | `dropPasteUpload` | `true` | 允许拖放/粘贴文件到编辑区自动上传 |
-| `dropPasteAtMouse` | `true` | 粘贴文件插入到最近鼠标位置（false 用光标位置） |
-| `dropPasteMaxFiles` | `10` | 单次拖放/粘贴最多处理文件数 |
+| `dropPasteAtMouse` | `true` | 粘贴/拖放文件插入到最近鼠标位置（false 用光标位置，拖放坐标同样忽略） |
+| `dropPasteMaxFiles` | `10` | 单次拖放/粘贴最多处理文件数（0 表示不处理） |
+| `dropPasteFallbackToBase64` | `true` | 图片上传失败时降级为内嵌 base64，保证内容不丢失 |
 | `uploadMaxSize` | `10MB` | 图片单文件大小上限 |
 | `uploadMaxFileSize` | `50MB` | 视频/附件单文件大小上限 |
 | `strictMimeCheck` | `true` | 校验图片扩展名、MIME 与文件头 |
 | `allowedUploadProtocols` | `["http:","https:","mailto:","tel:","ftp:","/","./","../"]` | 服务端返回地址协议白名单 |
-| `uploadFunction` | `null` | 自定义上传函数 `(file, meta, done)` |
+| `uploadFunction` | `null` | 自定义上传函数 `(file, meta, done)`；配置后优先于 URL 上传，**无需填写任何 `uploadURL` 即可工作** |
 | `uploadHeaders` | `{}` | XHR 上传附加请求头 |
-| `onUploadError` | `function(){}` | 上传失败回调 `(info)` |
+| `uploadTimeout` | `30000` | 单个 XHR 上传超时（毫秒），超时后继续处理队列后续文件 |
+| `onUploadProgress` | `function(){}` | 上传进度回调 `(info)`，`info={file,loaded,total,percent}` |
+| `onUploadError` | `function(){}` | 上传失败回调 `(info)`，`info={type,name,message}` |
 
-> 拖放/粘贴上传由 `dropPasteUpload` 独立控制，按文件类型自动选择 `imageUploadURL` / `videoUploadURL` / `fileUploadURL`，与工具栏弹窗的 `imageUpload` / `fileUpload` 开关互不影响。
+> 拖放/粘贴上传由 `dropPasteUpload` 独立控制，按文件类型自动选择 `imageUploadURL` / `videoUploadURL` / `fileUploadURL`（或统一走 `uploadFunction`），与工具栏弹窗的 `imageUpload` / `fileUpload` 开关互不影响。
+>
+> - 粘贴的截图通常没有文件名，编辑器会按 MIME 推断扩展名（如 `image/png` → `png`），再通过格式白名单与图片魔数校验，不会误判为“不支持的格式”。
+> - 文件事件在原生 DOM 捕获阶段接管（CodeMirror 自带事件在含文件时不会触发），`onpaste` / `ondrop` 回调仍会正常收到通知；普通文本粘贴不受影响。
+> - 拖放按鼠标位置定位插入点；多文件按拖入顺序依次插入。
 
 ### 扩展功能
 | 选项 | 默认值 | 说明 |
@@ -461,8 +468,8 @@ editor.exportFile("文档", "markdown"); // 导出文件
 ### 同步滚动与生命周期
 | 方法 | 说明 |
 |------|------|
-| `bindChapterSync()` | 绑定章节同步引擎（watch 模式自动调用） |
-| `unbindChapterSync()` | 解除章节同步绑定并清理全部监听 |
+| `bindChapterSync()` | 绑定章节同步引擎（渲染时自动调用；`watch()` 重新开启时自动恢复） |
+| `unbindChapterSync()` | 解除章节同步绑定并清理全部监听（`unwatch()` 时自动调用） |
 | `suspendSyncScroll()` | 临时 suspend 同步（内容程序化更新时用） |
 | `resumeSyncScroll()` | 恢复同步 |
 | `scrollToLineNum(line, linePercent)` | 滚动编辑区到指定行并按章节规则同步预览 |

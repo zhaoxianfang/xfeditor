@@ -337,6 +337,16 @@
   border-bottom-color: #2C7EEA;
 }
 
+/* ★ v2.1.0: 拖放文件进入编辑区时的视觉反馈（JS 添加 .xf_editor-dragover） */
+.xf_editor.xf_editor-dragover,
+.xf_editor-dragover {
+  border-color: #2C7EEA;
+  box-shadow: inset 0 0 0 2px rgba(44, 126, 234, 0.35);
+}
+.xf_editor-dragover .CodeMirror {
+  background-color: rgba(44, 126, 234, 0.04);
+}
+
 /* ECharts/Tabs/Columns/Row/Col styles are defined in xf_editor.preview.scss
    and imported via @import "xf_editor.preview" below.
    Duplicate definitions removed to avoid CSS bloat. */

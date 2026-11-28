@@ -934,7 +934,7 @@ editor.suspendSyncScroll();   // 暂停同步
 editor.resumeSyncScroll();    // 恢复同步
 ```
 
-> **引擎原理**：分别解析编辑区 Markdown `#`~`########` 与预览区 `h1`~`h8`，按文本与层级顺序配对；以“最小/最深层章节”为原则定位当前章节，再按该章节在左右两侧的内容高度比例同步滚动。主控区 TTL、程序化滚动自识别与 rAF 合并共同防止反馈震荡。
+> **引擎原理**：分别解析编辑区 Markdown `#`~`########`（含 Setext 标题、无空格 ATX、最多 3 个前导空格）与预览区 `h1`~`h8`，按文本与层级全文配对；以“最小/最深层章节”为原则定位当前章节，再按该章节在左右两侧的内容高度比例同步滚动。内置 marked 渲染器将 `#######` / `########` 渲染为 `h6`，引擎按实际渲染结果同化配对；未匹配标题不强行顺序配对，避免章节错位。主控区 TTL、程序化滚动自识别与 rAF 合并共同防止反馈震荡；`unwatch()` 自动解绑，`watch()` 自动恢复。
 
 **工具栏**：
 ```javascript
@@ -1124,7 +1124,33 @@ xfEditor("editor", {
 });
 ```
 
-拖放或粘贴文件到左侧编辑区时，编辑器会按后缀与 MIME 自动分类，分别调用 `imageUploadURL` / `videoUploadURL` / `fileUploadURL`，上传成功后回插到鼠标位置。该能力由 `dropPasteUpload` 控制，与工具栏弹窗的 `imageUpload` / `fileUpload` 开关互不影响。
+拖放或粘贴文件到左侧编辑区时，编辑器会按后缀与 MIME 自动分类，分别调用 `imageUploadURL` / `videoUploadURL` / `fileUploadURL`（或统一走 `uploadFunction`），上传成功后回插到鼠标位置。该能力由 `dropPasteUpload` 控制，与工具栏弹窗的 `imageUpload` / `fileUpload` 开关互不影响。
+
+无后端接口时可用自定义上传器，此时**不需要**配置任何 `uploadURL`：
+
+```javascript
+var editor = xfEditor("editor-container", {
+    dropPasteUpload: true,
+    uploadFunction: function(file, meta, done) {
+        // meta.type: image | video | file；meta.fieldName: 表单字段名
+        var formData = new FormData();
+        formData.append(meta.fieldName, file, file.name || "image.png");
+        fetch("/api/upload", { method: "POST", body: formData })
+            .then(function(res) { return res.json(); })
+            .then(function(json) { done(null, json); })
+            .catch(function(err) { done(err); });
+    }
+});
+// done(err, json) 中的 json 需包含 { success: true, url: "..." }
+```
+
+- 粘贴截图无文件名时按 MIME 推断扩展名（如 `image/png` → `png`），格式白名单与图片魔数校验照常生效。
+- 文件事件在原生 DOM 捕获阶段接管，`onpaste` / `ondrop` 回调仍会正常收到通知；普通文本粘贴不受影响。
+- 拖放/粘贴不仅识别 `files`，也识别 `dataTransfer.items` / `clipboardData.items`（`kind === "file"`），覆盖从网页拖图、截图粘贴等来源。
+- 图片上传失败时默认降级为内嵌 base64（`dropPasteFallbackToBase64: true`），避免"粘贴了却什么都没出现"；设为 `false` 则仅报错不插入。
+- 服务端返回的 URL 必须位于 `allowedUploadProtocols` 白名单内；反斜杠协议相对地址（如 `/\evil.com`）、`javascript:`、`data:image/svg+xml` 等会被拒绝。显式失败响应（如 `{success:false,url:"..."}`）不会被误判为成功。
+- XHR 上传默认 30 秒超时（`uploadTimeout`），超时后继续处理后续文件；可通过 `onUploadProgress` 显示进度。
+- `dropPasteAtMouse: false` 时拖放也按当前光标位置插入；`readOnly` 或 `dropPasteUpload: false` 时不会吞掉浏览器默认事件。
 
 ### Q: 如何在页面内使用 Tabs 和 Columns？
 

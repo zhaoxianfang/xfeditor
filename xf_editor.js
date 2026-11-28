@@ -1877,12 +1877,15 @@
         dropPasteUpload      : true,            // 总开关：是否处理拖入/粘贴的文件
         dropPasteAtMouse     : true,            // true=插入到最近一次鼠标位置；false=插入到当前光标
         dropPasteMaxFiles    : 10,              // 单次最多处理的文件数
+        dropPasteFallbackToBase64: true,        // 图片上传失败时降级为内嵌 base64，保证内容不丢失
         uploadMaxSize        : 10 * 1024 * 1024, // 图片单文件上限（10MB）
         uploadMaxFileSize    : 50 * 1024 * 1024, // 视频/附件单文件上限（50MB）
         strictMimeCheck      : true,            // 严格校验图片扩展名、MIME 与文件头魔数
         allowedUploadProtocols: ["http:", "https:", "mailto:", "tel:", "ftp:", "/", "./", "../"],
         uploadFunction       : null,            // 自定义上传：function(file, meta, done)，返回 (err, json)
         uploadHeaders        : {},              // 附加到 XHR 上传的请求头
+        uploadTimeout        : 30000,          // 单个 XHR 上传超时（毫秒），超时后继续处理队列中后续文件
+        onUploadProgress     : function() {},  // 上传进度回调：function(info){ file, loaded, total, percent }
         onUploadError        : function() {},  // 上传失败回调：function(info){}
 
         toc                  : true,           // 启用目录生成
@@ -3941,47 +3944,151 @@
                 }
             });
 
-            cm.on("paste", function(_cm, e) {
-                var cd = e && (e.clipboardData || (e.originalEvent && e.originalEvent.clipboardData));
-                if (cd) {
-                    // 直接粘贴文件（部分浏览器把文件放在 clipboardData.files 中）
-                    if (cd.files && cd.files.length > 0) {
-                        if (e.preventDefault) e.preventDefault();
-                        var pastePos = (settings.dropPasteAtMouse && lastMousePos && Date.now() - lastMousePos.t < 2000) ? lastMousePos : null;
-                        _this._handleDroppedFiles(cd.files, _cm, pastePos && pastePos.x, pastePos && pastePos.y);
-                        return;
-                    }
-                    // 粘贴板中的图片项（截图粘贴等）
-                    if (cd.items && cd.items.length) {
-                        var imgItem = null;
-                        for (var ci = 0; ci < cd.items.length; ci++) {
-                            if (cd.items[ci].kind === "file" && cd.items[ci].type && cd.items[ci].type.indexOf("image/") === 0) {
-                                imgItem = cd.items[ci];
-                                break;
-                            }
-                        }
-                        if (imgItem) {
-                            var blob = imgItem.getAsFile();
-                            if (blob) {
-                                if (e.preventDefault) e.preventDefault();
-                                var imagePastePos = (settings.dropPasteAtMouse && lastMousePos && Date.now() - lastMousePos.t < 2000) ? lastMousePos : null;
-                                _this._handleDroppedFiles([blob], _cm, imagePastePos && imagePastePos.x, imagePastePos && imagePastePos.y);
-                                return;
-                            }
-                        }
-                    }
+            // ★ 关键修复：CodeMirror 5 在 clipboardData.files / dataTransfer.files 非空时
+            //   会直接返回而不 signal("paste") / signal("drop")，因此 cm.on(...) 永远收不到
+            //   文件事件。文件必须改在原生 DOM 的「捕获阶段」接管；cm.on(...) 仅保留给用户回调。
+            // 统一收集 DataTransfer / DataTransferItemList 中的文件：
+            // 真实浏览器里 clipboardData.files / dataTransfer.files 常常为空，
+            // 文件只存在于 items（kind === "file"）中，旧逻辑只判 files 会直接漏掉。
+            var collectFileList = function(source) {
+                if (!source) return null;
+                // FileList / 数组
+                if (source.files && source.files.length) return source.files;
+                if (typeof source.length === "number" && source.length && !source.items) {
+                    return Array.prototype.slice.call(source);
                 }
+                // DataTransferItemList
+                if (source.items && source.items.length) {
+                    var picked = [];
+                    for (var ci = 0; ci < source.items.length; ci++) {
+                        var item = source.items[ci];
+                        if (!item || item.kind !== "file") continue;
+                        // 部分浏览器的 File.type 为空；仍取 File，由后续魔数嗅探判定真实类型
+                        var blob = (typeof item.getAsFile === "function") ? item.getAsFile() : null;
+                        if (blob) picked.push(blob);
+                    }
+                    if (picked.length) return picked;
+                }
+                return null;
+            };
+            var collectPasteFiles = function(cd) {
+                if (!cd) return null;
+                var files = collectFileList(cd);
+                if (files && files.length) return files;
+                // 再尝试 dataTransfer 形态（某些封装事件把数据在 dataTransfer 上）
+                if (cd.dataTransfer) return collectFileList(cd.dataTransfer);
+                return null;
+            };
+            var collectDropFiles = function(dt) {
+                if (!dt) return null;
+                var files = collectFileList(dt);
+                if (files && files.length) return files;
+                return null;
+            };
+            // 传入坐标仅在 dropPasteAtMouse 开启时有效；关闭时必须退回光标位置，
+            // 否则 drop 事件自带的 clientX/clientY 会让该配置项形同虚设。
+            var dropCoords = function(e) {
+                if (settings.dropPasteAtMouse === false || !e) return [undefined, undefined];
+                return [e.clientX, e.clientY];
+            };
+            var handleFiles = function(files, e, x, y) {
+                // 总开关与只读模式必须在这里拦截：若先吞掉事件再在内部 return，
+                // 用户粘贴后会毫无反应，也无法交回浏览器默认处理链。
+                if (settings.dropPasteUpload === false || settings.readOnly) return false;
+                if (!files || !files.length) return false;
+                if (e && e.preventDefault) e.preventDefault();
+                if (e && e.stopImmediatePropagation) e.stopImmediatePropagation();
+                else if (e && e.stopPropagation) e.stopPropagation();
+                // 标记该事件已被文件处理链接管，避免 CodeMirror 回调重复触发用户 onpaste/ondrop
+                if (e) { try { e.__xfFileHandled = true; } catch (err) {} }
+                var pastePos = null;
+                if (settings.dropPasteAtMouse !== false && lastMousePos && Date.now() - lastMousePos.t < 2000) {
+                    pastePos = lastMousePos;
+                }
+                var useX = (typeof x === "number") ? x : (pastePos && pastePos.x);
+                var useY = (typeof y === "number") ? y : (pastePos && pastePos.y);
+                return _this._handleDroppedFiles(files, cm, useX, useY);
+            };
+            var domPasteHandler = function(e) {
+                var cd = e && (e.clipboardData || (e.originalEvent && e.originalEvent.clipboardData));
+                var files = collectPasteFiles(cd);
+                if (!files || !files.length) return; // 普通文本粘贴交回 CodeMirror 默认处理
+                if (handleFiles(files, e)) {
+                    try { settings.onpaste.call(_this, cm, e); } catch (err) {}
+                }
+            };
+            var domDropHandler = function(e) {
+                var dt = e && e.dataTransfer;
+                var files = collectDropFiles(dt);
+                if (!files || !files.length) return;
+                var coords = dropCoords(e);
+                if (handleFiles(files, e, coords[0], coords[1])) {
+                    try { settings.ondrop.call(_this, cm, e); } catch (err) {}
+                }
+            };
+            var domDragOverHandler = function(e) {
+                var dt = e && e.dataTransfer;
+                if (settings.dropPasteUpload === false || settings.readOnly) return;
+                if (!collectDropFiles(dt)) return;
+                if (e.preventDefault) e.preventDefault();
+                try { dt.dropEffect = "copy"; } catch (err) {}
+            };
+
+            // ★ 编辑区级兜底：用户拖放到工具栏/空白间隙等 wrapper 之外时也要接管
+            var containerEl = (this.editor && this.editor.get) ? this.editor.get(0) : null;
+            var containerDropHandler = function(e) {
+                var dt = e && e.dataTransfer;
+                var files = collectDropFiles(dt);
+                if (!files || !files.length) return;
+                var coords = dropCoords(e);
+                if (handleFiles(files, e, coords[0], coords[1])) {
+                    try { settings.ondrop.call(_this, cm, e); } catch (err) {}
+                }
+            };
+            var containerDragOverHandler = function(e) {
+                var dt = e && e.dataTransfer;
+                if (settings.dropPasteUpload === false || settings.readOnly) return;
+                if (!collectDropFiles(dt)) return;
+                if (e.preventDefault) e.preventDefault();
+                try { dt.dropEffect = "copy"; } catch (err) {}
+            };
+
+            // 重复初始化时先解绑旧监听，避免累积
+            if (this._dropPasteHandlers) {
+                var oldH = this._dropPasteHandlers;
+                try { oldH.input && oldH.input.removeEventListener("paste", oldH.paste, true); } catch (err) {}
+                try { oldH.wrapper && oldH.wrapper.removeEventListener("drop", oldH.drop, true); } catch (err) {}
+                try { oldH.wrapper && oldH.wrapper.removeEventListener("dragover", oldH.dragover, true); } catch (err) {}
+                try { oldH.container && oldH.container.removeEventListener("drop", oldH.containerDrop, true); } catch (err) {}
+                try { oldH.container && oldH.container.removeEventListener("dragover", oldH.containerDragOver, true); } catch (err) {}
+                this._dropPasteHandlers = null;
+            }
+            var inputEl = null;
+            var wrapperEl = null;
+            try { inputEl = (cm.display && cm.display.input && cm.display.input.getField) ? cm.display.input.getField() : null; } catch (err) {}
+            try { wrapperEl = (typeof cm.getWrapperElement === "function") ? cm.getWrapperElement() : null; } catch (err) {}
+            if (inputEl && typeof inputEl.addEventListener === "function") inputEl.addEventListener("paste", domPasteHandler, true);
+            if (wrapperEl && typeof wrapperEl.addEventListener === "function") {
+                wrapperEl.addEventListener("drop", domDropHandler, true);
+                wrapperEl.addEventListener("dragover", domDragOverHandler, true);
+            }
+            if (containerEl && containerEl !== wrapperEl && typeof containerEl.addEventListener === "function") {
+                containerEl.addEventListener("drop", containerDropHandler, true);
+                containerEl.addEventListener("dragover", containerDragOverHandler, true);
+            }
+            this._dropPasteHandlers = {
+                input: inputEl, paste: domPasteHandler,
+                wrapper: wrapperEl, drop: domDropHandler, dragover: domDragOverHandler,
+                container: containerEl, containerDrop: containerDropHandler, containerDragOver: containerDragOverHandler
+            };
+
+            cm.on("paste", function(_cm, e) {
+                if (e && e.__xfFileHandled) return; // 文件粘贴已由 DOM 捕获处理器转发，避免重复回调
                 settings.onpaste.call(_this, _cm, e);
             });
-            
+
             cm.on("drop", function(_cm, e) {
-                // ★ 拖拽文件（图片/视频/音频/附件）到编辑器：按类型识别并上传或离线插入
-                var dt = e && e.dataTransfer;
-                if (dt && dt.files && dt.files.length > 0) {
-                    if (e.preventDefault) e.preventDefault();
-                    var handled = _this._handleDroppedFiles(dt.files, _cm, e.clientX, e.clientY);
-                    if (handled) return;
-                }
+                if (e && e.__xfFileHandled) return; // 文件拖放已由 DOM 捕获处理器转发，避免重复回调
                 settings.ondrop.call(_this, _cm, e);
             });
             
@@ -8147,7 +8254,9 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             
             this.state.watching = settings.watch = true;
             this.preview.show();
-            
+            // unwatch 时已解绑，重新开启后恢复章节同步
+            if (settings.syncScroll !== false) this.bindChapterSync();
+
             if (this.toolbar)
             {
                 var watchIcon   = settings.toolbarIconsClass.watch;
@@ -8186,8 +8295,10 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             // ★ 空守卫：CodeMirror 未就绪时不操作，避免崩溃
             if (!this.cm) return this;
             this.state.watching = settings.watch = false;
+            // 预览隐藏后同步引擎没有可定位的章节，先解绑，避免空转与 stale 模型
+            this.unbindChapterSync();
             this.preview.hide();
-            
+
             if (this.toolbar) 
             {
                 var watchIcon   = settings.toolbarIconsClass.watch;
@@ -8241,6 +8352,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         resumeSyncScroll : function() {
             if (this._chapterSync) {
                 this._chapterSync.state.suspended = false;
+                // 未绑定（syncScroll:false 或 unwatch）时不得强制执行同步
                 this._chapterSync.refresh();
             }
             return this;
@@ -8259,7 +8371,11 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             try {
                 this.cm.setCursor({ line: lineNum, ch: 0 });
                 var lineHeight = this.cm.heightAtLine(lineNum, "local");
-                var nextHeight = this.cm.heightAtLine(Math.min(this.cm.lineCount() - 1, lineNum + 1), "local");
+                // 末行没有 nextLine，需用默认行高估算，否则 linePercent 永远失效
+                var isLast = lineNum >= this.cm.lineCount() - 1;
+                var nextHeight = isLast
+                    ? lineHeight + (this.cm.defaultTextHeight ? this.cm.defaultTextHeight() : 20)
+                    : this.cm.heightAtLine(lineNum + 1, "local");
                 this.cm.scrollTo(null, lineHeight + (nextHeight - lineHeight) * linePercent - this.cm.getScrollInfo().clientHeight / 2);
             } catch (e) {}
             if (this._chapterSync) {
@@ -9113,6 +9229,17 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             // 4. 如果处于全屏状态则退出全屏
             if (this.state.fullscreen) {
                 this.fullscreenExit();
+            }
+
+            // 4b. 解绑原生 DOM 的粘贴/拖放文件监听器（CodeMirror 自定义事件无法接管文件）
+            if (this._dropPasteHandlers) {
+                var dropPasteH = this._dropPasteHandlers;
+                try { dropPasteH.input && dropPasteH.input.removeEventListener("paste", dropPasteH.paste, true); } catch (ex) {}
+                try { dropPasteH.wrapper && dropPasteH.wrapper.removeEventListener("drop", dropPasteH.drop, true); } catch (ex) {}
+                try { dropPasteH.wrapper && dropPasteH.wrapper.removeEventListener("dragover", dropPasteH.dragover, true); } catch (ex) {}
+                try { dropPasteH.container && dropPasteH.container.removeEventListener("drop", dropPasteH.containerDrop, true); } catch (ex) {}
+                try { dropPasteH.container && dropPasteH.container.removeEventListener("dragover", dropPasteH.containerDragOver, true); } catch (ex) {}
+                this._dropPasteHandlers = null;
             }
 
             // 5. 销毁 CodeMirror 并恢复原始 textarea
@@ -10075,7 +10202,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         _buildCanvasBlock : function(dataUri, align, title) {
             var header = "[[canvas";
             if (align && align !== "left") header += ":" + align;
-            if (title) header += ' title="' + String(title).replace(/"/g, "&quot;") + '"';
+            if (title) header += ' title="' + String(title).replace(/"/g, "&quot;").replace(/\]/g, "&#93;") + '"';
             header += "]]";
             return header + "\n(" + dataUri + ")\n[[/canvas]]";
         },
@@ -10131,10 +10258,12 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             if (!files || !files.length) return false;
             var settings = this.settings;
             var classPrefix = this.classPrefix;
-            if (settings.dropPasteUpload === false) return false;
+            if (settings.dropPasteUpload === false || settings.readOnly) return false;
 
             var queue = Array.prototype.slice.call(files);
-            var maxFiles = Math.max(1, parseInt(settings.dropPasteMaxFiles, 10) || 10);
+            var configuredMax = parseInt(settings.dropPasteMaxFiles, 10);
+            var maxFiles = isFinite(configuredMax) ? Math.max(0, configuredMax) : 10;
+            if (maxFiles === 0) return false; // 显式配置为 0 表示不处理任何文件
             if (queue.length > maxFiles) {
                 xfEditor.notify("单次最多处理 " + maxFiles + " 个文件，多余文件已忽略。", "warning", 5000);
                 queue = queue.slice(0, maxFiles);
@@ -10145,12 +10274,44 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 var m = /\.([^.\/]+)$/.exec(name || "");
                 return m ? m[1].toLowerCase() : "";
             };
+            // ★ 粘贴截图/拖拽无扩展名文件时 File.name 可能为空，需按 MIME 推断扩展名，
+            //   否则格式白名单校验会把合法图片误判为"不支持的格式"。
+            var mimeExtMap = {
+                "image/jpeg": "jpg", "image/jpg": "jpg", "image/png": "png", "image/gif": "gif",
+                "image/bmp": "bmp", "image/x-ms-bmp": "bmp", "image/webp": "webp",
+                "video/mp4": "mp4", "video/webm": "webm", "video/ogg": "ogv",
+                "video/quicktime": "mov", "video/x-matroska": "mkv", "video/x-flv": "flv", "video/x-msvideo": "avi",
+                "audio/mpeg": "mp3", "audio/mp3": "mp3", "audio/wav": "wav", "audio/x-wav": "wav",
+                "audio/ogg": "ogg", "audio/mp4": "m4a", "audio/x-m4a": "m4a", "audio/aac": "aac", "audio/flac": "flac",
+                "application/pdf": "pdf", "application/msword": "doc",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+                "application/vnd.ms-excel": "xls",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+                "application/vnd.ms-powerpoint": "ppt",
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation": "pptx",
+                "application/zip": "zip", "application/x-rar-compressed": "rar", "application/vnd.rar": "rar",
+                "text/plain": "txt", "text/markdown": "md", "text/csv": "csv"
+            };
+            var extOfFile = function(file) {
+                var ext = extOf(file && file.name);
+                if (ext) return ext;
+                var mime = String((file && file.type) || "").toLowerCase().split(";")[0].trim();
+                return mimeExtMap[mime] || "";
+            };
+            // 分类以用户配置的格式白名单为准，避免自定义白名单后分类行为脱节
+            var extIn = function(ext, formats) {
+                var fmts = formats || [];
+                for (var i = 0; i < fmts.length; i++) {
+                    if (String(fmts[i]).toLowerCase() === ext) return true;
+                }
+                return false;
+            };
             var categorize = function(file) {
-                var type = (file.type || "").toLowerCase();
-                var ext  = extOf(file.name);
-                if (type.indexOf("image/") === 0 || ["jpg","jpeg","gif","png","bmp","webp"].indexOf(ext) >= 0) return "image";
-                if (type.indexOf("video/") === 0 || ["mp4","webm","ogv","mov","mkv","flv","avi"].indexOf(ext) >= 0) return "video";
-                if (type.indexOf("audio/") === 0 || ["mp3","wav","ogg","m4a","aac","flac"].indexOf(ext) >= 0) return "audio";
+                var type = String((file && file.type) || "").toLowerCase();
+                var ext  = extOfFile(file);
+                if (type.indexOf("image/") === 0 || extIn(ext, settings.imageFormats)) return "image";
+                if (type.indexOf("video/") === 0 || extIn(ext, settings.videoFormats)) return "video";
+                if (type.indexOf("audio/") === 0 || extIn(ext, settings.audioFormats)) return "audio";
                 return "file";
             };
             var formatsOf = function(type) {
@@ -10159,8 +10320,8 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 if (type === "audio") return settings.audioFormats;
                 return settings.fileFormats;
             };
-            var isAllowed = function(type, name) {
-                var ext = extOf(name);
+            var isAllowed = function(type, file) {
+                var ext = extOfFile(file);
                 var fmts = formatsOf(type) || [];
                 for (var i = 0; i < fmts.length; i++) {
                     if (String(fmts[i]).toLowerCase() === ext) return true;
@@ -10172,18 +10333,35 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 if (type === "video") return settings.videoUploadURL;
                 return settings.fileUploadURL; // file / audio 共用附件上传地址
             };
-            var safeUrl = function(value) {
+            // 服务端返回地址必须在白名单内。使用 URL 解析而非字符串前缀匹配，
+            // 否则 /\\evil.com 会被浏览器规范化为 //evil.com，绕过协议相对地址检查。
+            var safeUrl = function(value, resourceType) {
                 var url = String(value || "").trim();
                 if (!url) return "";
-                var protocols = settings.allowedUploadProtocols || [];
+                if (/[\u0000-\u001f\u007f\\]/.test(url)) return "";
                 if (/^(javascript|vbscript|jar|mocha|livescript|data:text\/html|data:image\/svg)/i.test(url)) return "";
-                if (url.indexOf("//") === 0) return ""; // 协议相对地址可能指向外部域
-                if (/^data:image\/(png|jpe?g|gif|webp);base64,/i.test(url)) return url;
+                var dataMatch = /^data:image\/(png|jpe?g|gif|bmp|x-ms-bmp|webp);base64,[A-Za-z0-9+/=]+$/i.exec(url);
+                if (dataMatch) return url; // 受限 data:image，与预览渲染白名单一致
+                if (/^data:/i.test(url)) return "";
+                var parsed = null;
+                try { parsed = new URL(url, window.location.href); } catch (e) { return ""; }
+                var protocol = parsed.protocol.toLowerCase();
+                var isRelative = /^(\/|\.\/|\.\.\/)/.test(url) && !/^[a-z][a-z0-9+.-]*:/i.test(url);
+                var protocols = settings.allowedUploadProtocols || [];
+                var allowed = false;
                 for (var i = 0; i < protocols.length; i++) {
-                    var prefix = String(protocols[i]);
-                    if (url.indexOf(prefix) === 0) return url;
+                    var item = String(protocols[i]).toLowerCase();
+                    if (item === "/" || item === "./" || item === "../") {
+                        if (isRelative && parsed.origin === window.location.origin) { allowed = true; break; }
+                    } else if (protocol === item && (!isRelative || parsed.origin === window.location.origin)) {
+                        allowed = true; break;
+                    }
                 }
-                return "";
+                if (!allowed) return "";
+                // 图片/视频 src 只接受 http(s) 或同源相对地址，避免 mailto:/tel: 被当成资源加载
+                if ((resourceType === "image" || resourceType === "video") && !isRelative &&
+                    protocol !== "http:" && protocol !== "https:") return "";
+                return url;
             };
             var notifyError = function(type, label, message) {
                 try { settings.onUploadError.call(self, { type: type, name: label, message: message }); } catch (e) {}
@@ -10198,10 +10376,31 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 if (lastInsertPos && typeof editorCm.setCursor === "function") {
                     try { editorCm.setCursor(lastInsertPos); } catch (e) { lastInsertPos = null; }
                 } else if (typeof clientX === "number" && typeof clientY === "number" && editorCm.coordsChar) {
-                    try {
-                        var pos = editorCm.coordsChar({ left: clientX, top: clientY }, "client");
-                        if (pos && typeof pos.line === "number") editorCm.setCursor(pos);
-                    } catch (e) {}
+                    // 多重兜底定位：client → 相对 wrapper 的 local → 相对 scroller 的 local，
+                    //   避免个别 CodeMirror/浏览器组合下 client 模式返回 outside 导致插到文首。
+                    var dropPos = null;
+                    try { dropPos = editorCm.coordsChar({ left: clientX, top: clientY }, "client"); } catch (e) {}
+                    if (!dropPos || dropPos.outside) {
+                        try {
+                            var wrapEl = (typeof editorCm.getWrapperElement === "function") ? editorCm.getWrapperElement() : null;
+                            if (wrapEl && wrapEl.getBoundingClientRect) {
+                                var wrapRect = wrapEl.getBoundingClientRect();
+                                dropPos = editorCm.coordsChar({ left: clientX - wrapRect.left, top: clientY - wrapRect.top }, "local");
+                            }
+                        } catch (e) {}
+                    }
+                    if (!dropPos || dropPos.outside) {
+                        try {
+                            var scrollEl = (typeof editorCm.getScrollerElement === "function") ? editorCm.getScrollerElement() : null;
+                            if (scrollEl && scrollEl.getBoundingClientRect) {
+                                var scrollRect = scrollEl.getBoundingClientRect();
+                                dropPos = editorCm.coordsChar({ left: clientX - scrollRect.left, top: clientY - scrollRect.top }, "local");
+                            }
+                        } catch (e) {}
+                    }
+                    if (dropPos && typeof dropPos.line === "number" && !dropPos.outside) {
+                        editorCm.setCursor(dropPos);
+                    }
                 }
                 editorCm.focus();
                 editorCm.replaceSelection("\n" + md + "\n");
@@ -10224,7 +10423,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     };
                     reader.onerror = function() { callback(false); };
                     reader.readAsArrayBuffer(file.slice(0, 12));
-                } catch (e) { callback(true); }
+                } catch (e) { callback(false); } // 严格校验失败时关闭放行，避免绕过魔数检查
             };
             var doUpload = function(file, upType, url, fieldName, callback) {
                 if (typeof settings.uploadFunction === "function") {
@@ -10243,7 +10442,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 var label = file.name || type;
                 var fieldName = classPrefix + upType + "-file";
 
-                if (!isAllowed(type, label)) {
+                if (!isAllowed(type, file)) {
                     xfEditor.notify("不支持的文件格式：" + label, "warning", 4000);
                     return done();
                 }
@@ -10254,7 +10453,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 }
 
                 var finish = function(rawUrl) {
-                    var u = safeUrl(rawUrl);
+                    var u = safeUrl(rawUrl, type);
                     if (!u) {
                         notifyError(type, label, "服务端返回的文件地址不被允许。");
                         return done();
@@ -10271,8 +10470,11 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 };
 
                 var startUpload = function() {
-                    // 无上传地址：图片可离线转 base64 涂鸦块；其余类型需配置上传接口
-                    if (!url || String(url).trim() === "") {
+                    var hasCustomUploader = (typeof settings.uploadFunction === "function");
+                    // ★ 自定义 uploadFunction 优先：即使未配置上传 URL 也应执行上传，
+                    //   旧逻辑先判空 URL 导致自定义上传器永远收不到文件。
+                    if (!hasCustomUploader && (!url || String(url).trim() === "")) {
+                        // 无上传地址：图片可离线转 base64 涂鸦块；其余类型需配置上传接口
                         if (type === "image") {
                             self.fileToDataURL(file, function(err, dataUri) {
                                 if (!err && dataUri) {
@@ -10283,7 +10485,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                                 done();
                             });
                         } else {
-                            notifyError(type, label, "「" + label + "」需要配置对应的上传接口（imageUploadURL / videoUploadURL / fileUploadURL）后才能上传。");
+                            notifyError(type, label, "「" + label + "」需要配置对应的上传接口（imageUploadURL / videoUploadURL / fileUploadURL）或 uploadFunction 后才能上传。");
                             done();
                         }
                         return;
@@ -10291,7 +10493,19 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     doUpload(file, upType, url, fieldName, function(err, json) {
                         var parsed = (self._parseUploadResult && self._parseUploadResult(json)) || { success: false, url: "", message: (json && json.message) || "" };
                         if (err || !parsed.success) {
-                            notifyError(type, label, parsed.message || "上传失败，请检查上传接口。");
+                            var failMsg = parsed.message || "上传失败，请检查上传接口。";
+                            notifyError(type, label, failMsg);
+                            // 图片上传失败时降级为内嵌 base64，避免用户看到"粘贴了但什么都没有"
+                            if (type === "image" && settings.dropPasteFallbackToBase64 !== false) {
+                                self.fileToDataURL(file, function(readErr, dataUri) {
+                                    if (!readErr && dataUri) {
+                                        insertAt(self._buildCanvasBlock(dataUri, "center", file.name || ""));
+                                        xfEditor.notify("图片已以内嵌方式插入（上传失败：" + failMsg + "）", "warning", 5000);
+                                    }
+                                    done();
+                                });
+                                return;
+                            }
                             return done();
                         }
                         finish(parsed.url);
@@ -10331,11 +10545,21 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
          */
         _uploadFileByXhr: function(file, url, fieldName, callback, headers) {
             callback = callback || function() {};
+            var self = this;
+            var finished = false;
+            // 保证回调只执行一次：超时、失败与 load 可能先后触发
+            var done = function(err, json) {
+                if (finished) return;
+                finished = true;
+                callback(err, json);
+            };
             try {
                 var formData = new FormData();
                 formData.append(fieldName, file, file.name || "file");
                 var xhr = new XMLHttpRequest();
                 xhr.open("POST", url, true);
+                // 网络挂起时必须有超时，否则串行队列会永久卡在第一个文件上
+                xhr.timeout = (self.settings && self.settings.uploadTimeout) || 30000;
                 // ★ CSRF 防护：XHR 上传请求携带 X-CSRF-TOKEN 请求头，避免遭遇 CSRF 拦截
                 var _csrf = (this._getCsrfToken && this._getCsrfToken()) || "";
                 if (_csrf) { try { xhr.setRequestHeader("X-CSRF-TOKEN", _csrf); } catch (e) {} }
@@ -10344,6 +10568,20 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                         try { xhr.setRequestHeader(key, headers[key]); } catch (e) {}
                     });
                 }
+                if (xhr.upload && typeof xhr.upload.addEventListener === "function") {
+                    xhr.upload.addEventListener("progress", function(e) {
+                        var progress = self.settings && self.settings.onUploadProgress;
+                        if (typeof progress !== "function" || !e || !e.lengthComputable) return;
+                        try {
+                            progress.call(self, {
+                                file: file,
+                                loaded: e.loaded,
+                                total: e.total,
+                                percent: e.total ? Math.min(100, Math.round(e.loaded * 100 / e.total)) : 0
+                            });
+                        } catch (err) {}
+                    }, false);
+                }
                 xhr.onload = function() {
                     if (xhr.status >= 200 && xhr.status < 300) {
                         var raw = xhr.responseText || "";
@@ -10351,18 +10589,20 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                         try {
                             json = JSON.parse(raw);
                         } catch (e) {
-                            callback(new Error("parse-error"));
+                            done(new Error("parse-error"));
                             return;
                         }
-                        callback(null, json);
+                        done(null, json);
                     } else {
-                        callback(new Error("http-" + xhr.status));
+                        done(new Error("http-" + xhr.status));
                     }
                 };
-                xhr.onerror = function() { callback(new Error("network-error")); };
+                xhr.onerror = function() { done(new Error("network-error")); };
+                xhr.ontimeout = function() { done(new Error("timeout")); };
+                xhr.onabort = function() { done(new Error("abort")); };
                 xhr.send(formData);
             } catch (e) {
-                callback(e);
+                done(e);
             }
         },
 
@@ -10408,17 +10648,37 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
          */
         _parseUploadResult: function(json) {
             json = json || {};
-            var success =
-                json.success === 1  || json.success === true  || json.success === "1"  ||
-                json.code   === 0   || json.code   === "0"    ||
-                json.errno  === 0   || json.errno  === "0"    ||
-                json.error  === 0   || json.error  === "0"    ||
-                json.status === 1   || json.status === true   ||
-                json.state  === 1   || json.state  === "SUCCESS" || json.state === "success" ||
-                (typeof json.url   !== "undefined" && json.url)   ||
-                (typeof json.link  !== "undefined" && json.link)  ||
-                (typeof json.src   !== "undefined" && json.src)   ||
-                (typeof json.path  !== "undefined" && json.path);
+            var own = function(key) { return Object.prototype.hasOwnProperty.call(json, key); };
+            var successValues = [1, true, "1", "true"];
+            var zeroValues = [0, "0"];
+            var statusValues = [1, true, "1", "true", 200, "200"];
+            var inList = function(value, list) {
+                for (var i = 0; i < list.length; i++) if (value === list[i]) return true;
+                return false;
+            };
+
+            // 显式失败标志（success:false / code:1 等）优先于 url 字段兜底，
+            // 否则业务层明确拒绝的上传会被误判为成功并插入错误地址。
+            var explicitFailure = false;
+            if (own("success")) {
+                if (!inList(json.success, successValues)) explicitFailure = true;
+            }
+            if (own("code")) {
+                if (!inList(json.code, zeroValues)) explicitFailure = true;
+            }
+            if (own("errno")) {
+                if (!inList(json.errno, zeroValues)) explicitFailure = true;
+            }
+            if (own("error")) {
+                if (!inList(json.error, zeroValues)) explicitFailure = true;
+            }
+            if (own("status")) {
+                if (!inList(json.status, statusValues)) explicitFailure = true;
+            }
+            if (own("state")) {
+                if (!/^(1|success|ok|done)$/i.test(String(json.state))) explicitFailure = true;
+            }
+
             var url = json.url || json.link || json.src || json.path || json.fileUrl ||
                       json.file || json.location || json.attachment || json.filePath || "";
             if (!url && json.data) {
@@ -10428,7 +10688,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 url = json.result.url || json.result.link || json.result.src || json.result.path || "";
             }
             return {
-                success : !!(success && url),
+                success : !explicitFailure && !!url,
                 url     : url,
                 message : json.message || json.msg || json.info || "",
                 name    : json.name || json.fileName || json.filename || (json.data && json.data.name) || ""
@@ -13841,8 +14101,9 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                     if (cTm) cTitle = cTm[1];
                     var cDataMatch = cb.content.match(/\(([\s\S]*?)\)\s*$/);
                     var cDataUri = cDataMatch ? cDataMatch[1].trim() : cb.content.trim();
-                    // XSS 防护：仅允许 PNG / JPEG data URI（涂鸦导出优先 jpeg 以减小体积）
-                    if (!/^data:image\/(png|jpeg|webp);base64,/i.test(cDataUri)) continue;
+                    // XSS 防护：仅允许位图 data URI；与上传回显白名单保持一致，
+                    // 禁止 svg 等可执行格式，同时避免因 gif/bmp 被拒导致内容丢失。
+                    if (!/^data:image\/(png|jpe?g|gif|bmp|x-ms-bmp|webp);base64,[A-Za-z0-9+/=]+$/i.test(cDataUri)) continue;
                     var cAlignClass = "xfeditor-canvas-graffiti-" + (cAlign === "center" ? "center" : (cAlign === "right" ? "right" : "left"));
                     var cImgHtml = '<img data-type="xfeditor_canvas_graffiti" class="xfeditor-canvas-graffiti-img" src="' + xfEditor.escapeHtml(cDataUri) + '" alt="' + xfEditor.escapeHtml(cTitle || "涂鸦") + '">';
                     var cTitleHtml = cTitle ? '<span class="xfeditor-canvas-graffiti-title">' + xfEditor.escapeHtml(cTitle) + '</span>' : '';
@@ -17689,13 +17950,14 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             masterTs: 0,
             expectPreview: null,
             expectEditor: null,
-            expectTs: 0,
+            expectPreviewTs: 0,
+            expectEditorTs: 0,
             cursorLine: -1,
             cursorTs: 0,
             rafEditor: 0,
             rafPreview: 0,
             refreshTimer: 0,
-            mediaTimer: 0,
+            origOverflow: null,
             resizeObserver: null,
             lastError: null
         };
@@ -17717,8 +17979,9 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 .toLowerCase();
         },
 
-        /** 解析 Markdown 中的 ATX 标题，自动跳过围栏代码块。 */
+        /** 解析 Markdown 标题：规则与内置 marked 渲染保持一致，自动跳过围栏代码块。 */
         parseEditorHeadings: function() {
+            var self = this;
             var cm = this.cm;
             var lines = cm.getValue().split("\n");
             var result = [];
@@ -17727,6 +17990,23 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             var fenceLen = 0;
             var info = cm.getScrollInfo();
             var docHeight = Math.max(0, info.height || 0);
+            var seenLine = {};
+
+            var pushHeading = function(line, level, rawText) {
+                var text = self.normalizeText(rawText);
+                if (!text || seenLine[line]) return;
+                seenLine[line] = true;
+                var start = 0;
+                try { start = cm.heightAtLine(line, "local"); } catch (e) { start = 0; }
+                result.push({
+                    index: result.length,
+                    line: line,
+                    level: level,
+                    text: text,
+                    start: start,
+                    end: docHeight
+                });
+            };
 
             for (var index = 0; index < lines.length; index++) {
                 var line = lines[index];
@@ -17746,20 +18026,26 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 }
                 if (inFence) continue;
 
-                var match = /^(#{1,8})\s+(.+?)(?:\s+#+)?\s*$/.exec(line);
-                if (!match) continue;
-                var text = this.normalizeText(match[2]);
-                if (!text) continue;
-                var start = 0;
-                try { start = cm.heightAtLine(index, "local"); } catch (e) { start = 0; }
-                result.push({
-                    index: result.length,
-                    line: index,
-                    level: match[1].length,
-                    text: text,
-                    start: start,
-                    end: docHeight
-                });
+                // marked 的 ATX 规则：最多 3 个前导空格、# 后可不写空格、末尾 # 为可选闭合符
+                var match = /^ {0,3}(#{1,6}) *([^\n]+?) *#*\s*$/.exec(line);
+                if (match) {
+                    pushHeading(index, match[1].length, match[2]);
+                    continue;
+                }
+                // 7/8 个 # 在 marked 中渲染为 h6，多余 # 成为标题文本；按渲染结果同化以便左右配对
+                var deep = /^ {0,3}(#{7,8}) *([^\n]+?) *#*\s*$/.exec(line);
+                if (deep) {
+                    var extra = new Array(deep[1].length - 6 + 1).join("# ");
+                    pushHeading(index, 6, extra + deep[2]);
+                    continue;
+                }
+                // Setext 标题：=== 生成 h1，--- 生成 h2；排除列表项与代码围栏内的伪标题
+                if (index > 0 && /^ {0,3}(=+|-+)\s*$/.test(line)) {
+                    var prev = lines[index - 1];
+                    if (prev && prev.trim() && !/^\s*([-*+]|\d+\.)\s+/.test(prev) && !/^ {0,3}#{1,8}/.test(prev)) {
+                        pushHeading(index - 1, line.trim().charAt(0) === "=" ? 1 : 2, prev);
+                    }
+                }
             }
 
             for (var i = 0; i < result.length; i++) {
@@ -17769,11 +18055,22 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             return result;
         },
 
+        /** 预览区是否可见且可滚动（unwatch 或折叠后应直接跳过同步）。 */
+        isPreviewVisible: function() {
+            var el = this.preview;
+            if (!el || (!el.clientHeight && !el.clientWidth)) return false;
+            try {
+                var style = window.getComputedStyle ? window.getComputedStyle(el) : null;
+                if (style && (style.display === "none" || style.visibility === "hidden")) return false;
+            } catch (e) {}
+            return true;
+        },
+
         /** 采集预览区可见的 h1~h8，按滚动内容坐标记录章节区间。 */
         parsePreviewHeadings: function() {
             var scrollEl = this.preview;
             var container = this.container;
-            if (!scrollEl || !container) return [];
+            if (!scrollEl || !container || !this.isPreviewVisible()) return [];
             var scrollRect = scrollEl.getBoundingClientRect();
             var nodes = container.querySelectorAll("h1,h2,h3,h4,h5,h6,h7,h8");
             var result = [];
@@ -17781,11 +18078,12 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 var node = nodes[i];
                 var parent = node.parentElement;
                 var inToc = false;
-                while (parent && parent !== container) {
+                while (parent) {
                     if (/markdown-toc|\btoc\b|xf_editor-toc/i.test(parent.className || "")) {
                         inToc = true;
                         break;
                     }
+                    if (parent === container) break;
                     parent = parent.parentElement;
                 }
                 if (inToc) continue;
@@ -17796,7 +18094,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 if (!text) continue;
                 result.push({
                     index: result.length,
-                    level: parseInt(node.tagName.charAt(1), 10) || 1,
+                    level: parseInt(node.tagName.substring(1), 10) || 1,
                     text: text,
                     element: node,
                     start: top,
@@ -17809,48 +18107,42 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             return result;
         },
 
-        /** 顺序优先、文本+层级优先的标题配对，避免同名标题错配。 */
+        /** 层级 + 文本优先的标题配对；不做盲目顺序兜底，避免整篇章节错位。 */
         alignHeadings: function(editorHeads, previewHeads) {
             var pairs = [];
             var usedPreview = {};
-            var cursor = 0;
+            var pairedEditor = {};
+            var ei, pi;
 
-            for (var ei = 0; ei < editorHeads.length; ei++) {
-                var editorHeading = editorHeads[ei];
-                var found = -1;
-                var limit = Math.min(previewHeads.length, cursor + 12);
-                for (var pi = cursor; pi < limit; pi++) {
+            // 第一轮：层级与文本完全一致。全文搜索，不受固定窗口限制，
+            // 否则两个可匹配标题之间出现较多未解析标题时会导致后续全部错配。
+            for (ei = 0; ei < editorHeads.length; ei++) {
+                var editorHead = editorHeads[ei];
+                for (pi = 0; pi < previewHeads.length; pi++) {
                     if (usedPreview[pi]) continue;
-                    var previewHeading = previewHeads[pi];
-                    if (previewHeading.level === editorHeading.level && previewHeading.text === editorHeading.text) {
-                        found = pi;
+                    if (previewHeads[pi].level === editorHead.level && previewHeads[pi].text === editorHead.text) {
+                        usedPreview[pi] = true;
+                        pairedEditor[editorHead.index] = true;
+                        pairs.push({ editor: editorHead, preview: previewHeads[pi] });
                         break;
                     }
                 }
-                if (found < 0) {
-                    for (var pj = cursor; pj < limit; pj++) {
-                        if (usedPreview[pj]) continue;
-                        if (previewHeads[pj].text === editorHeading.text) {
-                            found = pj;
-                            break;
-                        }
+            }
+            // 第二轮：仅文本一致，兼容第三方渲染器层级映射差异
+            for (ei = 0; ei < editorHeads.length; ei++) {
+                var pending = editorHeads[ei];
+                if (pairedEditor[pending.index]) continue;
+                for (pi = 0; pi < previewHeads.length; pi++) {
+                    if (usedPreview[pi]) continue;
+                    if (previewHeads[pi].text === pending.text) {
+                        usedPreview[pi] = true;
+                        pairedEditor[pending.index] = true;
+                        pairs.push({ editor: pending, preview: previewHeads[pi] });
+                        break;
                     }
                 }
-                if (found >= 0) {
-                    usedPreview[found] = true;
-                    cursor = found + 1;
-                    pairs.push({ editor: editorHeading, preview: previewHeads[found] });
-                }
             }
-
-            var pairedEditor = {};
-            for (var i = 0; i < pairs.length; i++) pairedEditor[pairs[i].editor.index] = true;
-            var remainingEditor = editorHeads.filter(function(item) { return !pairedEditor[item.index]; });
-            var remainingPreview = previewHeads.filter(function(item, idx) { return !usedPreview[idx]; });
-            var fallbackCount = Math.min(remainingEditor.length, remainingPreview.length);
-            for (var k = 0; k < fallbackCount; k++) {
-                pairs.push({ editor: remainingEditor[k], preview: remainingPreview[k] });
-            }
+            // 故意不按剩余顺序硬配：宁可留出空档，也不要把 A 章接到 B 章。
             pairs.sort(function(a, b) { return a.editor.line - b.editor.line; });
             return pairs;
         },
@@ -17889,26 +18181,26 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         isSelfPreviewScroll: function() {
             var state = this.state;
             if (state.expectPreview == null) return false;
-            var age = this.now() - state.expectTs;
+            var age = this.now() - state.expectPreviewTs;
             if (age > 300 || Math.abs(this.preview.scrollTop - state.expectPreview) > 4) {
                 state.expectPreview = null;
                 return false;
             }
-            if (age > 80) state.expectPreview = null;
+            // 一次程序化赋值可能触发多个 scroll 事件；不能在 80ms 时提前清除期望，
+            // 否则后续事件会被误判为用户滚动并翻转主控区。
             return true;
         },
 
         isSelfEditorScroll: function() {
             var state = this.state;
             if (state.expectEditor == null) return false;
-            var age = this.now() - state.expectTs;
+            var age = this.now() - state.expectEditorTs;
             var top = 0;
             try { top = this.cm.getScrollInfo().top; } catch (e) { top = 0; }
             if (age > 300 || Math.abs(top - state.expectEditor) > 4) {
                 state.expectEditor = null;
                 return false;
             }
-            if (age > 80) state.expectEditor = null;
             return true;
         },
 
@@ -17918,7 +18210,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             var maxTop = Math.max(0, scrollEl.scrollHeight - scrollEl.clientHeight);
             var top = Math.max(0, Math.min(maxTop, target));
             this.state.expectPreview = top;
-            this.state.expectTs = this.now();
+            this.state.expectPreviewTs = this.now();
             if (Math.abs(scrollEl.scrollTop - top) > 0.5) scrollEl.scrollTop = top;
             else this.state.expectPreview = null;
         },
@@ -17930,15 +18222,16 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             var maxTop = Math.max(0, info.height - info.clientHeight);
             var top = Math.max(0, Math.min(maxTop, target));
             this.state.expectEditor = top;
-            this.state.expectTs = this.now();
+            this.state.expectEditorTs = this.now();
             cm.scrollTo(null, top);
         },
 
         /** 左侧 → 右侧：先定位同一章节，再按章节内容高度比例滚动。 */
         syncFromEditor: function() {
             var state = this.state;
-            if (state.destroyed || state.suspended || this.getMaster() === "preview") return;
-            if (!this.cm || !this.preview) return;
+            if (state.destroyed || state.suspended || !state.bound) return;
+            if (this.getMaster() === "preview") return;
+            if (!this.cm || !this.preview || !this.isPreviewVisible()) return;
             var model = this.getModel();
             var info = this.cm.getScrollInfo();
             var pairs = model.pairs;
@@ -17953,7 +18246,9 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             if (state.cursorLine >= 0 && (this.now() - state.cursorTs) < 900) {
                 var cursorY = 0;
                 try { cursorY = this.cm.heightAtLine(state.cursorLine, "local"); } catch (e) {}
-                if (cursorY >= info.top - 2 && cursorY <= info.top + info.clientHeight + 2) anchorLine = state.cursorLine;
+                // 仅在光标处于视口上方 1/3 时作为锚点；否则视口顶部仍在上章而光标已在下章，
+                // 会错误选中更深章节并导致预览跳变。
+                if (cursorY >= info.top - 2 && cursorY <= info.top + info.clientHeight / 3 + 2) anchorLine = state.cursorLine;
             }
 
             var chapter = null;
@@ -17973,8 +18268,9 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         /** 右侧 → 左侧：使用与左侧完全相同的章节定位与比例算法。 */
         syncFromPreview: function() {
             var state = this.state;
-            if (state.destroyed || state.suspended || this.getMaster() === "editor") return;
-            if (!this.cm || !this.preview) return;
+            if (state.destroyed || state.suspended || !state.bound) return;
+            if (this.getMaster() === "editor") return;
+            if (!this.cm || !this.preview || !this.isPreviewVisible()) return;
             var model = this.getModel();
             var pairs = model.pairs;
             var anchor = this.preview.scrollTop;
@@ -17984,10 +18280,12 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 return;
             }
 
+            // 全遍历取「start <= 当前位置」的最大章节，不依赖 pairs 的排序方向，
+            // 避免隐藏标题或错配导致 preview.start 非单调时选到过早章节。
             var chapter = null;
             for (var i = 0; i < pairs.length; i++) {
-                if (pairs[i].preview.start <= anchor) chapter = pairs[i];
-                else break;
+                if (pairs[i].preview.start <= anchor &&
+                    (!chapter || pairs[i].preview.start > chapter.preview.start)) chapter = pairs[i];
             }
             if (!chapter) chapter = pairs[0];
 
@@ -18022,7 +18320,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             clearTimeout(state.refreshTimer);
             state.refreshTimer = setTimeout(function() {
                 state.refreshTimer = 0;
-                if (state.destroyed || state.suspended) return;
+                if (state.destroyed || state.suspended || !state.bound) return;
                 self.invalidate();
                 if (self.getMaster() === "preview") self.syncFromPreview();
                 else self.syncFromEditor();
@@ -18030,7 +18328,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         },
 
         refresh: function() {
-            if (this.state.destroyed || this.state.suspended) return;
+            if (this.state.destroyed || this.state.suspended || !this.state.bound) return;
             this.invalidate();
             if (this.getMaster() === "preview") this.syncFromPreview();
             else this.syncFromEditor();
@@ -18050,7 +18348,15 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             state.suspended = false;
             state.master = "editor";
             state.masterTs = this.now();
+            // 解绑后 rAF 句柄可能仍为真值，重绑时必须清零，否则节流函数永久早退
+            state.rafEditor = 0;
+            state.rafPreview = 0;
+            state.expectPreview = null;
+            state.expectEditor = null;
+            state.expectPreviewTs = 0;
+            state.expectEditorTs = 0;
 
+            state.origOverflow = this.container.style.overflow;
             this.container.style.overflow = "hidden";
 
             dom(cmScrollEl).off("scroll" + ns).on("scroll" + ns, function() {
@@ -18063,15 +18369,21 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 self.setMaster("preview");
                 self.scheduleFromPreview();
             });
-                dom([cmScrollEl, this.preview]).off("wheel" + ns + " touchstart" + ns + " mousedown" + ns)
-                    .on("wheel" + ns + " touchstart" + ns + " mousedown" + ns, function(e) {
-                        var zone = (e.currentTarget === self.preview) ? "preview" : "editor";
-                        self.setMaster(zone);
-                        // 用户滚轮/触摸滚动时以视口位置为准，避免旧光标章节持续抢占
-                        if (zone === "editor" && e.type !== "mousedown") state.cursorTs = 0;
-                    });
+            dom([cmScrollEl, this.preview]).off("wheel" + ns + " touchstart" + ns + " mousedown" + ns)
+                .on("wheel" + ns + " touchstart" + ns + " mousedown" + ns, function(e) {
+                    var zone = (e.currentTarget === self.preview) ? "preview" : "editor";
+                    self.setMaster(zone);
+                    // 用户主动输入必须清除该区的程序化滚动期望，否则首个真实滚动会被误判为同步回弹
+                    if (zone === "preview") {
+                        state.expectPreview = null;
+                    } else {
+                        state.expectEditor = null;
+                        // 滚轮/触摸以视口位置为准；mousedown 后拖拽也可能改变视口，同样清除光标锚点
+                        state.cursorTs = 0;
+                    }
+                });
 
-            // CodeMirror 事件不支持 jQuery 命名空间，必须使用具名处理器精确绑定/解绑
+            // CodeMirror 事件需使用具名处理器精确绑定/解绑，避免重复注册累积监听器
             if (state.onCursor) this.cm.off("cursorActivity", state.onCursor);
             state.onCursor = function() {
                 try {
@@ -18099,9 +18411,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             dom(this.container).off("click" + ns).on("click" + ns, function() {
                 self.scheduleRefresh(160);
             });
-            dom(this.container).off("load" + ns).on("load" + ns, "img", function() {
-                self.scheduleRefresh(150);
-            });
+            // load 事件不冒泡，委托绑定不会触发；统一由下面的原生 capture 处理器负责
             try {
                 state.mediaHandler = function() { self.scheduleRefresh(150); };
                 this.container.addEventListener("load", state.mediaHandler, true);
@@ -18143,14 +18453,20 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             state.bound = false;
 
             clearTimeout(state.refreshTimer);
-            clearTimeout(state.mediaTimer);
+            state.refreshTimer = 0;
             if (state.rafEditor) {
                 if (typeof cancelAnimationFrame === "function") cancelAnimationFrame(state.rafEditor);
                 else clearTimeout(state.rafEditor);
+                state.rafEditor = 0; // 必须清零，否则重新 bind 后节流分支永久早退
             }
             if (state.rafPreview) {
                 if (typeof cancelAnimationFrame === "function") cancelAnimationFrame(state.rafPreview);
                 else clearTimeout(state.rafPreview);
+                state.rafPreview = 0;
+            }
+            if (state.origOverflow !== null && this.container) {
+                try { this.container.style.overflow = state.origOverflow; } catch (e) {}
+                state.origOverflow = null;
             }
             if (state.resizeObserver) {
                 try { state.resizeObserver.disconnect(); } catch (e) {}
@@ -18160,18 +18476,26 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 try { this.container.removeEventListener("load", state.mediaHandler, true); } catch (e) {}
                 state.mediaHandler = null;
             }
+            // 逐项解绑：任何一处异常都不能导致其余监听器残留
             try {
-                dom(this.cm.getScrollerElement()).off("scroll" + this.ns + " wheel" + this.ns + " touchstart" + this.ns + " mousedown" + this.ns);
-                dom(this.preview).off("scroll" + this.ns + " wheel" + this.ns + " touchstart" + this.ns + " mousedown" + this.ns);
-                    dom(this.container).off("click" + this.ns + " load" + this.ns);
-                    dom(window).off("resize" + this.ns);
-                    if (state.onCursor) { this.cm.off("cursorActivity", state.onCursor); state.onCursor = null; }
-                    if (state.onChanges) { this.cm.off("changes", state.onChanges); state.onChanges = null; }
-                    if (state.onFold) { this.cm.off("fold", state.onFold); state.onFold = null; }
+                if (this.cm && this.cm.getScrollerElement) {
+                    dom(this.cm.getScrollerElement()).off("scroll" + this.ns + " wheel" + this.ns + " touchstart" + this.ns + " mousedown" + this.ns);
+                }
             } catch (e) {}
+            try { if (this.preview) dom(this.preview).off("scroll" + this.ns + " wheel" + this.ns + " touchstart" + this.ns + " mousedown" + this.ns); } catch (e) {}
+            try { if (this.container) dom(this.container).off("click" + this.ns + " load" + this.ns); } catch (e) {}
+            try { dom(window).off("resize" + this.ns); } catch (e) {}
+            try { if (state.onCursor && this.cm) { this.cm.off("cursorActivity", state.onCursor); state.onCursor = null; } } catch (e) {}
+            try { if (state.onChanges && this.cm) { this.cm.off("changes", state.onChanges); state.onChanges = null; } } catch (e) {}
+            try { if (state.onFold && this.cm) { this.cm.off("fold", state.onFold); state.onFold = null; } } catch (e) {}
+
             state.model = null;
             state.expectPreview = null;
             state.expectEditor = null;
+            state.expectPreviewTs = 0;
+            state.expectEditorTs = 0;
+            state.cursorTs = 0;
+            state.lastError = null;
         }
     };
 
