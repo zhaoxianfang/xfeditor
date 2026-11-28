@@ -123,12 +123,12 @@
             </tbody>
         </table>
         <h3>同步滚动（编辑区 ⇄ 预览区）</h3>
-        <p>由配置 <code>syncScroll: true</code> 开启，双向精准同步。相关可调用方法：</p>
+        <p>由配置 <code>syncScroll: true</code> 开启。先对齐左右两侧最小/最深层 H 标签章节，再按章节内容高度比例双向滚动。</p>
         <ul>
-            <li><code>bindSyncScroll()</code> / <code>unbindSyncScroll()</code> — 手动绑定/解绑</li>
-            <li><code>scrollToLineNum(lineNum, linePercent)</code> — 滚动预览区到指定编辑行</li>
+            <li><code>bindChapterSync()</code> / <code>unbindChapterSync()</code> — 手动绑定/解绑</li>
+            <li><code>scrollToLineNum(lineNum, linePercent)</code> — 滚动编辑区到指定行并按章节规则同步预览</li>
         </ul>
-        <div class="callout">v2.1.0 增强：预览区图片/视频/音频加载完成会自动失效位置映射并重建，避免同步滚动跳转错位；图片缩放、表格编辑等预览交互期间会暂停同步，杜绝抖动与回环。</div>
+        <div class="callout">预览区媒体加载、尺寸变化与内容更新都会重建章节模型；图片缩放、表格编辑等预览交互期间可临时暂停同步，杜绝抖动与回环。</div>
     </section>
 
     <section id="file">
@@ -310,7 +310,7 @@ editor._syncUploadedFiles();         // 主动触发一次删除比对</code></p
             <li><b>上传地址门控：</b>视频/音频/附件若未配置对应上传地址，本地上传入口会被禁用，不会在浏览器侧保存文件；仅图片允许在无地址时以 base64 内联。</li>
             <li><b>删除通知时机：</b>在内容编辑触发防抖后比对，正文不再引用即视为删除。已上传但从未插入的文件不会被误删。</li>
             <li><b>跨域上传：</b>开启 <code>crossDomainUpload</code> 时需配合 <code>uploadCallbackURL</code>，删除通知仍走 <code>fileDeleteURL</code> 系列。</li>
-            <li><b>性能：</b>大量图片加载会触发位置映射重建（已防抖），建议服务端返回带尺寸的图片以减少回流。</li>
+            <li><b>性能：</b>大量图片加载会触发章节模型重建（已防抖），建议服务端返回带尺寸的图片以减少回流。</li>
             <li><b>this 指向：</b>所有回调内 <code>this</code> 均为编辑器实例，可直接调用 <code>this.getMarkdown()</code> 等方法。</li>
         </ul>
         <p style="margin-top:14px;"><a class="back" href="index.html">← 返回示例导航</a></p>

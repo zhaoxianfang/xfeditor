@@ -16,7 +16,7 @@
 - **🚫 上传地址门控**：未配置对应上传地址时，视频/音频/附件的本地上传入口被禁用（不保存文件到前端）；图片为唯一例外，无地址时自动转为 base64 内联。
 - **🗑️ 文件删除服务端通知**：已上传到服务器的文件在编辑器中删除/修改时，自动回调 `fileDeleteURL` 通知服务端清理，避免僵尸文件；新增 `onFileUploaded` / `onFileDeleted` 事件。
 - **🖱️ 拖拽 / 粘贴文件**：支持拖入或粘贴图片、视频、音频、附件，按类型识别后走对应上传或离线处理。
-- **🔄 同步滚动加固**：编辑区与预览区双向精准同步滚动的锚点映射、抖动抑制与动态重建进一步优化。
+- **🔄 同步滚动重构**：按 H1~H8 标题章节双向定位，再按章节内容高度比例同步滚动。
 - **📑 事件与回调文档**：新增 `examples/events-reference.html`，系统枚举所有事件/回调的参数、用法与接入示例。
 
 
@@ -29,11 +29,11 @@
 - [API 接口文档](https://zhaoxianfang.github.io/xfeditor/examples/api-reference.html)
 
 ##核心变更
-- **🔄 实时双向同步滚动**：基于源码真实行号锚点的单调可逆映射，编辑区与预览区双向精准同步；主控区带 TTL 过期，拖动滚动条/键盘翻页不再单向失效；媒体加载后自动重对齐，缓动动画可取消，杜绝抖动与回环。
+- **🔄 章节同步滚动**：先对齐左右两侧最小/最深层 H 标签章节，再按章节内容高度比例滚动；主控区带 TTL 过期，媒体加载与尺寸变化后自动重建模型，杜绝抖动与回环。
 - **🚫 零兼容 / 零别名**：彻底移除 IE polyfill、window.test 全局污染、URL 兼容别名（escapeHTML/escapeAttr/ucfirst 等）、loadKaTeX 旧签名、eval 回退等历史兼容代码；公开 API 唯一命名。
 - **🔐 安全加固**：XSS 过滤新增协议白名单（http/https/mailto/tel/ftp + 安全 data 图片），危险协议黑名单双保险；上传文件名采用 Markdown 结构转义；fetch Promise 统一防 unhandled rejection。
-- **⚡ 性能提升**：滚动热路径不再触发强制布局（移除逐帧 scrollHeight 读取）；超长文档块映射采用均匀采样；实例级状态隔离，多编辑器互不干扰。
-- **🧹 资源清理**：destroy 完整解绑同步滚动/拖拽/字体加载监听与动画帧，杜绝内存泄漏。
+- **⚡ 性能提升**：章节模型仅在内容/尺寸变化时重建，滚动热路径只读缓存；实例级状态隔离，多编辑器互不干扰。
+- **🧹 资源清理**：destroy 完整解绑章节同步/拖拽/字体加载监听与动画帧，杜绝内存泄漏。
 - **📚 文档与示例**：全部接口文档与 demo 更新至 v2.1.0，内容与实际实现一致。
 
 
@@ -126,7 +126,7 @@ xfEditor 支持 **40+ 种语法和功能**，远超标准 Markdown。以下为�
 ### 🔧 编辑器功能
 | 功能 | 说明 | 配置 |
 |------|------|------|
-| 同步滚动 | 编辑区与预览区实时双向同步滚动，基于源码真实行号锚点的单调可逆映射；主控区 TTL 过期、媒体加载自动重对齐、缓动动画可取消 | `syncScroll: true` |
+| 同步滚动 | 先按 H1~H8 标题章节定位，再按章节内容高度比例双向同步；主控区 TTL 过期、媒体加载自动重建 | `syncScroll: true` |
 | 表格行列编辑 | 预览区点击单元格插入/删除行列 | `tableEdit: true` |
 | 图片尺寸编辑 | 拖拽+精确输入图片尺寸 | `imageResize: true` |
 | 代码复制按钮 | 代码块右上角一键复制 | 默认 |
@@ -461,17 +461,17 @@ editor.exportFile("文档", "markdown"); // 导出文件
 ### 同步滚动与生命周期
 | 方法 | 说明 |
 |------|------|
-| `bindSyncScroll()` | 绑定双向同步滚动（watch 模式自动调用） |
-| `unbindSyncScroll()` | 解除同步滚动绑定并清理全部监听 |
+| `bindChapterSync()` | 绑定章节同步引擎（watch 模式自动调用） |
+| `unbindChapterSync()` | 解除章节同步绑定并清理全部监听 |
 | `suspendSyncScroll()` | 临时 suspend 同步（内容程序化更新时用） |
 | `resumeSyncScroll()` | 恢复同步 |
-| `scrollToLineNum(line)` | 滚动编辑区到指定行并同步预览 |
+| `scrollToLineNum(line, linePercent)` | 滚动编辑区到指定行并按章节规则同步预览 |
 | `destroy()` | 销毁实例，释放所有监听器/定时器/动画帧 |
 | `watch()` / `unwatch()` | 开启/关闭实时预览 |
 | `previewing()` / `previewed()` | 进入/退出纯预览模式 |
 | `fullscreen()` / `fullscreenExit()` | 进入/退出全屏 |
 | `show()` / `hide()` | 显示/隐藏编辑器 |
-| `resize()` | 重新计算尺寸（同时失效同步滚动映射） |
+| `resize()` | 重新计算尺寸（同时失效章节模型） |
 | `setLang(lang)` | 切换界面语言 |
 | `executePlugin(name, path)` | 执行插件 |
 | `search()` / `searchReplace()` / `searchReplaceAll()` | 搜索与替换 |

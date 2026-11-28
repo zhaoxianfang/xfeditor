@@ -346,7 +346,7 @@
         </tr>
         <tr>
             <td><b>同步滚动</b></td>
-            <td>✅ 编辑区↔预览区双向同步</td>
+            <td>✅ 编辑区↔预览区章节同步（H1~H8 + 高度比例）</td>
             <td>❌ 不适用（无编辑器）</td>
         </tr>
         <tr>
@@ -715,7 +715,7 @@ toolbarIcons: [
         <tr><td>emailLink</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>邮件自动链接</td></tr>
         <tr><td>copybook</td><td class="type">Boolean</td><td class="default">false</td><td class="values">true|false</td><td>字帖。田字格/米字格/拼音格</td></tr>
         <tr><td>previewCodeHighlight</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>预览区代码高亮</td></tr>
-        <tr><td>syncScroll</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>同步滚动(v2.1.0重写引擎)</td></tr>
+        <tr><td>syncScroll</td><td class="type">Boolean</td><td class="default">true</td><td class="values">true|false</td><td>章节同步滚动（H1~H8 章节定位 + 章节内高度比例）</td></tr>
         <tr><td>previewOnly</td><td class="type">Boolean</td><td class="default">false</td><td class="values">true|false</td><td>纯预览模式(禁用交互)</td></tr>
     </table></div>
 
@@ -1972,7 +1972,7 @@ xfEditor.registerLang(<span class="str">"ja"</span>, {
     emailLink         : <span class="fn">true</span>,       <span class="cmt">// 邮件链接，默认 true</span>
     copybook          : <span class="fn">false</span>,      <span class="cmt">// 字帖，默认 false(田字格/米字格/拼音格)</span>
     previewCodeHighlight: <span class="fn">true</span>,     <span class="cmt">// 代码高亮，默认 true</span>
-    syncScroll        : <span class="fn">true</span>,       <span class="cmt">// 同步滚动，默认 true(v2.1.0重写引擎)</span>
+    syncScroll        : <span class="fn">true</span>,       <span class="cmt">// 章节同步滚动，默认 true</span>
     previewOnly       : <span class="fn">false</span>,      <span class="cmt">// 纯预览，默认 false</span>
 
     <span class="cmt">/* ===== 上传配置 ===== */</span>

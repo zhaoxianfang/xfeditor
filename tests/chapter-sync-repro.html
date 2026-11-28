@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8" />
-<title>xfEditor 双向同步滚动复现</title>
+<title>xfEditor 章节同步回归</title>
 <link rel="stylesheet" href="../css/xf_editor.min.css" />
 <style>
   body { margin: 0; font-family: sans-serif; }
@@ -15,14 +15,22 @@
 <script>
 (function () {
   var parts = [];
-  for (var i = 1; i <= 60; i++) {
-    parts.push('# 章节 ' + i + ' 标题');
+  function chapter(title, level, count) {
+    var hashes = new Array(level + 1).join('#');
+    parts.push(hashes + ' ' + title);
     parts.push('');
-    for (var j = 1; j <= 6; j++) {
-      parts.push('这是第 ' + i + ' 章的第 ' + j + ' 段正文内容，用于构造足够长的文档以便观察同步滚动的定位精度。段落文本包含中英文 abcdefg 与数字 ' + (i * 100 + j) + '。');
+    for (var index = 1; index <= count; index++) {
+      parts.push('这是「' + title + '」章节的第 ' + index + ' 段正文，用于构造足够长的章节内容，以便验证先定位章节再按内容高度比例滚动的同步逻辑。');
       parts.push('');
     }
   }
+
+  chapter('系统说明', 2, 8);
+  chapter('示例', 3, 14);
+  chapter('细节', 4, 10);
+  chapter('部署说明', 2, 8);
+  chapter('回滚方案', 3, 12);
+
   var markdown = parts.join('\n');
   var dom = window.xfEditor.dom;
   dom(function () {

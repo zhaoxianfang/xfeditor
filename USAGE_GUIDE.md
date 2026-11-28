@@ -99,7 +99,7 @@ xfEditor.markdownToHTML("preview-container", {
 | `watch` | `true` | 实时预览 |
 | `delay` | `80` | 解析延迟 (ms)，从 300ms 降至 80ms |
 | `previewCodeHighlight` | `true` | 预览区代码高亮 |
-| `syncScroll` | `true` | 编辑区与预览区双向精准同步滚动（源码行号锚点 + 单调可逆映射 + 实时双向同步） |
+| `syncScroll` | `true` | 编辑区与预览区章节同步滚动（H1~H8 章节定位 + 章节内高度比例） |
 
 ### 扩展语法
 
@@ -915,26 +915,26 @@ editor.initColumns();          // 初始化 Columns
 editor.initPages();            // 初始化纸张页面
 ```
 
-**同步滚动**：
+**章节同步滚动**：
 ```javascript
 // 配置项（默认启用）
 var editor = xfEditor("id", { syncScroll: true });
 
-// 绑定/解绑同步滚动
-editor.bindSyncScroll();       // 绑定同步滚动
-editor.unbindSyncScroll();     // 解绑同步滚动
+// 绑定/解绑章节同步引擎
+editor.bindChapterSync();       // 绑定同步
+editor.unbindChapterSync();     // 解绑同步
 
-// 编程式滚动到指定行号（标题锚点精准定位 + smooth 动画）
-editor.scrollToLineNum(42);         // 滚动预览区到第 42 行
-editor.scrollToLineNum(42, 0.5);   // 滚动预览区到第 42 行中间位置
+// 编程式滚动到指定行（按章节规则同步预览）
+editor.scrollToLineNum(42);         // 滚动到第 42 行
+editor.scrollToLineNum(42, 0.5);   // 滚动到第 42 行中间位置
 
-// ★: 预览交互保护（图片缩放/表格编辑时暂停同步）
-editor.suspendSyncScroll();   // 暂停同步滚动
-// ... 预览区交互操作 ...
-editor.resumeSyncScroll();    // 恢复同步滚动
+// 程序化更新 DOM 时临时暂停同步
+editor.suspendSyncScroll();   // 暂停同步
+// ... 程序化更新 ...
+editor.resumeSyncScroll();    // 恢复同步
 ```
 
-> **引擎原理**：解析 markdown 源码标题行号 + 预览 DOM 标题元素 → 文本+层级智能配对 → `editorLine ↔ previewElement` 锚点表 → 锚点间线性插值精准定位。门控体系（suppressAllSync → programmaticScroll → disablePreviewListener）确保各方向互不干扰。程序化滚动识别防止反馈循环。祖先链滚动监听不遗漏任何事件。
+> **引擎原理**：分别解析编辑区 Markdown `#`~`########` 与预览区 `h1`~`h8`，按文本与层级顺序配对；以“最小/最深层章节”为原则定位当前章节，再按该章节在左右两侧的内容高度比例同步滚动。主控区 TTL、程序化滚动自识别与 rAF 合并共同防止反馈震荡。
 
 **工具栏**：
 ```javascript

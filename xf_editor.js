@@ -2309,24 +2309,10 @@
             this.flowchartTimer  = null;
             this._asyncLoadCount  = 0;        // 异步加载计数器
             this._allAsyncLoaded = false;    // onAllAsyncLoad 是否已触发
-            this._syncingScroll   = false;   // 同步滚动防抖标记
-            this._scrollSyncBound = false;   // 是否已绑定同步滚动事件
-            this._syncScrollActive = null;   // 当前鼠标所在区域："editor" | "preview" | null
-            this._applyingDomChanges = false;  // DOM 更新期间锁定滚动同步
-            // 实例唯一 ID，用于 window 级事件命名空间隔离；
-            //   多个编辑器共存时，A 的解绑不会误删 B 的监听器。
+            // 实例唯一 ID，用于事件命名空间隔离；多个编辑器共存时互不干扰。
             this._uid = "xfed" + (++xfEditor._instanceSeq).toString(36);
-            // 统一同步滚动状态管理
-            this._syncState = {
-                suppressAllSync    : false,   // 完全禁用双向同步（preview→editor内容更新时）
-                programmaticScroll : false,   // 标记为程序化滚动（忽略该次scroll事件）
-                disablePreviewListener : false, // 禁用预览区→编辑区方向（editor→preview动画期间）
-                editorDestTop      : 0,       // 动画目标位置
-                editorAnimTimer    : null,    // 编辑器动画 timer
-                lastEditorSyncTime : 0,       // 防抖时间戳
-                lastPreviewSyncTime: 0,       // 防抖时间戳
-                mouseTarget        : null     // 鼠标所在区域 "editor" | "preview" | null
-            };
+            // 章节同步引擎实例（延迟到首次渲染时创建）
+            this._chapterSync = null;
             
             var classNames       = this.classNames   = {
                 textarea : {
@@ -2706,9 +2692,9 @@
                         try { cm.foldCode(xfEditor.CodeMirror.Pos(i, 0), xfBase64Fold, "fold"); } catch (e) {}
                     }
                 }
-                // base64 折叠会改变行的可见高度，使 编辑行↔预览Y 映射失效，需立即废弃缓存
-                if (self._syncState && typeof self._syncState._invalidateAnchors === "function") {
-                    try { self._syncState._invalidateAnchors(); } catch (e) {}
+                // base64 折叠会改变章节高度，需立即废弃章节模型缓存
+                if (self._chapterSync) {
+                    try { self._chapterSync.invalidate(); } catch (e) {}
                 }
             };
             this._xfFoldAllBase64 = xfFoldAllBase64;
@@ -4293,10 +4279,9 @@
                 preview.hide();
             }
             
-            // ★ v2.1.0 fix: 尺寸变化后位置映射的 previewY 已失效，
-            //   必须显式失效，否则全屏/预览/宽度切换后同步定位到旧坐标。
-            if (this._syncState && this._syncState._invalidateAnchors) {
-                this._syncState._invalidateAnchors();
+            // 尺寸变化后章节高度失效，全屏/预览/宽度切换后需重新计算。
+            if (this._chapterSync) {
+                this._chapterSync.invalidate();
             }
 
             if (state.loaded) 
@@ -4383,21 +4368,7 @@
             
             if(settings.watch || (!settings.watch && state.preview))
             {
-                // DOM 更新期间锁定同步滚动，防止内容变化触发反向同步
-                this._applyingDomChanges = true;
-                clearTimeout(this.__syncDomLockTimer);
-                
-                // 注入 data-sign 块签名用于精准行号映射
-                if (settings.syncScroll) {
-                    newMarkdownDoc = xfEditor.addBlockSignatures(newMarkdownDoc, cmValue);
-                }
-                
                 previewContainer.html(newMarkdownDoc);
-
-                // 延迟解锁滚动同步，等待 DOM 高度稳定
-                this.__syncDomLockTimer = setTimeout(function() {
-                    _this._applyingDomChanges = false;
-                }, 100);
 
                 // 每次预览更新后重新绑定 tooltip 事件（DOM 已完全替换）
                 if (settings && settings.tooltip !== false) {
@@ -4565,43 +4536,10 @@
                 // tooltip 已在上方 xfEditor.initTooltips(previewContainer) 中初始化，
                 //     此处的重复调用已移除（避免双层清理+全量遍历无效迭代）
                 if (settings.syncScroll) {
-                    // 确保首次绑定
-                    if (!_this._scrollSyncBound) {
-                        _this.bindSyncScroll();
-                    }
-                    // 内容变更后强制刷新同步状态
-                    // 即使 bindSyncScroll 已绑定，内容变更后也需要：
-                    // 1. 重新无效化锚点缓存（因为 data-sign 已变化）
-                    // 2. 延迟触发一次编辑区→预览区的同步滚动
-                    if (_this._syncState) {
-                        // 清除上一次的延迟同步定时器，防止累积
-                        if (_this.__lastSyncTimer) {
-                            clearTimeout(_this.__lastSyncTimer);
-                            _this.__lastSyncTimer = null;
-                        }
-                        // 延迟确保 DOM 已稳定（如 KaTeX/flowchart 等异步渲染）
-                        var _syncTimer = setTimeout(function() {
-                            if (!_this._syncState || _this._syncState.suppressAllSync) return;
-                            if (_this._applyingDomChanges) return;
-                            if (!_this.cm) return;
-                            try {
-                                var cm = _this.cm;
-                                var cmInfo = cm.getScrollInfo();
-                                if (Math.max(0, cmInfo.height - cmInfo.clientHeight) <= 0) return;
-                                // 直接按当前编辑区滚动位置重建映射并同步，避免线性比例估算在不等高行/折行时产生偏差。
-                                if (_this._syncState && typeof _this._syncState._refreshSync === 'function') {
-                                    _this._syncState._refreshSync();
-                                } else if (typeof _this._syncState._invalidateAnchors === 'function') {
-                                    _this._syncState._invalidateAnchors();
-                                }
-                        } catch(e) {
-                            if (typeof console !== "undefined" && console.warn) {
-                                console.warn("[xfEditor] Scroll sync error:", e.message);
-                            }
-                        }
-                    }, 250);
-                        // 存储 timer 以便清理
-                        _this.__lastSyncTimer = _syncTimer;
+                    // 首次渲染绑定章节同步引擎；后续内容更新统一刷新章节模型。
+                    _this.bindChapterSync();
+                    if (_this._chapterSync) {
+                        _this._chapterSync.scheduleRefresh(220);
                     }
                 }
             }
@@ -8275,1341 +8213,62 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
         },
         
         /**
-         * ★ v2.0.0: 共享标题锚点映射构建函数（增强：文本验证 + 层级匹配）
-         * 解析 CM 源码提取标题行号 + 查询预览 DOM 标题元素 → 智能配对
-         * 供 bindSyncScroll 和 scrollToLineNum 共用
-         * 
-         * @returns {Array<{editorLine, editorLevel, previewElement, previewSignIndex}>}
-         */
-        _buildHeadingAnchorMap : function() {
-            var cm = this.cm;
-            var preview = this.previewContainer;
-            if (!cm || !preview || !preview[0]) return [];
-            
-            try {
-                var mdSource = cm.getValue();
-                var lines = mdSource.split('\n');
-                
-                // 只在非代码区域提取标题
-                var mdHeadingRegex = /^(#{1,6})\s+(.+?)(?:\s+#+)?\s*$/;
-                var inCodeBlock = false;
-                var editorHeadings = [];
-                for (var i = 0; i < lines.length; i++) {
-                    var line = lines[i];
-                    // 检测代码块边界
-                    if (/^\s*```/.test(line)) {
-                        inCodeBlock = !inCodeBlock;
-                        continue;
-                    }
-                    if (inCodeBlock) continue;
-                    
-                    var m = line.match(mdHeadingRegex);
-                    if (m) {
-                        // 防御 m[2] 可能为 undefined
-                        editorHeadings.push({
-                            line: i,
-                            level: m[1].length,
-                            text: (m[2] || '').replace(/\{#[^\}]*\}/g, '').trim()
-                        });
-                    }
-                }
-                
-                if (editorHeadings.length === 0) return [];
-                
-                // 查找预览 DOM 中的所有标题元素（带 data-sign）
-                var allBlocks = preview[0].querySelectorAll('[data-sign]');
-                var previewHeadings = [];
-                for (var j = 0; j < allBlocks.length; j++) {
-                    var block = allBlocks[j];
-                    if (/^H[1-6]$/.test(block.tagName)) {
-                        var text = (block.textContent || '').replace(/[\s\u00a0\u200b]+/g, ' ').trim();
-                        previewHeadings.push({
-                            element: block,
-                            signIndex: j,
-                            level: parseInt(block.tagName.charAt(1)),
-                            text: text
-                        });
-                    }
-                }
-                
-                // 智能配对 — 优先文本+层级匹配，回退到顺序匹配
-                var anchors = [];
-                var usedPreview = {};
-                
-                // 第一轮：精确文本 + 层级匹配
-                for (var ei = 0; ei < editorHeadings.length; ei++) {
-                    var eH = editorHeadings[ei];
-                    var bestMatch = null;
-                    var bestScore = Infinity;
-                    
-                    for (var pi = 0; pi < previewHeadings.length; pi++) {
-                        if (usedPreview[pi]) continue;
-                        var pH = previewHeadings[pi];
-                        
-                        // 文本匹配度
-                        if (eH.text === pH.text && eH.level === pH.level) {
-                            // 完美匹配：优先选距离最近的
-                            var dist = Math.abs(ei - pi);
-                            if (dist < bestScore) {
-                                bestScore = dist;
-                                bestMatch = pi;
-                            }
-                        }
-                    }
-                    
-                    if (bestMatch !== null) {
-                        usedPreview[bestMatch] = true;
-                        anchors.push({
-                            editorLine: eH.line,
-                            editorLevel: eH.level,
-                            previewElement: previewHeadings[bestMatch].element,
-                            previewSignIndex: previewHeadings[bestMatch].signIndex
-                        });
-                    }
-                }
-                
-                // 第二轮：对剩余未匹配的，按顺序配对
-                var remainingEditor = [];
-                var remainingPreview = [];
-                for (ei = 0; ei < editorHeadings.length; ei++) {
-                    if (anchors.filter(function(a) { return a.editorLine === editorHeadings[ei].line; }).length === 0) {
-                        remainingEditor.push(editorHeadings[ei]);
-                    }
-                }
-                for (pi = 0; pi < previewHeadings.length; pi++) {
-                    if (!usedPreview[pi]) {
-                        remainingPreview.push(previewHeadings[pi]);
-                    }
-                }
-                
-                var limit2 = Math.min(remainingEditor.length, remainingPreview.length);
-                for (var ri = 0; ri < limit2; ri++) {
-                    anchors.push({
-                        editorLine: remainingEditor[ri].line,
-                        editorLevel: remainingEditor[ri].level,
-                        previewElement: remainingPreview[ri].element,
-                        previewSignIndex: remainingPreview[ri].signIndex
-                    });
-                }
-                
-                // 按 editorLine 排序保证顺序正确
-                anchors.sort(function(a, b) { return a.editorLine - b.editorLine; });
-                
-                return anchors;
-            } catch(e) {
-                return [];
-            }
-        },
-        
-        /**
-         * ★ v2.0.0: 绑定编辑区与预览区同步滚动（彻底重写）
-         * 
-         * 彻底修复：
-         *   1. **程序化滚动识别**：使用 _syncState.programmaticScroll 标记区分
-         *      用户手动滚动和代码触发的滚动。程序化滚动不触发反向同步。
-         *   2. **预览→编辑方向完全修复**：
-         *      - 使用 _syncState.disablePreviewListener 精确控制，仅在
-         *        editor→preview 动画期间禁用反向同步
-         *      - 不再错误地阻止用户预览区滚动事件
-         *      - 使用委托监听模式，scroll 事件统一走 previewContainer，
-         *        同时在滚动容器的祖先链上监听，确保不遗漏
-         *   3. **预览交互防护**：_syncState.suppressAllSync 标志
-         *      - 图片拖拽缩放、表格编辑等预览操作更新编辑器内容时
-         *        完全禁止双向同步，防止内容更新→预览重建→滚动跳转
-         *   4. **锚点文本验证匹配**：二维（文本+层级）匹配替代纯顺序配对
-         *   5. **代码块过滤**：提取标题时跳过代码块内的 # 开头的行
-         * 
-         * 方向一 — 编辑区 → 预览区：
-         *   1. 获取编辑区可视中心行号
-         *   2. 标题锚点 + 插值定位预览滚动位置
-         *   3. 设置 programmaticScroll 标记后播放缓动动画
-         * 
-         * 方向二 — 预览区 → 编辑区：
-         *   1. 检查 suppressAllSync / disablePreviewListener / applyingDomChanges
-         *   2. 标题锚点定位编辑器行号
-         *   3. 使用 scrollIntoView 滚动编辑器
-         * 
+         * 绑定章节同步引擎。
          * @returns {xfEditor}
          */
-        bindSyncScroll : function() {
-            var _this    = this;
-            var settings = this.settings;
-
-            if (!settings.syncScroll || this._scrollSyncBound) {
-                return this;
-            }
-
-            var cm      = this.cm;
-            // previewDom = 内层 (.xf_editor-preview-container) — DOM 查询用
-            // scrollEl   = 外层 .xf_editor-preview — 实际产生滚动
-            var previewDom = this.previewContainer;
-            var scrollEl   = this.preview && this.preview[0];
-            var editor     = this.editor;
-
-            // ★ 同步状态：新增「期望值记账」用于自愈式防回环
-            if (!this._syncState) {
-                this._syncState = {
-                    lastEditorSyncTime: 0,
-                    lastPreviewSyncTime: 0,
-                    programmaticScroll: false,
-                    disablePreviewListener: false,
-                    disableEditorListener: false,
-                    editorAnimTimer: null,
-                    editorCmAnimTimer: null,
-                    mouseTarget: null,
-                    suppressAllSync: false
-                };
-            }
-            var state = this._syncState;
-            // 期望值记账：即使动画被打断也不会死锁，超时自动自愈
-            state.expectPreviewTop = null;
-            state.expectEditorTop  = null;
-            state.expectPreviewTs  = 0;
-            state.expectEditorTs   = 0;
-            // 生命周期令牌，用于取消 destroy 后的异步回调
-            state._destroyed       = false;
-            state._generation      = (state._generation || 0) + 1;
-            state._initialAlignTimer = null;
-            state.lastError        = null;
-
-            if (!cm || !previewDom || !previewDom.length || !scrollEl || !editor || !editor.length) {
-                return this;
-            }
-
-            var cmScrollEl = cm.getScrollerElement();
-            var cmScroll  = dom(cmScrollEl);
-
-            previewDom.css("overflow", "hidden");
-
-            // ============================================================
-            // 基础设施：rAF 节流 / 计时
-            // ============================================================
-            var _hasRAF = (typeof requestAnimationFrame === "function");
-            var _now = (typeof performance !== "undefined" && performance.now)
-                ? function() { return performance.now(); }
-                : function() { return Date.now(); };
-
-            var _rafThrottle = function(fn) {
-                var scheduled = false;
-                var dirty = false;
-                var runner = function() {
-                    scheduled = false;
-                    if (!dirty) return;
-                    dirty = false;
-                    try { fn(); } catch(e) {
-                        // 同步热路径异常不再完全静默
-                        if (state && typeof state === "object") {
-                            state.lastError = e && e.message ? e.message : String(e);
-                        }
-                    }
-                };
-                return function() {
-                    dirty = true;   // 本帧内后续滚动仍需执行，避免尾帧丢失
-                    if (scheduled) return;
-                    scheduled = true;
-                    if (_hasRAF) requestAnimationFrame(runner);
-                    else setTimeout(runner, 16);
-                };
-            };
-
-            // ============================================================
-            // 主控区（带过期TTL）
-            //   谁最后产生「用户滚动意图」谁是主控；另一侧始终跟随。
-            //   程序化滚动（同步产生）不更新主控区 —— 由 self-trigger 检测拦截。
-            //   TTL 过期后自动释放，修复拖动滚动条/键盘翻页不更新主控区导致单向失效。
-            // ============================================================
-            var _masterZone = null;   // "editor" | "preview" | null
-            var _masterZoneTs = 0;
-            var _MASTER_TTL = 900;    // 900ms 无用户交互则释放主控
-            var _setMasterZone = function(zone) {
-                _masterZone = zone;
-                _masterZoneTs = _now();
-            };
-            var _getMasterZone = function() {
-                if (_masterZone && (_now() - _masterZoneTs) > _MASTER_TTL) {
-                    _masterZone = null;
-                }
-                return _masterZone;
-            };
-
-            var _isSelfPreviewScroll = function() {
-                if (state.expectPreviewTop == null) return false;
-                if (_now() - state.expectPreviewTs > 250) { state.expectPreviewTop = null; return false; }
-                // 命中期望位置视为自身触发；随后清除记账，放行后续用户滚动
-                if (Math.abs(scrollEl.scrollTop - state.expectPreviewTop) <= 2) {
-                    if (_now() - state.expectPreviewTs > 60) state.expectPreviewTop = null;
-                    return true;
-                }
-                return false;
-            };
-            var _isSelfEditorScroll = function() {
-                if (state.expectEditorTop == null) return false;
-                if (_now() - state.expectEditorTs > 250) { state.expectEditorTop = null; return false; }
-                var top = 0;
-                try { top = cm.getScrollInfo().top; } catch(e) { return false; }
-                if (Math.abs(top - state.expectEditorTop) <= 2) {
-                    if (_now() - state.expectEditorTs > 60) state.expectEditorTop = null;
-                    return true;
-                }
-                return false;
-            };
-
-            // ============================================================
-            // 编辑区行 <-> 像素（行高不等高，必须逐行换算）
-            // mdPos 为「连续型行位置」：mdPos = line + 行内高度比例(0~1)
-            // ============================================================
-            var _lineCount = function() {
-                try { return cm.lineCount(); } catch(e) { return 0; }
-            };
-            var _lineTop = function(line) {
-                var n = _lineCount();
-                if (n <= 0) return 0;
-                // NaN 不受 Math.min/max 钳制，会污染整条映射，入口必须拦截
-                if (!isFinite(line)) line = 0;
-                try {
-                    var top = cm.heightAtLine(Math.max(0, Math.min(n - 1, line)), "local");
-                    return isFinite(top) ? top : 0;
-                } catch(e) { return 0; }
-            };
-            // ★ 防御加固：_defaultLineHeight 必须在 _lineHeight 之前完成赋值。
-            //   二者均为 var 函数表达式（不提升到赋值），当前调用时机虽在赋值之后不会出错，
-            //   但一旦将来有同步调用插入到两者之间，就会抛出
-            //   TypeError: _defaultLineHeight is not a function。此处显式前置，彻底消除隐患。
-            var _defaultLineHeight = function() {
-                try { if (typeof cm.defaultTextHeight === "function") return cm.defaultTextHeight(); } catch(e) {}
-                return 20;
-            };
-            var _lineHeight = function(line) {
-                var n = _lineCount();
-                if (n <= 1) return _defaultLineHeight();
-                if (line >= n - 1) {
-                    var h = _lineTop(n - 1) - _lineTop(n - 2);
-                    return h > 0 ? h : _defaultLineHeight();
-                }
-                var h2 = _lineTop(line + 1) - _lineTop(line);
-                return h2 > 0 ? h2 : _defaultLineHeight();
-            };
-
-            // mdPos(连续行位置) -> 编辑器 scrollTop
-            var _mdPosToEditorTop = function(mdPos) {
-                var n = _lineCount();
-                if (n <= 0) return 0;
-                if (!isFinite(mdPos)) mdPos = 0;
-                mdPos = Math.max(0, Math.min(n - 1, mdPos));
-                var line = Math.floor(mdPos);
-                var frac = mdPos - line;
-                var result = _lineTop(line) + frac * _lineHeight(line);
-                return isFinite(result) ? result : 0;
-            };
-
-            // 编辑器 scrollTop -> mdPos(连续行位置)
-            var _editorTopToMdPos = function(top) {
-                var n = _lineCount();
-                if (n <= 0) return 0;
-                if (!isFinite(top)) return 0;
-                top = Math.max(0, top);
-                var line = 0;
-                try { line = cm.lineAtHeight(top, "local"); } catch(e) { line = 0; }
-                line = Math.max(0, Math.min(n - 1, line));
-                var lt = _lineTop(line);
-                var lh = _lineHeight(line);
-                var frac = lh > 0 ? (top - lt) / lh : 0;
-                if (!isFinite(frac)) frac = 0;
-                frac = Math.max(0, Math.min(1, frac));
-                return line + frac;
-            };
-
-            // ============================================================
-            // ★ 标题锚点：两侧序列抽取 + 「同 key 第 n 个配第 n 个」消歧
-            //   这是处理「文档中存在多个相同标题」的正确方案。
-            // ============================================================
-            var _plainText = function(s) {
-                if (s == null) return "";
-                return String(s)
-                    .replace(/`+([^`]*)`+/g, "$1")                 // 行内代码
-                    .replace(/!\[[^\]]*\]\([^)]*\)/g, "")           // 图片
-                    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")        // 链接
-                    .replace(/<[^>]+>/g, "")                        // 内联 HTML
-                    .replace(/(\*\*|__|\*|_|~~)/g, "")              // 强调
-                    .replace(/\\([\\`*_{}\[\]()#+\-.!])/g, "$1")    // 转义
-                    .replace(/[\s\u00a0\u200b\ufeff]+/g, " ")       // 空白/零宽
-                    .trim();
-            };
-
-            // 抽取编辑器标题（ATX + Setext），跳过代码块/行内代码围栏与 HTML 注释
-            var _collectEditorHeadings = function() {
-                var src = "";
-                try { src = cm.getValue(); } catch(e) { return []; }
-                var lines = src.split("\n");
-                var out = [];
-                var fenceOpen = false, fenceMark = "";
-                for (var i = 0; i < lines.length; i++) {
-                    var raw = lines[i];
-                    var t   = raw.replace(/\s+$/, "");
-                    var indented = /^ {4,}/.test(raw);
-
-                    // 代码块围栏 ``` 或 ~~~（>=3）
-                    var fence = raw.match(/^\s*(`{3,}|~{3,})/);
-                    if (fence) {
-                        var mark = fence[1].charAt(0);
-                        if (!fenceOpen) { fenceOpen = true; fenceMark = mark; }
-                        else if (mark === fenceMark) { fenceOpen = false; fenceMark = ""; }
-                        continue;
-                    }
-                    if (fenceOpen || indented) continue;
-                    if (/^\s*<!--/.test(raw)) { out.__skip = true; }
-
-                    // ATX
-                    var m = t.match(/^\s{0,3}(#{1,6})\s+(.*?)\s*#*\s*$/);
-                    if (m) {
-                        out.push({ line: i, level: m[1].length, key: _plainText(m[2]) });
-                        continue;
-                    }
-                    // Setext（下一行为 === 或 ---）
-                    if (i + 1 < lines.length && /^\s{0,3}(=+|-{2,})\s*$/.test(lines[i + 1]) && t.trim().length) {
-                        // 前置分隔线 --- 会误判为空行分隔，需保证本行非空且不是列表符号开头
-                        if (!/^\s*([-*+]|\d+\.)\s/.test(t)) {
-                            var lv = /^\s*=/.test(lines[i + 1]) ? 1 : 2;
-                            out.push({ line: i, level: lv, key: _plainText(t) });
-                            continue;
-                        }
-                    }
-                }
-                return out;
-            };
-
-            // 抽取预览 DOM 标题及其内容坐标 top（相对 scrollEl 内容顶部）
-            var _collectPreviewHeadings = function(seTop) {
-                var hs = [];
-                try {
-                    hs = previewDom[0].querySelectorAll("h1,h2,h3,h4,h5,h6");
-                } catch(e) { return []; }
-                var arr = [];
-                for (var i = 0; i < hs.length; i++) {
-                    var el = hs[i];
-                    // 跳过 TOC 容器内部的标题（不参与正文映射，避免数量错位）
-                    var p = el.parentElement, isToc = false;
-                    while (p && p !== previewDom[0]) {
-                        var cls = p.className || "";
-                        if (typeof cls === "string" && /markdown-toc|\btoc\b|xf_editor-toc/i.test(cls)) { isToc = true; break; }
-                        p = p.parentElement;
-                    }
-                    if (isToc) continue;
-                    var r = el.getBoundingClientRect();
-                    arr.push({
-                        y: Math.max(0, scrollEl.scrollTop + (r.top - seTop)),
-                        level: parseInt(el.tagName.charAt(1), 10),
-                        key: _plainText(el.textContent || ""),
-                        node: el
-                    });
-                }
-                return arr;
-            };
-
-            // 同 key 按出现次序一一配对 —— 相同标题消歧的核心
-            var _alignHeadings = function(eHeads, pHeads) {
-                var pairs = [];
-                if (!eHeads.length || !pHeads.length) return pairs;
-
-                var eMap = {}, i, k;
-                for (i = 0; i < eHeads.length; i++) {
-                    k = eHeads[i].level + "|" + eHeads[i].key;
-                    (eMap[k] = eMap[k] || []).push(i);
-                }
-                var pMap = {};
-                for (i = 0; i < pHeads.length; i++) {
-                    k = pHeads[i].level + "|" + pHeads[i].key;
-                    (pMap[k] = pMap[k] || []).push(i);
-                }
-
-                var usedP = {};
-                for (k in eMap) {
-                    if (!pMap[k]) continue;
-                    var cnt = Math.min(eMap[k].length, pMap[k].length);
-                    for (var j = 0; j < cnt; j++) {
-                        usedP[pMap[k][j]] = true;
-                        pairs.push({ mdPos: eHeads[eMap[k][j]].line, previewY: pHeads[pMap[k][j]].y });
-                    }
-                }
-                pairs.sort(function(a, b) { return a.mdPos - b.mdPos; });
-
-                // ★ 兜底：一个都没配上（标题文本渲染差异大）时，退化为「序列等比对齐」
-                if (pairs.length === 0 && Math.abs(eHeads.length - pHeads.length) <= Math.max(2, eHeads.length * 0.3)) {
-                    for (var q = 0; q < eHeads.length; q++) {
-                        var pIdx = Math.min(pHeads.length - 1, Math.round(q * (pHeads.length - 1) / Math.max(1, eHeads.length - 1)));
-                        pairs.push({ mdPos: eHeads[q].line, previewY: pHeads[pIdx].y });
-                    }
-                    pairs.sort(function(a, b) { return a.mdPos - b.mdPos; });
-                }
-                return pairs;
-            };
-
-            // 收集预览中的块级元素（去嵌套，取最外层），一次性读取 rect
-            var _collectPreviewBlocks = function(seTop) {
-                var nodes = null;
-                try {
-                    nodes = previewDom[0].querySelectorAll('[data-sign]');
-                    if (!nodes || !nodes.length) {
-                        nodes = previewDom[0].querySelectorAll('h1,h2,h3,h4,h5,h6,p,pre,blockquote,ul,ol,table,dl,hr');
-                    }
-                } catch(e) { return []; }
-                if (!nodes || !nodes.length) return [];
-
-                // 超长文档采用均匀采样（首/尾必留），避免截断导致尾部无锚点
-                var MAXB = 1200;
-                var arr = [], kept = {};
-                var lim = Math.min(nodes.length, MAXB);
-                var sampled = null;
-                if (nodes.length > MAXB) {
-                    sampled = [];
-                    for (var si = 0; si < MAXB; si++) {
-                        sampled.push(nodes[Math.round(si * (nodes.length - 1) / (MAXB - 1))]);
-                    }
-                }
-                var nodeList = sampled || nodes;
-                for (var i = 0; i < lim; i++) {
-                    var el = nodeList[i];
-                    // 跳过目录容器内的节点，避免与正文块数量错位
-                    var tocParent = el.parentElement, inToc = false;
-                    while (tocParent && tocParent !== previewDom[0]) {
-                        var parentClass = tocParent.className || "";
-                        if (typeof parentClass === "string" && /markdown-toc|\btoc\b|xf_editor-toc/i.test(parentClass)) {
-                            inToc = true;
-                            break;
-                        }
-                        tocParent = tocParent.parentElement;
-                    }
-                    if (inToc) continue;
-
-                    // 去嵌套：祖先已在集合中则跳过
-                    var p = el.parentElement, nested = false;
-                    while (p && p !== previewDom[0]) {
-                        if (kept[p.__xfSyncId]) { nested = true; break; }
-                        p = p.parentElement;
-                    }
-                    if (nested) continue;
-                    el.__xfSyncId = i + 1;
-                    kept[el.__xfSyncId] = true;
-                    var r = el.getBoundingClientRect();
-                    var lineAttr = el.getAttribute ? el.getAttribute("data-line") : null;
-                    var sourceLine = lineAttr == null ? null : parseInt(lineAttr, 10);
-                    if (sourceLine != null && !isFinite(sourceLine)) sourceLine = null;
-                    var topY = Math.max(0, scrollEl.scrollTop + (r.top - seTop));
-                    var bottomY = Math.max(0, scrollEl.scrollTop + (r.bottom - seTop));
-                    arr.push({
-                        y: topY,
-                        bottom: bottomY,
-                        h: r.height,
-                        mdPos: sourceLine,
-                        isHead: /^H[1-6]$/.test(el.tagName),
-                        node: el
-                    });
-                    // 块结束锚点：让多行段落/标题内部也能线性插值，缩小块内定位误差
-                    var endAttr = el.getAttribute ? el.getAttribute("data-line-end") : null;
-                    var sourceLineEnd = endAttr == null ? null : parseInt(endAttr, 10);
-                    if (sourceLine != null && sourceLineEnd != null && isFinite(sourceLineEnd) && sourceLineEnd > sourceLine) {
-                        arr.push({ y: bottomY, bottom: bottomY, h: 0, mdPos: sourceLineEnd, isHead: false, node: el });
-                    }
-                }
-                return arr;
-            };
-
-            // ============================================================
-            // 位置映射表：[{mdPos, previewY}] 单调递增双射
-            //   1) 预览块携带的 data-line 真实源码行号为主锚点
-            //   2) 标题文本匹配作为无 data-line 时的回退
-            //   3) 端点 0↔0、可达终点↔最大滚动，保证顶/底对齐与双向互逆
-            //   4) 仅在内容变更/视口变化时重建，滚动过程只读缓存
-            // ============================================================
-            var _positionMap = null;
-            var _positionDirty = true;
-
-            var _buildPositionMap = function() {
-                try {
-                    var nLines = _lineCount();
-                    if (nLines <= 1) { _positionMap = []; return; }
-
-                    var seRect = scrollEl.getBoundingClientRect ? scrollEl.getBoundingClientRect() : { top: 0, height: 0 };
-                    var seTop = seRect.top;
-                    var maxPreviewTop = Math.max(0, (scrollEl.scrollHeight || 0) - (scrollEl.clientHeight || seRect.height || 0));
-
-                    var infoEnd = cm.getScrollInfo();
-                    var endH = Number(infoEnd && infoEnd.height), endCH = Number(infoEnd && infoEnd.clientHeight);
-                    var maxEditorTop = (isFinite(endH) && isFinite(endCH)) ? Math.max(0, endH - endCH) : 0;
-                    var mdPosEnd = maxEditorTop > 0 ? _editorTopToMdPos(maxEditorTop) : (nLines - 1);
-                    if (!isFinite(mdPosEnd)) mdPosEnd = nLines - 1;
-                    mdPosEnd = Math.max(0, Math.min(nLines - 1, mdPosEnd));
-
-                    var map = [];
-                    var blocks = _collectPreviewBlocks(seTop);
-
-                    // 主锚点：预览块携带的真实源码行号，避免按高度比例反推造成系统性偏移
-                    for (var blockIndex = 0; blockIndex < blocks.length; blockIndex++) {
-                        var block = blocks[blockIndex];
-                        if (block.mdPos == null || block.mdPos <= 0 || block.mdPos > mdPosEnd) continue;
-                        if (block.y > maxPreviewTop) continue;
-                        map.push({ mdPos: block.mdPos, previewY: block.y });
-                    }
-
-                    // 标题锚点仅在真实行号锚点不足时补充，保证兼容无 data-line 的渲染结果
-                    if (map.length < 3) {
-                        var pairs = _alignHeadings(_collectEditorHeadings(), _collectPreviewHeadings(seTop));
-                        for (var pairIndex = 0; pairIndex < pairs.length; pairIndex++) {
-                            if (pairs[pairIndex].mdPos <= 0 || pairs[pairIndex].mdPos > mdPosEnd) continue;
-                            map.push({ mdPos: pairs[pairIndex].mdPos, previewY: pairs[pairIndex].previewY });
-                        }
-                    }
-
-                    map.push({ mdPos: 0, previewY: 0 });
-
-                    if (map.length === 1) {
-                        map.push({ mdPos: Math.max(0.001, mdPosEnd), previewY: maxPreviewTop });
-                        _positionMap = map;
-                        return;
-                    }
-
-                    // 单调化：mdPos 严格递增，previewY 非递减，保证双向查表互逆
-                    map.sort(function(a, b) { return a.mdPos - b.mdPos; });
-                    var clean = [map[0]];
-                    for (var i = 1; i < map.length; i++) {
-                        var last = clean[clean.length - 1];
-                        if (map[i].mdPos - last.mdPos < 1e-6) {
-                            last.previewY = Math.max(last.previewY, map[i].previewY);
-                            continue;
-                        }
-                        if (map[i].previewY < last.previewY) map[i].previewY = last.previewY;
-                        clean.push(map[i]);
-                    }
-
-                    // 过滤后再补齐末端锚点，保证映射严格单调且可通过二分查找。
-                    clean = clean.filter(function(item) { return item.mdPos < mdPosEnd - 1e-6; });
-                    if (!clean.length) clean.push({ mdPos: 0, previewY: 0 });
-                    if (clean[clean.length - 1].mdPos < mdPosEnd) {
-                        clean.push({ mdPos: mdPosEnd, previewY: maxPreviewTop });
-                    } else {
-                        clean[clean.length - 1].mdPos = mdPosEnd;
-                        clean[clean.length - 1].previewY = maxPreviewTop;
-                    }
-                    // 强单调：previewY 非递减，保证反向 _lookup 二分正确
-                    for (var mi = 1; mi < clean.length; mi++) {
-                        if (clean[mi].previewY < clean[mi - 1].previewY) clean[mi].previewY = clean[mi - 1].previewY;
-                        if (!isFinite(clean[mi].mdPos) || !isFinite(clean[mi].previewY)) {
-                            clean[mi].mdPos = clean[mi - 1].mdPos + 1;
-                            clean[mi].previewY = clean[mi - 1].previewY;
-                        }
-                    }
-                    _positionMap = clean;
-                } catch(e) {
-                    // 异常时保留上一次有效映射，并标记 dirty 使下次滚动重试。
-                    if (!_positionMap) _positionMap = [];
-                    _positionDirty = true;
-                    state.lastError = e && e.message ? e.message : String(e);
-                }
-            };
-
-            var _getPositionMap = function() {
-                // ★ v2.1.0 性能：滚动热路径不再读取 scrollHeight/clientHeight（会强制 layout）。
-                //   视口尺寸变化由 resize / 内容变更 / 媒体加载等显式调用 _invalidatePositionMap 驱动。
-                if (_positionDirty || !_positionMap) {
-                    _buildPositionMap();
-                    _positionDirty = false;
-                }
-                return _positionMap;
-            };
-
-            var _invalidatePositionMap = function() {
-                _positionDirty = true;
-                _positionMap = null;
-            };
-
-            // 单调表线性插值
-            var _lookup = function(map, fromKey, toKey, x) {
-                var len = map.length;
-                if (len === 0) return null;
-                if (x <= map[0][fromKey]) return map[0][toKey];
-                if (x >= map[len - 1][fromKey]) return map[len - 1][toKey];
-                var lo = 0, hi = len - 1;
-                while (lo < hi) {
-                    var mid = (lo + hi + 1) >> 1;
-                    if (map[mid][fromKey] <= x) lo = mid; else hi = mid - 1;
-                }
-                if (lo >= len - 1) return map[len - 1][toKey];
-                var a = map[lo], b = map[lo + 1];
-                var d = b[fromKey] - a[fromKey];
-                if (d <= 0) return a[toKey];
-                var t = Math.max(0, Math.min(1, (x - a[fromKey]) / d));
-                return a[toKey] + (b[toKey] - a[toKey]) * t;
-            };
-
-            // ★ 两个方向严格互逆的核心
-            var _mdPosToPreviewY = function(mdPos) {
-                var map = _getPositionMap();
-                var v = _lookup(map, "mdPos", "previewY", mdPos);
-                return v == null ? null : Math.max(0, v);
-            };
-            var _previewYToMdPos = function(previewY) {
-                var map = _getPositionMap();
-                if (!map || !map.length) return null;
-                return _lookup(map, "previewY", "mdPos", previewY);
-            };
-
-            // ============================================================
-            // 方向一：编辑器 scrollTop → 预览 scrollTop
-            // ============================================================
-            var _editorTopToPreviewTop = function(editorTop) {
-                var map = _getPositionMap();
-                if (!map || map.length === 0) return null;
-                try {
-                    var info = cm.getScrollInfo();
-                    var infoH = Number(info && info.height), infoCH = Number(info && info.clientHeight);
-                    if (!isFinite(infoH) || !isFinite(infoCH)) return 0;
-                    var maxEditorTop = Math.max(0, infoH - infoCH);
-                    var maxPreviewTop = Math.max(0, (scrollEl.scrollHeight || 0) - (scrollEl.clientHeight || 0));
-                    if (maxEditorTop <= 0) return 0;
-
-                    // ★ 端点吸附：保证顶对顶、底对底，消除累计误差
-                    if (editorTop <= 1) return 0;
-                    if (editorTop >= maxEditorTop - 1) return maxPreviewTop;
-
-                    // mdPos → previewY（map 端点已校准为 (0,0)/(Emax,Pmax)，
-                    // 全程严格单调且无需任何缩放，因此与方向二天然互逆）
-                    var mdPos = _editorTopToMdPos(editorTop);
-                    var y = _mdPosToPreviewY(mdPos);
-                    if (y == null) return null;
-                    return Math.max(0, Math.min(maxPreviewTop, y));
-                } catch(e) { return null; }
-            };
-
-            // ============================================================
-            // 方向二：预览 scrollTop → 编辑器 scrollTop
-            // ============================================================
-            var _previewTopToEditorTop = function(previewTop) {
-                var map = _getPositionMap();
-                if (!map || map.length === 0) return null;
-                try {
-                    var info = cm.getScrollInfo();
-                    var infoH = Number(info && info.height), infoCH = Number(info && info.clientHeight);
-                    if (!isFinite(infoH) || !isFinite(infoCH)) return 0;
-                    var maxEditorTop = Math.max(0, infoH - infoCH);
-                    var maxPreviewTop = Math.max(0, (scrollEl.scrollHeight || 0) - (scrollEl.clientHeight || 0));
-                    if (maxEditorTop <= 0) return null;
-
-                    if (previewTop <= 1) return 0;
-                    if (maxPreviewTop > 0 && previewTop >= maxPreviewTop - 1) return maxEditorTop;
-
-                    var mdPos = _previewYToMdPos(previewTop);
-                    if (mdPos == null) return null;
-                    var top = _mdPosToEditorTop(mdPos);
-                    return Math.max(0, Math.min(maxEditorTop, top));
-                } catch(e) { return null; }
-            };
-
-            // ============================================================
-            // 应用滚动（默认瞬时跟随 —— 原生手感的严格 1:1 同步；可选缓动）
-            //   瞬时 + rAF 合帧：既流畅又永不错位/漂移，彻底消除回环死锁。
-            // ============================================================
-            var _smoothDur = (settings && settings.syncScrollSmooth) ? 180 : 0;
-
-            // 取消上一帧未完成的缓动动画（避免多次滚动叠加/抖动）
-            var _cancelAnim = function() {
-                if (state.previewAnimTimer) {
-                    cancelAnimationFrame(state.previewAnimTimer);
-                    state.previewAnimTimer = null;
-                }
-                if (state.editorCmAnimTimer) {
-                    cancelAnimationFrame(state.editorCmAnimTimer);
-                    state.editorCmAnimTimer = null;
-                }
-            };
-            var _clearProgrammatic = function() {
-                // 瞬时模式：等 scroll 事件派发完再解锁（双重 rAF）；缓动模式在动画末帧解锁
-                if (_hasRAF) {
-                    requestAnimationFrame(function() {
-                        requestAnimationFrame(function() { state.programmaticScroll = false; });
-                    });
-                } else {
-                    setTimeout(function() { state.programmaticScroll = false; }, 32);
-                }
-            };
-
-            var _applyPreviewTop = function(target) {
-                target = Math.max(0, target);
-                _cancelAnim();
-                state.expectPreviewTop = target;
-                state.expectPreviewTs  = _now();
-                state.programmaticScroll = true;
-                try {
-                    if (!_smoothDur) {
-                        scrollEl.scrollTop = target;
-                        _clearProgrammatic();
-                    } else {
-                        var startTop = scrollEl.scrollTop, startT = _now();
-                        var step = function() {
-                            // destroy/re-init 竞态保护
-                            if (state._destroyed) { state.previewAnimTimer = null; state.programmaticScroll = false; return; }
-                            var p = Math.min(1, (_now() - startT) / _smoothDur);
-                            var e = p < 0.5 ? 4*p*p*p : 1 - Math.pow(-2*p + 2, 3) / 2;
-                            scrollEl.scrollTop = startTop + (target - startTop) * e;
-                            state.expectPreviewTop = scrollEl.scrollTop;
-                            state.expectPreviewTs  = _now();
-                            if (p < 1) {
-                                state.previewAnimTimer = requestAnimationFrame(step);
-                            } else {
-                                state.previewAnimTimer = null;
-                                scrollEl.scrollTop = target;
-                                state.programmaticScroll = false;
-                            }
-                        };
-                        state.previewAnimTimer = requestAnimationFrame(step);
-                    }
-                } catch(e) {
-                    state.programmaticScroll = false;
-                }
-            };
-
-            var _applyEditorTop = function(target) {
-                target = Math.max(0, target);
-                _cancelAnim();
-                state.expectEditorTop = target;
-                state.expectEditorTs  = _now();
-                state.programmaticScroll = true;
-                try {
-                    if (!_smoothDur) {
-                        cm.scrollTo(0, target);
-                        _clearProgrammatic();
-                    } else {
-                        var startTop = cm.getScrollInfo().top, startT = _now();
-                        var step = function() {
-                            // destroy/re-init 竞态保护
-                            if (state._destroyed) { state.editorCmAnimTimer = null; state.programmaticScroll = false; return; }
-                            var p = Math.min(1, (_now() - startT) / _smoothDur);
-                            var e = p < 0.5 ? 4*p*p*p : 1 - Math.pow(-2*p + 2, 3) / 2;
-                            cm.scrollTo(0, startTop + (target - startTop) * e);
-                            state.expectEditorTop = cm.getScrollInfo().top;
-                            state.expectEditorTs  = _now();
-                            if (p < 1) {
-                                state.editorCmAnimTimer = requestAnimationFrame(step);
-                            } else {
-                                state.editorCmAnimTimer = null;
-                                cm.scrollTo(0, target);
-                                state.programmaticScroll = false;
-                            }
-                        };
-                        state.editorCmAnimTimer = requestAnimationFrame(step);
-                    }
-                } catch(e) {
-                    state.programmaticScroll = false;
-                }
-            };
-
-            // ============================================================
-            // 方向一处理器
-            // ============================================================
-            var _editorSyncToPreview = function() {
-                if (state.suppressAllSync) return;
-                if (_this._applyingDomChanges) return;
-                if (_getMasterZone() === "preview") return;
-                if (_isSelfEditorScroll()) return;
-                try {
-                    var info = cm.getScrollInfo();
-                    var target = _editorTopToPreviewTop(info.top);
-                    if (target === null) return;
-                    _applyPreviewTop(target);
-                } catch(e) {}
-            };
-            var _editorSyncRAF = _rafThrottle(_editorSyncToPreview);
-
-            var _editorChangeTimer = null;
-            cmScroll.off("scroll.xf_editor-sync").on("scroll.xf_editor-sync", function() {
-                if (_isSelfEditorScroll()) return;
-                _setMasterZone("editor");
-                _editorSyncRAF();
-            });
-
-            // ============================================================
-            // 方向二处理器
-            // ============================================================
-            var _previewSyncToEditor = function() {
-                if (state.suppressAllSync) return;
-                if (_this._applyingDomChanges) return;
-                if (_getMasterZone() === "editor") return;
-                if (_isSelfPreviewScroll()) return;
-                try {
-                    var target = _previewTopToEditorTop(scrollEl.scrollTop);
-                    if (target === null) return;
-                    _applyEditorTop(target);
-                } catch(e) {}
-            };
-            var _previewSyncRAF = _rafThrottle(_previewSyncToEditor);
-
-            dom(scrollEl).off("scroll.xf_editor-sync-v3").on("scroll.xf_editor-sync-v3", function() {
-                if (_isSelfPreviewScroll()) return;
-                _setMasterZone("preview");
-                _previewSyncRAF();
-            });
-
-            // ============================================================
-            // 主控区：由真实用户交互确定（wheel / touch / 键盘 / 拖动滚动条）
-            // ============================================================
-            var _bindMaster = function(el, zone) {
-                if (!el) return;
-                dom(el).off("wheel.xf_editor-master touchstart.xf_editor-master touchmove.xf_editor-master mousedown.xf_editor-master")
-                    .on("wheel.xf_editor-master touchstart.xf_editor-master touchmove.xf_editor-master mousedown.xf_editor-master", function() {
-                        _setMasterZone(zone);
-                    });
-            };
-            _bindMaster(cmScrollEl, "editor");
-            _bindMaster(scrollEl,   "preview");
-
-            try {
-                cm.off("focus.xf_editor-sync");
-                cm.on("focus.xf_editor-sync", function() { _setMasterZone("editor"); });
-            } catch(e) {}
-
-            editor.off("mouseenter.xf_editor-sync mouseleave.xf_editor-sync")
-                .on("mouseenter.xf_editor-sync", function() { state.mouseTarget = "editor"; })
-                .on("mouseleave.xf_editor-sync", function() { if (state.mouseTarget === "editor") state.mouseTarget = null; });
-            dom(scrollEl).off("mouseenter.xf_editor-sync mouseleave.xf_editor-sync")
-                .on("mouseenter.xf_editor-sync", function() { state.mouseTarget = "preview"; })
-                .on("mouseleave.xf_editor-sync", function() { if (state.mouseTarget === "preview") state.mouseTarget = null; });
-
-            // 内容变更 → 失效映射 + 重新对齐
-            cm.off("changes.xfsync");
-            cm.on("changes.xfsync", function() {
-                clearTimeout(_editorChangeTimer);
-                _editorChangeTimer = setTimeout(function() {
-                    if (_this._applyingDomChanges) return;
-                    _invalidatePositionMap();
-                    if (!state.suppressAllSync && _getMasterZone() !== "preview") {
-                        _editorSyncToPreview();
-                    }
-                }, 50);
-            });
-
-            // 折叠/展开会改变行高，必须让映射失效（否则同步位置整体漂移）
-            cm.off("fold.xfsync");
-            cm.on("fold.xfsync", function() { _invalidatePositionMap(); });
-
-            cm.off("cursorActivity.xfsync");
-            cm.on("cursorActivity.xfsync", function() {
-                if (state.suppressAllSync) return;
-                if (_this._applyingDomChanges) return;
-                if (_getMasterZone() === "preview") return;
-                try {
-                    var cur = cm.getCursor();
-                    var info = cm.getScrollInfo();
-                    var top = cm.charCoords(cur, "local").top;
-                    if (top < info.top || top > info.top + info.clientHeight) {
-                        _invalidatePositionMap();
-                        _editorSyncToPreview();
-                    }
-                } catch(e) {}
-            });
-
-            // ============================================================
-            // TOC 链接点击
-            // ============================================================
-            previewDom.off("click.xf_editor-toc").on("click.xf_editor-toc", ".markdown-toc-list a[href^='#']", function(e) {
-                var href = dom(this).attr("href");
-                if (!href || href === "#") return;
-                var targetId = decodeURIComponent(href.substring(1));
-                var targetEl = null;
-                try {
-                    targetEl = previewDom[0].querySelector('[id="' + CSS.escape(targetId) + '"]');
-                } catch(_) {
-                    targetEl = previewDom[0].querySelector('[id="' + targetId.replace(/"/g, '\\"') + '"]');
-                }
-                if (targetEl && previewDom[0].contains(targetEl)) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    var seRect = scrollEl.getBoundingClientRect();
-                    var tRect = targetEl.getBoundingClientRect();
-                    var targetScrollTop = Math.max(0, scrollEl.scrollTop + (tRect.top - seRect.top) - 30);
-                    _invalidatePositionMap();
-                    _setMasterZone("preview");
-                    _applyPreviewTop(targetScrollTop);
-                }
-            });
-
-            // ============================================================
-            // 脚注引用链接点击
-            // ============================================================
-            previewDom.off("click.xf_editor-footnote").on("click.xf_editor-footnote", ".xf_editor-footnote-ref-wrapper a[href^='#xf_editor-fn-'], .xf_editor-copybook-footnote a[href^='#xf_editor-fn-'], .xf_editor-footnote-backref[href^='#xf_editor-fnref-']", function(e) {
-                var href = dom(this).attr("href");
-                if (!href || href === "#") return;
-                var targetId = decodeURIComponent(href.substring(1));
-                var targetEl = null;
-                try {
-                    targetEl = previewDom[0].querySelector('[id="' + CSS.escape(targetId) + '"]');
-                } catch(_) {
-                    targetEl = previewDom[0].querySelector('[id="' + targetId.replace(/"/g, '\\"') + '"]');
-                }
-                if (targetEl && previewDom[0].contains(targetEl)) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    var tRect = targetEl.getBoundingClientRect();
-                    var targetScrollTop = Math.max(0, scrollEl.scrollTop + (tRect.top - scrollEl.getBoundingClientRect().top) - 40);
-                    _setMasterZone("preview");
-                    _applyPreviewTop(targetScrollTop);
-                    var target = dom(targetEl);
-                    target.addClass("xf_editor-footnote-highlight");
-                    setTimeout(function() { target.removeClass("xf_editor-footnote-highlight"); }, 2000);
-                }
-            });
-
-            var _resizeTimer = null;
-            var _syncResizeNs = ".xf_editor-sync_" + _this._uid;
-            dom(window).off(_syncResizeNs).on("resize" + _syncResizeNs, function() {
-                clearTimeout(_resizeTimer);
-                _resizeTimer = setTimeout(function() {
-                    _invalidatePositionMap();
-                    if (_getMasterZone() !== "preview") _editorSyncToPreview();
-                }, 200);
-            });
-
-            // ============================================================
-            // 异步资源（图片/KaTeX/图表/字体）加载完成后重算，避免基于临时高度
-            // ============================================================
-            var _imgResyncTimer = null;
-            var _scheduleImgResync = function() {
-                if (_imgResyncTimer) clearTimeout(_imgResyncTimer);
-                _imgResyncTimer = setTimeout(function() {
-                    _imgResyncTimer = null;
-                    state._imgResyncTimer = null;
-                    _invalidatePositionMap();
-                    if (_getMasterZone() === "editor" || (!_getMasterZone() && state.mouseTarget !== "preview")) {
-                        _editorSyncToPreview();
-                    }
-                }, 150);
-                state._imgResyncTimer = _imgResyncTimer;
-            };
-            previewDom.off("load.xf_editor-sync-img").on("load.xf_editor-sync-img", "img", function() { _scheduleImgResync(); });
-            try {
-                var _imgs0 = previewDom[0].querySelectorAll("img");
-                Array.prototype.forEach.call(_imgs0, function(img) {
-                    if (!img.complete) {
-                        dom(img).off("load.xf_editor-sync-img2").on("load.xf_editor-sync-img2", function() { _scheduleImgResync(); });
-                    }
-                });
-            } catch(e) {}
-
-            try {
-                var _onPreviewMediaLoad = function(ev) {
-                    var t = ev && ev.target;
-                    if (t && (t.tagName === "IMG" || t.tagName === "VIDEO" || t.tagName === "AUDIO")) {
-                        // 与 _scheduleImgResync 行为统一 —— 失效后立即按主控区重新对齐，
-                        //   避免图片加载后映射失效却要等下次滚动才收敛的短暂错位。
-                        _invalidatePositionMap();
-                        _scheduleImgResync();
-                    }
-                };
-                previewDom[0].addEventListener("load", _onPreviewMediaLoad, true);
-                state._previewMediaLoadHandler = _onPreviewMediaLoad;
-            } catch(e) {}
-
-            // 观察预览容器尺寸变化（KaTeX 字体、图表、折叠等不触发 img load 的场景）
-            try {
-                if (typeof ResizeObserver !== "undefined") {
-                    if (state._syncResizeObserver) {
-                        try { state._syncResizeObserver.disconnect(); } catch (e) {}
-                        state._syncResizeObserver = null;
-                    }
-                    var _syncResizeObserver = new ResizeObserver(function() {
-                        if (state._destroyed || _this._applyingDomChanges) return;
-                        _invalidatePositionMap();
-                        _scheduleImgResync();
-                    });
-                    if (previewDom[0]) _syncResizeObserver.observe(previewDom[0]);
-                    if (_this.previewContainer && _this.previewContainer[0]) _syncResizeObserver.observe(_this.previewContainer[0]);
-                    state._syncResizeObserver = _syncResizeObserver;
-                }
-            } catch(e) {}
-
-            var _mediaResizeNs = ".xf_editor-sync-media_" + _this._uid;
-            dom(window).off(_mediaResizeNs);
-            dom(window).on("resize" + _mediaResizeNs, function() { _invalidatePositionMap(); });
-
-            try {
-                if (typeof document !== "undefined" && document.fonts && document.fonts.ready && document.fonts.ready.then) {
-                    var _fontGeneration = state._generation;
-                    document.fonts.ready.then(function() {
-                        // 代次令牌 —— destroy 后或 re-init 后旧回调直接丢弃
-                        if (state._destroyed || _fontGeneration !== state._generation) return;
-                        try {
-                            _invalidatePositionMap();
-                            if (_getMasterZone() !== "preview" && !state.suppressAllSync && !_this._applyingDomChanges) {
-                                _editorSyncToPreview();
-                            }
-                        } catch(e) {}
-                    });
-                }
-            } catch(e) {}
-            var _fontLoadNs = ".xf_editor-sync-fonts_" + _this._uid;
-            dom(window).off(_fontLoadNs).on("load" + _fontLoadNs, function() { _invalidatePositionMap(); });
-
-            // ============================================================
-            // 外部接口
-            // ============================================================
-            state._invalidateAnchors = _invalidatePositionMap;
-            state._getAnchorTable    = _getPositionMap;
-            state._editorToPreview   = _editorTopToPreviewTop;
-            state._previewToEditor   = _previewTopToEditorTop;
-            state._mdPosToEditorTop  = _mdPosToEditorTop;
-            state._refreshSync = function(lineNum) {
-                try {
-                    _invalidatePositionMap();
-                    if (typeof lineNum === "number") {
-                        var top = _mdPosToEditorTop(lineNum);
-                        var target = _editorTopToPreviewTop(top);
-                        if (target !== null) _applyPreviewTop(target);
-                    } else {
-                        _editorSyncToPreview();
-                    }
-                } catch(e) {}
-            };
-
-            this.suspendSyncScroll = function() {
-                state.suppressAllSync = true;
-                clearTimeout(_editorChangeTimer);
-                _editorChangeTimer = null;
-                if (_this.__lastSyncTimer) { clearTimeout(_this.__lastSyncTimer); _this.__lastSyncTimer = null; }
-                state.expectPreviewTop = null;
-                state.expectEditorTop  = null;
-                state.programmaticScroll = false;
-            };
-            this.resumeSyncScroll = function() {
-                state.suppressAllSync = false;
-                if (_this.__lastSyncTimer) { clearTimeout(_this.__lastSyncTimer); _this.__lastSyncTimer = null; }
-                _invalidatePositionMap();
-            };
-
-            this._scrollSyncBound = true;
-            _invalidatePositionMap();
-
-            // 初始对齐（句柄保存，解绑/destroy 可取消，避免新实例被旧回调误同步）
-            state._initialAlignTimer = setTimeout(function() {
-                state._initialAlignTimer = null;
-                if (state._destroyed) return;
-                if (state.suppressAllSync) return;
-                if (_this._applyingDomChanges) return;
-                try {
-                    var info = cm.getScrollInfo();
-                    if (Math.max(0, info.height - info.clientHeight) <= 0) return;
-                    var target = _editorTopToPreviewTop(info.top);
-                    if (target !== null) _applyPreviewTop(target);
-                } catch(e) {}
-            }, 300);
-
+        bindChapterSync : function() {
+            if (!this._chapterSync) this._chapterSync = new xfEditor.ChapterSync(this);
+            this._chapterSync.bind();
             return this;
         },
-        
+
         /**
-         * ★ v2.0.0: 解除同步滚动绑定
-         * Unbind editor-preview sync scrolling
-         * 
+         * 解绑章节同步引擎并释放全部监听器、定时器与观察器。
          * @returns {xfEditor}
          */
-        unbindSyncScroll : function() {
-            if (!this._scrollSyncBound) return this;
-            
-            try {
-                // 取消所有动画帧（含 preview / editor 双向缓动）
-                if (this._syncState) {
-                    var syncTimers = ["editorAnimTimer", "editorCmAnimTimer", "previewAnimTimer"];
-                    for (var timerIdx = 0; timerIdx < syncTimers.length; timerIdx++) {
-                        var timerKey = syncTimers[timerIdx];
-                        if (this._syncState[timerKey]) {
-                            try { cancelAnimationFrame(this._syncState[timerKey]); } catch (ex) {}
-                            this._syncState[timerKey] = null;
-                        }
-                    }
-                    this._syncState.disablePreviewListener = false;
-                }
-                var cmScrollEl = this.cm && this.cm.getScrollerElement();
-                var preview = this.preview && this.preview[0];
-                
-                if (cmScrollEl) {
-                    dom(cmScrollEl).off("scroll.xf_editor-sync wheel.xf_editor-master touchstart.xf_editor-master touchmove.xf_editor-master mousedown.xf_editor-master wheel.xf_editor-anim");
-                }
-                if (preview) {
-                    dom(preview).off("scroll.xf_editor-sync-v3 wheel.xf_editor-master touchstart.xf_editor-master touchmove.xf_editor-master mousedown.xf_editor-master wheel.xf_editor-anim mousedown.xf_editor-sync mouseenter.xf_editor-sync mouseleave.xf_editor-sync");
-                }
-                if (this.previewContainer) {
-                    this.previewContainer.off("click.xf_editor-toc click.xf_editor-footnote load.xf_editor-sync-img");
-                    // 清理图片 load 监听，避免解绑后监听器残留
-                    try {
-                        var boundImages = this.previewContainer[0].querySelectorAll("img");
-                        Array.prototype.forEach.call(boundImages, function(image) {
-                            dom(image).off("load.xf_editor-sync-img2");
-                        });
-                    } catch (e) {}
-                    // 移除媒体加载捕获监听（与 bindSyncScroll 中的注册配对）
-                    if (this._syncState && this._syncState._previewMediaLoadHandler) {
-                        try {
-                            this.previewContainer[0].removeEventListener("load", this._syncState._previewMediaLoadHandler, true);
-                        } catch (e) {}
-                        this._syncState._previewMediaLoadHandler = null;
-                    }
-                }
-                dom(window).off("resize.xf_editor-sync-media load.xf_editor-sync-fonts"
-                    + " .xf_editor-sync-media_" + this._uid + " .xf_editor-sync-fonts_" + this._uid
-                    + " .xf_editor-sync_" + this._uid + " .xf_editor-resize_" + this._uid);
-                if (this.editor) {
-                    this.editor.off("mouseenter.xf_editor-sync mouseleave.xf_editor-sync");
-                }
-                if (this.cm) {
-                    this.cm.off("changes.xfsync fold.xfsync cursorActivity.xfsync focus.xf_editor-sync");
-                }
-                if (this._syncState && this._syncState._syncResizeObserver) {
-                    try { this._syncState._syncResizeObserver.disconnect(); } catch (e) {}
-                    this._syncState._syncResizeObserver = null;
-                }
-                if (this._syncState && this._syncState._imgResyncTimer) {
-                    clearTimeout(this._syncState._imgResyncTimer);
-                    this._syncState._imgResyncTimer = null;
-                }
-            } catch(e) {}
-            
-            // 标记销毁态并清理初始对齐定时器 / 代次递增
-            if (this._syncState) {
-                this._syncState._destroyed = true;
-                this._syncState._generation = (this._syncState._generation || 0) + 1;
-                if (this._syncState._initialAlignTimer) {
-                    clearTimeout(this._syncState._initialAlignTimer);
-                    this._syncState._initialAlignTimer = null;
-                }
-            }
-            clearTimeout(this.__syncLeaveTimer);
-            clearTimeout(this.__syncDomLockTimer);
-            clearTimeout(this.__lastSyncTimer);
-            this.__lastSyncTimer = null;
-            this._scrollSyncBound = false;
-            this._syncingScroll = false;
-            this._syncScrollActive = null;
-            this._applyingDomChanges = false;
-            // 重置同步状态
-            if (this._syncState) {
-                this._syncState.suppressAllSync = false;
-                this._syncState.programmaticScroll = false;
-                this._syncState.disablePreviewListener = false;
-                this._syncState.mouseTarget = null;
-                this._syncState.lastEditorSyncTime = 0;
-                this._syncState.lastPreviewSyncTime = 0;
-            }
-            // 清理外部接口
-            this.suspendSyncScroll = null;
-            this.resumeSyncScroll = null;
-            
+        unbindChapterSync : function() {
+            if (this._chapterSync) this._chapterSync.unbind();
             return this;
         },
-        
+
+        /** 临时暂停同步（程序化更新 DOM 时使用）。 */
+        suspendSyncScroll : function() {
+            if (this._chapterSync) this._chapterSync.state.suspended = true;
+            return this;
+        },
+
+        /** 恢复同步并立即按当前主控区重新对齐。 */
+        resumeSyncScroll : function() {
+            if (this._chapterSync) {
+                this._chapterSync.state.suspended = false;
+                this._chapterSync.refresh();
+            }
+            return this;
+        },
+
         /**
-         * ★ v2.0.0-FIX: 滚动预览区到指定编辑区行号（标题锚点 + 插值）
-         * 
-         * 参照 cherry-markdown scrollToLineNum(lineNum, linePercent)，
-         * 使用标题锚点映射替代简单比例算法，定位精准。
-         * 
-         * @param {number} lineNum     目标行号（从 0 开始）
-         * @param {number} [linePercent=0] 行内百分比偏移 (0~1)
+         * 将编辑区滚动到指定行，并按章节规则同步预览区。
+         * @param {number} lineNum      目标行号（从 0 开始）
+         * @param {number} [linePercent=0] 行内比例（0~1）
          * @returns {xfEditor}
          */
         scrollToLineNum : function(lineNum, linePercent) {
-            linePercent = linePercent || 0;
-            var targetLine = lineNum + linePercent;
-            
-            var previewDom = this.previewContainer;
-            var scrollEl = this.preview ? this.preview[0] : null;
-            if (!previewDom || !previewDom[0] || !scrollEl) return this;
-            var state = this._syncState;
-
-            // ★ 优先复用重写后的同步引擎：与其完全同源的映射，避免新旧两套逻辑定位不一致
-            if (state && state._mdPosToEditorTop && state._editorToPreview) {
-                try {
-                    state._invalidateAnchors();
-                    var y = state._editorToPreview(state._mdPosToEditorTop(targetLine));
-                    if (y !== null) {
-                        scrollEl.scrollTop = Math.max(0, y);
-                        return this;
-                    }
-                } catch(e) {}
-            }
-
+            if (!this.cm) return this;
+            lineNum = Math.max(0, Math.min(this.cm.lineCount() - 1, parseInt(lineNum, 10) || 0));
+            linePercent = Math.max(0, Math.min(1, Number(linePercent) || 0));
             try {
-                var totalLines = this.cm ? this.cm.lineCount() : 1;
-                var anchors = this._buildHeadingAnchorMap();
-                var targetScrollTop = null;
-                
-                // ★ 有标题锚点时使用插值定位
-                if (anchors.length > 0) {
-                    var prevAnchor = anchors[0];
-                    var nextAnchor = anchors[anchors.length - 1];
-                    
-                    for (var i = 0; i < anchors.length; i++) {
-                        if (anchors[i].editorLine <= targetLine) prevAnchor = anchors[i];
-                        if (anchors[i].editorLine >= targetLine) {
-                            nextAnchor = anchors[i];
-                            break;
-                        }
-                    }
-                    
-                    var scRect = scrollEl.getBoundingClientRect();
-                    
-                    if (prevAnchor === nextAnchor) {
-                        var pR = prevAnchor.previewElement.getBoundingClientRect();
-                        targetScrollTop = scrollEl.scrollTop + (pR.top - scRect.top);
-                    } else {
-                        var editorDist = nextAnchor.editorLine - prevAnchor.editorLine;
-                        if (editorDist <= 0) editorDist = 1;
-                        var localRatio = (targetLine - prevAnchor.editorLine) / editorDist;
-                        localRatio = Math.max(0, Math.min(1, localRatio));
-                        
-                        var pRect = prevAnchor.previewElement.getBoundingClientRect();
-                        var nRect = nextAnchor.previewElement.getBoundingClientRect();
-                        
-                        var prevScrollPos = scrollEl.scrollTop + (pRect.top - scRect.top);
-                        var nextScrollPos = scrollEl.scrollTop + (nRect.top - scRect.top);
-                        
-                        targetScrollTop = prevScrollPos + (nextScrollPos - prevScrollPos) * localRatio;
-                    }
-                }
-                
-                // ★ 回退：无标题时使用比例映射
-                if (targetScrollTop === null) {
-                    var blocks = previewDom[0].querySelectorAll('[data-sign]');
-                    if (blocks.length) {
-                        var ratio = Math.max(0, Math.min(1, targetLine / Math.max(1, totalLines - 1)));
-                        var tIdx = Math.round(ratio * (blocks.length - 1));
-                        tIdx = Math.min(blocks.length - 1, Math.max(0, tIdx));
-                        var targetBlock = blocks[tIdx];
-                        var containerRect = scrollEl.getBoundingClientRect();
-                        var blockRect = targetBlock.getBoundingClientRect();
-                        targetScrollTop = scrollEl.scrollTop + (blockRect.top - containerRect.top);
-                    }
-                }
-                
-                if (targetScrollTop !== null) {
-                    if (state) state.programmaticScroll = true;
-                    scrollEl.scrollTo({
-                        top: Math.max(0, targetScrollTop),
-                        behavior: "smooth"
-                    });
-                    if (state) {
-                        requestAnimationFrame(function() {
-                            requestAnimationFrame(function() {
-                                state.programmaticScroll = false;
-                            });
-                        });
-                    }
-                }
-            } catch(e) {
-                if (typeof console !== "undefined" && console.warn) {
-                    console.warn("[xfEditor] scrollToLineNum error:", e);
-                }
+                this.cm.setCursor({ line: lineNum, ch: 0 });
+                var lineHeight = this.cm.heightAtLine(lineNum, "local");
+                var nextHeight = this.cm.heightAtLine(Math.min(this.cm.lineCount() - 1, lineNum + 1), "local");
+                this.cm.scrollTo(null, lineHeight + (nextHeight - lineHeight) * linePercent - this.cm.getScrollInfo().clientHeight / 2);
+            } catch (e) {}
+            if (this._chapterSync) {
+                this._chapterSync.setMaster("editor");
+                this._chapterSync.refresh();
             }
-            
             return this;
         },
-        
+
         /**
          * 显示编辑器
          * Show editor
@@ -10393,23 +9052,10 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
                 this.draftTimer = null;
             }
 
-            // 1b. 取消可能仍在运行的滚动同步动画帧，避免销毁后继续操作已拆除的 CodeMirror
-            // 修正 —— 动画 timer 实际存放在 _syncState（非 state），原代码为死代码
-            if (this._syncState) {
-                if (this._syncState.editorAnimTimer) {
-                    try { cancelAnimationFrame(this._syncState.editorAnimTimer); } catch (ex) {}
-                    this._syncState.editorAnimTimer = null;
-                }
-                if (this._syncState.editorCmAnimTimer) {
-                    try { cancelAnimationFrame(this._syncState.editorCmAnimTimer); } catch (ex) {}
-                    this._syncState.editorCmAnimTimer = null;
-                }
-                this._syncState.suppressAllSync = true;
-            }
-
-            // 1c. 解绑同步滚动引擎，避免监听器/定时器残留。
-            if (this._scrollSyncBound && typeof this.unbindSyncScroll === "function") {
-                try { this.unbindSyncScroll(); } catch (ex) {}
+            // 1b. 解绑章节同步引擎，取消全部 rAF、定时器与观察器。
+            if (this._chapterSync) {
+                try { this._chapterSync.unbind(); } catch (ex) {}
+                this._chapterSync = null;
             }
 
             // 2. 解绑所有文档级事件（xfEditor 命名空间）
@@ -13567,160 +12213,6 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
     };
 
     /**
-     * ★ v2.0.0: 为预览区 HTML 注入 data-sign 块签名，用于同步滚动行号映射
-     * 
-     * 参照 cherry-markdown 的设计思路，为每个块级元素添加 data-sign 属性，
-     * 使编辑区行号和预览区块之间可以相互映射，从而实现精准的同步滚动。
-     *
-     * 支持的块级元素：h1-h6, p, pre, blockquote, ul, ol, table,
-     *                  div.xf_editor-row, div.xf_editor-columns, div.xf_editor-tabs
-     *
-     * @param {string}  html       已渲染的 HTML 字符串
-     * @param {number}  totalLines 编辑器总行数 (/n 分隔)
-     * @returns {string} 带有 data-sign 属性的 HTML
-     */
-    /**
-     * v2.0.0: 扫描 Markdown 源码中各块级结构的起始行号。
-     * 顺序与 addBlockSignatures 注入的 data-sign 块顺序一一对应，
-     * 为「编辑区行号 ↔ 预览区渲染位置」提供真实锚点，替代按高度比例反推的近似算法。
-     *
-     * @param {string} markdown 原始 Markdown 文本
-     * @returns {number[]} 每个块级结构的起始行号（0 基）
-     */
-    xfEditor.scanSourceBlockLines = function(markdown) {
-        var lines = String(markdown || "").split("\n");
-        var result = [];
-        var inFence = false;
-        var fenceChar = "";
-        var prevBlank = true;
-        var inQuote = false;
-        var inTable = false;
-
-        for (var index = 0; index < lines.length; index++) {
-            var line = lines[index];
-            var trimmed = line.trim();
-
-            var fence = line.match(/^\s{0,3}(`{3,}|~{3,})/);
-            if (fence) {
-                var mark = fence[1].charAt(0);
-                if (!inFence) {
-                    inFence = true;
-                    fenceChar = mark;
-                    result.push(index);
-                } else if (mark === fenceChar) {
-                    inFence = false;
-                    fenceChar = "";
-                }
-                prevBlank = true;
-                inQuote = false;
-                inTable = false;
-                continue;
-            }
-            if (inFence) continue;
-
-            if (/^\s*(\[\[|<!--|<[a-zA-Z][^>]*>)/.test(line)) {
-                result.push(index);
-                prevBlank = true;
-                inQuote = false;
-                inTable = false;
-                continue;
-            }
-
-            if (!trimmed) {
-                prevBlank = true;
-                inQuote = false;
-                inTable = false;
-                continue;
-            }
-
-            if (/^#{1,6}\s/.test(trimmed) || /^(-{3,}|\*{3,}|_{3,})$/.test(trimmed)) {
-                result.push(index);
-                prevBlank = true;
-                inQuote = false;
-                inTable = false;
-                continue;
-            }
-
-            if (/^\|/.test(trimmed)) {
-                if (!inTable) {
-                    result.push(index);
-                    inTable = true;
-                }
-                prevBlank = false;
-                inQuote = false;
-                continue;
-            }
-            inTable = false;
-
-            if (/^>/.test(trimmed)) {
-                if (!inQuote) result.push(index);
-                inQuote = true;
-                prevBlank = false;
-                continue;
-            }
-            inQuote = false;
-
-            if (/^([-*+]|\d+[.)])\s+/.test(trimmed)) {
-                result.push(index);
-                prevBlank = false;
-                continue;
-            }
-
-            if (prevBlank) result.push(index);
-            prevBlank = false;
-        }
-        return result;
-    };
-
-    /**
-     * 为预览 HTML 块注入 data-sign、真实源码起始行 data-line 与结束行 data-line-end。
-     *
-     * @param {string} html       已渲染的 HTML 字符串
-     * @param {string} markdown   对应的原始 Markdown 文本
-     * @returns {string} 带 data-sign / data-line / data-line-end 的 HTML
-     */
-    xfEditor.addBlockSignatures = function(html, markdown) {
-        if (!html) return html;
-
-        var sourceLines = xfEditor.scanSourceBlockLines(markdown);
-        var totalLines  = String(markdown || "").split("\n").length;
-        var lastLine    = sourceLines.length ? sourceLines[sourceLines.length - 1] : 0;
-        var blockIdx    = 0;
-        // 纯布局容器不参与块签名，避免一个源码块被多次计数导致后续 data-line 整体偏移
-        var nonSignDiv  = /xf_editor-(tab-body|tab-panel|tab-nav|tab-header)([\s"]|$)/;
-
-        var result = html.replace(/<(h[1-6]|p|pre|blockquote|ul|ol|table|dl|hr|section|article|header|footer|nav|main|aside|li|div\s+[^>]*class="[^"]*xf_editor-[^"]*")[^>]*>/gi, function(tagMatch) {
-            if (/\/>$/.test(tagMatch) || /data-sign\s*=/.test(tagMatch)) return tagMatch;
-            if (/^<div/i.test(tagMatch) && nonSignDiv.test(tagMatch)) return tagMatch;
-
-            blockIdx++;
-            var sourceLine = sourceLines[blockIdx - 1];
-            if (sourceLine == null) {
-                sourceLine = sourceLines.length
-                    ? Math.min(totalLines - 1, lastLine + (blockIdx - sourceLines.length + 1))
-                    : Math.max(0, blockIdx - 1);
-            }
-            var nextSourceLine = sourceLines[blockIdx];
-            var sourceLineEnd = (nextSourceLine != null && nextSourceLine > sourceLine)
-                ? nextSourceLine - 1
-                : sourceLine;
-            var insertPos = tagMatch.length - 1;
-            return tagMatch.substring(0, insertPos)
-                + ' data-sign="block-' + blockIdx + '"'
-                + ' data-line="' + sourceLine + '"'
-                + ' data-line-end="' + sourceLineEnd + '"'
-                + tagMatch.substring(insertPos);
-        });
-
-        result = result.replace(/<div class="markdown-body[^"]*"[^>]*>/, function(match) {
-            if (/data-sign-count=/.test(match)) return match;
-            return match.replace('>', ' data-sign-count="' + blockIdx + '">');
-        });
-
-        return result;
-    };
-
-    /**
      * ★ v2.0.0: 预处理链接 target 语法
      * 将 [text](url){target=_blank} 转换为 [text](url "target=_blank")
      * 使 marked.js 能够将 target 信息传入 link renderer 的 title 参数
@@ -16549,10 +15041,7 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
             .replace(/\sdata-sd-initialized="true"/g, '')
             .replace(/\sdata-xfe-initialized="true"/g, '')
             .replace(/\sdata-_copyBtnReady="true"/g, '')
-            .replace(/\sdata-_originalCode="[^"]*"/g, '')
-            .replace(/\sdata-sign="[^"]*"/g, '')
-            .replace(/\sdata-line="[^"]*"/g, '')
-            .replace(/\sdata-sign-count="[^"]*"/g, '');
+            .replace(/\sdata-_originalCode="[^"]*"/g, '');
     };
 
     /**
@@ -19177,6 +17666,515 @@ c.push('.xf_editor-html-preview pre code{display:block;max-width:100%;overflow-x
 
         return datefmt;
     };
+
+    /**
+     * 章节同步引擎：先对齐左右两侧标题章节，再按章节内容高度比例滚动。
+     * 标题范围：左侧 Markdown `#` ~ `########`，右侧预览 `h1` ~ `h8`。
+     */
+    xfEditor.ChapterSync = function(editor) {
+        this.editor   = editor;
+        this.settings = editor.settings;
+        this.cm       = editor.cm;
+        this.preview  = editor.preview && editor.preview[0];
+        this.container = editor.previewContainer && editor.previewContainer[0];
+        this.ns       = ".xf-chapter-sync_" + editor._uid;
+        this.state    = {
+            bound: false,
+            destroyed: false,
+            suspended: false,
+            generation: 0,
+            dirty: true,
+            model: null,
+            master: "editor",
+            masterTs: 0,
+            expectPreview: null,
+            expectEditor: null,
+            expectTs: 0,
+            cursorLine: -1,
+            cursorTs: 0,
+            rafEditor: 0,
+            rafPreview: 0,
+            refreshTimer: 0,
+            mediaTimer: 0,
+            resizeObserver: null,
+            lastError: null
+        };
+    };
+
+    xfEditor.ChapterSync.prototype = {
+        now: function() {
+            return (typeof performance !== "undefined" && performance.now)
+                ? performance.now() : Date.now();
+        },
+
+        normalizeText: function(value) {
+            return String(value || "")
+                .replace(/\{#[\s\S]*?\}/g, "")
+                .replace(/<[^>]*>/g, "")
+                .replace(/[`*_~\[\]()]/g, "")
+                .replace(/\s+/g, " ")
+                .trim()
+                .toLowerCase();
+        },
+
+        /** 解析 Markdown 中的 ATX 标题，自动跳过围栏代码块。 */
+        parseEditorHeadings: function() {
+            var cm = this.cm;
+            var lines = cm.getValue().split("\n");
+            var result = [];
+            var inFence = false;
+            var fenceChar = "";
+            var fenceLen = 0;
+            var info = cm.getScrollInfo();
+            var docHeight = Math.max(0, info.height || 0);
+
+            for (var index = 0; index < lines.length; index++) {
+                var line = lines[index];
+                var fence = /^(\s{0,3})(`{3,}|~{3,})/.exec(line);
+                if (fence) {
+                    var marker = fence[2];
+                    if (!inFence) {
+                        inFence = true;
+                        fenceChar = marker.charAt(0);
+                        fenceLen = marker.length;
+                    } else if (marker.charAt(0) === fenceChar && marker.length >= fenceLen) {
+                        inFence = false;
+                        fenceChar = "";
+                        fenceLen = 0;
+                    }
+                    continue;
+                }
+                if (inFence) continue;
+
+                var match = /^(#{1,8})\s+(.+?)(?:\s+#+)?\s*$/.exec(line);
+                if (!match) continue;
+                var text = this.normalizeText(match[2]);
+                if (!text) continue;
+                var start = 0;
+                try { start = cm.heightAtLine(index, "local"); } catch (e) { start = 0; }
+                result.push({
+                    index: result.length,
+                    line: index,
+                    level: match[1].length,
+                    text: text,
+                    start: start,
+                    end: docHeight
+                });
+            }
+
+            for (var i = 0; i < result.length; i++) {
+                if (i + 1 < result.length) result[i].end = Math.max(result[i].start + 1, result[i + 1].start);
+                else result[i].end = Math.max(result[i].start + 1, docHeight);
+            }
+            return result;
+        },
+
+        /** 采集预览区可见的 h1~h8，按滚动内容坐标记录章节区间。 */
+        parsePreviewHeadings: function() {
+            var scrollEl = this.preview;
+            var container = this.container;
+            if (!scrollEl || !container) return [];
+            var scrollRect = scrollEl.getBoundingClientRect();
+            var nodes = container.querySelectorAll("h1,h2,h3,h4,h5,h6,h7,h8");
+            var result = [];
+            for (var i = 0; i < nodes.length; i++) {
+                var node = nodes[i];
+                var parent = node.parentElement;
+                var inToc = false;
+                while (parent && parent !== container) {
+                    if (/markdown-toc|\btoc\b|xf_editor-toc/i.test(parent.className || "")) {
+                        inToc = true;
+                        break;
+                    }
+                    parent = parent.parentElement;
+                }
+                if (inToc) continue;
+                var rect = node.getBoundingClientRect();
+                if (!rect.height || !rect.width) continue;
+                var top = scrollEl.scrollTop + (rect.top - scrollRect.top);
+                var text = this.normalizeText(node.textContent);
+                if (!text) continue;
+                result.push({
+                    index: result.length,
+                    level: parseInt(node.tagName.charAt(1), 10) || 1,
+                    text: text,
+                    element: node,
+                    start: top,
+                    end: Math.max(0, scrollEl.scrollHeight - scrollEl.clientHeight)
+                });
+            }
+            for (var j = 0; j < result.length; j++) {
+                if (j + 1 < result.length) result[j].end = Math.max(result[j].start + 1, result[j + 1].start);
+            }
+            return result;
+        },
+
+        /** 顺序优先、文本+层级优先的标题配对，避免同名标题错配。 */
+        alignHeadings: function(editorHeads, previewHeads) {
+            var pairs = [];
+            var usedPreview = {};
+            var cursor = 0;
+
+            for (var ei = 0; ei < editorHeads.length; ei++) {
+                var editorHeading = editorHeads[ei];
+                var found = -1;
+                var limit = Math.min(previewHeads.length, cursor + 12);
+                for (var pi = cursor; pi < limit; pi++) {
+                    if (usedPreview[pi]) continue;
+                    var previewHeading = previewHeads[pi];
+                    if (previewHeading.level === editorHeading.level && previewHeading.text === editorHeading.text) {
+                        found = pi;
+                        break;
+                    }
+                }
+                if (found < 0) {
+                    for (var pj = cursor; pj < limit; pj++) {
+                        if (usedPreview[pj]) continue;
+                        if (previewHeads[pj].text === editorHeading.text) {
+                            found = pj;
+                            break;
+                        }
+                    }
+                }
+                if (found >= 0) {
+                    usedPreview[found] = true;
+                    cursor = found + 1;
+                    pairs.push({ editor: editorHeading, preview: previewHeads[found] });
+                }
+            }
+
+            var pairedEditor = {};
+            for (var i = 0; i < pairs.length; i++) pairedEditor[pairs[i].editor.index] = true;
+            var remainingEditor = editorHeads.filter(function(item) { return !pairedEditor[item.index]; });
+            var remainingPreview = previewHeads.filter(function(item, idx) { return !usedPreview[idx]; });
+            var fallbackCount = Math.min(remainingEditor.length, remainingPreview.length);
+            for (var k = 0; k < fallbackCount; k++) {
+                pairs.push({ editor: remainingEditor[k], preview: remainingPreview[k] });
+            }
+            pairs.sort(function(a, b) { return a.editor.line - b.editor.line; });
+            return pairs;
+        },
+
+        invalidate: function() {
+            this.state.dirty = true;
+            this.state.model = null;
+        },
+
+        getModel: function(force) {
+            var state = this.state;
+            if (!state.model || state.dirty || force) {
+                var editorHeads = this.parseEditorHeadings();
+                var previewHeads = this.parsePreviewHeadings();
+                state.model = {
+                    editorHeads: editorHeads,
+                    previewHeads: previewHeads,
+                    pairs: this.alignHeadings(editorHeads, previewHeads)
+                };
+                state.dirty = false;
+            }
+            return state.model;
+        },
+
+        setMaster: function(zone) {
+            this.state.master = zone;
+            this.state.masterTs = this.now();
+        },
+
+        getMaster: function() {
+            var state = this.state;
+            if (state.master && (this.now() - state.masterTs) > 1200) state.master = null;
+            return state.master;
+        },
+
+        isSelfPreviewScroll: function() {
+            var state = this.state;
+            if (state.expectPreview == null) return false;
+            var age = this.now() - state.expectTs;
+            if (age > 300 || Math.abs(this.preview.scrollTop - state.expectPreview) > 4) {
+                state.expectPreview = null;
+                return false;
+            }
+            if (age > 80) state.expectPreview = null;
+            return true;
+        },
+
+        isSelfEditorScroll: function() {
+            var state = this.state;
+            if (state.expectEditor == null) return false;
+            var age = this.now() - state.expectTs;
+            var top = 0;
+            try { top = this.cm.getScrollInfo().top; } catch (e) { top = 0; }
+            if (age > 300 || Math.abs(top - state.expectEditor) > 4) {
+                state.expectEditor = null;
+                return false;
+            }
+            if (age > 80) state.expectEditor = null;
+            return true;
+        },
+
+        applyPreviewTop: function(target) {
+            var scrollEl = this.preview;
+            if (!scrollEl) return;
+            var maxTop = Math.max(0, scrollEl.scrollHeight - scrollEl.clientHeight);
+            var top = Math.max(0, Math.min(maxTop, target));
+            this.state.expectPreview = top;
+            this.state.expectTs = this.now();
+            if (Math.abs(scrollEl.scrollTop - top) > 0.5) scrollEl.scrollTop = top;
+            else this.state.expectPreview = null;
+        },
+
+        applyEditorTop: function(target) {
+            var cm = this.cm;
+            if (!cm) return;
+            var info = cm.getScrollInfo();
+            var maxTop = Math.max(0, info.height - info.clientHeight);
+            var top = Math.max(0, Math.min(maxTop, target));
+            this.state.expectEditor = top;
+            this.state.expectTs = this.now();
+            cm.scrollTo(null, top);
+        },
+
+        /** 左侧 → 右侧：先定位同一章节，再按章节内容高度比例滚动。 */
+        syncFromEditor: function() {
+            var state = this.state;
+            if (state.destroyed || state.suspended || this.getMaster() === "preview") return;
+            if (!this.cm || !this.preview) return;
+            var model = this.getModel();
+            var info = this.cm.getScrollInfo();
+            var pairs = model.pairs;
+            if (!pairs.length) {
+                var globalRatio = info.top / Math.max(1, info.height - info.clientHeight);
+                this.applyPreviewTop(globalRatio * Math.max(0, this.preview.scrollHeight - this.preview.clientHeight));
+                return;
+            }
+
+            var anchorLine = 0;
+            try { anchorLine = this.cm.lineAtHeight(info.top, "local"); } catch (e) { anchorLine = 0; }
+            if (state.cursorLine >= 0 && (this.now() - state.cursorTs) < 900) {
+                var cursorY = 0;
+                try { cursorY = this.cm.heightAtLine(state.cursorLine, "local"); } catch (e) {}
+                if (cursorY >= info.top - 2 && cursorY <= info.top + info.clientHeight + 2) anchorLine = state.cursorLine;
+            }
+
+            var chapter = null;
+            for (var i = 0; i < pairs.length; i++) {
+                if (pairs[i].editor.line <= anchorLine) chapter = pairs[i];
+                else break;
+            }
+            if (!chapter) chapter = pairs[0];
+
+            var editorSpan = Math.max(1, chapter.editor.end - chapter.editor.start);
+            var ratio = (info.top - chapter.editor.start) / editorSpan;
+            ratio = Math.max(0, Math.min(1, ratio));
+            var previewSpan = Math.max(1, chapter.preview.end - chapter.preview.start);
+            this.applyPreviewTop(chapter.preview.start + ratio * previewSpan);
+        },
+
+        /** 右侧 → 左侧：使用与左侧完全相同的章节定位与比例算法。 */
+        syncFromPreview: function() {
+            var state = this.state;
+            if (state.destroyed || state.suspended || this.getMaster() === "editor") return;
+            if (!this.cm || !this.preview) return;
+            var model = this.getModel();
+            var pairs = model.pairs;
+            var anchor = this.preview.scrollTop;
+            if (!pairs.length) {
+                var globalRatio = anchor / Math.max(1, this.preview.scrollHeight - this.preview.clientHeight);
+                this.applyEditorTop(globalRatio * Math.max(0, this.cm.getScrollInfo().height - this.cm.getScrollInfo().clientHeight));
+                return;
+            }
+
+            var chapter = null;
+            for (var i = 0; i < pairs.length; i++) {
+                if (pairs[i].preview.start <= anchor) chapter = pairs[i];
+                else break;
+            }
+            if (!chapter) chapter = pairs[0];
+
+            var previewSpan = Math.max(1, chapter.preview.end - chapter.preview.start);
+            var ratio = (anchor - chapter.preview.start) / previewSpan;
+            ratio = Math.max(0, Math.min(1, ratio));
+            var editorSpan = Math.max(1, chapter.editor.end - chapter.editor.start);
+            this.applyEditorTop(chapter.editor.start + ratio * editorSpan);
+        },
+
+        scheduleFromEditor: function() {
+            var self = this;
+            var state = this.state;
+            if (state.rafEditor) return;
+            state.rafEditor = (typeof requestAnimationFrame === "function")
+                ? requestAnimationFrame(function() { state.rafEditor = 0; try { self.syncFromEditor(); } catch (e) { state.lastError = e && e.message ? e.message : String(e); } })
+                : setTimeout(function() { state.rafEditor = 0; try { self.syncFromEditor(); } catch (e) { state.lastError = e && e.message ? e.message : String(e); } }, 16);
+        },
+
+        scheduleFromPreview: function() {
+            var self = this;
+            var state = this.state;
+            if (state.rafPreview) return;
+            state.rafPreview = (typeof requestAnimationFrame === "function")
+                ? requestAnimationFrame(function() { state.rafPreview = 0; try { self.syncFromPreview(); } catch (e) { state.lastError = e && e.message ? e.message : String(e); } })
+                : setTimeout(function() { state.rafPreview = 0; try { self.syncFromPreview(); } catch (e) { state.lastError = e && e.message ? e.message : String(e); } }, 16);
+        },
+
+        scheduleRefresh: function(delay) {
+            var self = this;
+            var state = this.state;
+            clearTimeout(state.refreshTimer);
+            state.refreshTimer = setTimeout(function() {
+                state.refreshTimer = 0;
+                if (state.destroyed || state.suspended) return;
+                self.invalidate();
+                if (self.getMaster() === "preview") self.syncFromPreview();
+                else self.syncFromEditor();
+            }, delay || 120);
+        },
+
+        refresh: function() {
+            if (this.state.destroyed || this.state.suspended) return;
+            this.invalidate();
+            if (this.getMaster() === "preview") this.syncFromPreview();
+            else this.syncFromEditor();
+        },
+
+        bind: function() {
+            if (this.state.bound || !this.settings.syncScroll) return;
+            if (!this.cm || !this.preview || !this.container) return;
+            var self = this;
+            var state = this.state;
+            var ns = this.ns;
+            var cmScrollEl = this.cm.getScrollerElement();
+
+            state.generation++;
+            state.bound = true;
+            state.destroyed = false;
+            state.suspended = false;
+            state.master = "editor";
+            state.masterTs = this.now();
+
+            this.container.style.overflow = "hidden";
+
+            dom(cmScrollEl).off("scroll" + ns).on("scroll" + ns, function() {
+                if (self.isSelfEditorScroll()) return;
+                self.setMaster("editor");
+                self.scheduleFromEditor();
+            });
+            dom(this.preview).off("scroll" + ns).on("scroll" + ns, function() {
+                if (self.isSelfPreviewScroll()) return;
+                self.setMaster("preview");
+                self.scheduleFromPreview();
+            });
+                dom([cmScrollEl, this.preview]).off("wheel" + ns + " touchstart" + ns + " mousedown" + ns)
+                    .on("wheel" + ns + " touchstart" + ns + " mousedown" + ns, function(e) {
+                        var zone = (e.currentTarget === self.preview) ? "preview" : "editor";
+                        self.setMaster(zone);
+                        // 用户滚轮/触摸滚动时以视口位置为准，避免旧光标章节持续抢占
+                        if (zone === "editor" && e.type !== "mousedown") state.cursorTs = 0;
+                    });
+
+            // CodeMirror 事件不支持 jQuery 命名空间，必须使用具名处理器精确绑定/解绑
+            if (state.onCursor) this.cm.off("cursorActivity", state.onCursor);
+            state.onCursor = function() {
+                try {
+                    state.cursorLine = self.cm.getCursor().line;
+                    state.cursorTs = self.now();
+                } catch (e) {}
+                self.setMaster("editor");
+            };
+            this.cm.on("cursorActivity", state.onCursor);
+
+            if (state.onChanges) this.cm.off("changes", state.onChanges);
+            state.onChanges = function() {
+                self.invalidate();
+                self.scheduleRefresh(180);
+            };
+            this.cm.on("changes", state.onChanges);
+
+            if (state.onFold) this.cm.off("fold", state.onFold);
+            state.onFold = function() {
+                self.invalidate();
+                self.scheduleRefresh(120);
+            };
+            this.cm.on("fold", state.onFold);
+
+            dom(this.container).off("click" + ns).on("click" + ns, function() {
+                self.scheduleRefresh(160);
+            });
+            dom(this.container).off("load" + ns).on("load" + ns, "img", function() {
+                self.scheduleRefresh(150);
+            });
+            try {
+                state.mediaHandler = function() { self.scheduleRefresh(150); };
+                this.container.addEventListener("load", state.mediaHandler, true);
+            } catch (e) {}
+
+            dom(window).off("resize" + ns).on("resize" + ns, function() {
+                self.invalidate();
+                self.scheduleRefresh(150);
+            });
+            try {
+                if (typeof ResizeObserver !== "undefined") {
+                    state.resizeObserver = new ResizeObserver(function() {
+                        self.invalidate();
+                        self.scheduleRefresh(150);
+                    });
+                    state.resizeObserver.observe(this.preview);
+                    state.resizeObserver.observe(this.container);
+                }
+            } catch (e) {}
+            try {
+                if (document.fonts && document.fonts.ready) {
+                    var generation = state.generation;
+                    document.fonts.ready.then(function() {
+                        if (state.destroyed || generation !== state.generation) return;
+                        self.refresh();
+                    });
+                }
+            } catch (e) {}
+
+            this.invalidate();
+            this.scheduleRefresh(0);
+        },
+
+        unbind: function() {
+            var state = this.state;
+            if (!state.bound) return;
+            state.destroyed = true;
+            state.generation++;
+            state.bound = false;
+
+            clearTimeout(state.refreshTimer);
+            clearTimeout(state.mediaTimer);
+            if (state.rafEditor) {
+                if (typeof cancelAnimationFrame === "function") cancelAnimationFrame(state.rafEditor);
+                else clearTimeout(state.rafEditor);
+            }
+            if (state.rafPreview) {
+                if (typeof cancelAnimationFrame === "function") cancelAnimationFrame(state.rafPreview);
+                else clearTimeout(state.rafPreview);
+            }
+            if (state.resizeObserver) {
+                try { state.resizeObserver.disconnect(); } catch (e) {}
+                state.resizeObserver = null;
+            }
+            if (state.mediaHandler && this.container) {
+                try { this.container.removeEventListener("load", state.mediaHandler, true); } catch (e) {}
+                state.mediaHandler = null;
+            }
+            try {
+                dom(this.cm.getScrollerElement()).off("scroll" + this.ns + " wheel" + this.ns + " touchstart" + this.ns + " mousedown" + this.ns);
+                dom(this.preview).off("scroll" + this.ns + " wheel" + this.ns + " touchstart" + this.ns + " mousedown" + this.ns);
+                    dom(this.container).off("click" + this.ns + " load" + this.ns);
+                    dom(window).off("resize" + this.ns);
+                    if (state.onCursor) { this.cm.off("cursorActivity", state.onCursor); state.onCursor = null; }
+                    if (state.onChanges) { this.cm.off("changes", state.onChanges); state.onChanges = null; }
+                    if (state.onFold) { this.cm.off("fold", state.onFold); state.onFold = null; }
+            } catch (e) {}
+            state.model = null;
+            state.expectPreview = null;
+            state.expectEditor = null;
+        }
+    };
+
 
     window.xfEditor = xfEditor;
 
